@@ -72,6 +72,7 @@ try {
   await page.getByRole("heading", { name: "Fixture do Radar" }).waitFor();
   await page.waitForTimeout(800);
   await shot("01-pautas");
+  checks.push({ lessonLinksPautas: await page.locator(".lesson-link").allTextContents() });
   await page.getByRole("checkbox", { name: /Top 10/ }).check();
   checks.push({ topFilter: await page.locator(".idea-card").count() });
   await page.locator(".idea-card").first().getByRole("button", { name: /Criar carrossel/ }).click();
@@ -83,6 +84,7 @@ try {
     await page.getByRole("button", { name: `Abrir ${title}`, exact: true }).click();
     await page.waitForTimeout(600);
     await shot(name);
+    checks.push({ [`lessonLinks-${name}`]: await page.locator(".lesson-link").allTextContents() });
     if (name === "03-texto") {
       const approve = page.getByRole("button", { name: /Aprovar texto/ });
       checks.push({ approveDisabledBeforeChecklist: await approve.isDisabled() });

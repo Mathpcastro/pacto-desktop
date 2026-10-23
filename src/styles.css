@@ -2728,6 +2728,49 @@
     gap: 6px;
     align-items: center;
   }
+  .lesson-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    padding: 0;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--sage);
+  }
+  .lesson-link:hover {
+    color: var(--accent);
+  }
+  .lesson-link small {
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .lesson-link.compact {
+    margin: 0 0 0 6px;
+    vertical-align: middle;
+  }
+  .course-moments {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 30px 18px;
+  }
+  .course-moments > .eyebrow {
+    margin: 10px 0 6px;
+  }
+  .course-moments > button {
+    display: flex;
+    justify-content: space-between;
+    background: transparent;
+    border-bottom: 1px solid var(--line);
+    padding: 8px 0;
+    font-size: 12px;
+    text-align: left;
+  }
+  .course-moments small {
+    color: var(--muted);
+    font-size: 10px;
+  }
 }
 @layer responsive {
   @media (min-width: 1550px) {

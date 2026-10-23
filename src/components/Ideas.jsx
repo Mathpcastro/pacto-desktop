@@ -10,6 +10,7 @@ import {
   Trash2,
   Trophy,
 } from "lucide-react";
+import { LessonLink } from "../course.jsx";
 
 const sources = {
   radar: { label: "Radar de Pautas", icon: Radar },
@@ -138,6 +139,7 @@ export default function Ideas({ state, request, isPending, onCreate }) {
               Usa o seu Contexto Oficial da Marca para gerar 30 pautas e marcar
               as 10 mais fortes para testar primeiro.
             </p>
+            <LessonLink step="radar" />
             <button className="button primary" disabled={busy || !connected}>
               {working === "radar" ? (
                 <LoaderCircle className="spin" size={15} />
@@ -159,7 +161,10 @@ export default function Ideas({ state, request, isPending, onCreate }) {
             }}
           >
             <label className="field">
-              <span>Referência que performou bem</span>
+              <span>
+                Referência que performou bem{" "}
+                <LessonLink step="modelador" compact />
+              </span>
               <textarea
                 rows={4}
                 value={reference}

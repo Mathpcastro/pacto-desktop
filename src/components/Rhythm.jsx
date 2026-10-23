@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, Check, Minus, Plus, Trophy } from "lucide-react";
+import { LessonLink } from "../course.jsx";
 import { rhythm } from "../../core/rhythm.mjs";
 import { ResultsDialog } from "./Flow.jsx";
 import { IdeaCard } from "./Ideas.jsx";
@@ -35,6 +36,7 @@ export default function Rhythm({ state, request, onOpen, onIdeas, onCreate }) {
             Não tente prever o vencedor. Produza rápido o suficiente para
             encontrá-lo.
           </p>
+          <LessonLink step="replicator" />
         </div>
       </header>
       <section className="rhythm-goal">

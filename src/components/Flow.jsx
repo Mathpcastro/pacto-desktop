@@ -12,6 +12,7 @@ import {
   Trophy,
   WandSparkles,
 } from "lucide-react";
+import { LessonLink } from "../course.jsx";
 import Dialog from "./Dialog.jsx";
 
 // Etapas do fluxo do curso (Aula 06): texto aprovado → capa escolhida → restante.
@@ -193,6 +194,7 @@ export function CopyBoard({
             Edite o que quiser. A arte só é gerada depois que você aprovar o
             texto. {project.architecture && <em>{project.architecture}</em>}
           </p>
+          <LessonLink step="copy" />
         </div>
       </header>
       <div className="copy-direction">
@@ -361,6 +363,7 @@ export function CoverPicker({ project, request, busy, connected }) {
       <header>
         <span className="eyebrow">ETAPA 2 · CAPA</span>
         <h2>Escolha a capa que faria você parar.</h2>
+        <LessonLink step="cover" />
         <p>
           A capa escolhida vira a referência de estilo dos outros cards.
           {project.slides[0] && (
@@ -458,6 +461,7 @@ export function FixDialog({ project, slide, problems, request, onClose }) {
           O PACTO corrige só o que você marcar e preserva personagens, cores e
           composição que já funcionam.
         </p>
+        <LessonLink step="correction" />
         <div className="goal-chips">
           {problems.map((item) => (
             <button
@@ -560,6 +564,9 @@ export function CtaDialog({ project, request, busy, onClose }) {
           carrossel e do seu Contexto Oficial da Marca.
         </p>
       )}
+      <div className="dialog-fields">
+        <LessonLink step="cta" />
+      </div>
       <div className="dialog-footer">
         <button className="button ghost" onClick={onClose}>
           Fechar

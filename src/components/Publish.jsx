@@ -14,6 +14,7 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
+import { LessonLink } from "../course.jsx";
 import Dialog from "./Dialog.jsx";
 
 const copyText = (value) =>
@@ -176,6 +177,7 @@ function StoriesDialog({ project, request, busy, onClose }) {
           opcional: gere só a dos stories que você quiser, para economizar o
           limite da conta.
         </p>
+        <LessonLink step="stories" />
         {stories.length > 0 ? (
           <div className="story-list">
             {stories.map((story, i) => (

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, LoaderCircle, Sparkles } from "lucide-react";
+import { LessonLink } from "../course.jsx";
 import Dialog from "./Dialog.jsx";
 
 export default function CreateProject({
@@ -130,7 +131,10 @@ export default function CreateProject({
           </div>
           {architectures.length > 0 && (
             <div className="field">
-              <span>Tipo de carrossel · as 5 arquiteturas do método</span>
+              <span>
+                Tipo de carrossel · as 5 arquiteturas do método{" "}
+                <LessonLink step="architecture" compact />
+              </span>
               <div className="architecture-grid" role="radiogroup">
                 <button
                   type="button"

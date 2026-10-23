@@ -12,6 +12,7 @@ import {
   Square,
   Trash2,
 } from "lucide-react";
+import { LessonLink } from "../course.jsx";
 import IconButton from "./IconButton.jsx";
 
 const steps = [
@@ -316,6 +317,9 @@ export default function Onboarding({
                 ? "Contexto, Design Kit e Prompt Mestre ficam salvos neste computador e acompanham cada carrossel."
                 : copy[current].lead}
           </p>
+          {(current === "brand" || current === "design") && (
+            <LessonLink step={current} />
+          )}
         </div>
         <div className="fields">
           {current === "account" && (
