@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification, screen } from 'electron';
 import { reminder } from '../core/rhythm.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join, extname, resolve } from 'node:path';
@@ -22,9 +22,18 @@ async function login(url){
   loginWindow.on('closed',()=>{loginWindow=null;});await loginWindow.loadURL(url);
 }
 async function createWindow(){
-  window=new BrowserWindow({width:1440,height:940,minWidth:1000,minHeight:720,title:'PACTO',backgroundColor:'#f5f3ee',autoHideMenuBar:true,webPreferences:{preload:join(root,'electron','preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
+  // Fit small screens (e.g. 1366×768 at 125% leaves about 1093×580): never open or lock the window larger than the work area.
+  const area=screen.getPrimaryDisplay().workAreaSize;
+  window=new BrowserWindow({width:Math.min(1440,area.width),height:Math.min(940,area.height),minWidth:Math.min(960,area.width),minHeight:Math.min(560,area.height),title:'PACTO',backgroundColor:'#f5f3ee',autoHideMenuBar:true,webPreferences:{preload:join(root,'electron','preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());
-  window.webContents.session.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));
+  // Lessons play in-app through the privacy-enhanced YouTube embed: only that
+  // origin may load in a frame, and it only gets fullscreen.
+  const lessonFrame=raw=>{try{const u=new URL(raw);return u.protocol==='https:'&&['www.youtube-nocookie.com','www.youtube.com','youtube.com'].includes(u.hostname);}catch{return false;}};
+  window.webContents.session.setPermissionRequestHandler((_contents,permission,callback,details)=>callback(permission==='fullscreen'&&lessonFrame(details?.requestingUrl||'')));
+  window.webContents.session.setPermissionCheckHandler((_contents,permission,origin)=>permission==='fullscreen'&&lessonFrame(origin||''));
+  window.webContents.on('will-frame-navigate',event=>{if(!event.isMainFrame&&!lessonFrame(event.url))event.preventDefault();});
+  // From file:// the embed sends no Referer and YouTube refuses to play (error 153); identify the embed itself.
+  window.webContents.session.webRequest.onBeforeSendHeaders({urls:['https://www.youtube-nocookie.com/embed/*']},(details,callback)=>{const headers={...details.requestHeaders};if(!headers.Referer)headers.Referer='https://www.youtube-nocookie.com/';callback({requestHeaders:headers});});
   const dev=!app.isPackaged&&process.env.PACTO_DEV_URL;
   if(dev){const url=new URL(dev);if(url.hostname!=='127.0.0.1'||url.protocol!=='http:')throw new Error('URL de desenvolvimento inválida.');await window.loadURL(url.href);}
   else await window.loadFile(join(root,'dist','index.html'));

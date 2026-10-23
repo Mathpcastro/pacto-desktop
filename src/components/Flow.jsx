@@ -75,7 +75,13 @@ const fromProject = (project) => ({
   })),
 });
 
-export function ProjectDirection({ project, request, busy, onGenerate }) {
+export function ProjectDirection({
+  project,
+  request,
+  busy,
+  disabled = false,
+  onGenerate,
+}) {
   const [form, setForm] = useState({
     editorialLine: project.editorialLine || "",
     visualConcept: project.visualConcept || "",
@@ -106,7 +112,7 @@ export function ProjectDirection({ project, request, busy, onGenerate }) {
       </label>
       <button
         className="button primary"
-        disabled={busy}
+        disabled={busy || disabled}
         onClick={async () => {
           try {
             await request("saveProject", { id: project.id, ...form });
@@ -413,7 +419,7 @@ export function CoverPicker({ project, request, busy, connected }) {
         </button>
         <div className="cover-generate">
           <span>Opções</span>
-          {[2, 3].map((n) => (
+          {[1, 2, 3].map((n) => (
             <button
               key={n}
               className={total === n ? "selected" : ""}

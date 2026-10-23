@@ -696,7 +696,8 @@ export default function Editor({
                 key={project.id}
                 project={project}
                 request={request}
-                busy={busy || !account.connected}
+                busy={busy}
+                disabled={!account.connected}
                 onGenerate={() => infer("generatePlan")}
               />
               {!account.connected && (

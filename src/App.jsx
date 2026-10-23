@@ -28,7 +28,7 @@ import CreateProject from "./components/CreateProject.jsx";
 import Editor from "./components/Editor.jsx";
 import Ideas from "./components/Ideas.jsx";
 import Rhythm from "./components/Rhythm.jsx";
-import { CourseContext, formatMoment } from "./course.jsx";
+import { CourseContext, LessonPlayer, formatMoment } from "./course.jsx";
 import { rhythm } from "../core/rhythm.mjs";
 
 function readTheme() {
@@ -58,6 +58,7 @@ export default function App() {
   const [projectId, setProjectId] = useState(null);
   const [creating, setCreating] = useState(false);
   const [courseOpen, setCourseOpen] = useState(false);
+  const [video, setVideo] = useState(null);
   const [manual, setManual] = useState(false);
   const [notice, setNotice] = useState("");
   const navigationGuard = useRef(null);
@@ -138,7 +139,7 @@ export default function App() {
       <CourseContext.Provider
         value={{
           moments: state.courseMoments || [],
-          request: available ? request : null,
+          play: available ? setVideo : null,
         }}
       >
         <div className={`app ${view === "editor" && project ? "editing" : ""}`}>
@@ -457,9 +458,10 @@ export default function App() {
                 {state.course.map((lesson, index) => (
                   <button
                     key={lesson.id}
-                    onClick={() =>
-                      request("openCourse", { id: lesson.id }).catch(() => {})
-                    }
+                    onClick={() => {
+                      setCourseOpen(false);
+                      setVideo({ lessonId: lesson.id, seconds: 0 });
+                    }}
                   >
                     <span className="mono">
                       {String(index + 1).padStart(2, "0")}
@@ -477,9 +479,14 @@ export default function App() {
                   {state.courseMoments.map((m) => (
                     <button
                       key={m.step}
-                      onClick={() =>
-                        request("openCourse", { step: m.step }).catch(() => {})
-                      }
+                      onClick={() => {
+                        setCourseOpen(false);
+                        setVideo({
+                          lessonId: m.lessonId,
+                          seconds: m.seconds,
+                          step: m.step,
+                        });
+                      }}
                     >
                       <span>{m.label}</span>
                       <small>
@@ -512,6 +519,16 @@ export default function App() {
                 <X size={15} />
               </IconButton>
             </div>
+          )}
+          {video && (
+            <LessonPlayer
+              video={video}
+              course={state.course}
+              moments={state.courseMoments || []}
+              request={request}
+              onSeek={setVideo}
+              onClose={() => setVideo(null)}
+            />
           )}
         </div>
       </CourseContext.Provider>
