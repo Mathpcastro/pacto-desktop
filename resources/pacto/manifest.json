@@ -1,0 +1,108 @@
+{
+  "version": "0.1.0",
+  "jobId": "9b68e7b3-a10d-4b76-bd7f-ddacf29c0a77",
+  "status": "transcripts-complete",
+  "lessons": [
+    {
+      "id": "SkJWJMKwy6I",
+      "order": 1,
+      "title": "Aula 1   A prova + Método PACTO",
+      "url": "https://www.youtube.com/watch?v=SkJWJMKwy6I",
+      "durationSeconds": 673,
+      "transcribed": true,
+      "language": "asr-en",
+      "source": "external_transcription_api",
+      "file": "transcripts/01-SkJWJMKwy6I.md"
+    },
+    {
+      "id": "73OpTuUsCH8",
+      "order": 2,
+      "title": "Aula 02   P Radar de Pautas",
+      "url": "https://www.youtube.com/watch?v=73OpTuUsCH8",
+      "durationSeconds": 844,
+      "transcribed": true,
+      "language": "asr-en",
+      "source": "external_transcription_api",
+      "file": "transcripts/02-73OpTuUsCH8.md"
+    },
+    {
+      "id": "-o3AEfDjBsQ",
+      "order": 3,
+      "title": "Aula 03   A As 5 Arquiteturas",
+      "url": "https://www.youtube.com/watch?v=-o3AEfDjBsQ",
+      "durationSeconds": 521,
+      "transcribed": true,
+      "language": "asr-en",
+      "source": "external_transcription_api",
+      "file": "transcripts/03--o3AEfDjBsQ.md"
+    },
+    {
+      "id": "plr8iGMRnRo",
+      "order": 4,
+      "title": "Aula 04   C Copy Engine",
+      "url": "https://www.youtube.com/watch?v=plr8iGMRnRo",
+      "durationSeconds": 209,
+      "transcribed": true,
+      "language": "asr-en",
+      "source": "external_transcription_api",
+      "file": "transcripts/04-plr8iGMRnRo.md"
+    },
+    {
+      "id": "LWIanBtCUHg",
+      "order": 5,
+      "title": "Aula 05   T Design Kit + Efeito Continuidade",
+      "url": "https://www.youtube.com/watch?v=LWIanBtCUHg",
+      "durationSeconds": 244,
+      "transcribed": true,
+      "language": "asr-en",
+      "source": "external_transcription_api",
+      "file": "transcripts/05-LWIanBtCUHg.md"
+    },
+    {
+      "id": "32aNnLBXBrA",
+      "order": 6,
+      "title": "Aula 06   Criando um Carrossel que Vende do Zero",
+      "url": "https://www.youtube.com/watch?v=32aNnLBXBrA",
+      "durationSeconds": 318,
+      "transcribed": true,
+      "language": "asr-en",
+      "source": "external_transcription_api",
+      "file": "transcripts/06-32aNnLBXBrA.md"
+    },
+    {
+      "id": "QRwxq7bqWwo",
+      "order": 7,
+      "title": "Aula 07   O Comentário → DM → Oferta",
+      "url": "https://www.youtube.com/watch?v=QRwxq7bqWwo",
+      "durationSeconds": 662,
+      "transcribed": true,
+      "language": "asr-en",
+      "source": "external_transcription_api",
+      "file": "transcripts/07-QRwxq7bqWwo.md"
+    },
+    {
+      "id": "bvDw6TPoU8I",
+      "order": 8,
+      "title": "Aula 08   Sistema Completo + Desafio de 30 Minutos",
+      "url": "https://www.youtube.com/watch?v=bvDw6TPoU8I",
+      "durationSeconds": 397,
+      "transcribed": true,
+      "language": "asr-en",
+      "source": "external_transcription_api",
+      "file": "transcripts/08-bvDw6TPoU8I.md"
+    }
+  ],
+  "transcribed": 8,
+  "total": 8,
+  "provider": "Pauta.ai",
+  "limitations": [
+    "O provedor retornou texto em inglês (asr-en), não transcrição literal em português.",
+    "Sem timestamps de fala na resposta recebida.",
+    "A biblioteca oficial do Notion foi recebida integralmente; alterações futuras devem ser importadas novamente."
+  ],
+  "retryJobId": "536cca42-312b-4431-85bf-05166f920968",
+  "notionSource": {
+    "pages": 13,
+    "manifest": "notion-manifest.json"
+  }
+}

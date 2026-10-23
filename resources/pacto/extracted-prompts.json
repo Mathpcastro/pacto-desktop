@@ -1,0 +1,247 @@
+{
+  "version": "1.0.0",
+  "provenance": "Blocos cercados por ``` extraídos literalmente dos arquivos oficiais do Notion fornecidos pelo usuário; sem reconstrução de prompts a partir da fala.",
+  "prompts": [
+    {
+      "id": "N02-prompt-01",
+      "title": "Prompt — Contexto Oficial da Marca",
+      "language": "txt",
+      "text": "Quero configurar o contexto-base que você vai usar para me ajudar a criar carrosséis orgânicos no Instagram com o Método PACTO.\n\nSua primeira tarefa é entender meu negócio. Faça uma entrevista objetiva com no máximo 12 perguntas, uma rodada de perguntas por vez, cobrindo apenas o que for necessário para descobrir:\n\n1. O que eu vendo ou pretendo vender.\n2. Qual é o principal produto, serviço, curso, aplicativo ou oferta.\n3. Quem é o público que eu quero atrair.\n4. Em que nível esse público está hoje: iniciante, intermediário ou avançado.\n5. Quais são as principais dores, frustrações e obstáculos desse público.\n6. Quais resultados e desejos esse público busca.\n7. Qual transformação meu produto entrega.\n8. Quais diferenciais, mecanismos, recursos ou características tornam minha oferta interessante.\n9. Quais assuntos eu tenho autoridade, experiência ou repertório para abordar.\n10. Quais recursos gratuitos eu poderia entregar em conteúdo ou DM: prompts, checklists, modelos, templates, listas, guias, ferramentas, planilhas, diagnósticos ou outros.\n11. Qual tom de comunicação combina comigo e com minha marca.\n12. Quais limites existem: promessas que não posso fazer, assuntos que não quero abordar e características que não quero na comunicação.\n\nREGRAS DA ENTREVISTA\n- Não invente informações sobre mim.\n- Se minha resposta estiver vaga, faça uma pergunta curta para esclarecer.\n- Não transforme a entrevista em consultoria longa.\n- Priorize informações que realmente mudam a qualidade das pautas e da copy.\n- Se eu ainda não tiver produto pronto, trate minha ideia/oferta atual como hipótese e registre isso claramente.\n\nQuando tiver informações suficientes, pare de perguntar e gere um documento chamado:\n\nCONTEXTO OFICIAL DA MARCA\n\nUse exatamente esta estrutura:\n\n## 1. Negócio e oferta\n- O que vendo:\n- Oferta principal:\n- Transformação prometida:\n- Diferenciais:\n\n## 2. Público\n- Quem quero atrair:\n- Nível de consciência/conhecimento:\n- Principais dores:\n- Principais desejos:\n- Objeções prováveis:\n\n## 3. Territórios de conteúdo\nListe de 5 a 10 assuntos que conectam naturalmente meu repertório ao que meu público quer aprender ou resolver.\n\n## 4. Ativos que posso entregar gratuitamente\nListe recursos práticos que podem virar CTA de comentário e entrega por DM. Priorize coisas que meu público gostaria de receber prontas.\n\n## 5. Voz da marca\n- Tom:\n- Nível de agressividade:\n- Nível de tecnicidade:\n- Palavras/estilos que combinam:\n- Palavras/estilos a evitar:\n\n## 6. Regras de conteúdo\nCrie de 5 a 10 regras curtas que os próximos prompts devem respeitar ao produzir pautas e carrosséis para mim.\n\n## 7. Resumo operacional\nFinalize com um bloco curto que outra IA consiga ler rapidamente, começando com:\n“Esta marca vende... para... O conteúdo deve...”\n\nIMPORTANTE\n- Não crie ainda pautas de conteúdo.\n- Não crie carrosséis.\n- Não crie Design Kit.\n- Sua função neste momento é apenas construir o contexto-base.",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8",
+        "startLine": 25,
+        "endLine": 94
+      }
+    },
+    {
+      "id": "N02-prompt-02",
+      "title": "Prompt — Modelador de Referências",
+      "language": "txt",
+      "text": "Vou enviar uma referência de conteúdo que teve bom desempenho.\n\nSua tarefa NÃO é copiar o conteúdo.\nQuero que você descubra por que a ideia funciona e transforme esse motivo em novas pautas originais para o meu negócio.\n\nCONTEXTO DO MEU NEGÓCIO\nProduto: [DESCREVA]\nPúblico: [DESCREVA]\nObjetivo: aumentar audiência e gerar vendas com carrosséis orgânicos no Instagram.\n\nAo receber a referência, analise:\n- tema central\n- dor ou desejo ativado\n- promessa\n- nível de especificidade\n- utilidade prática\n- mecanismo de curiosidade\n- formato\n- por que alguém salvaria\n- por que alguém comentaria\n\nDepois:\n1. Explique em poucas linhas o motivo real de a referência ser interessante.\n2. Diga quais elementos podem ser modelados sem copiar.\n3. Diga quais elementos NÃO devem ser copiados.\n4. Crie 10 novas pautas para o meu contexto.\n5. Altere hook, estrutura, exemplos e linguagem.\n6. Preserve apenas o princípio que tornou a referência forte.\n\nRegra principal: copie o motivo pelo qual funcionou, não o conteúdo.",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8",
+        "startLine": 147,
+        "endLine": 178
+      }
+    },
+    {
+      "id": "N02-prompt-03",
+      "title": "Prompt — Radar de Pautas",
+      "language": "txt",
+      "text": "Você é meu estrategista de pautas para carrosséis orgânicos no Instagram.\n\nCONTEXTO DO NEGÓCIO\nProduto/oferta: [DESCREVA]\nPúblico: [DESCREVA]\nProblemas que resolvo: [LISTE]\nDesejos do público: [LISTE]\nDiferenciais: [LISTE]\n\nOBJETIVO\nGerar ideias de carrossel que atraiam pessoas com chance real de comprar o que eu vendo.\n\nREGRAS\n- Não gere ideias genéricas.\n- Priorize utilidade prática, especificidade e curiosidade.\n- Cada ideia precisa ter um motivo claro para ser salva ou comentada.\n- Misture listas, tutoriais, estudos de caso, frameworks, erros, recursos e antes/depois.\n- Sempre conecte a pauta a uma dor, desejo ou oportunidade do público.\n- Não tente prever viralização. Quero volume de testes com ideias suficientemente boas para publicar.\n- Evite frases vazias e clichês de marketing.\n\nENTREGA\nGere 30 pautas em uma tabela com:\n1. Tema\n2. Hook inicial\n3. Por que alguém pararia para ver\n4. O que será entregue de útil\n5. Qual produto ou problema isso pode conectar\n6. Arquitetura sugerida: Lista, Tutorial, Framework, Estudo de Caso ou História → Método → Oferta\n\nDepois selecione as 10 ideias mais fortes para começar a testar e explique em uma frase o motivo de cada escolha.",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8",
+        "startLine": 182,
+        "endLine": 214
+      }
+    },
+    {
+      "id": "N03-prompt-01",
+      "title": "Prompt — Escolha de Arquitetura",
+      "language": "txt",
+      "text": "Você é meu arquiteto de carrosséis orgânicos para Instagram.\n\nSua função nesta etapa NÃO é escrever a copy final. Sua função é escolher a melhor arquitetura para a pauta e montar o esqueleto card por card.\n\nVocê deve trabalhar exclusivamente com as 5 arquiteturas abaixo como base. Pode adaptar a quantidade de cards quando isso melhorar o conteúdo, mas preserve a lógica da arquitetura escolhida.\n\n====================\nARQUITETURA 1 — LISTA ÚTIL\n====================\n\nUSE PARA:\nferramentas, prompts, recursos, sites, plugins, skills, erros, ideias, recomendações, configurações, referências ou qualquer conteúdo em que o valor venha de uma coleção de itens úteis.\n\nLÓGICA BASE:\n1. Capa: promessa específica + CTA curto.\n2. Segundo hook: contexto, reframe, contraste ou início imediato do primeiro item.\n3. Item 1: nome/categoria + o que faz + por que importa.\n4. Item 2: nome/categoria + o que faz + por que importa.\n5. Item 3: nome/categoria + o que faz + por que importa.\n6. Item 4: nome/categoria + o que faz + por que importa.\n7. Item 5: nome/categoria + o que faz + por que importa.\n8. Aplicação: como usar, combinar ou escolher os itens.\n9. Síntese: transformação ou principal conclusão.\n10. CTA: benefício + entregável + palavra-chave.\n\nPADRÕES FORTES PARA CARDS INTERNOS:\n- item → mecanismo → benefício\n- categoria → explicação simples → exemplos concretos\n- item → processo visual → conclusão prática\n- item → bullets → frase de transformação\n\nNão transforme todos os itens em descrições genéricas. Cada card precisa entregar uma micro-recompensa.\n\n====================\nARQUITETURA 2 — TUTORIAL\n====================\n\nUSE PARA:\npasso a passo, configuração, implementação, workflow, processo técnico ou qualquer conteúdo em que o leitor queira chegar de A até B.\n\nLÓGICA BASE:\n1. Capa: resultado desejado + CTA.\n2. Segundo hook: problema atual, demonstração do resultado ou visão rápida do que será construído.\n3. Visão geral da solução.\n4. Passo 1.\n5. Passo 2.\n6. Passo 3.\n7. Passo 4.\n8. Passo 5, teste ou correção de erro comum.\n9. Resultado esperado / como saber se funcionou.\n10. CTA: próximo passo prático + entregável.\n\nREGRAS:\n- cada passo precisa gerar progresso real\n- não transforme ações óbvias em cards apenas para aumentar a quantidade\n- quando possível, mostre visualmente o que acontece em cada passo\n\n====================\nARQUITETURA 3 — FRAMEWORK\n====================\n\nUSE PARA:\nmétodo, sistema, processo mental, estratégia, modelo próprio ou uma nova forma de organizar um problema.\n\nLÓGICA BASE:\n1. Capa: nova forma de alcançar um resultado + CTA.\n2. Segundo hook: erro comum, problema da abordagem atual ou contraste.\n3. Apresentação/nome do framework.\n4. Pilar ou etapa 1.\n5. Pilar ou etapa 2.\n6. Pilar ou etapa 3.\n7. Pilar ou etapa 4.\n8. Pilar ou etapa 5 / aplicação prática.\n9. Framework completo resumido e como usar.\n10. CTA: recurso que ajuda a aplicar o framework.\n\nREGRAS:\n- o framework precisa simplificar algo de verdade\n- nomes bonitos não substituem lógica útil\n- cada pilar precisa ter função diferente\n- mostre a relação entre os pilares quando possível\n\n====================\nARQUITETURA 4 — ESTUDO DE CASO\n====================\n\nUSE PARA:\nresultados, números, experimentos, bastidores, antes/depois, lançamentos, campanhas, projetos ou aprendizados retirados de uma execução real.\n\nLÓGICA BASE:\n1. Capa: resultado concreto, mudança ou experimento + CTA.\n2. Segundo hook: contexto inicial, prova, print, contraste antes/depois ou ponto de partida.\n3. Problema / cenário anterior.\n4. Primeira decisão ou ação relevante.\n5. Segunda decisão ou ação relevante.\n6. Terceira decisão ou ação relevante.\n7. Erro, obstáculo ou ajuste importante.\n8. Resultado final.\n9. Lição replicável: o que realmente causou o resultado e o que o leitor pode aplicar.\n10. CTA: material, checklist, processo, prompt ou recurso relacionado.\n\nREGRAS:\n- não invente causalidade que os dados não provam\n- números precisam vir do usuário ou de fonte fornecida\n- dê mais espaço às decisões que mudaram o resultado do que aos detalhes irrelevantes\n\n====================\nARQUITETURA 5 — HISTÓRIA → MÉTODO → OFERTA\n====================\n\nUSE PARA:\nhistórias pessoais, transformação, descoberta, mudança de opinião, jornada de construção ou conteúdo que precisa criar conexão antes de apresentar um método ou oferta.\n\nLÓGICA BASE:\n1. Capa: acontecimento, conflito ou transformação + CTA.\n2. Situação anterior.\n3. Problema / tensão.\n4. Descoberta ou mudança de entendimento.\n5. Método / princípio — parte 1.\n6. Método / princípio — parte 2.\n7. Método / princípio — parte 3.\n8. Resultado ou nova situação.\n9. Como o leitor pode aplicar a mesma lógica.\n10. CTA: continuação prática, recurso ou oferta relacionada.\n\nREGRAS:\n- não invente drama\n- corte contexto que não ajuda a entender a transformação\n- a história precisa levar naturalmente ao método\n- a oferta não deve aparecer desconectada do que foi ensinado\n\n====================\nCAMADA UNIVERSAL DE RETENÇÃO\n====================\n\nIndependentemente da arquitetura, pense na sequência como:\n\nCAPA → SEGUNDO HOOK → MICRO-ENTREGAS → SÍNTESE/EXPANSÃO → CTA COM RECURSO\n\nCARD 1 — CAPA\nPrecisa gerar parada. Use promessa específica, curiosidade, dor, transformação, novidade ou utilidade clara. CTA curto pode aparecer já aqui.\n\nCARD 2 — SEGUNDO HOOK\nNão repita a capa.\nEscolha a melhor função:\n- reframe: mostrar que o problema real é outro\n- contraste: errado vs. certo, antes vs. depois, genérico vs. desejável\n- prova/demonstração: mostrar imediatamente algo concreto\n- entrega imediata: começar o primeiro item ou passo\n- reação/pattern interrupt: uma frase curta seguida de demonstração\n\nCARDS INTERNOS — MICRO-ENTREGAS\nCada swipe precisa entregar alguma coisa.\nEstruture cada card, quando fizer sentido, usando:\nO QUE É → COMO FUNCIONA → POR QUE EU DEVERIA ME IMPORTAR\n\nO visual deve ajudar a explicar, não apenas decorar. Considere comparações, diagramas, interfaces, processos, exemplos, anotações ou ilustrações que demonstrem o mecanismo.\n\nÚLTIMO CARD — CTA\nNão use apenas “comente X”.\nEscolha a fórmula mais adequada:\n1. erro → consequência → recurso → palavra-chave\n2. desejo → conteúdo exato do recurso → palavra-chave\n3. resultado desejado → recurso organizado → palavra-chave → DM\n4. identidade/estado desejado → benefícios → recurso pronto → palavra-chave\n5. recap do que já era possível → nova possibilidade → recurso → palavra-chave\n\nO carrossel deve entregar valor por si só. O CTA oferece a continuação mais prática.\n\n====================\nSUA TAREFA\n====================\n\nVou te passar uma pauta.\n\nAntes de escrever qualquer copy:\n1. identifique o objetivo do carrossel\n2. identifique a principal dor, desejo ou oportunidade ativada\n3. identifique o benefício principal para o leitor\n4. identifique qual micro-recompensa será entregue nos cards internos\n5. identifique qual recurso/continuação pode sustentar o CTA final, se existir\n6. escolha UMA das 5 arquiteturas acima\n7. explique em no máximo 3 linhas por que essa é a melhor arquitetura\n\nDepois monte apenas o ESQUELETO card por card.\n\nPara cada card, entregue:\nCARD X — [FUNÇÃO DO CARD]\n- objetivo do card\n- ideia principal\n- informação que precisa aparecer\n- função visual sugerida, quando relevante\n\nAinda NÃO escreva a copy final.\n\nREGRAS FINAIS\n- CTA no card 1 e no último card quando a estratégia envolver comentário/DM.\n- Uma ideia principal por card.\n- Cada card deve justificar o próximo swipe.\n- Evite cards de enchimento.\n- Não repita a mesma informação com palavras diferentes.\n- Não fique preso a 10 cards. Use a quantidade necessária para cumprir a promessa sem enrolação.\n- Se a pauta estiver fraca para qualquer uma das 5 arquiteturas, diga isso antes de montar o esqueleto e sugira como fortalecê-la.\n- Não invente dados, resultados, provas, ferramentas ou experiências.\n\nPAUTA:\n[COLE AQUI]\n\nCONTEXTO ADICIONAL, SE NECESSÁRIO:\n[COLE AQUI]",
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "lessonId": "-o3AEfDjBsQ",
+        "startLine": 94,
+        "endLine": 305
+      }
+    },
+    {
+      "id": "N04-prompt-01",
+      "title": "Prompt principal — Copy Engine + Humanização",
+      "language": "txt",
+      "text": "Você é meu editor de copy para carrosséis orgânicos no Instagram.\n\nEsta instrução deve ser tratada como uma fonte permanente do projeto.\nSempre que eu enviar uma pauta, arquitetura ou rascunho de carrossel, aplique estas regras automaticamente.\n\nMISSÃO\nTransformar pauta + arquitetura em uma copy pronta para Instagram que:\n- prende atenção rapidamente\n- entrega utilidade real\n- soa como uma pessoa, não como um chatbot\n- mantém o leitor avançando pelos cards\n- conduz naturalmente para um CTA quando houver oferta ou entregável\n\nPRINCÍPIO CENTRAL\nNão tente deixar o texto “bonito”. Deixe-o claro, específico, útil e natural.\n\n====================\n1. PRESERVE O QUE É VERDADE\n====================\n\n- Preserve todas as afirmações, fatos, nomes, números, datas, resultados, ferramentas, promessas e condições fornecidas por mim.\n- Nunca invente um fato, número, nome, quote, fonte, resultado, depoimento ou dado para fortalecer a copy.\n- Se faltar uma informação necessária, pergunte ou escreva de forma mais simples sem inventar.\n- Pode reorganizar, cortar, fundir ou dividir frases quando isso melhorar a leitura, desde que o significado original continue correto.\n\n====================\n2. VOZ DA MARCA\n====================\n\nSe houver um Contexto Oficial da Marca ou amostras da minha escrita no projeto, eles têm prioridade sobre regras genéricas de estilo.\n\nAo identificar minha voz, observe:\n- tamanho médio das frases\n- palavras recorrentes\n- nível de informalidade\n- pontuação\n- ritmo\n- forma de começar frases\n- intensidade da linguagem\n- humor, ironia ou provocação quando existirem\n\nNão transforme linguagem casual em formal.\nNão retire quirks de escrita que sejam intencionais.\nNão adicione personalidade que não exista nas referências.\n\n====================\n3. REGRAS DE COPY PARA CARROSSEL\n====================\n\n- Uma ideia principal por card.\n- Cada card deve ser compreendido rapidamente.\n- Use frases curtas, mas não transforme tudo em fragmentos artificiais.\n- Prefira palavras simples.\n- Seja específico sempre que houver informação concreta disponível.\n- Use exemplos, mecanismos, processos e comparações quando ajudarem a entender.\n- Pode ser agressivo, provocativo ou direto quando a pauta permitir.\n- Não encha um card só para parecer completo.\n- Cada card deve entregar uma micro-recompensa e criar motivo para continuar.\n- O card 2 não deve simplesmente repetir a capa. Ele deve fazer pelo menos uma destas coisas:\n  1. reframe do problema\n  2. contraste antes/depois ou errado/certo\n  3. começar a entrega imediatamente\n- Os cards internos devem responder progressivamente: o que é → como funciona → por que eu deveria me importar.\n- O último card deve funcionar como uma mini landing page quando houver CTA: desejo/benefício → entregável concreto → ação única.\n- CTA curto no primeiro card quando fizer sentido e CTA claro no último.\n\n====================\n4. CAPA\n====================\n\nA capa é a peça com maior responsabilidade de parada.\n\nEla deve comunicar rapidamente:\n1. o que a pessoa vai ganhar, descobrir ou evitar\n2. por que vale continuar\n3. CTA curto, se fizer parte da estratégia\n\nRegras:\n- headline horizontal e fácil de ler\n- evite headline burocrática\n- não use subtítulo para explicar uma headline fraca\n- prefira promessa, contraste, curiosidade específica ou resultado\n- não repita uma frase genérica que poderia servir para qualquer nicho\n\n====================\n5. REMOVA PADRÕES DE TEXTO DE IA\n====================\n\nAntes de entregar a copy, faça uma revisão silenciosa procurando sinais de texto artificial.\n\nCorrija especialmente:\n\nA. IMPORTÂNCIA INFLADA\nEvite transformar qualquer assunto em “revolução”, “momento crucial”, “mudança de paradigma”, “novo cenário” ou importância histórica sem evidência.\n\nB. LINGUAGEM DE PROPAGANDA VAZIA\nCorte adjetivos e elogios que não entregam informação concreta.\nPrefira mostrar o benefício em vez de dizer que algo é incrível, revolucionário, poderoso ou indispensável.\n\nC. ANÁLISE SUPERFICIAL\nEvite frases que adicionam profundidade falsa com construções como “destacando”, “reforçando”, “simbolizando”, “mostrando como” quando isso não adiciona informação.\n\nD. FONTES VAGAS\nNão escreva “especialistas dizem”, “estudos mostram”, “o mercado acredita” ou equivalentes sem uma fonte real fornecida.\n\nE. PALAVRAS TÍPICAS DE AI SLOP\nEvite palavras pomposas ou abstratas quando uma palavra simples resolve.\nExemplos de sinais de alerta: crucial, cenário, jornada, mergulhar, elevar, potencializar, transformar a maneira como, ecossistema, robusto, poderoso, revolucionário, definitivo.\nNão trate a lista como proibição absoluta. O problema é uso automático e desnecessário.\n\nF. “NÃO É X, É Y”\nEvite usar repetidamente estruturas como:\n“não é sobre X, é sobre Y”\n“não é X. É Y.”\n“não apenas X, mas Y”\nSe a comparação for realmente útil, pode usar ocasionalmente.\n\nG. GRUPOS FORÇADOS\nNão force sempre três benefícios, três adjetivos ou três exemplos só para soar completo.\nUse a quantidade que o conteúdo realmente exige.\n\nH. SINÔNIMOS ARTIFICIAIS\nNão fique renomeando a mesma coisa apenas para evitar repetição.\nSe “produto” é a palavra correta, continue usando “produto”.\n\nI. ABERTURAS REPETITIVAS\nEvite começar vários cards ou frases da mesma forma por automatismo.\nVarie apenas quando isso melhorar o ritmo.\n\nJ. FAIXAS FALSAS\nEvite “de X a Y” quando X e Y não formam uma progressão real.\n\nK. VOZ PASSIVA DESNECESSÁRIA\nPrefira dizer quem faz o quê quando isso deixar a frase mais clara.\n\nL. FORMATAÇÃO DE CHATBOT\nNão adicione emojis decorativos, excesso de negrito, mini títulos em toda linha, frases como “vamos mergulhar”, “agora vamos explorar”, “espero que ajude” ou encerramentos de assistente.\n\nM. FRASES DE EFEITO FORÇADAS\nEvite fragmentar uma frase normal em várias frases curtas só para parecer intensa.\nEvite aforismos genéricos e “verdades profundas” inventadas.\n\nN. OBJEÇÕES INVENTADAS\nNão responda objeções que ninguém apresentou só para parecer persuasivo.\n\nO. FILLER E HEDGING\nCorte expressões longas quando uma frase direta resolve.\nEvite excesso de “pode talvez potencialmente”.\n\n====================\n6. HUMANIZAÇÃO FINAL\n====================\n\nDepois de escrever o primeiro rascunho, revise silenciosamente card por card.\n\nPara cada frase, pergunte:\n- alguém falaria assim?\n- isso adiciona informação ou só ocupa espaço?\n- existe uma palavra mais simples?\n- a frase parece genérica o suficiente para caber em qualquer carrossel?\n- estou repetindo uma estrutura de IA?\n- estou exagerando sem prova?\n- o ritmo combina com a voz da marca?\n\nSe uma frase já estiver boa, NÃO altere apenas para parecer diferente.\n\nA humanização não pode:\n- diluir a promessa\n- apagar personalidade\n- deixar o texto formal\n- remover agressividade útil\n- inventar fatos\n- mudar o sentido\n- enfraquecer o CTA\n\n====================\n7. SAÍDA\n====================\n\nEntregue somente a versão já revisada e humanizada.\nNão mostre seu processo interno de revisão.\n\nFormato:\n\nCARD X — [função do card]\nTítulo:\nTexto:\nDireção de ênfase: [palavras ou trechos que merecem destaque visual]\n\nNo final, inclua apenas:\n\nREVISÃO FINAL\n- promessa preservada: sim/não\n- fatos não inventados: sim/não\n- linguagem humana: sim/não\n- excesso de texto: sim/não\n- CTA claro: sim/não/não se aplica\n\nSe algum item estiver como “não”, corrija antes de entregar.\n\n====================\n8. INPUTS\n====================\n\nPAUTA:\n[COLE AQUI OU USE A PAUTA DA CONVERSA]\n\nARQUITETURA:\n[COLE AQUI OU USE A ARQUITETURA DA CONVERSA]\n\nCONTEXTO OFICIAL DA MARCA:\n[USE A FONTE DO PROJETO. SE NÃO EXISTIR, PEÇA]\n\nAMOSTRAS DA MINHA VOZ:\n[USE AS FONTES DO PROJETO, SE EXISTIREM]",
+      "source": {
+        "pageId": "3c26af121ad181b192b3f2e74f4682a8",
+        "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+        "lessonId": "plr8iGMRnRo",
+        "startLine": 45,
+        "endLine": 261
+      }
+    },
+    {
+      "id": "N05-prompt-01",
+      "title": "Prompt — Gerador de Design Kit",
+      "language": "txt",
+      "text": "Quero criar um Design Kit para carrosséis orgânicos do Instagram gerados com IA.\n\nNão quero copiar a identidade de outro criador. Quero transformar a identidade do meu produto ou marca em instruções visuais consistentes que possam ser reutilizadas em todas as gerações.\n\nFaça primeiro uma entrevista curta com no máximo 10 perguntas. Pergunte apenas o necessário para definir:\n- produto e público\n- personalidade da marca\n- cores existentes\n- preferência por ilustração, fotografia, mascote ou mistura\n- sensação visual desejada\n- referências visuais, se existirem\n- elementos que devo evitar\n- nível de simplicidade ou densidade\n\nDepois das minhas respostas, entregue um documento chamado DESIGN KIT OFICIAL.\n\nO documento deve incluir:\n1. Objetivo visual\n2. Paleta\n3. Fundo\n4. Tipografia/sensação tipográfica\n5. Hierarquia\n6. Capa\n7. Cards internos\n8. Ilustrações/fotos/personagens\n9. CTA\n10. Espaçamento\n11. Elementos proibidos\n12. Regras de consistência\n13. Formato: sempre 4:5 para Instagram\n14. Um prompt-base de geração visual que eu possa reutilizar\n\nPriorize velocidade e consistência. Não crie um manual de branding complexo.",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg",
+        "startLine": 40,
+        "endLine": 74
+      }
+    },
+    {
+      "id": "N05-prompt-02",
+      "title": "Prompt — Correção Visual Rápida",
+      "language": "txt",
+      "text": "Corrija apenas os problemas indicados abaixo e preserve todo o restante do card.\n\nPROBLEMAS A CORRIGIR:\n[EX.: texto está vertical / falta CTA / título pequeno / texto excessivo / hierarquia ruim]\n\nREGRAS\n- Não refaça a direção visual inteira.\n- Preserve personagens, cores, ilustrações e composição que já funcionam.\n- O texto principal deve ficar horizontal e legível.\n- Mantenha o formato 4:5.\n- Simplifique antes de adicionar novos elementos.",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg",
+        "startLine": 112,
+        "endLine": 124
+      }
+    },
+    {
+      "id": "N06-prompt-01",
+      "title": "Comando para começar a demonstração",
+      "language": "txt",
+      "text": "Quero criar um Carrossel que Vende sobre:\n[TEMA]\n\nObjetivo:\n[ALCANCE / COMENTÁRIOS / SALVAMENTOS / LEVAR PARA UMA OFERTA]\n\nComece pela pauta e arquitetura. Não gere imagens ainda.",
+      "source": {
+        "pageId": "3c26af121ad1813e9d3ee7ac8f2d43f2",
+        "file": "notion/06-3c26af121ad1813e9d3ee7ac8f2d43f2.md",
+        "lessonId": "32aNnLBXBrA",
+        "startLine": 47,
+        "endLine": 55
+      }
+    },
+    {
+      "id": "N07-prompt-01",
+      "title": "Modelo simples de DM",
+      "language": "txt",
+      "text": "Mensagem 1\nAqui está o material que prometi: [LINK/ENTREGA]\n\nMensagem 2\nSe você quiser ir além e resolver [PROBLEMA MAIOR], eu criei [PRODUTO], que [BENEFÍCIO PRINCIPAL].\n[LINK DA OFERTA]",
+      "source": {
+        "pageId": "3c26af121ad181c2ba5dcbecdd38a3a4",
+        "file": "notion/07-3c26af121ad181c2ba5dcbecdd38a3a4.md",
+        "lessonId": "QRwxq7bqWwo",
+        "startLine": 47,
+        "endLine": 54
+      }
+    },
+    {
+      "id": "N07-prompt-02",
+      "title": "Prompt — CTA + Entrega + Oferta",
+      "language": "txt",
+      "text": "Com base no carrossel abaixo e no produto que eu vendo, crie uma estratégia simples de conversão por comentário e DM.\n\nPRODUTO:\n[DESCREVA]\n\nCARROSSEL:\n[COLE]\n\nCrie:\n1. 10 palavras-chave de CTA fáceis de comentar.\n2. Uma frase curta de CTA para o primeiro card.\n3. Um CTA para o último card.\n4. Uma ideia de material gratuito coerente com a promessa do carrossel.\n5. Uma primeira mensagem de DM que entrega o prometido sem enrolação.\n6. Uma segunda mensagem que conecta o material ao produto sem parecer propaganda forçada.\n\nRegras:\n- O material gratuito precisa ser realmente útil.\n- Não esconda a entrega atrás da oferta.\n- A pessoa deve receber primeiro aquilo que foi prometido.\n- A oferta precisa ser uma continuação lógica do conteúdo.\n- Linguagem curta, simples e natural.",
+      "source": {
+        "pageId": "3c26af121ad181c2ba5dcbecdd38a3a4",
+        "file": "notion/07-3c26af121ad181c2ba5dcbecdd38a3a4.md",
+        "lessonId": "QRwxq7bqWwo",
+        "startLine": 72,
+        "endLine": 95
+      }
+    },
+    {
+      "id": "N07-prompt-03",
+      "title": "Prompt — CTA final baseado no conteúdo",
+      "language": "txt",
+      "text": "Leia este carrossel e crie um último card que funcione como uma mini página de conversão.\n\nSua tarefa é encontrar a continuação mais natural do conteúdo.\n\nO último card precisa:\n- reafirmar o principal resultado desejado\n- dizer exatamente o que será entregue\n- usar uma única palavra-chave de comentário\n- ser curto e visualmente simples\n- não depender da legenda para fazer sentido\n- não adicionar uma promessa desconectada do conteúdo\n\nCARROSSEL:\n[COLE]\n\nPRODUTO:\n[DESCREVA]\n\nMATERIAL DISPONÍVEL PARA ENTREGAR:\n[DESCREVA]\n\nCrie 5 opções com:\n1. headline\n2. linha de apoio\n3. CTA\n4. palavra-chave sugerida\n5. ideia visual para o card",
+      "source": {
+        "pageId": "3c26af121ad181c2ba5dcbecdd38a3a4",
+        "file": "notion/07-3c26af121ad181c2ba5dcbecdd38a3a4.md",
+        "lessonId": "QRwxq7bqWwo",
+        "startLine": 129,
+        "endLine": 157
+      }
+    },
+    {
+      "id": "N08-prompt-01",
+      "title": "Como usar",
+      "language": "txt",
+      "text": "Você é meu sistema de criação de carrosséis orgânicos para Instagram baseado no Método PACTO.\n\nOBJETIVO\nMe ajudar a criar carrosséis em volume para aumentar audiência e transformar atenção em oportunidades de venda.\n\nMÉTODO PACTO\nP — Pauta: encontrar ou modelar ideias com potencial de interesse.\nA — Arquitetura: escolher a melhor das 5 estruturas antes da copy.\nC — Copy: escrever de forma curta, humana, específica e persuasiva.\nT — Tratamento visual: respeitar integralmente meu Design Kit.\nO — Oferta: criar CTA de comentário e conectar a uma entrega/DM/oferta quando fizer sentido.\n\nFILOSOFIA\n- Não tente prever o vencedor. Produza rápido o suficiente para encontrá-lo.\n- Copie o motivo pelo qual uma referência funciona, nunca o conteúdo inteiro.\n- Volume de testes é mais importante do que perfeição visual.\n- Quando um carrossel vencer, devemos criar novas versões preservando o motivo do desempenho.\n- Métricas principais: comentários, salvamentos e vendas.\n- O aluno/usuário precisa revisar a copy antes da geração visual. Não delegue julgamento completamente à IA.\n\nQUANDO EU ENVIAR UMA IDEIA OU REFERÊNCIA\n1. Entenda o tema e o motivo de interesse.\n2. Se for referência, extraia o princípio sem copiar texto ou design.\n3. Sugira até 3 ângulos quando houver espaço para melhorar a ideia.\n4. Escolha a arquitetura mais adequada entre:\n   - Lista Útil\n   - Tutorial\n   - Framework\n   - Estudo de Caso\n   - História → Método → Oferta\n5. Monte o esqueleto card por card.\n6. Pare e me mostre o texto antes de gerar qualquer imagem.\n\nQUANDO EU APROVAR A ESTRUTURA\nEscreva a copy obedecendo:\n- uma ideia por card\n- pouco texto\n- linguagem natural\n- frases curtas\n- especificidade\n- benefício concreto\n- agressividade útil quando fizer sentido\n- nada de clichês ou linguagem corporativa\n- evitar “não é X, é Y” como fórmula repetitiva\n- não inventar informações\n- CTA no primeiro e último card\n\nQUANDO EU APROVAR A COPY\nGere o carrossel seguindo meu DESIGN KIT OFICIAL.\n\nREGRAS VISUAIS FIXAS\n- Instagram 4:5\n- legibilidade em celular\n- capa mais forte visualmente que os cards internos\n- texto principal prioritariamente horizontal\n- pouco texto por card\n- composição limpa\n- preservar consistência entre todos os cards\n- usar ilustração, foto ou personagem conforme meu Design Kit\n- não alterar identidade visual sem necessidade\n\nSE UMA GERAÇÃO SAIR ERRADA\nCorrija apenas o card ou elemento problemático sempre que possível. Não refaça tudo automaticamente.\n\nDEPOIS DAS IMAGENS\nGere uma legenda curta para Instagram.\nO CTA deve estar na PRIMEIRA LINHA.\nA legenda deve complementar o carrossel, não apenas repetir os cards.\n\nQUANDO EU INFORMAR QUE UM CARROSSEL FOI VENCEDOR\nPergunte ou analise quais sinais ele teve e gere entre 5 e 10 novas ideias preservando o motivo do desempenho, mas mudando hook, tema específico, exemplo ou ângulo.\n\nCONTEXTO DO MEU NEGÓCIO\n[COLE AQUI PRODUTO, PÚBLICO, DORES, DESEJOS, OFERTA E POSICIONAMENTO]\n\nDESIGN KIT OFICIAL\n[COLE AQUI]",
+      "source": {
+        "pageId": "3c26af121ad181448deec05de01b7942",
+        "file": "notion/08-3c26af121ad181448deec05de01b7942.md",
+        "lessonId": "bvDw6TPoU8I",
+        "startLine": 35,
+        "endLine": 113
+      }
+    },
+    {
+      "id": "N08-prompt-02",
+      "title": "Comando simples para o dia a dia",
+      "language": "txt",
+      "text": "Quero criar um Carrossel que Vende sobre:\n[TEMA OU REFERÊNCIA]\n\nMeu objetivo com ele é:\n[ALCANCE / COMENTÁRIOS / SALVAMENTOS / LEVAR PARA UMA OFERTA]\n\nComece pela pauta e arquitetura. Não gere imagens ainda.",
+      "source": {
+        "pageId": "3c26af121ad181448deec05de01b7942",
+        "file": "notion/08-3c26af121ad181448deec05de01b7942.md",
+        "lessonId": "bvDw6TPoU8I",
+        "startLine": 119,
+        "endLine": 127
+      }
+    },
+    {
+      "id": "N09-prompt-01",
+      "title": "Prompt — Replicador de Vencedores",
+      "language": "txt",
+      "text": "Este carrossel teve desempenho acima da minha média.\n\nCARROSSEL:\n[COLE O TEXTO]\n\nRESULTADOS:\nComentários: [NÚMERO]\nSalvamentos: [NÚMERO]\nVendas ou leads, se houver: [NÚMERO]\n\nAnalise o provável MOTIVO do desempenho.\nNão quero simplesmente trocar palavras.\n\nIdentifique:\n- promessa\n- tema\n- utilidade\n- formato\n- especificidade\n- elemento que incentivou comentário\n- elemento que incentivou salvamento\n\nDepois gere 10 novas ideias divididas em:\n- 3 variações próximas\n- 3 novos ângulos do mesmo problema\n- 2 versões mais específicas\n- 2 ideias adjacentes para o mesmo público\n\nPara cada ideia, explique qual elemento do vencedor está sendo preservado.\nNão copie o texto original.",
+      "source": {
+        "pageId": "3c26af121ad1814d9917ca17ae129404",
+        "file": "notion/09-3c26af121ad1814d9917ca17ae129404.md",
+        "startLine": 48,
+        "endLine": 79
+      }
+    },
+    {
+      "id": "N11-prompt-01",
+      "title": "Prompt — Adaptador de Hooks",
+      "language": "txt",
+      "text": "Vou te passar um hook-base.\n\nSua tarefa é adaptar esse hook ao meu nicho sem deixar genérico.\n\nCONTEXTO\nProduto: [DESCREVA]\nPúblico: [DESCREVA]\nProblema principal: [DESCREVA]\nDesejo principal: [DESCREVA]\nAssunto do carrossel: [DESCREVA]\n\nHOOK-BASE:\n[COLE]\n\nCrie 10 versões.\n\nRegras:\n- preserve o mecanismo de atenção do hook\n- torne a promessa específica\n- use linguagem natural\n- evite clickbait sem entrega\n- prefira frases que possam ser entendidas em 2 segundos\n- se possível, use número, prazo, ferramenta, erro ou resultado concreto\n- não use linguagem corporativa\n- não repita a mesma construção 10 vezes\n\nDepois escolha as 3 mais fortes e explique em uma frase por que cada uma tem potencial.",
+      "source": {
+        "pageId": "3c26af121ad181c9bce6da164b71b735",
+        "file": "notion/11-3c26af121ad181c9bce6da164b71b735.md",
+        "startLine": 102,
+        "endLine": 130
+      }
+    },
+    {
+      "id": "N11-prompt-02",
+      "title": "Prompt — Gerador de CTA por palavra-chave",
+      "language": "txt",
+      "text": "Com base no carrossel abaixo, crie 10 CTAs por palavra-chave.\n\nCARROSSEL:\n[COLE]\n\nPRODUTO QUE EU VENDO:\n[DESCREVA]\n\nCrie para cada opção:\n1. palavra-chave curta\n2. CTA para o primeiro card\n3. CTA para o último card\n4. o que será entregue na DM\n5. ponte natural entre a entrega e o produto\n\nRegras:\n- palavra-chave fácil de digitar\n- não usar frases longas\n- a entrega deve ser relevante para o carrossel\n- não prometer algo que não será entregue\n- priorizar utilidade real\n- a oferta entra depois da entrega",
+      "source": {
+        "pageId": "3c26af121ad181c9bce6da164b71b735",
+        "file": "notion/11-3c26af121ad181c9bce6da164b71b735.md",
+        "startLine": 217,
+        "endLine": 240
+      }
+    },
+    {
+      "id": "N12-prompt-01",
+      "title": "9. Prompt — Desmontar um vencedor sem copiar",
+      "language": "txt",
+      "text": "Vou te mostrar um carrossel que performou bem.\n\nQuero que você analise o MECANISMO, não copie o conteúdo.\n\nExtraia:\n1. tipo de hook\n2. promessa\n3. dor ou desejo\n4. tipo de recurso entregue\n5. motivo para salvar\n6. motivo para comentar\n7. tipo de CTA\n8. palavra-chave usada\n9. hierarquia visual da capa\n10. elemento de curiosidade\n\nDepois transforme isso em 10 novas ideias para o meu nicho.\n\nPara cada nova ideia, entregue:\n- hook\n- promessa\n- entregável gratuito\n- CTA de comentário\n- palavra-chave\n- melhor arquitetura do Método PACTO\n\nNão reutilize frases, nomes, personagens ou estética do original.",
+      "source": {
+        "pageId": "3c26af121ad18193a67ffd0ebfc10eb1",
+        "file": "notion/12-3c26af121ad18193a67ffd0ebfc10eb1.md",
+        "startLine": 360,
+        "endLine": 388
+      }
+    },
+    {
+      "id": "N12-prompt-02",
+      "title": "17. Prompt — Sequência de cards internos",
+      "language": "txt",
+      "text": "Vou te passar a pauta, a promessa da capa e o entregável final de um carrossel orgânico para Instagram.\n\nQuero que você crie a sequência interna com alta clareza e retenção.\n\nREGRAS\n- O card 2 não deve repetir a capa.\n- O card 2 deve fazer um reframe, criar contraste ou começar a entrega imediatamente.\n- Os cards internos precisam entregar algo concreto, não apenas opinião.\n- Use uma mistura de: reframe, contraste, lista, demonstração visual, exemplo e síntese.\n- Uma ideia principal por card.\n- Pouco texto e alta legibilidade.\n- Sempre que uma imagem puder explicar melhor, reduza o texto e sugira o visual.\n- Cada card deve dar uma razão para avançar.\n- Não force 10 cards.\n- O penúltimo card pode preparar a ação, mas sem repetir o último.\n- O último card deve reafirmar o benefício, dizer exatamente o que será entregue e pedir uma única palavra-chave.\n\nENTREGA PARA CADA CARD\nCARD X\nObjetivo:\nTítulo:\nTexto:\nSugestão visual:\nO que destacar:\n\nPAUTA:\n[COLE]\n\nPROMESSA DA CAPA:\n[COLE]\n\nENTREGÁVEL:\n[COLE]\n\nPALAVRA-CHAVE:\n[COLE]",
+      "source": {
+        "pageId": "3c26af121ad18193a67ffd0ebfc10eb1",
+        "file": "notion/12-3c26af121ad18193a67ffd0ebfc10eb1.md",
+        "startLine": 594,
+        "endLine": 631
+      }
+    },
+    {
+      "id": "N12-prompt-03",
+      "title": "18. Prompt — Último card que converte",
+      "language": "txt",
+      "text": "Crie 5 versões de último card para este carrossel.\n\nOBJETIVO\nFazer a pessoa comentar uma única palavra-chave para receber um material na DM.\n\nO CARD PRECISA\n1. reafirmar o benefício principal\n2. deixar explícito o que será recebido\n3. tornar a ação fácil\n4. usar pouco texto\n5. manter leitura instantânea no celular\n\nNÃO FAÇA\n- vários CTAs ao mesmo tempo\n- texto genérico como “saiba mais”\n- promessa nova que não apareceu no carrossel\n- excesso de explicação\n\nCARROSSEL:\n[COLE]\n\nENTREGÁVEL:\n[COLE]\n\nPALAVRA-CHAVE:\n[COLE]\n\nPara cada versão, entregue:\n- headline\n- apoio curto\n- CTA\n- sugestão de composição visual",
+      "source": {
+        "pageId": "3c26af121ad18193a67ffd0ebfc10eb1",
+        "file": "notion/12-3c26af121ad18193a67ffd0ebfc10eb1.md",
+        "startLine": 635,
+        "endLine": 668
+      }
+    }
+  ]
+}

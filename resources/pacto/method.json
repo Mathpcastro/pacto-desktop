@@ -1,0 +1,1245 @@
+{
+  "version": "1.0.0",
+  "primaryLanguage": "pt-BR",
+  "stages": [
+    {
+      "letter": "P",
+      "name": "Pauta",
+      "lessonIds": [
+        "73OpTuUsCH8"
+      ],
+      "rules": [
+        "Configurar contexto antes do Radar.",
+        "Usar referências, tendências, conteúdo próprio ou pesquisa com IA.",
+        "Identificar interesse e motivo para salvar/comentar."
+      ],
+      "outputs": [
+        "Contexto Oficial da Marca",
+        "30 pautas e 10 priorizadas",
+        "10 pautas originais por modelagem"
+      ],
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "letter": "A",
+      "name": "Arquitetura",
+      "lessonIds": [
+        "-o3AEfDjBsQ"
+      ],
+      "rules": [
+        "Escolher uma das cinco bases.",
+        "Justificar escolha em até 3 linhas.",
+        "Entregar esqueleto antes da copy; adaptar contagem."
+      ],
+      "outputs": [
+        "Arquitetura escolhida",
+        "Esqueleto por card"
+      ],
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "lessonId": "-o3AEfDjBsQ"
+      }
+    },
+    {
+      "letter": "C",
+      "name": "Copy",
+      "lessonIds": [
+        "plr8iGMRnRo"
+      ],
+      "rules": [
+        "Aplicar Copy Engine + humanização integrada.",
+        "Preservar voz, verdade, promessa e micro-entregas.",
+        "Revisão humana antes de imagens."
+      ],
+      "outputs": [
+        "Copy revisada por card",
+        "Revisão final"
+      ],
+      "source": {
+        "pageId": "3c26af121ad181b192b3f2e74f4682a8",
+        "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+        "lessonId": "plr8iGMRnRo"
+      }
+    },
+    {
+      "letter": "T",
+      "name": "Tratamento visual",
+      "lessonIds": [
+        "LWIanBtCUHg",
+        "32aNnLBXBrA"
+      ],
+      "rules": [
+        "Criar kit próprio e respeitar continuidade com página/produto.",
+        "Formato 4:5 e imagens individuais.",
+        "Corrigir apenas problemas localizados."
+      ],
+      "outputs": [
+        "Design Kit Oficial",
+        "Prompt-base visual",
+        "Cards revisados"
+      ],
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "letter": "O",
+      "name": "Oferta",
+      "lessonIds": [
+        "QRwxq7bqWwo",
+        "bvDw6TPoU8I"
+      ],
+      "rules": [
+        "Valor real → CTA → comentário → DM → entrega → oferta.",
+        "Benefício + entregável + palavra-chave; entrega antes da oferta.",
+        "Legenda com CTA na primeira linha; registrar sinais e replicar."
+      ],
+      "outputs": [
+        "CTA capa/final",
+        "Estratégia de entrega",
+        "DM de entrega e ponte para oferta",
+        "Legenda",
+        "Plano de replicação"
+      ],
+      "source": {
+        "pageId": "3c26af121ad181c2ba5dcbecdd38a3a4",
+        "file": "notion/07-3c26af121ad181c2ba5dcbecdd38a3a4.md",
+        "lessonId": "QRwxq7bqWwo"
+      }
+    }
+  ],
+  "architectures": [
+    {
+      "id": "lista-util",
+      "name": "Lista Útil",
+      "useWhen": "Coleção de ferramentas, prompts, recursos, sites, plugins, skills, erros, ideias, recomendações, configurações ou referências.",
+      "cards": [
+        {
+          "position": 1,
+          "function": "Capa: promessa específica + CTA curto."
+        },
+        {
+          "position": 2,
+          "function": "Segundo hook: contexto, reframe, contraste ou início imediato do primeiro item."
+        },
+        {
+          "position": 3,
+          "function": "Item 1: nome/categoria + o que faz + por que importa."
+        },
+        {
+          "position": 4,
+          "function": "Item 2: nome/categoria + o que faz + por que importa."
+        },
+        {
+          "position": 5,
+          "function": "Item 3: nome/categoria + o que faz + por que importa."
+        },
+        {
+          "position": 6,
+          "function": "Item 4: nome/categoria + o que faz + por que importa."
+        },
+        {
+          "position": 7,
+          "function": "Item 5: nome/categoria + o que faz + por que importa."
+        },
+        {
+          "position": 8,
+          "function": "Aplicação: como usar, combinar ou escolher os itens."
+        },
+        {
+          "position": 9,
+          "function": "Síntese: transformação ou principal conclusão."
+        },
+        {
+          "position": 10,
+          "function": "CTA: benefício + entregável + palavra-chave."
+        }
+      ],
+      "rules": [
+        "Cada card precisa entregar uma micro-recompensa.",
+        "Variar item → mecanismo → benefício; categoria → explicação → exemplos; processo visual → conclusão; bullets → transformação.",
+        "Se o item 1 começar no card 2, ajustar sequência sem duplicação."
+      ],
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "section": "Prompt — Escolha de Arquitetura",
+        "lessonId": "-o3AEfDjBsQ"
+      },
+      "cardCountPolicy": "Base de 10 cards, adaptável à promessa; não forçar 10 nem criar enchimento."
+    },
+    {
+      "id": "tutorial",
+      "name": "Tutorial",
+      "useWhen": "Execução de A até B: passo a passo, configuração, implementação, workflow ou processo técnico.",
+      "cards": [
+        {
+          "position": 1,
+          "function": "Capa: resultado desejado + CTA."
+        },
+        {
+          "position": 2,
+          "function": "Segundo hook: problema atual, demonstração do resultado ou visão rápida do que será construído."
+        },
+        {
+          "position": 3,
+          "function": "Visão geral da solução."
+        },
+        {
+          "position": 4,
+          "function": "Passo 1."
+        },
+        {
+          "position": 5,
+          "function": "Passo 2."
+        },
+        {
+          "position": 6,
+          "function": "Passo 3."
+        },
+        {
+          "position": 7,
+          "function": "Passo 4."
+        },
+        {
+          "position": 8,
+          "function": "Passo 5, teste ou correção de erro comum."
+        },
+        {
+          "position": 9,
+          "function": "Resultado esperado / como saber se funcionou."
+        },
+        {
+          "position": 10,
+          "function": "CTA: próximo passo prático + entregável."
+        }
+      ],
+      "rules": [
+        "Cada passo gera progresso real.",
+        "Não transformar ações óbvias em cards para aumentar quantidade.",
+        "Mostrar visualmente o que acontece em cada passo quando possível."
+      ],
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "section": "Prompt — Escolha de Arquitetura",
+        "lessonId": "-o3AEfDjBsQ"
+      },
+      "cardCountPolicy": "Base de 10 cards, adaptável à promessa; não forçar 10 nem criar enchimento."
+    },
+    {
+      "id": "framework",
+      "name": "Framework",
+      "useWhen": "Método, sistema, processo mental, estratégia, modelo próprio ou forma de organizar um problema.",
+      "cards": [
+        {
+          "position": 1,
+          "function": "Capa: nova forma de alcançar um resultado + CTA."
+        },
+        {
+          "position": 2,
+          "function": "Segundo hook: erro comum, problema da abordagem atual ou contraste."
+        },
+        {
+          "position": 3,
+          "function": "Apresentação/nome do framework."
+        },
+        {
+          "position": 4,
+          "function": "Pilar ou etapa 1."
+        },
+        {
+          "position": 5,
+          "function": "Pilar ou etapa 2."
+        },
+        {
+          "position": 6,
+          "function": "Pilar ou etapa 3."
+        },
+        {
+          "position": 7,
+          "function": "Pilar ou etapa 4."
+        },
+        {
+          "position": 8,
+          "function": "Pilar ou etapa 5 / aplicação prática."
+        },
+        {
+          "position": 9,
+          "function": "Framework completo resumido e como usar."
+        },
+        {
+          "position": 10,
+          "function": "CTA: recurso que ajuda a aplicar o framework."
+        }
+      ],
+      "rules": [
+        "Simplificar algo de verdade; nomes bonitos não substituem lógica útil.",
+        "Cada pilar tem função diferente.",
+        "Mostrar relação entre pilares quando possível."
+      ],
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "section": "Prompt — Escolha de Arquitetura",
+        "lessonId": "-o3AEfDjBsQ"
+      },
+      "cardCountPolicy": "Base de 10 cards, adaptável à promessa; não forçar 10 nem criar enchimento."
+    },
+    {
+      "id": "estudo-de-caso",
+      "name": "Estudo de Caso",
+      "useWhen": "Execução real: resultados, números, experimentos, bastidores, antes/depois, lançamentos, campanhas e projetos.",
+      "cards": [
+        {
+          "position": 1,
+          "function": "Capa: resultado concreto, mudança ou experimento + CTA."
+        },
+        {
+          "position": 2,
+          "function": "Segundo hook: contexto inicial, prova, print, contraste antes/depois ou ponto de partida."
+        },
+        {
+          "position": 3,
+          "function": "Problema / cenário anterior."
+        },
+        {
+          "position": 4,
+          "function": "Primeira decisão ou ação relevante."
+        },
+        {
+          "position": 5,
+          "function": "Segunda decisão ou ação relevante."
+        },
+        {
+          "position": 6,
+          "function": "Terceira decisão ou ação relevante."
+        },
+        {
+          "position": 7,
+          "function": "Erro, obstáculo ou ajuste importante."
+        },
+        {
+          "position": 8,
+          "function": "Resultado final."
+        },
+        {
+          "position": 9,
+          "function": "Lição replicável: o que realmente causou o resultado e o que o leitor pode aplicar."
+        },
+        {
+          "position": 10,
+          "function": "CTA: material, checklist, processo, prompt ou recurso relacionado."
+        }
+      ],
+      "rules": [
+        "Não inventar causalidade que dados não provam.",
+        "Números vêm do usuário ou fonte fornecida.",
+        "Dar espaço às decisões que mudaram resultado."
+      ],
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "section": "Prompt — Escolha de Arquitetura",
+        "lessonId": "-o3AEfDjBsQ"
+      },
+      "cardCountPolicy": "Base de 10 cards, adaptável à promessa; não forçar 10 nem criar enchimento."
+    },
+    {
+      "id": "historia-metodo-oferta",
+      "name": "História → Método → Oferta",
+      "useWhen": "História pessoal, transformação, descoberta, mudança de opinião ou jornada que cria conexão antes do método/oferta.",
+      "cards": [
+        {
+          "position": 1,
+          "function": "Capa: acontecimento, conflito ou transformação + CTA."
+        },
+        {
+          "position": 2,
+          "function": "Situação anterior."
+        },
+        {
+          "position": 3,
+          "function": "Problema / tensão."
+        },
+        {
+          "position": 4,
+          "function": "Descoberta ou mudança de entendimento."
+        },
+        {
+          "position": 5,
+          "function": "Método / princípio — parte 1."
+        },
+        {
+          "position": 6,
+          "function": "Método / princípio — parte 2."
+        },
+        {
+          "position": 7,
+          "function": "Método / princípio — parte 3."
+        },
+        {
+          "position": 8,
+          "function": "Resultado ou nova situação."
+        },
+        {
+          "position": 9,
+          "function": "Como o leitor pode aplicar a mesma lógica."
+        },
+        {
+          "position": 10,
+          "function": "CTA: continuação prática, recurso ou oferta relacionada."
+        }
+      ],
+      "rules": [
+        "Não inventar drama.",
+        "Cortar contexto que não ajuda a entender a transformação.",
+        "História leva naturalmente ao método; oferta ligada ao ensinado."
+      ],
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "section": "Prompt — Escolha de Arquitetura",
+        "lessonId": "-o3AEfDjBsQ"
+      },
+      "cardCountPolicy": "Base de 10 cards, adaptável à promessa; não forçar 10 nem criar enchimento."
+    }
+  ],
+  "onboarding": [
+    {
+      "field": "business",
+      "label": "Negócio",
+      "question": "O que você vende ou pretende vender?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "offer",
+      "label": "Oferta principal",
+      "question": "Qual é seu principal produto, serviço, curso, aplicativo ou oferta?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "offerStatus",
+      "label": "Estado da oferta",
+      "question": "Essa oferta já existe ou ainda é uma hipótese?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "audience",
+      "label": "Público",
+      "question": "Quem você quer atrair?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "awarenessLevel",
+      "label": "Nível do público",
+      "question": "Seu público está em nível iniciante, intermediário ou avançado? O que já conhece?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "audiencePains",
+      "label": "Dores e obstáculos",
+      "question": "Quais são as dores, frustrações e obstáculos reais desse público?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "audienceDesires",
+      "label": "Desejos",
+      "question": "Quais resultados e desejos esse público busca?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "transformation",
+      "label": "Transformação",
+      "question": "Qual transformação sua oferta entrega?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "differentiators",
+      "label": "Diferenciais",
+      "question": "Quais mecanismos, recursos ou características tornam sua oferta interessante?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "expertise",
+      "label": "Repertório",
+      "question": "Quais assuntos você tem autoridade, experiência ou repertório para abordar?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "freeAssets",
+      "label": "Ativos gratuitos",
+      "question": "O que você pode entregar gratuitamente em conteúdo ou DM? O que já está pronto?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "voice",
+      "label": "Tom da marca",
+      "question": "Qual tom de comunicação combina com você e sua marca?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "voiceIntensity",
+      "label": "Intensidade",
+      "question": "Que nível de agressividade e tecnicidade combina com sua marca?",
+      "required": false,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "voiceSamples",
+      "label": "Amostras de voz",
+      "question": "Você tem amostras da sua escrita para preservar seu ritmo e personalidade?",
+      "required": false,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "preferredLanguage",
+      "label": "Palavras e estilos",
+      "question": "Quais palavras ou estilos combinam com a marca e quais devem ser evitados?",
+      "required": false,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "communicationLimits",
+      "label": "Limites",
+      "question": "Que promessas não pode fazer, assuntos não quer abordar e características não quer na comunicação?",
+      "required": true,
+      "interview": "brand",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "field": "brandPersonality",
+      "label": "Personalidade visual",
+      "question": "Qual é a personalidade da marca?",
+      "required": true,
+      "interview": "design",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "field": "colors",
+      "label": "Cores existentes",
+      "question": "Quais cores sua marca ou produto já usa e você quer manter?",
+      "required": true,
+      "interview": "design",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "field": "visualMedia",
+      "label": "Tipo de imagem",
+      "question": "Você prefere ilustração, fotografia, mascote ou mistura?",
+      "required": true,
+      "interview": "design",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "field": "visualFeeling",
+      "label": "Sensação",
+      "question": "Qual sensação visual deseja transmitir?",
+      "required": true,
+      "interview": "design",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "field": "visualReferences",
+      "label": "Referências visuais",
+      "question": "Há referências visuais que ajudam a explicar o que você quer?",
+      "required": false,
+      "interview": "design",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "field": "visualAvoid",
+      "label": "Elementos proibidos",
+      "question": "Que elementos visuais devemos evitar?",
+      "required": true,
+      "interview": "design",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "field": "density",
+      "label": "Simplicidade e densidade",
+      "question": "Você quer uma composição mais simples ou mais densa?",
+      "required": true,
+      "interview": "design",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    }
+  ],
+  "onboardingPolicy": {
+    "brandMaxQuestions": 12,
+    "designMaxQuestions": 10,
+    "askInRounds": true,
+    "stopWhenSufficient": true,
+    "normalizedFields": "Campos e perguntas normalizados para aplicação; agrupar na entrevista, não interpretar cada campo como pergunta adicional obrigatória.",
+    "brandOutputSections": [
+      "Negócio e oferta",
+      "Público",
+      "Territórios de conteúdo (5–10)",
+      "Ativos gratuitos",
+      "Voz da marca",
+      "Regras de conteúdo (5–10)",
+      "Resumo operacional"
+    ],
+    "designOutputSections": [
+      "Objetivo visual",
+      "Paleta",
+      "Fundo",
+      "Tipografia/sensação",
+      "Hierarquia",
+      "Capa",
+      "Cards internos",
+      "Ilustrações/fotos/personagens",
+      "CTA",
+      "Espaçamento",
+      "Elementos proibidos",
+      "Consistência",
+      "Formato 4:5",
+      "Prompt-base visual"
+    ]
+  },
+  "rules": [
+    {
+      "id": "sequence",
+      "text": "Escolher arquitetura antes da copy; aprovar estrutura e copy antes das imagens.",
+      "source": {
+        "pageId": "3c26af121ad181448deec05de01b7942",
+        "file": "notion/08-3c26af121ad181448deec05de01b7942.md",
+        "lessonId": "bvDw6TPoU8I"
+      }
+    },
+    {
+      "id": "no-invention",
+      "text": "Nunca inventar dados, resultados, fontes, quotes, depoimentos, ferramentas ou experiências; perguntar ou simplificar quando faltar informação.",
+      "source": {
+        "pageId": "3c26af121ad181b192b3f2e74f4682a8",
+        "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+        "lessonId": "plr8iGMRnRo"
+      }
+    },
+    {
+      "id": "reference",
+      "text": "Modelar motivo do desempenho; mudar hook, estrutura, exemplos e linguagem sem copiar conteúdo ou identidade.",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "id": "radar",
+      "text": "Radar: 30 pautas com tema, hook, motivo de parada, utilidade, conexão à oferta/problema e arquitetura; selecionar 10 com justificativa.",
+      "source": {
+        "pageId": "3c26af121ad1819d863bce8ba228359b",
+        "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+        "lessonId": "73OpTuUsCH8"
+      }
+    },
+    {
+      "id": "weak-topic",
+      "text": "Se pauta não sustenta arquitetura, dizer isso e fortalecê-la antes do esqueleto.",
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "lessonId": "-o3AEfDjBsQ"
+      }
+    },
+    {
+      "id": "flexible-cards",
+      "text": "As cinco arquiteturas têm base de 10 cards; adaptar quantidade sem enchimento, repetição ou perda de promessa.",
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "lessonId": "-o3AEfDjBsQ"
+      }
+    },
+    {
+      "id": "skeleton",
+      "text": "Esqueleto entrega função, objetivo, ideia principal, informação necessária e função visual por card; sem copy final.",
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "lessonId": "-o3AEfDjBsQ"
+      }
+    },
+    {
+      "id": "one-idea",
+      "text": "Uma ideia principal por card; cada card dá micro-recompensa e razão para avançar.",
+      "source": {
+        "pageId": "3c26af121ad181b192b3f2e74f4682a8",
+        "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+        "lessonId": "plr8iGMRnRo"
+      }
+    },
+    {
+      "id": "cover",
+      "text": "Capa comunica ganho, descoberta ou prevenção; promessa específica, headline horizontal legível; cena visual acrescenta ideia.",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "id": "second-hook",
+      "text": "Card 2 paga parte da promessa: reframe, contraste ou entrega imediata; nunca simples repetição da capa.",
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "lessonId": "-o3AEfDjBsQ"
+      }
+    },
+    {
+      "id": "internal-value",
+      "text": "Cards internos: o que é → como funciona → por que importa; visual ajuda a explicar.",
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "lessonId": "-o3AEfDjBsQ"
+      }
+    },
+    {
+      "id": "copy-human",
+      "text": "Texto curto, natural, respirável, concreto e específico; sem introdução burocrática, professoral ou corporativa.",
+      "source": {
+        "pageId": "3c26af121ad181b192b3f2e74f4682a8",
+        "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+        "lessonId": "plr8iGMRnRo"
+      }
+    },
+    {
+      "id": "voice-priority",
+      "text": "Contexto oficial e amostras reais de voz têm prioridade; preservar personalidade e peculiaridades intencionais.",
+      "source": {
+        "pageId": "3c26af121ad181b192b3f2e74f4682a8",
+        "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+        "lessonId": "plr8iGMRnRo"
+      }
+    },
+    {
+      "id": "humanization",
+      "text": "Revisão silenciosa integrada ao Copy Engine; não diluir promessa, personalidade, agressividade útil ou CTA.",
+      "source": {
+        "pageId": "3c26af121ad181b192b3f2e74f4682a8",
+        "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+        "lessonId": "plr8iGMRnRo"
+      }
+    },
+    {
+      "id": "slop",
+      "text": "Cortar importância inflada, adjetivos vazios, fontes vagas, trios forçados, sinônimos artificiais, aforismos, objeções inventadas e filler.",
+      "source": {
+        "pageId": "3c26af121ad181b192b3f2e74f4682a8",
+        "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+        "lessonId": "plr8iGMRnRo"
+      }
+    },
+    {
+      "id": "contrast-formula",
+      "text": "Evitar fórmula repetitiva não é X, é Y; comparação útil é permitida ocasionalmente.",
+      "source": {
+        "pageId": "3c26af121ad181b192b3f2e74f4682a8",
+        "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+        "lessonId": "plr8iGMRnRo"
+      }
+    },
+    {
+      "id": "copy-output",
+      "text": "Saída: CARD X — função; Título; Texto; Direção de ênfase; REVISÃO FINAL.",
+      "source": {
+        "pageId": "3c26af121ad181b192b3f2e74f4682a8",
+        "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+        "lessonId": "plr8iGMRnRo"
+      }
+    },
+    {
+      "id": "human-review",
+      "text": "Revisar capa, card 2, utilidade, voz, especificidade, cards removíveis, excesso de texto e entregável/ação antes da imagem.",
+      "source": {
+        "pageId": "3c26af121ad1813e9d3ee7ac8f2d43f2",
+        "file": "notion/06-3c26af121ad1813e9d3ee7ac8f2d43f2.md",
+        "lessonId": "32aNnLBXBrA"
+      }
+    },
+    {
+      "id": "identity",
+      "text": "Usar Design Kit próprio ligado à marca/produto; carrossel, página e oferta mantêm continuidade visual.",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "id": "design-result",
+      "text": "Salvar o resultado aprovado da entrevista como DESIGN KIT OFICIAL; não tratar prompt gerador como kit já pronto.",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "id": "image-format",
+      "text": "Instagram 4:5, imagens individuais, leitura em celular, texto horizontal, capa mais forte e consistência entre cards.",
+      "source": {
+        "pageId": "3c26af121ad1813e9d3ee7ac8f2d43f2",
+        "file": "notion/06-3c26af121ad1813e9d3ee7ac8f2d43f2.md",
+        "lessonId": "32aNnLBXBrA"
+      }
+    },
+    {
+      "id": "targeted-correction",
+      "text": "Corrigir só card/elemento problemático, preservando acertos; simplificar antes de adicionar.",
+      "source": {
+        "pageId": "3c26af121ad181c693c4e5bf1760f39a",
+        "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+        "lessonId": "LWIanBtCUHg"
+      }
+    },
+    {
+      "id": "final-card",
+      "text": "Último card: benefício/desejo → entregável concreto → ação única/palavra-chave; não depender da legenda.",
+      "source": {
+        "pageId": "3c26af121ad181c2ba5dcbecdd38a3a4",
+        "file": "notion/07-3c26af121ad181c2ba5dcbecdd38a3a4.md",
+        "lessonId": "QRwxq7bqWwo"
+      }
+    },
+    {
+      "id": "cta-conditional",
+      "text": "CTA capa/final quando estratégia envolve comentário/DM; não inventar entregável para forçar CTA.",
+      "source": {
+        "pageId": "3c26af121ad181c79297ce0b11b65283",
+        "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+        "lessonId": "-o3AEfDjBsQ"
+      }
+    },
+    {
+      "id": "tangible-asset",
+      "text": "Dizer exatamente o que chega na DM; promessa deve corresponder ao material realmente disponível ou a produzir.",
+      "source": {
+        "pageId": "3c26af121ad181c2ba5dcbecdd38a3a4",
+        "file": "notion/07-3c26af121ad181c2ba5dcbecdd38a3a4.md",
+        "lessonId": "QRwxq7bqWwo"
+      }
+    },
+    {
+      "id": "delivery-first",
+      "text": "Entregar primeiro exatamente o prometido; oferta como continuação lógica, sem esconder material atrás dela.",
+      "source": {
+        "pageId": "3c26af121ad181c2ba5dcbecdd38a3a4",
+        "file": "notion/07-3c26af121ad181c2ba5dcbecdd38a3a4.md",
+        "lessonId": "QRwxq7bqWwo"
+      }
+    },
+    {
+      "id": "keyword",
+      "text": "Palavra-chave curta, óbvia, fácil de digitar/lembrar e ligada ao entregável.",
+      "source": {
+        "pageId": "3c26af121ad181c9bce6da164b71b735",
+        "file": "notion/11-3c26af121ad181c9bce6da164b71b735.md"
+      }
+    },
+    {
+      "id": "single-action",
+      "text": "Não pedir comentar, seguir, salvar, compartilhar e clicar ao mesmo tempo no último card.",
+      "source": {
+        "pageId": "3c26af121ad18193a67ffd0ebfc10eb1",
+        "file": "notion/12-3c26af121ad18193a67ffd0ebfc10eb1.md"
+      }
+    },
+    {
+      "id": "caption",
+      "text": "Legenda curta, CTA na PRIMEIRA LINHA, complementando em vez de repetir os cards.",
+      "source": {
+        "pageId": "3c26af121ad1813e9d3ee7ac8f2d43f2",
+        "file": "notion/06-3c26af121ad1813e9d3ee7ac8f2d43f2.md",
+        "lessonId": "32aNnLBXBrA"
+      }
+    },
+    {
+      "id": "volume",
+      "text": "Volume → Sinal → Repetição; não tentar prever vencedor; ritmo sustentável, sem número mágico.",
+      "source": {
+        "pageId": "3c26af121ad1814d9917ca17ae129404",
+        "file": "notion/09-3c26af121ad1814d9917ca17ae129404.md"
+      }
+    },
+    {
+      "id": "metrics",
+      "text": "Priorizar comentários, salvamentos e vendas/leads; comparar com própria média e contexto.",
+      "source": {
+        "pageId": "3c26af121ad1814d9917ca17ae129404",
+        "file": "notion/09-3c26af121ad1814d9917ca17ae129404.md"
+      }
+    },
+    {
+      "id": "replication",
+      "text": "Preservar provável motivo do vencedor: 3 variações próximas + 3 novos ângulos + 2 mais específicas + 2 adjacentes; explicar elemento preservado.",
+      "source": {
+        "pageId": "3c26af121ad1814d9917ca17ae129404",
+        "file": "notion/09-3c26af121ad1814d9917ca17ae129404.md"
+      }
+    },
+    {
+      "id": "benchmark",
+      "text": "Números da anatomia são exemplos históricos da conta estudada; não garantias nem provas sobre usuário.",
+      "source": {
+        "pageId": "3c26af121ad18193a67ffd0ebfc10eb1",
+        "file": "notion/12-3c26af121ad18193a67ffd0ebfc10eb1.md"
+      }
+    },
+    {
+      "id": "hook-adaptation",
+      "text": "Adaptar mecanismos de hooks ao nicho; número, prazo ou resultado apenas quando concreto; sem clickbait sem entrega.",
+      "source": {
+        "pageId": "3c26af121ad181c9bce6da164b71b735",
+        "file": "notion/11-3c26af121ad181c9bce6da164b71b735.md"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "id": "3c26af121ad1816a9c2ae48f36e747f0",
+      "alias": "N00",
+      "kind": "notion-primary-pt",
+      "title": "🎯 Carrossel que Vende — Biblioteca Oficial",
+      "file": "notion/00-3c26af121ad1816a9c2ae48f36e747f0.md",
+      "url": "https://app.notion.com/p/3c26af121ad1816a9c2ae48f36e747f0?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad181a2a8adeb8caa4b6a7d",
+      "alias": "N01",
+      "kind": "notion-primary-pt",
+      "title": "🎯 Aula 01 — A Prova + Método PACTO",
+      "file": "notion/01-3c26af121ad181a2a8adeb8caa4b6a7d.md",
+      "url": "https://app.notion.com/p/3c26af121ad181a2a8adeb8caa4b6a7d?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad1819d863bce8ba228359b",
+      "alias": "N02",
+      "kind": "notion-primary-pt",
+      "title": "🔎 Aula 02 — P: Radar de Pautas",
+      "file": "notion/02-3c26af121ad1819d863bce8ba228359b.md",
+      "url": "https://app.notion.com/p/3c26af121ad1819d863bce8ba228359b?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad181c79297ce0b11b65283",
+      "alias": "N03",
+      "kind": "notion-primary-pt",
+      "title": "🧱 Aula 03 — A: As 5 Arquiteturas",
+      "file": "notion/03-3c26af121ad181c79297ce0b11b65283.md",
+      "url": "https://app.notion.com/p/3c26af121ad181c79297ce0b11b65283?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad181b192b3f2e74f4682a8",
+      "alias": "N04",
+      "kind": "notion-primary-pt",
+      "title": "✍️ Aula 04 — C: Copy Engine",
+      "file": "notion/04-3c26af121ad181b192b3f2e74f4682a8.md",
+      "url": "https://app.notion.com/p/3c26af121ad181b192b3f2e74f4682a8?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad181c693c4e5bf1760f39a",
+      "alias": "N05",
+      "kind": "notion-primary-pt",
+      "title": "🎨 Aula 05 — T: Design Kit + Efeito Continuidade",
+      "file": "notion/05-3c26af121ad181c693c4e5bf1760f39a.md",
+      "url": "https://app.notion.com/p/3c26af121ad181c693c4e5bf1760f39a?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad1813e9d3ee7ac8f2d43f2",
+      "alias": "N06",
+      "kind": "notion-primary-pt",
+      "title": "🛠️ Aula 06 — Criando um Carrossel que Vende do Zero",
+      "file": "notion/06-3c26af121ad1813e9d3ee7ac8f2d43f2.md",
+      "url": "https://app.notion.com/p/3c26af121ad1813e9d3ee7ac8f2d43f2?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad181c2ba5dcbecdd38a3a4",
+      "alias": "N07",
+      "kind": "notion-primary-pt",
+      "title": "💬 Aula 07 — O: Comentário → DM → Oferta",
+      "file": "notion/07-3c26af121ad181c2ba5dcbecdd38a3a4.md",
+      "url": "https://app.notion.com/p/3c26af121ad181c2ba5dcbecdd38a3a4?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad181448deec05de01b7942",
+      "alias": "N08",
+      "kind": "notion-primary-pt",
+      "title": "🚀 Aula 08 — Sistema Completo + Desafio de 30 Minutos",
+      "file": "notion/08-3c26af121ad181448deec05de01b7942.md",
+      "url": "https://app.notion.com/p/3c26af121ad181448deec05de01b7942?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad1814d9917ca17ae129404",
+      "alias": "N09",
+      "kind": "notion-primary-pt",
+      "title": "📈 Bônus — Replicação de Vencedores",
+      "file": "notion/09-3c26af121ad1814d9917ca17ae129404.md",
+      "url": "https://app.notion.com/p/3c26af121ad1814d9917ca17ae129404?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad181a88433fa75d8c5c9b4",
+      "alias": "N10",
+      "kind": "notion-primary-pt",
+      "title": "⏱️ Bônus — Desafio: Primeiro Carrossel em 30 Minutos",
+      "file": "notion/10-3c26af121ad181a88433fa75d8c5c9b4.md",
+      "url": "https://app.notion.com/p/3c26af121ad181a88433fa75d8c5c9b4?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad181c9bce6da164b71b735",
+      "alias": "N11",
+      "kind": "notion-primary-pt",
+      "title": "📦 Bônus — Swipe File: Hooks, Ideias e CTAs",
+      "file": "notion/11-3c26af121ad181c9bce6da164b71b735.md",
+      "url": "https://app.notion.com/p/3c26af121ad181c9bce6da164b71b735?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "3c26af121ad18193a67ffd0ebfc10eb1",
+      "alias": "N12",
+      "kind": "notion-primary-pt",
+      "title": "🔬 Bônus — Anatomia dos Carrosséis Vencedores",
+      "file": "notion/12-3c26af121ad18193a67ffd0ebfc10eb1.md",
+      "url": "https://app.notion.com/p/3c26af121ad18193a67ffd0ebfc10eb1?pvs=204",
+      "language": "pt-BR",
+      "truncated": false
+    },
+    {
+      "id": "SkJWJMKwy6I",
+      "kind": "pauta-translated-asr",
+      "title": "Aula 1   A prova + Método PACTO",
+      "file": "transcripts/01-SkJWJMKwy6I.md",
+      "url": "https://www.youtube.com/watch?v=SkJWJMKwy6I",
+      "language": "asr-en",
+      "timestamps": false
+    },
+    {
+      "id": "73OpTuUsCH8",
+      "kind": "pauta-translated-asr",
+      "title": "Aula 02   P Radar de Pautas",
+      "file": "transcripts/02-73OpTuUsCH8.md",
+      "url": "https://www.youtube.com/watch?v=73OpTuUsCH8",
+      "language": "asr-en",
+      "timestamps": false
+    },
+    {
+      "id": "-o3AEfDjBsQ",
+      "kind": "pauta-translated-asr",
+      "title": "Aula 03   A As 5 Arquiteturas",
+      "file": "transcripts/03--o3AEfDjBsQ.md",
+      "url": "https://www.youtube.com/watch?v=-o3AEfDjBsQ",
+      "language": "asr-en",
+      "timestamps": false
+    },
+    {
+      "id": "plr8iGMRnRo",
+      "kind": "pauta-translated-asr",
+      "title": "Aula 04   C Copy Engine",
+      "file": "transcripts/04-plr8iGMRnRo.md",
+      "url": "https://www.youtube.com/watch?v=plr8iGMRnRo",
+      "language": "asr-en",
+      "timestamps": false
+    },
+    {
+      "id": "LWIanBtCUHg",
+      "kind": "pauta-translated-asr",
+      "title": "Aula 05   T Design Kit + Efeito Continuidade",
+      "file": "transcripts/05-LWIanBtCUHg.md",
+      "url": "https://www.youtube.com/watch?v=LWIanBtCUHg",
+      "language": "asr-en",
+      "timestamps": false
+    },
+    {
+      "id": "32aNnLBXBrA",
+      "kind": "pauta-translated-asr",
+      "title": "Aula 06   Criando um Carrossel que Vende do Zero",
+      "file": "transcripts/06-32aNnLBXBrA.md",
+      "url": "https://www.youtube.com/watch?v=32aNnLBXBrA",
+      "language": "asr-en",
+      "timestamps": false
+    },
+    {
+      "id": "QRwxq7bqWwo",
+      "kind": "pauta-translated-asr",
+      "title": "Aula 07   O Comentário → DM → Oferta",
+      "file": "transcripts/07-QRwxq7bqWwo.md",
+      "url": "https://www.youtube.com/watch?v=QRwxq7bqWwo",
+      "language": "asr-en",
+      "timestamps": false
+    },
+    {
+      "id": "bvDw6TPoU8I",
+      "kind": "pauta-translated-asr",
+      "title": "Aula 08   Sistema Completo + Desafio de 30 Minutos",
+      "file": "transcripts/08-bvDw6TPoU8I.md",
+      "url": "https://www.youtube.com/watch?v=bvDw6TPoU8I",
+      "language": "asr-en",
+      "timestamps": false
+    }
+  ],
+  "promptLibrary": "extracted-prompts.json",
+  "limitations": [
+    "Biblioteca Notion em português é fonte primária textual; transcrições Pauta em inglês são tradução ASR, sem timestamps e sujeitas a erro de nomes/valores.",
+    "Nenhuma fonte demonstra resultados futuros do usuário. Números de performance citados são exemplos históricos da conta do professor.",
+    "Falado na aula 07: algoritmo, seguir antes da entrega, conversão de 1–5%, ferramentas, preços e limites; são alegações históricas não verificadas e não constituem benchmark ou requisito universal.",
+    "Falado na aula 06: música/alcance e configurações Medium/High; não são disponibilidade atual ou garantias técnicas.",
+    "CTA capa/final aparece absoluto no Mestre e condicional nos prompts específicos; aplicar conforme objetivo e existência de entregável real.",
+    "Checklist Copy Engine pergunta excesso de texto sim/não mas manda corrigir qualquer não; resposta correta de concisão é não ter excesso, sem alterar o prompt original extraído.",
+    "Card 2 resumido como contexto no modelo Lista; prompt expandido permite reframe, contraste ou item imediato; ajustar restante sem duplicar.",
+    "Base tem 10 cards, mas fontes explicitamente permitem 5, 7, 8 ou quantidade necessária; não fixar 10.",
+    "Mestre propõe 5–10 ideias por vencedor; Replicador detalhado entrega 10 na distribuição 3+3+2+2.",
+    "Desafio de 30 minutos e ritmo de 3–4 carrosséis/dia são orientações pedagógicas condicionadas à capacidade, sem SLA nem plano de conta garantido.",
+    "Conhecimento não equivale a publicação/envio de DMs autorizados ou integrações disponíveis; imagens reais e ações externas precisam de execução e verificação no runtime.",
+    "Atualizações futuras da biblioteca precisam ser importadas novamente."
+  ]
+}

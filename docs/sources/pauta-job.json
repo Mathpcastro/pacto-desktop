@@ -1,0 +1,2249 @@
+{
+  "ok": true,
+  "job_run": {
+    "id": "9b68e7b3-a10d-4b76-bd7f-ddacf29c0a77",
+    "status": "running",
+    "started_at": "2026-10-23T00:59:50.227+00:00",
+    "finished_at": null,
+    "metadata": {
+      "goal": "script_research",
+      "errors": [],
+      "source": "youtube_links",
+      "video_ids": [
+        "SkJWJMKwy6I",
+        "73OpTuUsCH8",
+        "-o3AEfDjBsQ",
+        "plr8iGMRnRo",
+        "LWIanBtCUHg",
+        "32aNnLBXBrA",
+        "QRwxq7bqWwo",
+        "bvDw6TPoU8I"
+      ],
+      "input_urls": [
+        "https://youtu.be/SkJWJMKwy6I",
+        "https://youtu.be/73OpTuUsCH8",
+        "https://youtu.be/-o3AEfDjBsQ",
+        "https://youtu.be/plr8iGMRnRo",
+        "https://youtu.be/LWIanBtCUHg",
+        "https://youtu.be/32aNnLBXBrA",
+        "https://youtu.be/QRwxq7bqWwo",
+        "https://youtu.be/bvDw6TPoU8I"
+      ],
+      "long_videos": [],
+      "invalid_urls": [],
+      "video_db_ids": [
+        "b0dc48cb-eac1-4811-850a-59276a454b5b",
+        "7eb264f2-f80d-4b98-a1ca-460e150389a4",
+        "744057e0-b93b-409d-93ce-cc564158b7a8",
+        "65231dad-9af8-4356-a839-e950f175d9cc",
+        "24fe741d-d6d8-4069-bf8e-f471cef70cc0",
+        "68c60e83-926b-4a38-990a-f0e4dd6ff557",
+        "876f9abb-1279-46d8-960d-595d13a32183",
+        "9880e0c0-b288-409d-96cb-f8f34bdaad62"
+      ],
+      "analysis_budget": 8,
+      "found_video_ids": [
+        "SkJWJMKwy6I",
+        "73OpTuUsCH8",
+        "-o3AEfDjBsQ",
+        "plr8iGMRnRo",
+        "LWIanBtCUHg",
+        "32aNnLBXBrA",
+        "QRwxq7bqWwo",
+        "bvDw6TPoU8I"
+      ],
+      "missing_video_ids": [],
+      "youtube_video_ids": [
+        "SkJWJMKwy6I",
+        "73OpTuUsCH8",
+        "-o3AEfDjBsQ",
+        "plr8iGMRnRo",
+        "LWIanBtCUHg",
+        "32aNnLBXBrA",
+        "QRwxq7bqWwo",
+        "bvDw6TPoU8I"
+      ],
+      "queued_for_analysis": 0,
+      "queued_metadata_only": 0,
+      "transcription_budget": 12,
+      "queued_for_transcription": 8
+    },
+    "videos_collected": 8,
+    "videos_transcribed": 7,
+    "videos_analyzed": 8,
+    "error_message": null
+  },
+  "items": [
+    {
+      "video": {
+        "id": "24fe741d-d6d8-4069-bf8e-f471cef70cc0",
+        "youtube_video_id": "LWIanBtCUHg",
+        "title": "Aula 05   T Design Kit + Efeito Continuidade",
+        "url": "https://www.youtube.com/watch?v=LWIanBtCUHg",
+        "description": "Criar o SaaS é fácil, fazer sua primeira venda também pode ser com esse método: https://carrosseisquevendem.com.br/ Treinamento: https://www.iacoding.com.br\nComunidade Telegram: https://t.me/+51crAT5FRFY2MTdh",
+        "thumbnail_url": "https://i.ytimg.com/vi/LWIanBtCUHg/maxresdefault.jpg",
+        "published_at": "2026-08-20T21:44:41+00:00",
+        "duration_seconds": 244,
+        "views": 34,
+        "views_per_hour": 0.02,
+        "like_count": 0,
+        "comment_count": 0,
+        "technical_score": 24.96
+      },
+      "transcript": {
+        "id": "1231ca5d-d349-472b-8647-2bcf2a64b490",
+        "video_id": "24fe741d-d6d8-4069-bf8e-f471cef70cc0",
+        "source": "external_transcription_api",
+        "language": "asr-en",
+        "confidence": "high",
+        "text": "So, I told you, I told you in the last lesson about the continuity effect, right, which I explained to you. Let me close this part here. Uh, the design kit and this continuity effect are what we're going to see in this lesson so you can create your own design kit, okay? So, you see that my carousel follows the same design tone as my SaaS , right, as my product. So, look, it has the same colors, you see? Everything that's here is here too. So, if I go here to the chat, for example, look, all the same colors. There's a little green here to stand out, right? But it's normal, look. It's here too. But everything is the same color, see? Yes, everything is the same way. So the colors the person sees here in my carousel, they will also see inside my own product. So this gives a continuity effect and gives the feeling that this really makes sense, right? It will give a feeling of, wow, what this person said makes sense, the carousel I saw makes sense, because it provides this continuity effect. The person, the person doesn't feel like they left Instagram, right? They feel like they stayed in the same environment. So that's exactly what it causes, right? So, the carousel, the page, and the product must look like part of the same experience. When the person leaves the content and arrives at the offer, the visual sensation must remain coherent. So, this is exactly what you'll have to do. And here is a prompt for you to generate this design kit, okay? So, look, it will ask you some questions about this design kit, okay? So, it will ask you, uh, what colors you want, what your product is, your audience, your brand personality, existing colors , preference for drawings, photos, mascots, mixtures, whether to be cute, aggressive, persuasive, or calmer. Anyway, all of this will depend on what you want to sell, right? So, it could be a course, an info product, SaaS, info, SaaS, whatever you're going to sell, you'll have to create a design kit, right? Colors, palette, background , uh, hierarchy, cover, anyway, you'll create all of this. And here is the prompt for you to create it, okay? This prompt here, guys, I don't recommend you put it in, don't put it in the source here, okay? Why? Because it's a prompt for you to generate, right? So, what's going to happen? You will copy this prompt, you will open a new chat, and that is where you will send this prompt. And then, based on the answer it gives you, then yes, you will use it as a source, okay? So don't use this prompt as a source. You will use the prompt in the chat, and the answer the chat gives you after the interview it conducts with you is what you will then use as a source. Great. Uh, don't do that. And down here there are some presets, you see? There are presets, there will be some specific colors, there’s a clean one, a editorial one, a minimalist one, a creator tech one, anyway, if you don't have a specific design kit, you can use any preset here , and there is also a visual correction prompt. Then, after you generate your design kit, you will save it as your official design kit within your project's source, okay? So, even if you , the ideal, I, I strongly suggest you create your own, okay? Don't use presets, create your own to give a sense of continuity. So, if you already have a product, have already created something, or have a SaaS, copy the colors you used there. So, think, is this the color I really want to keep? Does it make sense? If it makes sense to you, if you want to keep the same color, you can use the same business logic there, okay? Down here you will have a visual correction that you will use when a card usually comes out in a way you didn't want it to, okay? So you can come back here to this page and copy this visual correction prompt to use in the chat, okay? It's not to be used as a source. It's when you see a card that's wrong, that doesn't look good, you can use this prompt as a reference to correct it. And then what will happen? Every time you generate your design kit, so when a person goes to your profile, the profile of your SaaS, I recommend that you create a personal profile with your face, okay? But if you don't want to do that, you can create one for the company and use the carousels as your visual identity, right? But they all have the same color , you see? They have the same style, right? The same, the same typography there, they all follow the same pattern and all thanks to this design kit generator prompt here. After the result , you will use it as the source for your project, okay? So I'll see you in the next class. Thanks,",
+        "duration_seconds": 244
+      },
+      "analysis": {
+        "id": "f2118635-ff60-47f6-a4d7-04c34c0250e1",
+        "video_id": "24fe741d-d6d8-4069-bf8e-f471cef70cc0",
+        "summary": "O vídeo ensina como criar um design kit para manter a continuidade visual entre um produto SaaS e seu conteúdo, enfatizando a importância de cores e estilo consistentes.",
+        "hook_analysis": "Nos primeiros 30-60 segundos, o apresentador menciona o 'efeito continuidade' e introduz a ideia de criar um design kit, destacando a importância de manter a mesma paleta de cores entre o conteúdo e o produto.",
+        "promise_analysis": "A promessa principal do vídeo é que os espectadores aprenderão a criar um design kit que proporciona uma experiência visual coesa entre seu conteúdo e seu produto SaaS.",
+        "structure_analysis": "O vídeo segue uma estrutura de explicação teórica seguida de instruções práticas sobre como gerar um design kit e usar prompts específicos.",
+        "key_arguments": [
+          "A continuidade visual é crucial para a experiência do usuário.",
+          "As cores e o estilo do conteúdo devem refletir o produto.",
+          "É importante criar um design kit personalizado em vez de usar presets."
+        ],
+        "proof_moments": [
+          "Demonstração de como as cores do carrossel se alinham com o SaaS.",
+          "Instruções sobre como usar prompts para gerar um design kit."
+        ],
+        "tools_mentioned": [
+          "Design kit",
+          "Prompt para geração de design kit",
+          "Visual correction prompt"
+        ],
+        "why_it_worked": "O vídeo provavelmente performou bem devido à relevância do tema para criadores de conteúdo e empreendedores, além de oferecer uma solução prática e visualmente atraente para um problema comum.",
+        "weaknesses": "A promessa pode ser considerada fraca se não houver exemplos concretos de design kits criados, e a narrativa pode parecer um pouco longa e técnica sem demonstrações visuais mais impactantes.",
+        "confidence_level": "high"
+      },
+      "context_pack": {
+        "id": "8fd2ec8e-ff8e-43d2-bba2-9e931ac32d98",
+        "trend_cluster_id": "44643e4b-31d4-47e2-a7d2-68e637da9119",
+        "pack_version": "1.1",
+        "payload": {
+          "risks": [
+            "A falta de transcrição e detalhes limita a análise e pode indicar que o conteúdo não é substancial."
+          ],
+          "trend": {
+            "id": "44643e4b-31d4-47e2-a7d2-68e637da9119",
+            "name": "T Design Kit + Efeito Continuidade",
+            "type": "tutorial_pattern",
+            "status": "emerging",
+            "summary": "O vídeo apresenta um tutorial sobre o T Design Kit e o conceito de Efeito Continuidade, mas carece de transcrição e detalhes específicos.",
+            "macro_key": "tutorial-pattern:t-design-kit",
+            "macro_name": "T Design Kit",
+            "raw_entities": [
+              "T Design Kit"
+            ],
+            "canonical_name": "T Design Kit",
+            "primary_entities": [
+              "T Design Kit"
+            ],
+            "secondary_entities": [
+              "Efeito Continuidade"
+            ],
+            "normalized_entities": [
+              {
+                "raw": "T Design Kit",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "T Design Kit",
+                "entity_type": "unknown"
+              }
+            ]
+          },
+          "quality": {
+            "flags": [
+              "single_source_cluster",
+              "missing_channel_baseline",
+              "missing_official_sources",
+              "secondary_sources_only",
+              "insufficient_snapshot_history"
+            ],
+            "score": 0.4,
+            "confidence": "low",
+            "confidence_reason": "Confidence low (score 0.4). limited signals. Limitations: single_source_cluster, missing_channel_baseline, missing_official_sources, secondary_sources_only, insufficient_snapshot_history."
+          },
+          "urgency": "low",
+          "evidence": [
+            {
+              "type": "metric",
+              "confidence": "medium",
+              "description": "O vídeo possui 34 visualizações, indicando algum nível de interesse inicial."
+            }
+          ],
+          "momentum": {
+            "status": "low",
+            "age_hours": 1515.340238611111,
+            "delta_views": null,
+            "acceleration": "unknown",
+            "cluster_size": 1,
+            "likes_per_view": 0,
+            "freshness_window": "7d+",
+            "velocity_windows": {
+              "1h": null,
+              "3h": null,
+              "6h": null,
+              "12h": null,
+              "24h": null
+            },
+            "comments_per_hour": 0,
+            "comments_per_view": 0,
+            "avg_views_per_hour": 0.02,
+            "max_views_per_hour": 0.02,
+            "delta_views_per_hour": null
+          },
+          "source_gaps": {
+            "notes": [],
+            "missing_official_sources": [
+              "Documentação do T Design Kit",
+              "Estudos de caso sobre Efeito Continuidade"
+            ],
+            "missing_benchmark_sources": [],
+            "missing_comparison_sources": []
+          },
+          "generated_at": "2026-10-23T01:05:05.859Z",
+          "proof_points": [
+            "O vídeo é parte de uma série de aulas, sugerindo um esforço contínuo para educar sobre o tema."
+          ],
+          "quality_flags": [
+            "single_source_cluster",
+            "missing_channel_baseline",
+            "missing_official_sources",
+            "secondary_sources_only",
+            "insufficient_snapshot_history"
+          ],
+          "related_links": [
+            {
+              "url": "https://carrosseisquevendem.com.br/",
+              "title": "carrosseisquevendem.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://www.iacoding.com.br",
+              "title": "iacoding.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://t.me/+51crAT5FRFY2MTdh",
+              "title": "t.me",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            }
+          ],
+          "source_videos": [
+            {
+              "url": "https://www.youtube.com/watch?v=LWIanBtCUHg",
+              "title": "Aula 05   T Design Kit + Efeito Continuidade",
+              "views": 34,
+              "market": "unknown",
+              "channel": null,
+              "source_role": "trend_signal",
+              "published_at": "2026-08-20T21:44:41+00:00",
+              "views_per_hour": 0.02,
+              "baseline_multiplier": null,
+              "transcript_available": false
+            }
+          ],
+          "market_context": {
+            "copycat_risk": "low",
+            "brazilian_signal": "not_detected",
+            "saturation_level": "low",
+            "international_signal": "not_detected"
+          },
+          "open_questions": [
+            "Qual é a aceitação do T Design Kit no mercado atual?",
+            "Quais são os resultados práticos do uso do Efeito Continuidade?"
+          ],
+          "brazilian_market": {
+            "signal": "not_detected",
+            "channels": [],
+            "copycat_risk": "low",
+            "source_count": 0,
+            "coverage_angles": [],
+            "opportunity_gap": null,
+            "repeated_angles": [],
+            "first_detected_at": null,
+            "saturation_reason": "No Brazilian source detected.",
+            "avg_views_per_hour": null,
+            "latest_detected_at": null,
+            "max_views_per_hour": null,
+            "recommended_positioning_gap": null
+          },
+          "confidence_level": "low",
+          "official_sources": [],
+          "technical_details": {
+            "complexity": "medium",
+            "requires_repo": false,
+            "demo_feasibility": "unknown",
+            "visual_demo_quality": "unknown",
+            "requires_installation": false
+          },
+          "best_action_window": {
+            "reason": "signal is older than 7 days",
+            "confidence": "low",
+            "publish_within_hours": null
+          },
+          "why_it_is_trending": [
+            "O conceito de design e continuidade pode estar atraindo interesse em comunidades de desenvolvimento e design de produtos digitais."
+          ],
+          "transcript_insights": null,
+          "context_pack_version": "1.1"
+        }
+      }
+    },
+    {
+      "video": {
+        "id": "65231dad-9af8-4356-a839-e950f175d9cc",
+        "youtube_video_id": "plr8iGMRnRo",
+        "title": "Aula 04   C Copy Engine",
+        "url": "https://www.youtube.com/watch?v=plr8iGMRnRo",
+        "description": "Criar o SaaS é fácil, fazer sua primeira venda também pode ser com esse método: https://carrosseisquevendem.com.br/ Treinamento: https://www.iacoding.com.br\nComunidade Telegram: https://t.me/+51crAT5FRFY2MTdh",
+        "thumbnail_url": "https://i.ytimg.com/vi/plr8iGMRnRo/maxresdefault.jpg",
+        "published_at": "2026-08-20T21:43:15+00:00",
+        "duration_seconds": 209,
+        "views": 30,
+        "views_per_hour": 0.02,
+        "like_count": 0,
+        "comment_count": 0,
+        "technical_score": 28.78
+      },
+      "transcript": {
+        "id": "91a3ce50-4538-4da2-bb6b-de7b9a6d0caf",
+        "video_id": "65231dad-9af8-4356-a839-e950f175d9cc",
+        "source": "external_transcription_api",
+        "language": "asr-en",
+        "confidence": "high",
+        "text": "So here in lesson 4, the goal is that you don't need to become a specialized copywriter to be able to generate persuasive copy for your carousel, right? Do you see that this copy here is very good, right? Uh, some aren't as good, as I mentioned in the first lesson, what matters is volume, right? That way you'll understand what works and what doesn't work. But basically, these copies here go through a filter, and this filter is exactly what I'm going to show you here. I'm going to give this to you for free, okay? So, look, here is the main prompt for you to grab; it's already here. Ready. So, what are we going to do? The same thing we did in the last ones. I'm going to copy the main prompt here. I'll come here to ChatGPT, go to the project, come here to sources, and add the source, text input. I'll put here, look , copy copywriter. So, in this prompt, it will establish several rules that will make your carousel copy much more persuasive. It won't just generate the carousel copy itself, but also the caption copy that you're going to use, right? So, all of this will be done right within this prompt itself. So, for example, some rules: one main idea per card, it won't mix ideas within a card, it will create visually breathable text, it will leave space in the carousel so it doesn't get too cluttered. Do you see that here there is a drawing and specific text above it ? Here there is text, a drawing, and more text below. So there is always white space, do you see? This is important to give your design some breathing room, right? And there are several rules here; just copy the prompt here and you will see that the result you generate will be much better . So, for example, look, I'll come here to the carousel we just generated and ask it to generate the text based on the copy in the copywriter file. So, generate the carousel text based on the copywriter file. So, look, card one title: your product probably already has 30 carousels hidden inside it. You just need to know where to look. What will it do? The title will be larger horizontally and the text will be smaller underneath, right? So it will follow more or less this structure here , okay? Here, right? Large text with slightly smaller text. Yeah, the colors won't be the same, right? You'll need to define the color for your, for your product. So you'll have to follow the same colors that are within your product. You saw that the carousel the person saw here on my, on my, on my Instagram, are the same colors that are here, look. Even though it's in dark mode here, right? You can leave it in light mode, then it looks even more similar, see? So it's the same thing and it's on purpose that it's the same thing, it's not, it's not by accident, right? So, look, card two, reframe, you're probably looking for the topic in the wrong place, text and such, all of that just right, based on the copy we put there, based on architecture 3, which is the carousel framework architecture we just generated. So this , this, this, this class four will serve for you to have a professional copywriter there within your project. So you don't need to worry about knowing copy, understanding it. The ideal is that you take the text generated here and you read it to see if it makes sense for your niche, right ? To see if it really generated things that are good, to see if it really worked, since you know your niche better than anyone, right? Especially if you already sell something, if you've already tested something, if you've created something you understand , you'll be able to read it here and know if it makes sense or not. If you, if you read it and you can't tell what makes sense or not, post it anyway, okay? Don't be worried, \"oh, I don't know if it's good or if it's bad.\" Post it, sometimes the market will tell you if it's good or bad automatically. So, no need to worry about this here. And now let's go to the next class. So we can, uh, start to finish this project.",
+        "duration_seconds": 209
+      },
+      "analysis": {
+        "id": "d944fde1-8cd5-45f5-bff5-d70afb6d80c3",
+        "video_id": "65231dad-9af8-4356-a839-e950f175d9cc",
+        "summary": "O vídeo apresenta uma aula sobre como gerar textos persuasivos para carrosséis utilizando um prompt específico no ChatGPT, sem a necessidade de ser um copywriter especializado.",
+        "hook_analysis": "Nos primeiros 30-60 segundos, o apresentador estabelece que o objetivo da aula é ensinar a gerar cópias persuasivas para carrosséis, destacando que não é necessário ser um especialista em copywriting. Ele menciona que a qualidade das cópias pode variar, mas o importante é a quantidade para entender o que funciona.",
+        "promise_analysis": "A promessa principal do vídeo é que os espectadores poderão gerar cópias persuasivas para carrosséis utilizando um prompt específico no ChatGPT, sem precisar ser um copywriter profissional.",
+        "structure_analysis": "A estrutura observada inclui uma introdução ao tema, a apresentação de um prompt para gerar textos, a explicação de regras para a criação de carrosséis e uma demonstração prática de como usar o ChatGPT para gerar o texto.",
+        "key_arguments": [
+          "Não é necessário ser um copywriter especializado para gerar cópias persuasivas.",
+          "A importância de seguir regras específicas para a criação de carrosséis.",
+          "A utilização do ChatGPT para gerar textos de carrosséis e legendas."
+        ],
+        "proof_moments": [
+          "Demonstração do uso do prompt no ChatGPT para gerar texto para carrosséis.",
+          "Exibição de exemplos de textos gerados e sua estrutura visual."
+        ],
+        "tools_mentioned": [
+          "ChatGPT"
+        ],
+        "why_it_worked": "O vídeo provavelmente performou bem devido à promessa de facilitar a criação de conteúdo persuasivo sem a necessidade de habilidades avançadas, além de fornecer uma demonstração prática que mostra resultados tangíveis.",
+        "weaknesses": "Uma fraqueza do vídeo é a falta de exemplos concretos de resultados antes/depois e a necessidade de validação do texto gerado pelo usuário, o que pode gerar insegurança.",
+        "confidence_level": "high"
+      },
+      "context_pack": {
+        "id": "8c363955-3c6f-476a-bb7a-0ba09d4a89fc",
+        "trend_cluster_id": "828153d8-7121-45ea-866e-563fa30c3227",
+        "pack_version": "1.1",
+        "payload": {
+          "risks": [
+            "Falta de exemplos concretos de resultados antes/depois pode gerar insegurança.",
+            "Necessidade de validação do texto gerado pelo usuário."
+          ],
+          "trend": {
+            "id": "828153d8-7121-45ea-866e-563fa30c3227",
+            "name": "Geração de textos persuasivos com IA",
+            "type": "tutorial_pattern",
+            "status": "emerging",
+            "summary": "O vídeo ensina como gerar textos persuasivos para carrosséis utilizando um prompt específico no ChatGPT, sem a necessidade de ser um copywriter especializado.",
+            "macro_key": "tutorial-pattern:chatgpt",
+            "macro_name": "ChatGPT",
+            "raw_entities": [
+              "ChatGPT"
+            ],
+            "canonical_name": "ChatGPT",
+            "primary_entities": [
+              "ChatGPT"
+            ],
+            "secondary_entities": [
+              "copywriting",
+              "carrosséis"
+            ],
+            "normalized_entities": [
+              {
+                "raw": "ChatGPT",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "ChatGPT",
+                "entity_type": "unknown"
+              }
+            ]
+          },
+          "quality": {
+            "flags": [
+              "missing_channel_baseline",
+              "missing_official_sources",
+              "secondary_sources_only",
+              "insufficient_snapshot_history"
+            ],
+            "score": 0.65,
+            "confidence": "medium",
+            "confidence_reason": "Confidence medium (score 0.65). transcript available, 2 sources, strong evidence. Limitations: missing_channel_baseline, missing_official_sources, secondary_sources_only, insufficient_snapshot_history."
+          },
+          "urgency": "low",
+          "evidence": [
+            {
+              "type": "demo",
+              "confidence": "high",
+              "description": "Demonstração do uso do prompt no ChatGPT para gerar texto para carrosséis."
+            },
+            {
+              "type": "claim",
+              "confidence": "medium",
+              "description": "Promessa de que não é necessário ser um copywriter especializado para gerar cópias persuasivas."
+            }
+          ],
+          "momentum": {
+            "status": "low",
+            "age_hours": 1515.3494075,
+            "delta_views": null,
+            "acceleration": "unknown",
+            "cluster_size": 2,
+            "likes_per_view": 0,
+            "freshness_window": "7d+",
+            "velocity_windows": {
+              "1h": null,
+              "3h": null,
+              "6h": null,
+              "12h": null,
+              "24h": null
+            },
+            "comments_per_hour": 0,
+            "comments_per_view": 0,
+            "avg_views_per_hour": 3.6849999999999996,
+            "max_views_per_hour": 7.35,
+            "delta_views_per_hour": null
+          },
+          "source_gaps": {
+            "notes": [],
+            "missing_official_sources": [
+              "Estudos sobre a eficácia de textos gerados por IA em marketing."
+            ],
+            "missing_benchmark_sources": [],
+            "missing_comparison_sources": []
+          },
+          "generated_at": "2026-10-23T01:04:12.867Z",
+          "proof_points": [
+            "Exibição de exemplos de textos gerados e sua estrutura visual."
+          ],
+          "quality_flags": [
+            "missing_channel_baseline",
+            "missing_official_sources",
+            "secondary_sources_only",
+            "insufficient_snapshot_history"
+          ],
+          "related_links": [
+            {
+              "url": "https://carrosseisquevendem.com.br/",
+              "title": "carrosseisquevendem.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://www.iacoding.com.br",
+              "title": "iacoding.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://t.me/+51crAT5FRFY2MTdh",
+              "title": "t.me",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            }
+          ],
+          "source_videos": [
+            {
+              "url": "https://www.youtube.com/watch?v=ii5XPvUto2g",
+              "title": "Nunca Peça Isso pro ChatGPT",
+              "views": 967,
+              "market": "br",
+              "channel": "No Code Startup",
+              "source_role": "trend_signal",
+              "published_at": "2026-07-09T00:30:06+00:00",
+              "views_per_hour": 7.35,
+              "baseline_multiplier": 1.26,
+              "transcript_available": false
+            },
+            {
+              "url": "https://www.youtube.com/watch?v=plr8iGMRnRo",
+              "title": "Aula 04   C Copy Engine",
+              "views": 30,
+              "market": "unknown",
+              "channel": null,
+              "source_role": "trend_signal",
+              "published_at": "2026-08-20T21:43:15+00:00",
+              "views_per_hour": 0.02,
+              "baseline_multiplier": null,
+              "transcript_available": true
+            }
+          ],
+          "market_context": {
+            "copycat_risk": "low",
+            "brazilian_signal": "early",
+            "saturation_level": "low",
+            "international_signal": "not_detected"
+          },
+          "open_questions": [
+            "Qual é a eficácia real dos textos gerados em comparação com textos escritos por humanos?",
+            "Como os usuários estão validando os textos gerados pelo ChatGPT?"
+          ],
+          "brazilian_market": {
+            "signal": "early",
+            "channels": [
+              {
+                "name": "No Code Startup",
+                "angle": "unknown",
+                "video_title": "Nunca Peça Isso pro ChatGPT",
+                "published_at": "2026-07-09T00:30:06+00:00",
+                "views_per_hour": 7.35
+              }
+            ],
+            "copycat_risk": "low",
+            "source_count": 1,
+            "coverage_angles": [],
+            "opportunity_gap": "Ainda não há vídeo brasileiro com teste real/prova prática.",
+            "repeated_angles": [],
+            "first_detected_at": "2026-07-09T00:30:06+00:00",
+            "saturation_reason": "Few Brazilian sources so far.",
+            "avg_views_per_hour": 7.35,
+            "latest_detected_at": "2026-07-09T00:30:06+00:00",
+            "max_views_per_hour": 7.35,
+            "recommended_positioning_gap": "Ainda não há vídeo brasileiro com teste real/prova prática."
+          },
+          "confidence_level": "high",
+          "official_sources": [],
+          "technical_details": {
+            "complexity": "low",
+            "requires_repo": false,
+            "demo_feasibility": "high",
+            "visual_demo_quality": "medium",
+            "requires_installation": false
+          },
+          "best_action_window": {
+            "reason": "signal is older than 7 days",
+            "confidence": "medium",
+            "publish_within_hours": null
+          },
+          "why_it_is_trending": [
+            "Facilita a criação de conteúdo persuasivo sem habilidades avançadas.",
+            "Demonstrou resultados tangíveis através de uma demonstração prática."
+          ],
+          "transcript_insights": {
+            "summary": "O vídeo apresenta uma aula sobre como gerar textos persuasivos para carrosséis utilizando um prompt específico no ChatGPT, sem a necessidade de ser um copywriter especializado.",
+            "weaknesses": "Uma fraqueza do vídeo é a falta de exemplos concretos de resultados antes/depois e a necessidade de validação do texto gerado pelo usuário, o que pode gerar insegurança.",
+            "proof_moments": [
+              "Demonstração do uso do prompt no ChatGPT para gerar texto para carrosséis.",
+              "Exibição de exemplos de textos gerados e sua estrutura visual."
+            ],
+            "tools_mentioned": [
+              "ChatGPT"
+            ]
+          },
+          "context_pack_version": "1.1"
+        }
+      }
+    },
+    {
+      "video": {
+        "id": "68c60e83-926b-4a38-990a-f0e4dd6ff557",
+        "youtube_video_id": "32aNnLBXBrA",
+        "title": "Aula 06   Criando um Carrossel que Vende do Zero",
+        "url": "https://www.youtube.com/watch?v=32aNnLBXBrA",
+        "description": "Criar o SaaS é fácil, fazer sua primeira venda também pode ser com esse método: https://carrosseisquevendem.com.br/ Treinamento: https://www.iacoding.com.br\nComunidade Telegram: https://t.me/+51crAT5FRFY2MTdh",
+        "thumbnail_url": "https://i.ytimg.com/vi/32aNnLBXBrA/maxresdefault.jpg",
+        "published_at": "2026-08-20T21:46:20+00:00",
+        "duration_seconds": 318,
+        "views": 31,
+        "views_per_hour": 0.02,
+        "like_count": 0,
+        "comment_count": 0,
+        "technical_score": 24.83
+      },
+      "transcript": {
+        "id": "ca3e4ba4-6aeb-42d4-896a-9a813c40b8d5",
+        "video_id": "68c60e83-926b-4a38-990a-f0e4dd6ff557",
+        "source": "external_transcription_api",
+        "language": "asr-en",
+        "confidence": "high",
+        "text": "So, lesson six here will be the practical part where we'll actually create this carousel, okay? I won't show you here how to post a carousel or how to open your Instagram, because I assume you already know how to do that. The one thing I tell you to do is to add music to your carousel, okay? Even if you think it’s silly, when you add music to your carousel, Instagram recommends your carousel as a Reel. So, if you don’t add music, it will just be a static photo and will lose a lot of reach. So, add music so it appears in the Reels feed. Great, add music. It is mandatory for you to get more reach within your carousel. So here, the practical workflow. We’ll choose the topic, choose the architecture, generate the copy, review it manually before generating the images, apply the design kit, and generate the cards in 4x5; always 4x5, never do one-by-one. And actually, that’s a rule in the copy, if I’m not mistaken. You will only correct what is wrong. So you will analyze each one, you will generate the caption with the first line, and then you will publish it. Since I’ve already generated all of this within this chat, I’m just going to ask it to generate this carousel, okay? Yeah, go ahead and generate the whole carousel. Oh, the only thing is I think there’s too much text, okay? Maybe I’ll have to fix that later, but let it do it first. You can see that there are some cards with a lot of text, see? I don’t think this carousel will look good with so much information. I’m actually going to do that right now. I’m going to stop it. And I’ll edit the message to have the whole carousel with more concise text. It didn’t create the image cards here, but it will generate them anyway, okay? If you aren't able to generate images, or if when you ask it to generate a carousel of images, it generates everything in one image, it’s because it’s on \" Instant\". It's right here, on \"Instant\" . You must always set it to \"Medium\" or \"High,\" okay? Set it to \"Medium\" so you don’t use up your whole plan, but keep it on \"Medium\" here as it’s better. If you leave it on snapshot, it will generate everything into a single image, and that's not what you want, right? So, after a few minutes, it generates the carousel ready for you, okay? It took 3 minutes here, look. You can see it turned out really cool, very nice, right? Similar to those you saw being generated earlier. Uh, remembering that in that design kit prompt, it will ask you if you want, uh , drawings, if you want a mascot, something like that. Since I didn't fill out that design kit prompt, it generated it based on what I already do , right? That's why it's like this; it doesn't have a specific kit here, which is why it ended up without illustrations, without a mascot, without those drawings you usually saw there, okay? But when you fill out the design kit, it will ask you if you tell it what you want, okay? So, look, it turned out really nice. Actually, I liked it a lot; it was very simple to understand. The text was very objective , and it had plenty of white space. That's a good thing, right? It shouldn't be a design that's completely filled, because if you make a design completely full of content, people don't know where to look, right? So, no , don't do that. Here is the list, look . Perfect. 3, 4, look, everything is just right. Transformation. Do the math . And here, look, six problems, six objections, well, 30 carousels. Here is the final CTA with the card number down here as well, which is quite interesting. So, this carousel here is the final product. After you've provided the context for your brand to ChatGPT, after you've generated your outline, after you've chosen the architecture for your carousel, right, what it does, what the framework of this carousel is, which in this case is this one. Step four would be the copy, which I gave you the complete prompt for. Step five would be the approval before the image. So you read the text here, you saw that it was OK. In this case, I saw there was too much text, so I asked it to shorten it. Step five would be—step six, pardon me—would be the visual generation, then, of this carousel, what you actually saw, what you truly saw in the image, right? If you have anything to correct, just ask for the correction directly on the carousel you want. So, for example, ah, I want a more designed, more illustrative copy. Go to copy one, to card one, sorry. Go to edit here. It will open a small window. Then you describe the edit here, and it will edit only this one, okay? All right. So it's easier for you to edit, no need to generate everything all over again, because otherwise you'll spend way too much of your plan, it will run out very quickly. And the last step here would be, uh, the caption. So if we put it here, look, generate a short caption based on the first slide, it will generate it for us, okay? Based on the copy, based on the carousel structure, it will do that, it will do that automatically, okay? And step nine would be to check, right? It would be to see if the idea you had, if the topic you chose, the copy you generated makes sense and will attract comments and saves, which are the two main metrics we mentioned here. Now I'm going to talk in the next lesson about this automation in the DMs. I'll give you a free option, and a paid option for you, okay? You can use either of the two options you prefer, it depends on your budget, on your pocket. Got it? So, let's head to the next lesson. M.",
+        "duration_seconds": 318
+      },
+      "analysis": {
+        "id": "201a4567-f91a-4b13-b5e5-05c34bf98e45",
+        "video_id": "68c60e83-926b-4a38-990a-f0e4dd6ff557",
+        "summary": "O vídeo ensina como criar um carrossel no Instagram, enfatizando a importância de adicionar música para aumentar o alcance e detalhando o processo de geração do carrossel com uma ferramenta de IA.",
+        "hook_analysis": "Nos primeiros 30-60 segundos, o apresentador menciona que a aula será prática e que não mostrará como abrir o Instagram, assumindo que os espectadores já sabem. Ele destaca a importância de adicionar música ao carrossel para que ele seja recomendado como um Reel.",
+        "promise_analysis": "A promessa principal do vídeo é ensinar a criar um carrossel no Instagram que maximize o alcance e a interação através de um processo passo a passo.",
+        "structure_analysis": "A estrutura observada inclui uma introdução ao tema, um passo a passo prático para a criação do carrossel, dicas sobre a edição do texto e a geração de imagens, e uma conclusão que antecipa a próxima aula.",
+        "key_arguments": [
+          "Adicionar música ao carrossel é obrigatório para aumentar o alcance.",
+          "O carrossel deve ser gerado em formato 4x5.",
+          "A revisão do texto e a edição são essenciais antes da publicação."
+        ],
+        "proof_moments": [
+          "Demonstração da geração do carrossel em tempo real.",
+          "Exibição do carrossel finalizado com design e texto objetivos.",
+          "Discussão sobre a importância do espaço em branco no design."
+        ],
+        "tools_mentioned": [
+          "ChatGPT",
+          "Instagram"
+        ],
+        "why_it_worked": "O vídeo provavelmente performou bem devido ao hook forte sobre a adição de música e a promessa clara de um método prático e acessível para aumentar o alcance no Instagram, além de uma demonstração ao vivo que valida as instruções.",
+        "weaknesses": "O vídeo poderia ter mais exemplos visuais de carrosséis bem-sucedidos e uma explicação mais detalhada sobre como usar a ferramenta de geração de carrosséis, pois algumas partes foram um pouco rápidas e podem deixar dúvidas.",
+        "confidence_level": "high"
+      },
+      "context_pack": {
+        "id": "44a7072a-8b9a-442c-8a7d-21c471735508",
+        "trend_cluster_id": "4a80a6d0-3697-4121-bd00-a050aa25c36c",
+        "pack_version": "1.1",
+        "payload": {
+          "risks": [
+            "O conteúdo pode ser visto como hype se não houver evidências consistentes de aumento de alcance.",
+            "Dependência de uma única ferramenta de IA pode limitar a criatividade."
+          ],
+          "trend": {
+            "id": "4a80a6d0-3697-4121-bd00-a050aa25c36c",
+            "name": "Criação de Carrosséis no Instagram com IA",
+            "type": "tutorial_pattern",
+            "status": "emerging",
+            "summary": "O vídeo ensina como criar um carrossel no Instagram, enfatizando a importância de adicionar música para aumentar o alcance e detalhando o processo de geração do carrossel com uma ferramenta de IA.",
+            "macro_key": "tutorial-pattern:instagram",
+            "macro_name": "Instagram",
+            "raw_entities": [
+              "Instagram",
+              "ChatGPT"
+            ],
+            "canonical_name": "Instagram / ChatGPT",
+            "primary_entities": [
+              "Instagram",
+              "ChatGPT"
+            ],
+            "secondary_entities": [
+              "carrossel",
+              "música",
+              "design"
+            ],
+            "normalized_entities": [
+              {
+                "raw": "Instagram",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "Instagram",
+                "entity_type": "unknown"
+              },
+              {
+                "raw": "ChatGPT",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "ChatGPT",
+                "entity_type": "unknown"
+              }
+            ]
+          },
+          "quality": {
+            "flags": [
+              "single_source_cluster",
+              "missing_channel_baseline",
+              "missing_official_sources",
+              "secondary_sources_only",
+              "insufficient_snapshot_history"
+            ],
+            "score": 0.5,
+            "confidence": "low",
+            "confidence_reason": "Confidence low (score 0.5). transcript available, strong evidence. Limitations: single_source_cluster, missing_channel_baseline, missing_official_sources, secondary_sources_only, insufficient_snapshot_history."
+          },
+          "urgency": "low",
+          "evidence": [
+            {
+              "type": "demo",
+              "confidence": "high",
+              "description": "Demonstração da geração do carrossel em tempo real."
+            },
+            {
+              "type": "claim",
+              "confidence": "medium",
+              "description": "A adição de música ao carrossel é obrigatória para aumentar o alcance."
+            }
+          ],
+          "momentum": {
+            "status": "low",
+            "age_hours": 1515.3308847222222,
+            "delta_views": null,
+            "acceleration": "unknown",
+            "cluster_size": 1,
+            "likes_per_view": 0,
+            "freshness_window": "7d+",
+            "velocity_windows": {
+              "1h": null,
+              "3h": null,
+              "6h": null,
+              "12h": null,
+              "24h": null
+            },
+            "comments_per_hour": 0,
+            "comments_per_view": 0,
+            "avg_views_per_hour": 0.02,
+            "max_views_per_hour": 0.02,
+            "delta_views_per_hour": null
+          },
+          "source_gaps": {
+            "notes": [],
+            "missing_official_sources": [
+              "Diretrizes do Instagram sobre carrosséis e Reels.",
+              "Estudos sobre o impacto da música no engajamento de postagens."
+            ],
+            "missing_benchmark_sources": [],
+            "missing_comparison_sources": []
+          },
+          "generated_at": "2026-10-23T01:06:11.185Z",
+          "proof_points": [
+            "Exibição do carrossel finalizado com design e texto objetivos.",
+            "Discussão sobre a importância do espaço em branco no design."
+          ],
+          "quality_flags": [
+            "single_source_cluster",
+            "missing_channel_baseline",
+            "missing_official_sources",
+            "secondary_sources_only",
+            "insufficient_snapshot_history"
+          ],
+          "related_links": [
+            {
+              "url": "https://carrosseisquevendem.com.br/",
+              "title": "carrosseisquevendem.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://www.iacoding.com.br",
+              "title": "iacoding.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://t.me/+51crAT5FRFY2MTdh",
+              "title": "t.me",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            }
+          ],
+          "source_videos": [
+            {
+              "url": "https://www.youtube.com/watch?v=32aNnLBXBrA",
+              "title": "Aula 06   Criando um Carrossel que Vende do Zero",
+              "views": 31,
+              "market": "unknown",
+              "channel": null,
+              "source_role": "trend_signal",
+              "published_at": "2026-08-20T21:46:20+00:00",
+              "views_per_hour": 0.02,
+              "baseline_multiplier": null,
+              "transcript_available": true
+            }
+          ],
+          "market_context": {
+            "copycat_risk": "low",
+            "brazilian_signal": "not_detected",
+            "saturation_level": "low",
+            "international_signal": "not_detected"
+          },
+          "open_questions": [
+            "Quais são os melhores tipos de música para incluir em carrosséis?",
+            "Como a adição de música impacta as métricas de engajamento a longo prazo?"
+          ],
+          "brazilian_market": {
+            "signal": "not_detected",
+            "channels": [],
+            "copycat_risk": "low",
+            "source_count": 0,
+            "coverage_angles": [],
+            "opportunity_gap": null,
+            "repeated_angles": [],
+            "first_detected_at": null,
+            "saturation_reason": "No Brazilian source detected.",
+            "avg_views_per_hour": null,
+            "latest_detected_at": null,
+            "max_views_per_hour": null,
+            "recommended_positioning_gap": null
+          },
+          "confidence_level": "high",
+          "official_sources": [],
+          "technical_details": {
+            "complexity": "medium",
+            "requires_repo": false,
+            "demo_feasibility": "high",
+            "visual_demo_quality": "medium",
+            "requires_installation": true
+          },
+          "best_action_window": {
+            "reason": "signal is older than 7 days",
+            "confidence": "low",
+            "publish_within_hours": null
+          },
+          "why_it_is_trending": [
+            "A crescente popularidade do Instagram como plataforma de marketing.",
+            "A utilização de ferramentas de IA para facilitar a criação de conteúdo.",
+            "A demanda por métodos que aumentem o alcance e a interação nas redes sociais."
+          ],
+          "transcript_insights": {
+            "summary": "O vídeo ensina como criar um carrossel no Instagram, enfatizando a importância de adicionar música para aumentar o alcance e detalhando o processo de geração do carrossel com uma ferramenta de IA.",
+            "weaknesses": "O vídeo poderia ter mais exemplos visuais de carrosséis bem-sucedidos e uma explicação mais detalhada sobre como usar a ferramenta de geração de carrosséis, pois algumas partes foram um pouco rápidas e podem deixar dúvidas.",
+            "proof_moments": [
+              "Demonstração da geração do carrossel em tempo real.",
+              "Exibição do carrossel finalizado com design e texto objetivos.",
+              "Discussão sobre a importância do espaço em branco no design."
+            ],
+            "tools_mentioned": [
+              "ChatGPT",
+              "Instagram"
+            ]
+          },
+          "context_pack_version": "1.1"
+        }
+      }
+    },
+    {
+      "video": {
+        "id": "744057e0-b93b-409d-93ce-cc564158b7a8",
+        "youtube_video_id": "-o3AEfDjBsQ",
+        "title": "Aula 03   A As 5 Arquiteturas",
+        "url": "https://www.youtube.com/watch?v=-o3AEfDjBsQ",
+        "description": "Criar o SaaS é fácil, fazer sua primeira venda também pode ser com esse método: https://carrosseisquevendem.com.br/ Treinamento: https://www.iacoding.com.br\nComunidade Telegram: https://t.me/+51crAT5FRFY2MTdh",
+        "thumbnail_url": "https://i.ytimg.com/vi/-o3AEfDjBsQ/maxresdefault.jpg",
+        "published_at": "2026-08-20T21:39:37+00:00",
+        "duration_seconds": 521,
+        "views": 43,
+        "views_per_hour": 0.03,
+        "like_count": 0,
+        "comment_count": 0,
+        "technical_score": 25.31
+      },
+      "transcript": {
+        "id": "1c859f8f-a837-4814-894a-997122bc478c",
+        "video_id": "744057e0-b93b-409d-93ce-cc564158b7a8",
+        "source": "external_transcription_api",
+        "language": "asr-en",
+        "confidence": "high",
+        "text": "Remember I told you at the beginning, in lesson one, that you would create several different types of carousels, right? There isn't just one type. In this case, I’m going to give you five possible architectures you can create, okay? What are these five? Useful list, tutorial, framework, case study and story, method, offer. These are the five, the five carousel architectures that I will give you here, okay? So, for example, look, here in architecture one, it will separate what it's going to tell you, right? In each architecture. Each architecture will have a different type, a different logic for the cards. So, each architecture will follow a different step-by-step process, see? So, look, for example, in architecture one, which is the useful list architecture, it will be useful for tools, prompts, resources, sites, plugins, errors, ideas, and recommendations. It will even suggest a card structure for this type of carousel architecture, okay? So , each architecture will have a specific card structure for you to take , okay? And here there will be the complete prompt with all five structures for you to put into your ChatGPT. So I'll copy the prompt here, I'll come here to my project, I'll go to sources, I'll go to add sources, text input. I'll paste the text I just took here and I'll label it: five carousel architectures. So, I'll save it. And remember that I said a little while ago that for every chat, every carousel you create, the ideal is that you first create a new chat. So let's do that now. So I clicked here on chats . Uh, let me click here on model. And see here that it gave me several ideas, okay? So I'll copy this first idea here . I'll come back here to the car, to the project again. I'll come here and ask the following question: Which architecture makes the most sense for this carousel? So, look, the one that makes the most sense here is architecture 3, framework. And the reason is simple. The outline doesn't just promise a list of 30 ideas, it promises to teach a way to look at a product and extract content from it. This is exactly a system, a mental process, the natural territory of a framework. So here, look, it already brought the entire architecture of the carousel, see? So, quite interesting. So, what are you going to look at here? You are going to look at a few things, okay? First, you'll look at the card, which is this one, the cover. You will look at card two. I'll explain to you why you're going to look at these things, right? And you will briefly look at the internal cards and you will also look at the last card, okay? So, why are you going to look at all of this? The cover needs to be, uh, it needs to grab attention, right? It needs to call for attention. So, if you look here at my profile, for example, you'll see that the cover is usually what grabs the most attention right away, right? So you see there's a Claudio shaped like a dog, it's on purpose, right? Claudio isn't a dog, he has nothing to do with dogs, but it works, right? So, that's why I did it this way. So you see here, look, the crying Claudio logo. You come down here a little, look, there's a whole system here of a whole gear system. This carousel, for example, didn't do so well, right? So, it doesn't have such a good cover, so maybe that's why it didn't do so well. This carousel has a great cover, this cover is very good. It has text here horizontally, short text, straight to the point, CTA. So all your covers have to have a CTA, okay? Later I'll explain to you why, right? Eh, but basically this cover is very good, right? So here in this case, look, cover: your product probably already has 30 carousels hidden inside it. So it became a good promise, short text, straight to the point and specific, right? And here is the second hook, look, in this case, the problem isn't a lack of topics, it's trying to invent content from scratch. Interesting, right? Eh, and here in the last one, which is the CTA, look, deliver a prompt guide to turn any product into topics. So, our CTA, in this case, our deliverable would be to provide a prompt, a guide to turn any type of product, any type of idea into various content topics. So, this would be what we would deliver if the person commented on our post, okay? So, here, look, if you check my profile, you'll see, look, six stupidly useful skills every cloud user should install right now. Comment \"skills\" to receive them all ready to go. So, if someone comments \"skills\" here, look, see how there are a bunch of comments, what will they receive? They will receive a complete guide with these skills here, which in this case is this guide here, see? Six stupidly useful skills to install on cloud right now. So, they'll have everything ready here, the whole guide ready. There's a prompt here for them to copy and paste into cloud to install whichever skill they want, too. It makes it very easy for the person to use it, right? Everything explaining exactly what each skill is, all detailed. This one the person receives for free, right? But if the person comes to another page of my app, they'll hit a paywall, right, and will have to pay to keep using it. But the page they accessed itself is free, right? So, look, here it even gave a cool idea, look. You don't need to look for subjects outside your business, you need to learn to break down what already sells. Interesting. I could already ask it to create the carousel in this architecture it chose here, okay? If you want to create yours right now, you can ask it to create it. You'll basically, uh, put here @create image and ask it to generate it. You can generate. Then it will generate the 10 manual images that I'm going to do here now, okay? Uh, let's continue here . So, down here in our Notion file, you'll see that the additional rule here for the role of card 2, in this case card 2 would be after the card, right? Obviously. So, card two here, card 2 generally doesn't start with a specific theme right away, see how it provides a little bit of antithesis, right? It provides a bit of logic, a bit of context for what the person is going to see in this carousel. So, that's exactly what it says here, look, based on the winners analyzed, which are my carousels, right, card 2 deserves special attention. So, it will have to reframe this proposal, in other words, it will show that the real problem is a little different from the obvious, a little different from what you thought. That’s it, this adds a little bit of antithesis to the carousel theme, right? Next is a contrast, so you will visually present what is right, what is wrong, or before and after. A generic approach versus what you desire, your current result versus the result you want. So that is what we call a contrast, right? And the third would be immediate delivery. You are going to start right to the point, okay? For some, I don't start, I don't start right to the point. See how in this one, for example, I didn't start right to the point, but by card 3, the skill you'll use is already there, okay ? Here it's a bit, it's a bit optional to start directly with the card, card two already having item one of what you're delivering, because sometimes you aren't delivering anything specific , you're just doing a story carousel, right? So this part is a bit optional, but if it's a list-based one, for example—in this case, he chose a framework, right? If it were a list, the ideal would be to start item one on card two. And here is the additional rule for the last card. The last card should not be just a CTA. So you come here to the last card. Here you can see there is a CTA as well, but there is also a bit of context, right? So we see , the last card shouldn't just be \" comment X to receive\" and so on. It will use a very specific sequence. It will show the benefit generated in this carousel, it will show what will be delivered, and it will provide the keyword for the CTA. So, here's a formula example, wanting the result here—in this case, what is it? \"Do you want these six skills in your DM, in your Claude? You can comment 'skills ' here to easily receive all of this in your DM.\" So, that is the final promise here on the last card. So, look, \" Claude doesn't need more random prompts ; he needs the right skills to understand before starting, create without slop, correct without guessing, test before delivering.\" So, all of this is available on the last card so the person really feels convinced to comment, right? And the first, the first sign we see that a carousel will have good engagement is the comment, right? The more comments, usually the more Instagram spreads it, okay? The first, the second sign would be the save, right? But the comment is more important than the save. And for this lesson here, that would be it. I'll see you in the next one, which is exactly the C part here, the copy engine of our PACT method. Here you saw the method, right, which would be there, the, well, which would be the five architectures, right? The P, and you saw in lesson one of the PACT, which is the topic radar there. So those are the topics you're going to pick up. Then you have the architectures, and in the next lesson we'll see, so in lesson four, we'll see the Copy Engine. So let's head to the next lesson.",
+        "duration_seconds": 521
+      },
+      "analysis": {
+        "id": "a63177a4-9459-4849-8e79-bfaabddecb62",
+        "video_id": "744057e0-b93b-409d-93ce-cc564158b7a8",
+        "summary": "O vídeo apresenta cinco arquiteturas diferentes para criar carrosséis, detalhando cada uma delas e como utilizá-las efetivamente, com exemplos práticos e dicas sobre a estrutura dos cards.",
+        "hook_analysis": "Nos primeiros 30-60 segundos, o apresentador menciona que existem várias arquiteturas de carrosséis e introduz as cinco principais: lista útil, tutorial, framework, estudo de caso e história, método, oferta.",
+        "promise_analysis": "O vídeo promete ensinar como criar carrosséis eficazes utilizando cinco arquiteturas distintas.",
+        "structure_analysis": "A estrutura do vídeo segue uma introdução das arquiteturas, explicações detalhadas sobre cada uma, exemplos práticos e dicas sobre a criação de carrosséis.",
+        "key_arguments": [
+          "Existem cinco arquiteturas de carrosséis",
+          "Cada arquitetura tem uma lógica e estrutura de cards específica",
+          "A importância de uma boa capa para chamar atenção"
+        ],
+        "proof_moments": [
+          "Demonstração da estrutura de um carrossel com exemplos de capas",
+          "Comparação entre carrosséis que tiveram bom e mau desempenho",
+          "Exibição de um CTA eficaz no último card"
+        ],
+        "tools_mentioned": [
+          "ChatGPT",
+          "Notion"
+        ],
+        "why_it_worked": "O vídeo provavelmente performou bem devido à promessa clara de ensinar uma habilidade prática, a estrutura organizada e a inclusão de provas visuais que demonstram a eficácia das dicas apresentadas.",
+        "weaknesses": "Faltou uma demonstração mais prática de como implementar as arquiteturas em tempo real, o que poderia aumentar a confiança do espectador na aplicação das técnicas.",
+        "confidence_level": "high"
+      },
+      "context_pack": {
+        "id": "6481bcea-e0a5-40a2-89cd-86c70155fe95",
+        "trend_cluster_id": "4871829a-dd2e-4243-9730-9ff7533ade97",
+        "pack_version": "1.1",
+        "payload": {
+          "risks": [
+            "A falta de demonstração prática em tempo real pode limitar a confiança do espectador na aplicação das técnicas."
+          ],
+          "trend": {
+            "id": "4871829a-dd2e-4243-9730-9ff7533ade97",
+            "name": "Arquiteturas de Carrosséis",
+            "type": "tutorial_pattern",
+            "status": "emerging",
+            "summary": "O vídeo apresenta cinco arquiteturas diferentes para criar carrosséis, detalhando cada uma delas e como utilizá-las efetivamente, com exemplos práticos e dicas sobre a estrutura dos cards.",
+            "macro_key": "tutorial-pattern:carrosseis",
+            "macro_name": "carrosséis",
+            "raw_entities": [
+              "carrosséis",
+              "arquiteturas",
+              "ChatGPT",
+              "Notion"
+            ],
+            "canonical_name": "carrosséis / arquiteturas",
+            "primary_entities": [
+              "carrosséis",
+              "arquiteturas",
+              "ChatGPT",
+              "Notion"
+            ],
+            "secondary_entities": [
+              "exemplos práticos",
+              "estrutura dos cards"
+            ],
+            "normalized_entities": [
+              {
+                "raw": "carrosséis",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "carrosséis",
+                "entity_type": "unknown"
+              },
+              {
+                "raw": "arquiteturas",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "arquiteturas",
+                "entity_type": "unknown"
+              },
+              {
+                "raw": "ChatGPT",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "ChatGPT",
+                "entity_type": "unknown"
+              },
+              {
+                "raw": "Notion",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "Notion",
+                "entity_type": "unknown"
+              }
+            ]
+          },
+          "quality": {
+            "flags": [
+              "single_source_cluster",
+              "missing_channel_baseline",
+              "missing_official_sources",
+              "secondary_sources_only",
+              "insufficient_snapshot_history"
+            ],
+            "score": 0.5,
+            "confidence": "low",
+            "confidence_reason": "Confidence low (score 0.5). transcript available, strong evidence. Limitations: single_source_cluster, missing_channel_baseline, missing_official_sources, secondary_sources_only, insufficient_snapshot_history."
+          },
+          "urgency": "low",
+          "evidence": [
+            {
+              "type": "demo",
+              "confidence": "high",
+              "description": "Demonstração da estrutura de um carrossel com exemplos de capas."
+            },
+            {
+              "type": "comparison",
+              "confidence": "high",
+              "description": "Comparação entre carrosséis que tiveram bom e mau desempenho."
+            },
+            {
+              "type": "demo",
+              "confidence": "high",
+              "description": "Exibição de um CTA eficaz no último card."
+            }
+          ],
+          "momentum": {
+            "status": "low",
+            "age_hours": 1515.3927416666668,
+            "delta_views": null,
+            "acceleration": "unknown",
+            "cluster_size": 1,
+            "likes_per_view": 0,
+            "freshness_window": "7d+",
+            "velocity_windows": {
+              "1h": null,
+              "3h": null,
+              "6h": null,
+              "12h": null,
+              "24h": null
+            },
+            "comments_per_hour": 0,
+            "comments_per_view": 0,
+            "avg_views_per_hour": 0.03,
+            "max_views_per_hour": 0.03,
+            "delta_views_per_hour": null
+          },
+          "source_gaps": {
+            "notes": [],
+            "missing_official_sources": [
+              "Estudos sobre a eficácia de carrosséis em plataformas digitais.",
+              "Diretrizes de melhores práticas para criação de conteúdo visual."
+            ],
+            "missing_benchmark_sources": [],
+            "missing_comparison_sources": []
+          },
+          "generated_at": "2026-10-23T01:03:10.870Z",
+          "proof_points": [
+            "O vídeo detalha cinco arquiteturas específicas, o que indica uma abordagem estruturada.",
+            "Inclui provas visuais que demonstram a eficácia das dicas apresentadas."
+          ],
+          "quality_flags": [
+            "single_source_cluster",
+            "missing_channel_baseline",
+            "missing_official_sources",
+            "secondary_sources_only",
+            "insufficient_snapshot_history"
+          ],
+          "related_links": [
+            {
+              "url": "https://carrosseisquevendem.com.br/",
+              "title": "carrosseisquevendem.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://www.iacoding.com.br",
+              "title": "iacoding.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://t.me/+51crAT5FRFY2MTdh",
+              "title": "t.me",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            }
+          ],
+          "source_videos": [
+            {
+              "url": "https://www.youtube.com/watch?v=-o3AEfDjBsQ",
+              "title": "Aula 03   A As 5 Arquiteturas",
+              "views": 43,
+              "market": "unknown",
+              "channel": null,
+              "source_role": "trend_signal",
+              "published_at": "2026-08-20T21:39:37+00:00",
+              "views_per_hour": 0.03,
+              "baseline_multiplier": null,
+              "transcript_available": true
+            }
+          ],
+          "market_context": {
+            "copycat_risk": "low",
+            "brazilian_signal": "not_detected",
+            "saturation_level": "low",
+            "international_signal": "not_detected"
+          },
+          "open_questions": [
+            "Quais são as melhores práticas para implementar essas arquiteturas em diferentes plataformas?",
+            "Como as métricas de desempenho dos carrosséis podem ser otimizadas?"
+          ],
+          "brazilian_market": {
+            "signal": "not_detected",
+            "channels": [],
+            "copycat_risk": "low",
+            "source_count": 0,
+            "coverage_angles": [],
+            "opportunity_gap": null,
+            "repeated_angles": [],
+            "first_detected_at": null,
+            "saturation_reason": "No Brazilian source detected.",
+            "avg_views_per_hour": null,
+            "latest_detected_at": null,
+            "max_views_per_hour": null,
+            "recommended_positioning_gap": null
+          },
+          "confidence_level": "high",
+          "official_sources": [],
+          "technical_details": {
+            "complexity": "medium",
+            "requires_repo": false,
+            "demo_feasibility": "medium",
+            "visual_demo_quality": "high",
+            "requires_installation": false
+          },
+          "best_action_window": {
+            "reason": "signal is older than 7 days",
+            "confidence": "low",
+            "publish_within_hours": null
+          },
+          "why_it_is_trending": [
+            "A demanda por conteúdos visuais e interativos está crescendo nas plataformas digitais.",
+            "A promessa de ensinar uma habilidade prática atrai criadores de conteúdo e profissionais de marketing."
+          ],
+          "transcript_insights": {
+            "summary": "O vídeo apresenta cinco arquiteturas diferentes para criar carrosséis, detalhando cada uma delas e como utilizá-las efetivamente, com exemplos práticos e dicas sobre a estrutura dos cards.",
+            "weaknesses": "Faltou uma demonstração mais prática de como implementar as arquiteturas em tempo real, o que poderia aumentar a confiança do espectador na aplicação das técnicas.",
+            "proof_moments": [
+              "Demonstração da estrutura de um carrossel com exemplos de capas",
+              "Comparação entre carrosséis que tiveram bom e mau desempenho",
+              "Exibição de um CTA eficaz no último card"
+            ],
+            "tools_mentioned": [
+              "ChatGPT",
+              "Notion"
+            ]
+          },
+          "context_pack_version": "1.1"
+        }
+      }
+    },
+    {
+      "video": {
+        "id": "7eb264f2-f80d-4b98-a1ca-460e150389a4",
+        "youtube_video_id": "73OpTuUsCH8",
+        "title": "Aula 02   P Radar de Pautas",
+        "url": "https://www.youtube.com/watch?v=73OpTuUsCH8",
+        "description": "Criar o SaaS é fácil, fazer sua primeira venda também pode ser com esse método: https://carrosseisquevendem.com.br/ Treinamento: https://www.iacoding.com.br\nComunidade Telegram: https://t.me/+51crAT5FRFY2MTdh",
+        "thumbnail_url": "https://i.ytimg.com/vi/73OpTuUsCH8/maxresdefault.jpg",
+        "published_at": "2026-08-20T21:36:01+00:00",
+        "duration_seconds": 844,
+        "views": 58,
+        "views_per_hour": 0.04,
+        "like_count": 0,
+        "comment_count": 0,
+        "technical_score": 25.76
+      },
+      "transcript": {
+        "id": "ecafd6b3-d477-453f-a1a6-662326162a03",
+        "video_id": "7eb264f2-f80d-4b98-a1ca-460e150389a4",
+        "source": "external_transcription_api",
+        "language": "asr-en",
+        "confidence": "high",
+        "text": "One thing I forgot to mention in the last lesson is that you will have access to this Notion template, okay? To help you get organized. So everything I talk about here, you'll find right inside this template. Great. We're in lesson two here, right? So I'll click here on lesson two for you to see. And here is everything you'll need in terms of deliverables and prompts for us to start applying this in practice. So, the first thing we're going to do here is that before asking anything of the chat, you need to make it understand what you sell. So, if you skip this step here, the content radar we’re going to generate will end up producing many generic ideas, okay? So that’s why you have the official brand context prompt here. So, let's get started in practice with this carousel creation project. So, this prompt here will basically interview you. It will understand what you sell, understand a bit about your audience, understand a bit about your audience’s pain points and desires, the offer you have, and what you can give away for free. A good part of the strategy we're going to use here depends on you delivering content, free content. So you will need to deliver this free content, or you can work in another way with a different funnel, okay? But the funnel I'm going to use here will be the free content carousel funnel, and you will convert through the offer on your landing page, okay? So, look, I'm going to copy this prompt here. This prompt will have a very large brand context here, okay? So, I'll go here to my ChatGPT and let's get started. Here in ChatGPT, we'll go here to open the sidebar, and we have the projects section, see? So, here I'll create a new project. For now, I'll give it whatever name I want; I'll call it \"Carousels That Sell,\" right? Which is the name of the training you're watching. I'll create the project, and here inside the project. You'll see that it's empty. Here we have the project settings section, see? Here we can add the main instruction for this agent. We won't add anything yet, okay? Later, we will build this instruction part here. Besides that, we also have the sources. We can add files here, we can add things from Google Drive, right? We can add text too, look . You can add files here. So, all of this will stay here, okay? We'll add some text here, uh, in a bit, but first we need to build the brand context, which is what I just told you about. So , I pasted the prompt and this is the first step. I'll send it here. So, it will divide your interview process into a few stages, right? You will need to answer in the best way possible. The more details you provide here, the better the result of the carousel you generate later will be, okay? You don't need to write, you can generate it via audio right here, okay? You can edit it , actually. If you have a microphone on your laptop, or you can do it from your phone, it's easier, okay? So, I'm going to generate the project for my own course here, which you see, so you can see how the example works for any type of business, right? In my case, I use it for a SaaS, right? It has an entire SaaS funnel linked to it, which is another project here that you saw a moment ago, right? Let me even show you , which in this case is this one, look. Kocar. Uh, but here, let's create this course project from scratch, right? So, I'll answer here, and then we'll come back. So, look, this is round two. See how I explained it here with audio, to make it easier. There are usually four little questions per round. So, answer carefully, answer calmly, with as much detail as you possibly can. Uh, so here in five, look, I'll answer this round, and then we'll come back so you can see how it works. So, look, round two has been answered, I answer with as much detail as possible, okay? And now let's move on to three. I want you to do the same thing there, don't just watch me, don't just keep watching me here, okay? So, after three rounds, it creates a complete prompt; the chat itself, based on your answers, will create your official brand context, right? In this official context, there will be the business and the offer you sell, right? What you do there and so on, it can be anything you sell, okay? Even physical products, TikTok Shop, Mercado Livre, e-commerce, that works too, okay? It doesn't matter. And what you sell, right? The main offer, the promised transformation, what you really want people to achieve with your product, the unique selling points, the audience here, everything, look, everything is just right, see. It even takes the answers we provide and makes them a bit more complete, you know, to make the prompt more well-rounded. Content territories, assets I can deliver for free. Wow, it listed a lot of things here; I only mentioned three or four, and it listed a bunch, right? So, quite interesting. You can take this prompt here, edit it if you want, okay? So, you can go here, for example, \"oh, I want to deliver more of this here,\" see . And you just take it and edit it, okay? Uh, five, brand voice. So, all of this has to make sense with what you want, okay? That's why you have to read the rest of what's here. But okay, I read it, I liked it, this is exactly what I wanted. What do I do now? I simply copy this prompt here, I click here on the project, you see? I go here to sources, add source, text input. I'll put the full prompt here, look. I'll name it here, as \"official brand context,\" okay? So you put the same thing there, save it, and that's it. This is step one of our step one of our second lesson, right? So, look, what are you going to do with this response? It's what I just said. You will read it , correct any information that doesn't represent your business. You will save the result in your project chat as \" official brand context\" and you will use this context in the next lessons instead of replicating and explaining your whole business in the prompt. So all of this stays saved right there inside your project, okay? And now the four main sources of topic radar that you will use. So there are four main sources that you will use to model the reference, to catch the trend, to make your carousels perform well, okay? Over time, your own content becomes your own reference, right? Which you can simply replicate there, reorganize into another carousel, reorganize into another piece of content. So, over time , you won't even need to worry so much about getting references from outside, okay? So here, look, the first module, the first main source of reference we'll use is modeling references we already see on Instagram, for example, okay? So, look, if I click here on the search part and if you follow people in your niche, follow people who create the same content as you, a lot of things will appear here, right? So, we can see here, for example, look, there’s an interesting carousel here, you see? Here, in this case, it’s in Portuguese, right? Look, here’s another carousel, you see? So, if there’s a carousel I see, ah, this carousel has an interesting idea. Cloud code is bad at design. So, look, those 40 skills there, this is a carousel, look, a carousel similar to the ones I make, right? In my opinion, mine is better. Uh, here is another carousel, another carousel here, for example, look. This one has a very interesting idea. What is it, look? It’s how to start a one-person business with cloud, a very good idea, right? So, wow, it’s a cool topic, it has an interesting hook, it has a cool theme to work with. So, what am I going to do ? I won't copy all the carousels because I don't want to make the same carousel, the same content as the guy, right? Especially because he’s selling something of his own here, probably, look. So, if I copy word for word, I'll be selling something that isn't even mine, right? It doesn't make sense. So, what do I do? I think like this: \"Ah, this topic is interesting. I want to create the same topic, the same angle, right? But with my own worldview , right? My view on what I think is how to start a one-person business with cloud. Then what do I do? I take a screenshot of this content, send it to our project here for the carousel that sells, and we start the reference modeling. So, so how are we going to do this, okay? I’m going to take a screenshot here for you to see, look. I’ll take a screenshot just of this part here. I’ll grab it here in the project we created, okay? I'll come over here, see. And along with this, I'll copy the reference modeler here. You see? You'll save this reference modeler here in the project section, okay? So I'll come here to sources, come here to text input, I'll copy this prompt here and put\" modeler \"here\" of reference. \"Just save and I'll put it here:\" use reference modeler. \"So, when we send the reference and tell it to use the reference modeler, it already knows what it is because it's in its project context, right? It will bring the whole answer here for us, you see? What makes this reference work? This reference modeler will basically show you three things, okay? What works, what can be modeled, and new original ideas that can arise from this reference, got it? So, I don't want you to copy everything you see, okay? That's not the idea. Only copy the theme, the angle, right? The hook, there. Don't copy the whole content, because often with full content, the person is selling something of theirs in the middle, okay? So this one, for example, I think this is an app from the creator themselves. So I don't recommend that you copy word for word. There are many people who do that. I don't think that's cool. You only copy the angle, right? The hook there. Don't copy everything. Yeah. So here is two, see. The most desirable word gets highlighted. So, you can see that ChatGPT realized that what gets the most highlight here in this carousel would be this\" One Person, \"right? A one-person business. So this means that this carousel worked, it had good engagement. So, this theme is probably an interesting theme for you to work with, right? Remembering that I am doing this for my niche, but you will have to do it for yours, right? For your Instagram, the people you follow, the people in your niche, your personal references, okay? I'm doing mine here, you have to adapt it to yours. So, cool , right? So, here is the modeling for our brand, see. You see? Cover one, transform a product into 30 content ideas. So, it brought another theme, another niche based on the same content we saw there. It already brings all the cover ideas for us, see? Cover one would be transform a product into content ideas. Cover two would be create seven carousels in one afternoon . Cover three would be build an audience for your product. This one is a bit weak, isn't it? Copy-wise. Cover four create your content machine. That's more interesting, closer to the original reference, right, that it mentioned here, look. So here it brings , okay? Already the look that this this this cover will have, right, which is quite interesting. And here is the design kit that you will need to have, which I will talk to you about in the next classes, okay? So now the next step we are going to do is the demonstration part of the volume of content ideas. So here on this same page you are on here in class two, okay ? You will see that there is this prompt here, look, content radar. The last prompt you saw to copy is this one here, okay? It's below, but let me even move this one up, look. So it's here, look, the modeler, the content modeler ended up a little bit lower. So now it's all correct here, look. Prompt which is the reference one and here the content radar. So let's copy this one. Let's come here to our project and do the same thing, okay? Add this document as a source. You can use the prompt in the chat if you want, but I prefer to add it as a source, so you don't have to keep repeating it, right? So I can put it here, look, and I will put here content ideas, put here the content modeler, okay? so it stays all correct here with the same name. So okay, I will come here now to the chat I just shared and I will ask it now to bring me a content radar based then on that prompt. So bring me a content radar based on the modeler. Over time it will know what it is. You will just need to say content radar, it will already know what it is, okay? But now at the beginning it is ideal that you are more specific. So when we do this, it will take all that document that we filled out, the information we gave, the reference we passed here. Remember that this reference we provided can be used for any niche, and this outline shaper can be used for any chat, okay? It can be a new chat too, and it will search on the internet. So you don't necessarily need to provide it with a reference. If you provide a reference, it will be better, okay? But it’s not strictly necessary. So what does it bring us, look? It brings 30 ideas based on the documents you picked and the references you gave. It will give you all of these ideas, see? Each idea here is a carousel, in this case. So it speaks, it gives the initial hook, it gives the theme for the initial hook, and the value you will deliver, the useful content you will provide in this carousel, and right below, it will give you the 10 ideas it would test first. So it filters the ideas it generated itself, so you can then create the carousels. So, if I wanted to generate the text for an idea now, for example, how would I do it? I could copy this part here, for example, look. Then I come here, create a new chat, right? The ideal approach is to create a new chat for each carousel, okay? So you can stay organized with the images there. Then you come here and you ask. So, generate the text for this carousel based on the reference you searched for . Done, it will generate the text. And that's basically it, okay? That’s all we’re going to do, but if you want to create one and test it out, feel free to do so. And if you get stuck when transforming an outline into an opening , or turning an outline into a good carousel, you have the swipe file here, okay? I will always update these swipe files, so when you check back, it will likely have many more hooks, many more ideas, and CTAs for you to use, okay? So here, for now, there are 30, there are 30 hook ideas, 30, 25, 25 shorter hooks, see? How to adapt a hook, a prompt for you to adapt a hook, see there? You can use it as a source, or you can use it in a chat, you decide, okay? And 20 carousel ideas for any niche as well, for you to get started here, okay? So this serves as a bonus for you; feel free to take it if you'd like, okay? At the end of the lesson two content. That would be it for this lesson. See you in the next one. Yeah.",
+        "duration_seconds": 844
+      },
+      "analysis": {
+        "id": "d5d60c15-5fe4-4399-bf8d-c06e6945f41e",
+        "video_id": "7eb264f2-f80d-4b98-a1ca-460e150389a4",
+        "summary": "O vídeo apresenta a segunda aula de um treinamento sobre como utilizar um modelo de carrossel para vendas, enfatizando a importância de entender o que se vende antes de gerar conteúdo e como usar prompts no ChatGPT para criar um contexto de marca.",
+        "hook_analysis": "Nos primeiros 30-60 segundos, o apresentador menciona que os espectadores terão acesso a um template do Notion para se organizarem e introduz a aula, destacando a importância de entender o que se vende antes de interagir com o ChatGPT.",
+        "promise_analysis": "A promessa principal do vídeo é ensinar como criar carrosséis que vendem utilizando um modelo de prompts no ChatGPT, focando na construção de um contexto de marca eficaz.",
+        "structure_analysis": "A estrutura do vídeo segue uma abordagem passo a passo, começando com a introdução do template, seguida pela explicação do processo de criação de carrosséis e a utilização de prompts no ChatGPT.",
+        "key_arguments": [
+          "Importância de entender o que se vende antes de gerar conteúdo",
+          "Uso de prompts para construir um contexto de marca",
+          "Estratégia de funil de conteúdo gratuito"
+        ],
+        "proof_moments": [
+          "Demonstração do uso do ChatGPT para criar um projeto chamado 'Carousels That Sell'",
+          "Exemplos de carrosséis existentes no Instagram como referência",
+          "Apresentação de um modelo de referência para criar novos conteúdos"
+        ],
+        "tools_mentioned": [
+          "Notion",
+          "ChatGPT"
+        ],
+        "why_it_worked": "O vídeo provavelmente performou bem devido à promessa clara de ensinar uma técnica prática e valiosa para criar conteúdo de vendas, combinada com uma estrutura organizada e demonstrações visuais que facilitam a compreensão.",
+        "weaknesses": "Uma fraqueza do vídeo é a falta de exemplos concretos de resultados obtidos com os carrosséis, o que poderia fortalecer a prova da eficácia da técnica apresentada.",
+        "confidence_level": "high"
+      },
+      "context_pack": {
+        "id": "6bfd334b-a7f7-476a-a72d-f962abdfacd0",
+        "trend_cluster_id": "06950d6f-4c5f-4cbd-ad17-82aa8d4e139e",
+        "pack_version": "1.1",
+        "payload": {
+          "risks": [
+            "A falta de exemplos concretos de resultados pode limitar a credibilidade da técnica.",
+            "Possibilidade de ser apenas uma tendência passageira sem resultados comprovados."
+          ],
+          "trend": {
+            "id": "06950d6f-4c5f-4cbd-ad17-82aa8d4e139e",
+            "name": "Uso de IA para criação de conteúdo de vendas",
+            "type": "tutorial_pattern",
+            "status": "emerging",
+            "summary": "O vídeo ensina como utilizar um modelo de carrossel para vendas, enfatizando a importância de entender o produto antes de criar conteúdo e como usar prompts no ChatGPT para construir um contexto de marca.",
+            "macro_key": "tutorial-pattern:chatgpt",
+            "macro_name": "ChatGPT",
+            "raw_entities": [
+              "ChatGPT",
+              "Notion"
+            ],
+            "canonical_name": "ChatGPT / Notion",
+            "primary_entities": [
+              "ChatGPT",
+              "Notion"
+            ],
+            "secondary_entities": [
+              "carrosséis",
+              "vendas",
+              "conteúdo"
+            ],
+            "normalized_entities": [
+              {
+                "raw": "ChatGPT",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "ChatGPT",
+                "entity_type": "unknown"
+              },
+              {
+                "raw": "Notion",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "Notion",
+                "entity_type": "unknown"
+              }
+            ]
+          },
+          "quality": {
+            "flags": [
+              "single_source_cluster",
+              "missing_channel_baseline",
+              "missing_official_sources",
+              "secondary_sources_only",
+              "insufficient_snapshot_history"
+            ],
+            "score": 0.5,
+            "confidence": "low",
+            "confidence_reason": "Confidence low (score 0.5). transcript available, strong evidence. Limitations: single_source_cluster, missing_channel_baseline, missing_official_sources, secondary_sources_only, insufficient_snapshot_history."
+          },
+          "urgency": "low",
+          "evidence": [
+            {
+              "type": "demo",
+              "confidence": "high",
+              "description": "Demonstração do uso do ChatGPT para criar um projeto chamado 'Carousels That Sell'."
+            },
+            {
+              "type": "workflow",
+              "confidence": "medium",
+              "description": "Estratégia de funil de conteúdo gratuito apresentada no vídeo."
+            }
+          ],
+          "momentum": {
+            "status": "low",
+            "age_hours": 1515.4372302777779,
+            "delta_views": null,
+            "acceleration": "unknown",
+            "cluster_size": 1,
+            "likes_per_view": 0,
+            "freshness_window": "7d+",
+            "velocity_windows": {
+              "1h": null,
+              "3h": null,
+              "6h": null,
+              "12h": null,
+              "24h": null
+            },
+            "comments_per_hour": 0,
+            "comments_per_view": 0,
+            "avg_views_per_hour": 0.04,
+            "max_views_per_hour": 0.04,
+            "delta_views_per_hour": null
+          },
+          "source_gaps": {
+            "notes": [],
+            "missing_official_sources": [
+              "Estatísticas sobre a eficácia de carrosséis em vendas.",
+              "Estudos sobre o uso de IA na criação de conteúdo."
+            ],
+            "missing_benchmark_sources": [],
+            "missing_comparison_sources": []
+          },
+          "generated_at": "2026-10-23T01:02:15.029Z",
+          "proof_points": [
+            "Exemplos de carrosséis existentes no Instagram como referência.",
+            "Apresentação de um modelo de referência para criar novos conteúdos."
+          ],
+          "quality_flags": [
+            "single_source_cluster",
+            "missing_channel_baseline",
+            "missing_official_sources",
+            "secondary_sources_only",
+            "insufficient_snapshot_history"
+          ],
+          "related_links": [
+            {
+              "url": "https://carrosseisquevendem.com.br/",
+              "title": "carrosseisquevendem.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://www.iacoding.com.br",
+              "title": "iacoding.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://t.me/+51crAT5FRFY2MTdh",
+              "title": "t.me",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            }
+          ],
+          "source_videos": [
+            {
+              "url": "https://www.youtube.com/watch?v=73OpTuUsCH8",
+              "title": "Aula 02   P Radar de Pautas",
+              "views": 58,
+              "market": "unknown",
+              "channel": null,
+              "source_role": "trend_signal",
+              "published_at": "2026-08-20T21:36:01+00:00",
+              "views_per_hour": 0.04,
+              "baseline_multiplier": null,
+              "transcript_available": true
+            }
+          ],
+          "market_context": {
+            "copycat_risk": "low",
+            "brazilian_signal": "not_detected",
+            "saturation_level": "low",
+            "international_signal": "not_detected"
+          },
+          "open_questions": [
+            "Quais são os resultados reais obtidos por usuários que aplicaram essa técnica?",
+            "Como a eficácia dessa abordagem se compara a outras estratégias de marketing digital?"
+          ],
+          "brazilian_market": {
+            "signal": "not_detected",
+            "channels": [],
+            "copycat_risk": "low",
+            "source_count": 0,
+            "coverage_angles": [],
+            "opportunity_gap": null,
+            "repeated_angles": [],
+            "first_detected_at": null,
+            "saturation_reason": "No Brazilian source detected.",
+            "avg_views_per_hour": null,
+            "latest_detected_at": null,
+            "max_views_per_hour": null,
+            "recommended_positioning_gap": null
+          },
+          "confidence_level": "high",
+          "official_sources": [],
+          "technical_details": {
+            "complexity": "medium",
+            "requires_repo": false,
+            "demo_feasibility": "high",
+            "visual_demo_quality": "high",
+            "requires_installation": true
+          },
+          "best_action_window": {
+            "reason": "signal is older than 7 days",
+            "confidence": "low",
+            "publish_within_hours": null
+          },
+          "why_it_is_trending": [
+            "A crescente demanda por técnicas de marketing digital eficazes.",
+            "O aumento do uso de ferramentas de IA para otimizar a criação de conteúdo.",
+            "A popularidade de formatos visuais como carrosséis nas redes sociais."
+          ],
+          "transcript_insights": {
+            "summary": "O vídeo apresenta a segunda aula de um treinamento sobre como utilizar um modelo de carrossel para vendas, enfatizando a importância de entender o que se vende antes de gerar conteúdo e como usar prompts no ChatGPT para criar um contexto de marca.",
+            "weaknesses": "Uma fraqueza do vídeo é a falta de exemplos concretos de resultados obtidos com os carrosséis, o que poderia fortalecer a prova da eficácia da técnica apresentada.",
+            "proof_moments": [
+              "Demonstração do uso do ChatGPT para criar um projeto chamado 'Carousels That Sell'",
+              "Exemplos de carrosséis existentes no Instagram como referência",
+              "Apresentação de um modelo de referência para criar novos conteúdos"
+            ],
+            "tools_mentioned": [
+              "Notion",
+              "ChatGPT"
+            ]
+          },
+          "context_pack_version": "1.1"
+        }
+      }
+    },
+    {
+      "video": {
+        "id": "876f9abb-1279-46d8-960d-595d13a32183",
+        "youtube_video_id": "QRwxq7bqWwo",
+        "title": "Aula 07   O Comentário → DM → Oferta",
+        "url": "https://www.youtube.com/watch?v=QRwxq7bqWwo",
+        "description": "Criar o SaaS é fácil, fazer sua primeira venda também pode ser com esse método: https://carrosseisquevendem.com.br/ Treinamento: https://www.iacoding.com.br\nComunidade Telegram: https://t.me/+51crAT5FRFY2MTdh",
+        "thumbnail_url": "https://i.ytimg.com/vi/QRwxq7bqWwo/maxresdefault.jpg",
+        "published_at": "2026-08-20T21:48:45+00:00",
+        "duration_seconds": 662,
+        "views": 21,
+        "views_per_hour": 0.01,
+        "like_count": 0,
+        "comment_count": 0,
+        "technical_score": 28.27
+      },
+      "transcript": {
+        "id": "ea90db19-7afc-4c22-9f8e-2cc7f3531cfe",
+        "video_id": "876f9abb-1279-46d8-960d-595d13a32183",
+        "source": "external_transcription_api",
+        "language": "asr-en",
+        "confidence": "high",
+        "text": "So, here we are in lesson 7. The goal here is to give you two options for DM automation, okay? I’ll give you a paid option, and a free option at first , but eventually you’ll end up paying anyway, alright? There isn't really anywhere to run, unless you’re tech-savvy and build your own automation, okay? You’re free to do that if you want. In my case, I won't do that; I won't build my own. I bought mine, and I’ll show you how you can buy yours too, or use a free one while your audience isn't that big, which will work well for a long time. So, look, this carousel content generation strategy I taught you wouldn't work without automation, okay? It is absolutely mandatory that you use automation because, when you do, Instagram understands that your carousel has comments and that you reply to those comments. The person opens the DM you sent them; they don't just open it, they also follow you, because you’ll ask them to follow before they receive the content, right? This part is also mandatory. And with all that, Instagram understands that, hey, this content is really cool, because people comment, like, save, send, share, open the DM sent to them, and follow the account. So the carousel becomes magnificent, even if it isn't actually that great, Instagram understands what it is and starts spreading it to many people, which creates a snowball effect of followers and audience, and consequently, you sell your product. It’s kind of automatic, right? It’s a foolproof recipe, and that’s how it works. So, look, the main flow here: you have the carousel, then you have the CTA, which we created just a moment ago. Then you have the comment that generates engagement and identifies if there’s anyone interested in that topic. If you created a carousel and it doesn't have many comments, engagement, saves, or shares, it means that the idea you had, that topic you chose from the PACTO method—the P part, which is the first step of the method—wasn't that interesting. The ideal thing would be for you to change topics, switch themes , and not repeat this same theme, at least not anytime soon, okay? So part four here would be the DM. The person will receive your DM, they will open your DM, they will follow you, right? So here your DM can be a prompt, a checklist, a guide, a template, a resource, a class, a video, or any useful material, for example. I strongly recommend that you organize all your freebies into one single thing . So how can you do that? You can go to Lovable, create a project in Lovable, and say, \"Look, this project will serve to deliver my free content to those who comment on my Instagram.\" Then you explain what your project is, and you can ask Claude itself, or ChatGPT itself, to do this for you, okay? So ask it to create a prompt to set up a project in Lovable so it can do this for you. Or you can use the Work feature of ChatGPT, okay? So if you come here to a new chat and you go to Work, for example, it will be able to write code, create a site, and build a project, so you can always use Work, okay? It will be more expensive to use only Work, though. So I recommend that you use it occasionally, or try to repurpose as much of the free content you generate as possible so you don't have to pay for a more expensive plan or something like that. But it is ideal that you have all of this in one place, which will make things easier when you have a lot of content, right? It will be easier for you to organize. Or you can deliver it directly via DM. So if it’s a prompt, for example, you can deliver it directly in the DM, okay? Just ask the person to follow you first before you deliver it, okay? So if it’s a prompt, a checklist, a guide, or a template, it can be by text, by message, to make it easier so you don't need to have all this structure, right? In my case, my content structure is my own SaaS that I created. So, for me, it makes sense to have everything in one place and pay to have a SaaS like this hosted here. So, for me, this makes sense. For you, maybe it doesn't make as much sense. You just need to organize this better in the best way you want, okay? You can create a new project, use Work, use Claude if you want, you can even use Chat, you can use the psyche one, you can use any tool you want to create a site, to create a project, and then you ask Chat itself to explain, to create an instruction prompt to build this project for you, okay? It will make it much easier for you to get organized in the future. And then, afterwards, comes the offer, right? So the person will comment, they'll open it, then they'll receive your reply, you'll send them a DM, they'll open your DM, they'll follow you, they'll receive the free content, and then there's the offer, which is the final delivery, right? Uh, generally a good conversion there revolves around 1 to 5%of the DMs you send. So, it's it's a good conversion, right? Really good. You'll get some very interesting organic growth, because Instagram will start promoting a lot of this content of yours. And down here we have some simple DM templates that you can use, okay? Some examples of of of connections that you can also use, like a course, a SaaS, look. In the case of a course, the carousel delivers a technique, the DM delivers a checklist, and the offer then presents a complete training. This here would be an example of a course-to-SaaS connection, look: the carousel delivers a tool or a process, the DM delivers a resource, and the offer then presents the software that simplifies or automates the process you delivered, right, this resource you delivered. So, for example, look, how how do I do this? In my case, the person comments here on on my on my Instagram, look, for example, this this carousel here has 5,000 comments. So, for example, the person saw here 12 things to install in Claude. Cool. Then they saw here, oh, plugins, these plugins here, skills, these these skills here. But I don't want to eh look for all of this here. How can I do to to have this in my in my Claude? I comment, so the person goes there, comments 01, they'll receive this guide . Then they received the guide, okay? The prompt for them to install everything on their cloud if they want to. But in case they want even more convenience, they can pay for the SaaS subscription. I don't even make a DM offer, okay? The person themselves goes inside the SaaS, they know the SaaS, they received the page for free, but they can pay if they want to, right? So , for example, look here, these are seven plugins here. Oh, cool. These plugins here, I have a prompt right above. But if I want to see other things, if I want to have access to these resource items here, how can I do that? I come to the chat and ask the chat here. That makes it a lot easier for the person. In other words, I sell that process that I deliver in the carousel for free, I sell it packaged for them inside the SaaS, right? So that's why there's a nice conversion. I recommend that you do the same thing there in your funnel down here. So we have the CTA delivery plus offer prompt , you see? Based on the carousel below and the product I sell, create a simple conversion strategy for DM comments. So here it will give you, look, 10 CTA keywords, a short CTA phrase, a CTA for the last card, ideas, free material ideas, it will give you all of this with this prompt here. Down here there are also some examples of bonus material, right, that I showed you a little while ago. So you can use that bonus to check hooks, ideas, and also verify your CTAs. You see here? There is quite a lot of stuff. When you go to look, there will probably be even more, right? I intend to update this course over time, to update the method, right? Here there is a prompt, here there are some rules for the deliverable, for example, the more tangible the material you create to give away for free, the better. So, I prefer, look, a guide with links and commands or more information. This is bad, right? It's not specific, there's no copy, no transformation, no promise, there's nothing. The ideal is that you say here , look, eight complete prompts for this content. So you have to be specific, you have to show what you want to deliver, it won't just be a generic word. So, for example, look, project plus installation prompt. It's more specific than just a tutorial. If, for example, I told you in this course, in the offer you saw on the VSL or the page, if you saw something like, \"oh, I'll teach you how to create carousels, \" I probably wouldn't buy it because it lacks specificity, right? You don't know what transformation I want to deliver to you. Actually, you don't understand the offer; you're not convinced by just a generic phrase. So you need to be more specific, and your deliverables also need to be specific so that people comment and save your content. So all of this is important for Instagram's metrics. Here is the final sentence to finish this lesson: the student needs to know exactly what arrives in the DM before commenting, okay? Actually, before finishing the lesson, I need to discuss the options you have. So, the first option you have is ManyChat, which is the most famous one, right? It's free to start, so you can get up to 1,500 customers for free, if I'm not mistaken, okay? Which is quite a lot. So, if you are starting your profile now, if you don't create content yet or if you create very little, don't have much of an audience or much reach, you can use ManyChat for a long time, okay? I remember that at the beginning, on another profile I had previously about the financial market, I used ManyChat for two or three months for free. I can use it for free because it has a generous free limit and it will help you a lot with this automation part, okay? There is also automation through Meta, but it's not that simple to set up and it's not available to everyone yet at the time of this video. Maybe when you watch the course it will already be released and you can do it more easily, but for now, it's not available. And the second tool I want to show you is Multipost. So, Multipost is like ManyChat, but it's open source, right? In this case, you only pay once to get access to Multipost and you can use it forever for your automations. So it will be priced at 297. It's not my product, okay? It's Macon's product. I don't know if you know Macon, he's very good. There's a really cool YouTube channel. And if you want to buy Multipost, there's a link down below, okay? There's my affiliate link right down here. If you buy through the link, I'll receive a portion of the value. If you want to buy directly from them too, it doesn't matter, okay? I'm just showing you the possibility here. I'm showing you this tool because it helped me a lot; it was this tool that made me grow with DM automation, you know? If it weren't for this automation, I probably wouldn't have grown half as much as I did; the carousel would still be good, the strategy would still be working, but I wouldn't be able to get comments or saves, right? So, it's the comments that make me deliver in the DMs, and the DM delivery that makes the person go to my SaaS and convert on my SaaS, okay? So this automation is essential for this to work well. So you can use ManyChat. Let me show you the automation from the inside, look. So here is the automation from the inside. Here I have my automations, see? The amount of automations I've already created. So there's quite a lot of stuff here already. And if you have any questions about installing the automation, Mar provides support, okay? Actually, he was the one who helped me install it here. He accessed my PC here via AnyDesk, you know? He installed it, and it helped me a ton. So that's why I'm doing this work of recommending his tool, okay? So there are these two options, one free, one that is paid. I'll leave the link below for you to buy MP, if you want. I'll see you in the next lesson.",
+        "duration_seconds": 662
+      },
+      "analysis": {
+        "id": "cc7cc79d-b8d5-4bc6-b57a-56662a0a9147",
+        "video_id": "876f9abb-1279-46d8-960d-595d13a32183",
+        "summary": "O vídeo apresenta estratégias de automação de DM no Instagram, destacando a importância da automação para aumentar o engajamento e as vendas, além de sugerir ferramentas pagas e gratuitas para implementar essas estratégias.",
+        "hook_analysis": "Nos primeiros 30-60 segundos, o apresentador introduz o tema da automação de DM, prometendo duas opções: uma paga e uma gratuita, enfatizando que a automação é essencial para o sucesso da estratégia de conteúdo no Instagram.",
+        "promise_analysis": "A promessa principal do vídeo é que a automação de DM pode aumentar significativamente o engajamento e as vendas no Instagram, utilizando uma estratégia de carrosséis e interações diretas.",
+        "structure_analysis": "O vídeo segue uma estrutura de introdução ao tema, apresentação de ferramentas, explicação da estratégia de engajamento e conversão, e finaliza com exemplos práticos e recomendações de ferramentas.",
+        "key_arguments": [
+          "A automação é essencial para o crescimento no Instagram.",
+          "O uso de carrosséis e DMs aumenta o engajamento e as vendas.",
+          "Existem opções gratuitas e pagas para automação."
+        ],
+        "proof_moments": [
+          "Demonstração de como a automação funciona no ManyChat.",
+          "Exemplos de conversões e engajamento através de DMs.",
+          "Discussão sobre resultados de engajamento e crescimento orgânico."
+        ],
+        "tools_mentioned": [
+          "ManyChat",
+          "Multipost",
+          "Claude",
+          "ChatGPT",
+          "Lovable"
+        ],
+        "why_it_worked": "O vídeo provavelmente performou bem devido à promessa clara de crescimento e engajamento no Instagram, a apresentação de ferramentas práticas e a estrutura lógica que guia o espectador através do processo de automação.",
+        "weaknesses": "O vídeo poderia ser mais conciso, com menos repetições, e algumas partes da explicação podem parecer confusas ou excessivamente técnicas para iniciantes.",
+        "confidence_level": "high"
+      },
+      "context_pack": {
+        "id": "ec3c9e6a-8af6-4dca-9786-c962ea4ce09b",
+        "trend_cluster_id": "74460a34-0db4-4388-b41d-fff4c6d10361",
+        "pack_version": "1.1",
+        "payload": {
+          "risks": [
+            "Dependência excessiva de automação pode prejudicar a interação humana.",
+            "Ferramentas podem ter custos que não se justificam para pequenos negócios."
+          ],
+          "trend": {
+            "id": "74460a34-0db4-4388-b41d-fff4c6d10361",
+            "name": "Automação de DM no Instagram",
+            "type": "workflow",
+            "status": "emerging",
+            "summary": "O vídeo apresenta estratégias de automação de mensagens diretas no Instagram, destacando ferramentas e métodos para aumentar engajamento e vendas.",
+            "macro_key": "workflow:manychat",
+            "macro_name": "ManyChat",
+            "raw_entities": [
+              "ManyChat",
+              "Multipost",
+              "Claude",
+              "ChatGPT",
+              "Lovable"
+            ],
+            "canonical_name": "ManyChat / Multipost",
+            "primary_entities": [
+              "ManyChat",
+              "Multipost",
+              "Claude",
+              "ChatGPT",
+              "Lovable"
+            ],
+            "secondary_entities": [
+              "Instagram",
+              "engajamento",
+              "vendas"
+            ],
+            "normalized_entities": [
+              {
+                "raw": "ManyChat",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "ManyChat",
+                "entity_type": "unknown"
+              },
+              {
+                "raw": "Multipost",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "Multipost",
+                "entity_type": "unknown"
+              },
+              {
+                "raw": "Claude",
+                "owner": "Anthropic",
+                "reason": "registry_match",
+                "confidence": "medium",
+                "normalized": "Claude",
+                "entity_type": "model"
+              },
+              {
+                "raw": "ChatGPT",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "ChatGPT",
+                "entity_type": "unknown"
+              },
+              {
+                "raw": "Lovable",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "Lovable",
+                "entity_type": "unknown"
+              }
+            ]
+          },
+          "quality": {
+            "flags": [
+              "single_source_cluster",
+              "missing_channel_baseline",
+              "missing_official_sources",
+              "secondary_sources_only",
+              "insufficient_snapshot_history"
+            ],
+            "score": 0.5,
+            "confidence": "low",
+            "confidence_reason": "Confidence low (score 0.5). transcript available, strong evidence. Limitations: single_source_cluster, missing_channel_baseline, missing_official_sources, secondary_sources_only, insufficient_snapshot_history."
+          },
+          "urgency": "low",
+          "evidence": [
+            {
+              "type": "demo",
+              "confidence": "high",
+              "description": "Demonstração de como a automação funciona no ManyChat."
+            },
+            {
+              "type": "claim",
+              "confidence": "high",
+              "description": "A automação pode aumentar significativamente o engajamento e as vendas."
+            },
+            {
+              "type": "workflow",
+              "confidence": "medium",
+              "description": "Estratégia de carrosséis e interações diretas para engajamento."
+            }
+          ],
+          "momentum": {
+            "status": "low",
+            "age_hours": 1515.30747,
+            "delta_views": null,
+            "acceleration": "unknown",
+            "cluster_size": 1,
+            "likes_per_view": 0,
+            "freshness_window": "7d+",
+            "velocity_windows": {
+              "1h": null,
+              "3h": null,
+              "6h": null,
+              "12h": null,
+              "24h": null
+            },
+            "comments_per_hour": 0,
+            "comments_per_view": 0,
+            "avg_views_per_hour": 0.01,
+            "max_views_per_hour": 0.01,
+            "delta_views_per_hour": null
+          },
+          "source_gaps": {
+            "notes": [],
+            "missing_official_sources": [
+              "Estatísticas de engajamento do Instagram",
+              "Estudos de caso sobre automação de DM"
+            ],
+            "missing_benchmark_sources": [],
+            "missing_comparison_sources": []
+          },
+          "generated_at": "2026-10-23T01:07:11.892Z",
+          "proof_points": [
+            "Exemplos de conversões e engajamento através de DMs.",
+            "Discussão sobre resultados de engajamento e crescimento orgânico."
+          ],
+          "quality_flags": [
+            "single_source_cluster",
+            "missing_channel_baseline",
+            "missing_official_sources",
+            "secondary_sources_only",
+            "insufficient_snapshot_history"
+          ],
+          "related_links": [
+            {
+              "url": "https://carrosseisquevendem.com.br/",
+              "title": "carrosseisquevendem.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://www.iacoding.com.br",
+              "title": "iacoding.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://t.me/+51crAT5FRFY2MTdh",
+              "title": "t.me",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            }
+          ],
+          "source_videos": [
+            {
+              "url": "https://www.youtube.com/watch?v=QRwxq7bqWwo",
+              "title": "Aula 07   O Comentário → DM → Oferta",
+              "views": 21,
+              "market": "unknown",
+              "channel": null,
+              "source_role": "trend_signal",
+              "published_at": "2026-08-20T21:48:45+00:00",
+              "views_per_hour": 0.01,
+              "baseline_multiplier": null,
+              "transcript_available": true
+            }
+          ],
+          "market_context": {
+            "copycat_risk": "low",
+            "brazilian_signal": "not_detected",
+            "saturation_level": "low",
+            "international_signal": "not_detected"
+          },
+          "open_questions": [
+            "Qual é o impacto a longo prazo da automação nas relações com clientes?",
+            "Quais são as melhores práticas para equilibrar automação e interação humana?"
+          ],
+          "brazilian_market": {
+            "signal": "not_detected",
+            "channels": [],
+            "copycat_risk": "low",
+            "source_count": 0,
+            "coverage_angles": [],
+            "opportunity_gap": null,
+            "repeated_angles": [],
+            "first_detected_at": null,
+            "saturation_reason": "No Brazilian source detected.",
+            "avg_views_per_hour": null,
+            "latest_detected_at": null,
+            "max_views_per_hour": null,
+            "recommended_positioning_gap": null
+          },
+          "confidence_level": "high",
+          "official_sources": [],
+          "technical_details": {
+            "complexity": "medium",
+            "requires_repo": false,
+            "demo_feasibility": "high",
+            "visual_demo_quality": "medium",
+            "requires_installation": true
+          },
+          "best_action_window": {
+            "reason": "signal is older than 7 days",
+            "confidence": "low",
+            "publish_within_hours": null
+          },
+          "why_it_is_trending": [
+            "A crescente necessidade de automação nas redes sociais para otimizar o engajamento.",
+            "A popularidade do Instagram como plataforma de marketing.",
+            "O aumento do interesse em ferramentas que facilitam a comunicação direta com clientes."
+          ],
+          "transcript_insights": {
+            "summary": "O vídeo apresenta estratégias de automação de DM no Instagram, destacando a importância da automação para aumentar o engajamento e as vendas, além de sugerir ferramentas pagas e gratuitas para implementar essas estratégias.",
+            "weaknesses": "O vídeo poderia ser mais conciso, com menos repetições, e algumas partes da explicação podem parecer confusas ou excessivamente técnicas para iniciantes.",
+            "proof_moments": [
+              "Demonstração de como a automação funciona no ManyChat.",
+              "Exemplos de conversões e engajamento através de DMs.",
+              "Discussão sobre resultados de engajamento e crescimento orgânico."
+            ],
+            "tools_mentioned": [
+              "ManyChat",
+              "Multipost",
+              "Claude",
+              "ChatGPT",
+              "Lovable"
+            ]
+          },
+          "context_pack_version": "1.1"
+        }
+      }
+    },
+    {
+      "video": {
+        "id": "9880e0c0-b288-409d-96cb-f8f34bdaad62",
+        "youtube_video_id": "bvDw6TPoU8I",
+        "title": "Aula 08   Sistema Completo + Desafio de 30 Minutos",
+        "url": "https://www.youtube.com/watch?v=bvDw6TPoU8I",
+        "description": "Criar o SaaS é fácil, fazer sua primeira venda também pode ser com esse método: https://carrosseisquevendem.com.br/ Treinamento: https://www.iacoding.com.br\nComunidade Telegram: https://t.me/+51crAT5FRFY2MTdh",
+        "thumbnail_url": "https://i.ytimg.com/vi/bvDw6TPoU8I/maxresdefault.jpg",
+        "published_at": "2026-08-20T21:53:20+00:00",
+        "duration_seconds": 397,
+        "views": 15,
+        "views_per_hour": 0.01,
+        "like_count": 0,
+        "comment_count": 0,
+        "technical_score": 23.79
+      },
+      "transcript": {
+        "id": "4bcd19b7-55dd-4de7-844f-1f0496a3cde3",
+        "video_id": "9880e0c0-b288-409d-96cb-f8f34bdaad62",
+        "source": "external_transcription_api",
+        "language": "asr-en",
+        "confidence": "high",
+        "text": "So, here is the last lesson of this training you purchased. I hope this has been useful to you, and not just useful , but I hope you have applied what I said here, because each lesson has an application method, each lesson has a specific step, it is a unique method, right, which is the pact. Every word makes sense, so you need to follow them , follow it exactly in order so that you can create yours, okay? And in this lesson here, eight, I will show you the general instruction for your project, right? Remember I was supposed to show you this and you haven't seen it yet, so I didn't forget. It's right here, okay? Look, you will go to your project , you will come here to project settings and here there is the instruction part, see? So this is what you will put, this complete prompt here , okay? So I came here, copied it, I will come here, here is the design kit, I will paste it here, okay? But you don't need to paste anything here because it will already read from the context of the files you have already uploaded. So you don't need to worry about pasting anything there, okay? It will already read it automatically. And down here there are simple commands for your day-to-day. So what will you do? Every morning or whenever you want to create your carousels, you will take this prompt here and paste it. Then it will generate ideas, it will generate the first stage of the process there, which are the outlines. After that, it will generate the architecture of your content. You will choose which type of architecture you will want, right? In this case, after that, after the outlines and the architecture, you will have the copy part there that you will need. You have already received the complete prompt, you already have all of that ready in your ChatGPT. After that, you will have the design kit, I mentioned it a little while ago, right? So here, guys, you will even have two bonuses, okay? Which in a moment I will show you there in the T, which is you will have it create the carousel where you will really show all of this in practice, right? And the last letter, which is the O, is the offer, right? It's where you will really convert then your lead, your audience, which is the comment in the DM, it's the save. Then there are also the stories that you can use, right? So if you have a lot, if you even start building an audience, this audience starts to grow, people start saving your posts, start commenting, they will follow you and automatically they will see your stories. I recommend that you use stories only to make offers, right? or you can do Q&A boxes, Q&A, offer, Q&A, offer, Q&A, offer. Don't keep posting random things, because few people see stories nowadays, it's not as big as it was until a while ago. So, take advantage of the time you have on stories to do Q&A and make offers, Q&A, offer, and Q&A, offer. Then when you start to grow and when, if you show your face in the business, you can post whatever you want, right? But I strongly recommend posting Q&A and offers. That would be the main focus of the stories, okay? And then, over time you will learn what works best, what also worked best for you. You will learn which content generated the most engagement and you will repeat them, then, with several different angles. You will just write, repeat the same angle. You will take a screenshot of the carousel you created that worked well and will ask to generate angle variables, positioning variables, CTA, anyway, all of this is described here in the files you uploaded. So, you don't need to worry about adding new files, you don't need to worry about explaining your business again. All of this will be ready here for you to just ask for what you want. It will generate it for you automatically. So, okay? So here, look, in these two bonuses that I mentioned, there will be the replication part here, which is precisely what you are going to replicate, right? that carousel that you made that worked well and you want to make another one, you will copy this prompt here. So the prompt is precisely the winner replicator. You can put it as a source or you can use it as a chat , it's up to you, okay? that is at your discretion. It will generate with this prompt here 10 new ideas divided into three close variations, three new angles for the same problem, two more specific versions, and two adjacent ideas for the same audience. So, there are 10 different ideas with text. If you liked an idea, take the text of the idea you liked, create a new chat, generate a text, if you liked the text, want to change something, change it right there, ask it to generate the carousel, and that’s it. You will have several carousels ready every day. You can generate three, four a day, even more, if you want. Yeah, eh, if you generate four a day and you have a paid plan, it will run out fast, okay? Just being honest with you here. So, if when you start making money with this, I recommend that you pay for a more expensive plan. You get the $ 500 a month plan. Wow, but that’s very expensive. No, it’s not expensive because it will generate a return for you, right? It is what will generate your income. So it’s not expensive because you pay, it’s an investment you make to be able to create such a volume of carousels, right? Eh, if you generate two a day there, you won't need it, okay? But if you want to generate a lot per day, you will need to upgrade your plan sooner or later. And the other bonus here would be the challenge, which is the first carousel in 30 minutes. You will have here the whole description of what you can do to generate the whole carousel here. It's basically the method I explained to you here, summarized. So I have content plan, architecture, copy, visual, and conversion and publication. So here is the whole challenge for you to generate . Then you can take this bonus here and generate whatever carousel you want. Got it? And if you didn't understand something, eh, you can comment down here in the lesson, okay? Feel free, I will answer here. Or you can send an email if it's very urgent, okay? Maybe I'll take a while to answer you, but if it's something very urgent, I'll answer faster, okay, got it? So, if it’s a, if it’s a question about content creation, something like that, eh, I won't be able to answer you, man, being honest, because, especially if you send it through Instagram, because through Instagram I can't answer, no chance, because Instagram has too many messages here, see, look? 1 minute, 3, 11, 12, 14, 17, it's too many messages all day long, so I can't answer, I can't even see the messages here, actually, because it's too much, okay? So, if any question is about access, like, ah, I had a problem accessing the class, watching the lesson, then you can send it to me. But if it's a question about content and such, I recommend that you ask your own ChatGPT, as it will understand more than I do, even about your business, and will be able to help you much better than I could. Awesome. So, for this course, that’s it for now, right? Maybe when you see some more bonus items here that I’ll provide over time, but for now, this would be the practical method for you to create carousels, build an audience with your carousel, and convert to a product. I hope it has been useful for you. And if it was useful, eh, rate the lessons here, and rate the course as well. We’re in this together. I’ll see you in the next course or the next lesson.",
+        "duration_seconds": 397
+      },
+      "analysis": {
+        "id": "62573447-73f9-4da3-9711-f07fa81ef031",
+        "video_id": "9880e0c0-b288-409d-96cb-f8f34bdaad62",
+        "summary": "O vídeo apresenta a última lição de um treinamento sobre criação de carousels, detalhando um método específico para gerar conteúdo e engajar a audiência usando prompts no ChatGPT.",
+        "hook_analysis": "Nos primeiros 30-60 segundos, o apresentador introduz a última lição do treinamento e menciona a importância de seguir as instruções para aplicar o método proposto, criando expectativa sobre o que será ensinado.",
+        "promise_analysis": "O vídeo promete ensinar um método prático e estruturado para criar carousels que ajudam a construir uma audiência e converter leads em vendas.",
+        "structure_analysis": "O vídeo é estruturado em torno de uma lição prática, com explicações passo a passo sobre como usar um prompt específico no ChatGPT para gerar conteúdo, além de bônus e desafios.",
+        "key_arguments": [
+          "Método único chamado 'pact' para criação de carousels",
+          "Importância de seguir as instruções exatamente",
+          "Uso de prompts para gerar ideias e conteúdo",
+          "Recomendações sobre o uso de stories para engajamento e ofertas"
+        ],
+        "proof_moments": [
+          "Demonstração de como copiar e colar o prompt no design kit",
+          "Explicação sobre a geração automática de ideias e carousels",
+          "Desafio de criar um carousel em 30 minutos"
+        ],
+        "tools_mentioned": [
+          "ChatGPT",
+          "Design Kit"
+        ],
+        "why_it_worked": "O vídeo provavelmente performou bem devido à promessa clara de um método prático e aplicável, a estrutura passo a passo que facilita a compreensão e a inclusão de provas concretas como demonstrações e desafios.",
+        "weaknesses": "A narrativa poderia ser mais concisa, e a promessa de resultados rápidos pode parecer exagerada sem exemplos concretos de sucesso. Além disso, a dependência de um software pago pode desestimular alguns espectadores.",
+        "confidence_level": "high"
+      },
+      "context_pack": {
+        "id": "c899591d-12df-4e8b-a6ba-bfa0f915c812",
+        "trend_cluster_id": "b90d836f-55dd-45ec-a4d2-5f36891cb028",
+        "pack_version": "1.1",
+        "payload": {
+          "risks": [
+            "A dependência de um software pago pode desestimular alguns espectadores.",
+            "A promessa de resultados rápidos pode parecer exagerada sem exemplos concretos de sucesso."
+          ],
+          "trend": {
+            "id": "b90d836f-55dd-45ec-a4d2-5f36891cb028",
+            "name": "Método de Criação de Carousels com ChatGPT",
+            "type": "tutorial_pattern",
+            "status": "emerging",
+            "summary": "O vídeo apresenta um método prático para criar carousels utilizando prompts no ChatGPT, visando engajar a audiência e converter leads em vendas.",
+            "macro_key": "tutorial-pattern:chatgpt",
+            "macro_name": "ChatGPT",
+            "raw_entities": [
+              "ChatGPT",
+              "Design Kit"
+            ],
+            "canonical_name": "ChatGPT / Design Kit",
+            "primary_entities": [
+              "ChatGPT",
+              "Design Kit"
+            ],
+            "secondary_entities": [
+              "carousels",
+              "engajamento",
+              "leads"
+            ],
+            "normalized_entities": [
+              {
+                "raw": "ChatGPT",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "ChatGPT",
+                "entity_type": "unknown"
+              },
+              {
+                "raw": "Design Kit",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "Design Kit",
+                "entity_type": "unknown"
+              }
+            ]
+          },
+          "quality": {
+            "flags": [
+              "single_source_cluster",
+              "missing_channel_baseline",
+              "missing_official_sources",
+              "secondary_sources_only",
+              "insufficient_snapshot_history"
+            ],
+            "score": 0.5,
+            "confidence": "low",
+            "confidence_reason": "Confidence low (score 0.5). transcript available, strong evidence. Limitations: single_source_cluster, missing_channel_baseline, missing_official_sources, secondary_sources_only, insufficient_snapshot_history."
+          },
+          "urgency": "low",
+          "evidence": [
+            {
+              "type": "demo",
+              "confidence": "high",
+              "description": "Demonstração de como copiar e colar o prompt no design kit."
+            },
+            {
+              "type": "workflow",
+              "confidence": "high",
+              "description": "Explicação sobre a geração automática de ideias e carousels."
+            },
+            {
+              "type": "claim",
+              "confidence": "medium",
+              "description": "Desafio de criar um carousel em 30 minutos."
+            }
+          ],
+          "momentum": {
+            "status": "low",
+            "age_hours": 1515.2482038888888,
+            "delta_views": null,
+            "acceleration": "unknown",
+            "cluster_size": 1,
+            "likes_per_view": 0,
+            "freshness_window": "7d+",
+            "velocity_windows": {
+              "1h": null,
+              "3h": null,
+              "6h": null,
+              "12h": null,
+              "24h": null
+            },
+            "comments_per_hour": 0,
+            "comments_per_view": 0,
+            "avg_views_per_hour": 0.01,
+            "max_views_per_hour": 0.01,
+            "delta_views_per_hour": null
+          },
+          "source_gaps": {
+            "notes": [],
+            "missing_official_sources": [
+              "Estudos de caso sobre a eficácia de carousels em marketing digital.",
+              "Dados sobre a utilização do ChatGPT em estratégias de conteúdo."
+            ],
+            "missing_benchmark_sources": [],
+            "missing_comparison_sources": []
+          },
+          "generated_at": "2026-10-23T01:08:13.534Z",
+          "proof_points": [
+            "Método único chamado 'pact' para criação de carousels.",
+            "Importância de seguir as instruções exatamente para resultados eficazes."
+          ],
+          "quality_flags": [
+            "single_source_cluster",
+            "missing_channel_baseline",
+            "missing_official_sources",
+            "secondary_sources_only",
+            "insufficient_snapshot_history"
+          ],
+          "related_links": [
+            {
+              "url": "https://carrosseisquevendem.com.br/",
+              "title": "carrosseisquevendem.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://www.iacoding.com.br",
+              "title": "iacoding.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://t.me/+51crAT5FRFY2MTdh",
+              "title": "t.me",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            }
+          ],
+          "source_videos": [
+            {
+              "url": "https://www.youtube.com/watch?v=bvDw6TPoU8I",
+              "title": "Aula 08   Sistema Completo + Desafio de 30 Minutos",
+              "views": 15,
+              "market": "unknown",
+              "channel": null,
+              "source_role": "trend_signal",
+              "published_at": "2026-08-20T21:53:20+00:00",
+              "views_per_hour": 0.01,
+              "baseline_multiplier": null,
+              "transcript_available": true
+            }
+          ],
+          "market_context": {
+            "copycat_risk": "low",
+            "brazilian_signal": "not_detected",
+            "saturation_level": "low",
+            "international_signal": "not_detected"
+          },
+          "open_questions": [
+            "Quais são os resultados reais obtidos por usuários que aplicaram o método?",
+            "Como o método se compara a outras estratégias de criação de conteúdo?"
+          ],
+          "brazilian_market": {
+            "signal": "not_detected",
+            "channels": [],
+            "copycat_risk": "low",
+            "source_count": 0,
+            "coverage_angles": [],
+            "opportunity_gap": null,
+            "repeated_angles": [],
+            "first_detected_at": null,
+            "saturation_reason": "No Brazilian source detected.",
+            "avg_views_per_hour": null,
+            "latest_detected_at": null,
+            "max_views_per_hour": null,
+            "recommended_positioning_gap": null
+          },
+          "confidence_level": "high",
+          "official_sources": [],
+          "technical_details": {
+            "complexity": "medium",
+            "requires_repo": false,
+            "demo_feasibility": "high",
+            "visual_demo_quality": "high",
+            "requires_installation": true
+          },
+          "best_action_window": {
+            "reason": "signal is older than 7 days",
+            "confidence": "low",
+            "publish_within_hours": null
+          },
+          "why_it_is_trending": [
+            "A crescente popularidade de ferramentas de IA como o ChatGPT para geração de conteúdo.",
+            "A demanda por métodos práticos e estruturados de marketing digital.",
+            "O uso de carousels como uma estratégia eficaz de engajamento nas redes sociais."
+          ],
+          "transcript_insights": {
+            "summary": "O vídeo apresenta a última lição de um treinamento sobre criação de carousels, detalhando um método específico para gerar conteúdo e engajar a audiência usando prompts no ChatGPT.",
+            "weaknesses": "A narrativa poderia ser mais concisa, e a promessa de resultados rápidos pode parecer exagerada sem exemplos concretos de sucesso. Além disso, a dependência de um software pago pode desestimular alguns espectadores.",
+            "proof_moments": [
+              "Demonstração de como copiar e colar o prompt no design kit",
+              "Explicação sobre a geração automática de ideias e carousels",
+              "Desafio de criar um carousel em 30 minutos"
+            ],
+            "tools_mentioned": [
+              "ChatGPT",
+              "Design Kit"
+            ]
+          },
+          "context_pack_version": "1.1"
+        }
+      }
+    },
+    {
+      "video": {
+        "id": "b0dc48cb-eac1-4811-850a-59276a454b5b",
+        "youtube_video_id": "SkJWJMKwy6I",
+        "title": "Aula 1   A prova + Método PACTO",
+        "url": "https://www.youtube.com/watch?v=SkJWJMKwy6I",
+        "description": "Criar o SaaS é fácil, fazer sua primeira venda também pode ser com esse método: https://carrosseisquevendem.com.br/ Treinamento: https://www.iacoding.com.br\nComunidade Telegram: https://t.me/+51crAT5FRFY2MTdh",
+        "thumbnail_url": "https://i.ytimg.com/vi/SkJWJMKwy6I/maxresdefault.jpg",
+        "published_at": "2026-08-20T21:34:08+00:00",
+        "duration_seconds": 673,
+        "views": 93,
+        "views_per_hour": 0.06,
+        "like_count": 0,
+        "comment_count": 0,
+        "technical_score": 26.5
+      },
+      "transcript": {
+        "id": "5ef6260f-afe9-4610-858f-c77a8f7a04a4",
+        "video_id": "b0dc48cb-eac1-4811-850a-59276a454b5b",
+        "source": "external_transcription_api",
+        "language": "asr-en",
+        "confidence": "high",
+        "text": "Before I teach you anything, I want to prove that what you saw on the page and the offer you followed to purchase, right, really happened and really works , okay? So here, look, I have my Instagram Analytics open. You can see that the number you saw on the page is actually real, so I reached 1.1 million views in the last 30 days. Here we can see that most of these views are from non-followers, right? Actually, it would be much higher, it's just that a good part of this audience here, look, ended up following me, so this number became a little more balanced, okay? So , if we look down here a little bit, the main content based on these 1.1 million views, most are carousels, all of them are carousels, actually, right? And you see that if I click here, for example, it will take me to this specific carousel, right? And I can see that just this carousel here, for example, brought in 112,000 views. It brought me here, uh, let me see if I can see the number of followers. Just this carousel brought me practically 1,000 followers, right? Which is quite interesting. Only one carousel brought me all of this, right? And if I close this, for example, I see that the others don't stray far from this analysis, from this parameter. So, this carousel here brought me 83,000 views and just this carousel brought me 595 followers, which is quite a lot, right? So, what I showed you on the page, in the offer, is not a lie. These carousels really work and they all have some specific mechanisms, some specific frameworks that I will show you here in this complete training. The goal is for you to learn as quickly as possible, as directly as possible, without me dragging it out. Another number you saw that I showed on the page, in the offer , was that I created a SaaS and this SaaS went from zero to 2,600 on average over 20 days, right? Actually, it was less, it was 18 days. Let me show you here so I can prove it to you, okay? So you can see that the day I started promoting this SaaS here was the 2nd, right? So from the 2nd to today, August 20th, I am at 78 active subscriptions, 2,553 BRL in commission, right? And the MRR is here, in this case, 2,553 BRL. I haven't had any refunds yet; there will probably be some others next month that will come through. It's normal, right? This happens with every type of application. But what I mean by this is that everything you saw on the page wasn't a lie; it's the truth. In this case, I really did reach this number of people. My profile went from 3,000 followers to 12,400 at the time of this video. And I'm sure that when you check my follower count, it will be higher than what is here, because I gain an average of 200 to 300 followers a day just with carousels, okay? There are some small videos here too, but most of my content is centered around carousels . My product itself is a SaaS, but the method doesn't depend on a SaaS. You can use it to sell a course, you can use it to sell a service, an app, a consultancy, or a community. Anything that depends on an audience to make a sale, you can use the carousel to build that audience, and the sale will practically become a consequence of a well-made carousel, okay? So, that's what I had to show here, that I am proving to you that what you bought is truly the truth. Now, the question is: how did I manage to create these carousels that attract so much attention and, consequently, attract a large audience and also convert into a final sale, right? Basically, I created a method called the Pact Method. This method is divided into five stages, and this training will be exactly explaining each stage. And I won't just explain it to you, I will deliver this entire system to you. Done. You basically don't have to do anything, you don't need to think, you don't need to learn copy, you don't need to learn design, none of that. I will hand all of that to you. Done, you will just replicate the method here, okay? So, look, this course isn't just about making pretty posts or doing well-made design; it's about attracting your audience's attention, attracting or creating that audience, right? delivering utility to your audience, generating comments and saves, which are the two most important metrics when analyzing a carousel, and then leading this user from your Instagram to an offer and then converting, right? So, AI comes in to reduce the cost of this carousel you'll have and the production time as well, which was generally very difficult before AI if you wanted to create a carousel in this style, right? everything is drawn, all illustrated, but nowadays it's much easier and I'll show you my step-by-step process here. So this method is basically divided into five stages, which are explained here. Each letter of the \"pacto\" acronym here represents a stage. In this case, the first stage we will follow is always the agenda, right? In other words, we will find ideas that are interesting, we will find references, find trends, we will see your own content that you've already created to reuse in a carousel, for example, or look at a real problem your audience has, or research it. So, I'm going to show you all these processes so you can have each one in the palm of your hand, right there on your phone, okay? The next step of this method is the letter A, which refers to architecture, meaning how the idea will be organized. So the architecture will define the logical sequence of the carousel cards, right? For example, we see that a carousel has several cards, right? Notice that each of these cards is a specific design, showing something specific, right? So, when we talk about architecture, it’s about how we will organize these carousel stages, right? so that it makes sense. And I'll tell you right now that I'm going to give you several ways to do it, several different logics. I will give you all of this ready-made. There are five carousel frameworks that I will give you here, all ready to use. You don't need to worry about learning each one of them because everything will be ready for you to just copy and paste, okay? And here in part three, with the letter C, we have the copy, which is precisely what goes into the text of your carousel. It’s no use just making a beautiful design, it needs to be something that is truly persuasive, that is aggressive, and that encourages the person to comment, to save, that it’s useful information, for example. So, all of this goes here under copy. I won't teach you copy in this course, you'll have everything ready-made, right? So, you don't need to worry about what converts, what doesn't convert, what is persuasion, what isn't persuasion. Rest easy regarding that. And here in the T, it would be the visual treatment of the carousel, right ? You can see that my carousel has a specific design. So it has, for example , cream, it has black, it has orange, and it has that beige tone, and a lot of illustrations, right? You can see that there are quite a lot of drawings in these carousels. So, this is on purpose, right? I really do this on purpose. For example, this one here. And all the designs here follow an illustration, which in this case is this little orange character, right? So you see that this is on purpose, and it is precisely here that we are in the visual treatment part, right? All of this fits into this letter T. So, this is on purpose. The text doesn't need to take up that much space in your carousel. And not only that, when a person comments on this post, for example, look, you see there are many comments here, right? I won't even show them because we'd be scrolling forever, but basically, when a person comments here, they go to a page I created myself within my app, within my SaaS, and they will be able to get that page for free. And on that page, in that SaaS, the design stays the same; it continues in the same way, okay? So this is what I call visual continuity, and I will also show you how you can do this. I will give you all of this for free in a prompt—well, not free, since you paid, right? But you get what I mean, you'll get the whole system ready for you to just copy and paste. And here, the \"O\" stands for offer, which is the final stage of this method , the PACTO method, where you use the content you're generating to build an audience and convert, to sell whatever it is—a course, an app, a service— whatever you want to sell on the internet, you can use carousels to build an audience and also use carousels to create your offer and convert your public, your audience. One of the things I really like to comment on regarding content creation for Instagram is that, nowadays, volume matters much more than content quality, okay? My carousels are like this—not to brag, but all of them are useful, all of them are very, very good, but some perform better than others. Why? Because sometimes the audience is more interested in one topic, sometimes that audience is looking more for one topic than another. It’s part of the process, okay? Eh, and what do we learn from this, right? What can we learn from this, from this issue? Here, volume is much more important. So you have to produce in volume, okay? You have to make three to four carousels a day so you can really understand what your audience wants from you. You’re going to publish without trying to guess which one will do well, which one won't, you’ll simply post, observe which one has more reach, observe two metrics that are the most important, which are comments and saves, okay? So if these two metrics are high, it’s a good sign for your carousel. Then, what are you going to do in step four? You are going to identify why that carousel worked out. Actually, you’re going to ask it to identify that for you, since we’re going to create a whole project right here inside Ya. You’ll soon see how this is going to work, right? And here in step five, which is the final step, you will generate new versions preserving the reason why that carousel worked. And you will alternate the theme a little bit, alternate your hook , alternate the example, the angle, the positioning; you will alternate all of that. So you can see that here on my Instagram, for example, I have this carousel that talks about design skills . I have this carousel here that says the same thing, which are design skills too, right? Some of these mix it up, right? For example, this one is about design, right? I have several carousels that talk about the same thing, I just change the angle, change the cover, change the design, basically change everything. But the theme remains practically the same. So, to wrap this up on a high note, keep these two phrases in mind. Don't try to predict the winner. Produce fast enough so that you can find out which one is the winner. So, don't keep thinking like: \" Oh, this one turned out bad, this one turned out good, I'll post this, this one turned out bad, I won't post it.\" No. Post anyway and see, let the audience test which one is good, which one isn't, okay? Over time, you will learn what works and what doesn't; you will get a feel for what your audience wants from you. But, since you probably don't have that yet, the ideal is to create in volume and keep creating in volume even after you find your rhythm, okay? The i-this is the main method you'll have, because I produce about three to four carousels a day, and 10 to 15 reels a day too, although carousels bring me much more results, right? Reels are also quite cool because it's my way of practicing my speech, my communication, and my persuasion skills, which is very important to me, but carousels are what bring the most results, especially in sales and followers. So, uh, carousels matter much more. And here is the second thing I want to tell you: you need to copy the reason why a carousel of yours worked, not copy the entire content word for word, okay? You will see that we will use some carousel modeling methods here, which I will teach you, but let's leave that for the next lesson. And now in the next lesson , we will really get started for real. We will create a schedule and set up your business; we will ask it to actually configure everything so it’s ready for you, so that on the day you want to create a carousel, you can just say: \"Hey, give me four topics.\" Then you'll read the texts, generate the images, post it, and that's it. All of this will be ready for you, so you can simply arrive, open your phone, pick which topic you want, and you're done.",
+        "duration_seconds": 673
+      },
+      "analysis": {
+        "id": "cd0b38ef-ee5d-44c3-ad34-0572695e4c83",
+        "video_id": "b0dc48cb-eac1-4811-850a-59276a454b5b",
+        "summary": "O vídeo apresenta a prova de resultados obtidos através de carousels no Instagram e introduz o Método PACTO, que ensina a criar carousels eficazes para atrair audiência e gerar vendas.",
+        "hook_analysis": "Nos primeiros 30-60 segundos, o apresentador mostra suas análises do Instagram, destacando que alcançou 1.1 milhão de visualizações e 12.400 seguidores, provando a eficácia dos carousels.",
+        "promise_analysis": "O vídeo promete ensinar como criar carousels que atraem audiência e geram vendas, utilizando o Método PACTO.",
+        "structure_analysis": "O vídeo começa com uma prova de resultados, seguida pela introdução do Método PACTO, que é dividido em cinco etapas, cada uma explicada detalhadamente.",
+        "key_arguments": [
+          "1.1 milhão de visualizações em 30 dias",
+          "Crescimento de seguidores de 3.000 para 12.400",
+          "Método PACTO dividido em cinco etapas"
+        ],
+        "proof_moments": [
+          "Demonstração de análises do Instagram com números reais",
+          "Exibição de carousels que geraram visualizações e seguidores",
+          "Resultados financeiros do SaaS criado"
+        ],
+        "tools_mentioned": [
+          "Instagram",
+          "SaaS",
+          "Método PACTO"
+        ],
+        "why_it_worked": "O vídeo provavelmente performou bem devido à forte prova social apresentada, com números concretos que demonstram resultados tangíveis, além de uma promessa clara e um método estruturado.",
+        "weaknesses": "A narrativa pode parecer exagerada em relação à facilidade de replicação do método, e a falta de exemplos visuais diretos do processo de criação dos carousels pode deixar algumas dúvidas.",
+        "confidence_level": "high"
+      },
+      "context_pack": {
+        "id": "56c1e39c-d9a6-4707-a380-8ecd200d0158",
+        "trend_cluster_id": "1859404e-66c3-4f6e-830a-7d1b6b1e8649",
+        "pack_version": "1.1",
+        "payload": {
+          "risks": [
+            "Narrativa pode parecer exagerada em relação à facilidade de replicação do método",
+            "Falta de exemplos visuais diretos do processo de criação dos carousels"
+          ],
+          "trend": {
+            "id": "1859404e-66c3-4f6e-830a-7d1b6b1e8649",
+            "name": "Método PACTO para Carousels no Instagram",
+            "type": "tutorial_pattern",
+            "status": "emerging",
+            "summary": "O vídeo introduz o Método PACTO, que ensina a criar carousels eficazes no Instagram, prometendo atrair audiência e gerar vendas.",
+            "macro_key": "tutorial-pattern:metodo-pacto",
+            "macro_name": "Método PACTO",
+            "raw_entities": [
+              "Método PACTO",
+              "Instagram"
+            ],
+            "canonical_name": "Método PACTO / Instagram",
+            "primary_entities": [
+              "Método PACTO",
+              "Instagram"
+            ],
+            "secondary_entities": [
+              "SaaS"
+            ],
+            "normalized_entities": [
+              {
+                "raw": "Método PACTO",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "Método PACTO",
+                "entity_type": "unknown"
+              },
+              {
+                "raw": "Instagram",
+                "reason": "as_is",
+                "confidence": "low",
+                "normalized": "Instagram",
+                "entity_type": "unknown"
+              }
+            ]
+          },
+          "quality": {
+            "flags": [
+              "single_source_cluster",
+              "missing_channel_baseline",
+              "missing_official_sources",
+              "secondary_sources_only",
+              "insufficient_snapshot_history"
+            ],
+            "score": 0.5,
+            "confidence": "low",
+            "confidence_reason": "Confidence low (score 0.5). transcript available, strong evidence. Limitations: single_source_cluster, missing_channel_baseline, missing_official_sources, secondary_sources_only, insufficient_snapshot_history."
+          },
+          "urgency": "low",
+          "evidence": [
+            {
+              "type": "demo",
+              "confidence": "high",
+              "description": "Demonstração de análises do Instagram com números reais"
+            },
+            {
+              "type": "claim",
+              "confidence": "high",
+              "description": "Crescimento de seguidores de 3.000 para 12.400"
+            },
+            {
+              "type": "metric",
+              "confidence": "high",
+              "description": "1.1 milhão de visualizações em 30 dias"
+            }
+          ],
+          "momentum": {
+            "status": "low",
+            "age_hours": 1515.4518508333333,
+            "delta_views": null,
+            "acceleration": "unknown",
+            "cluster_size": 1,
+            "likes_per_view": 0,
+            "freshness_window": "7d+",
+            "velocity_windows": {
+              "1h": null,
+              "3h": null,
+              "6h": null,
+              "12h": null,
+              "24h": null
+            },
+            "comments_per_hour": 0,
+            "comments_per_view": 0,
+            "avg_views_per_hour": 0.06,
+            "max_views_per_hour": 0.06,
+            "delta_views_per_hour": null
+          },
+          "source_gaps": {
+            "notes": [],
+            "missing_official_sources": [
+              "Estatísticas de engajamento do Instagram",
+              "Estudos sobre eficácia de carousels em redes sociais"
+            ],
+            "missing_benchmark_sources": [],
+            "missing_comparison_sources": []
+          },
+          "generated_at": "2026-10-23T01:01:14.663Z",
+          "proof_points": [
+            "Resultados financeiros do SaaS criado",
+            "Exibição de carousels que geraram visualizações e seguidores"
+          ],
+          "quality_flags": [
+            "single_source_cluster",
+            "missing_channel_baseline",
+            "missing_official_sources",
+            "secondary_sources_only",
+            "insufficient_snapshot_history"
+          ],
+          "related_links": [
+            {
+              "url": "https://carrosseisquevendem.com.br/",
+              "title": "carrosseisquevendem.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://www.iacoding.com.br",
+              "title": "iacoding.com.br",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            },
+            {
+              "url": "https://t.me/+51crAT5FRFY2MTdh",
+              "title": "t.me",
+              "confidence": "low",
+              "source_role": "related_link",
+              "source_type": "related_link",
+              "discovered_from": "video_description"
+            }
+          ],
+          "source_videos": [
+            {
+              "url": "https://www.youtube.com/watch?v=SkJWJMKwy6I",
+              "title": "Aula 1   A prova + Método PACTO",
+              "views": 93,
+              "market": "unknown",
+              "channel": null,
+              "source_role": "trend_signal",
+              "published_at": "2026-08-20T21:34:08+00:00",
+              "views_per_hour": 0.06,
+              "baseline_multiplier": null,
+              "transcript_available": true
+            }
+          ],
+          "market_context": {
+            "copycat_risk": "low",
+            "brazilian_signal": "not_detected",
+            "saturation_level": "low",
+            "international_signal": "not_detected"
+          },
+          "open_questions": [
+            "Qual é a taxa de sucesso real do Método PACTO em diferentes nichos?",
+            "Como o método se compara a outras estratégias de marketing no Instagram?"
+          ],
+          "brazilian_market": {
+            "signal": "not_detected",
+            "channels": [],
+            "copycat_risk": "low",
+            "source_count": 0,
+            "coverage_angles": [],
+            "opportunity_gap": null,
+            "repeated_angles": [],
+            "first_detected_at": null,
+            "saturation_reason": "No Brazilian source detected.",
+            "avg_views_per_hour": null,
+            "latest_detected_at": null,
+            "max_views_per_hour": null,
+            "recommended_positioning_gap": null
+          },
+          "confidence_level": "high",
+          "official_sources": [],
+          "technical_details": {
+            "complexity": "medium",
+            "requires_repo": false,
+            "demo_feasibility": "medium",
+            "visual_demo_quality": "medium",
+            "requires_installation": false
+          },
+          "best_action_window": {
+            "reason": "signal is older than 7 days",
+            "confidence": "low",
+            "publish_within_hours": null
+          },
+          "why_it_is_trending": [
+            "Prova social forte com resultados concretos apresentados",
+            "Promessa clara de geração de audiência e vendas",
+            "Estrutura do método em etapas facilita a compreensão"
+          ],
+          "transcript_insights": {
+            "summary": "O vídeo apresenta a prova de resultados obtidos através de carousels no Instagram e introduz o Método PACTO, que ensina a criar carousels eficazes para atrair audiência e gerar vendas.",
+            "weaknesses": "A narrativa pode parecer exagerada em relação à facilidade de replicação do método, e a falta de exemplos visuais diretos do processo de criação dos carousels pode deixar algumas dúvidas.",
+            "proof_moments": [
+              "Demonstração de análises do Instagram com números reais",
+              "Exibição de carousels que geraram visualizações e seguidores",
+              "Resultados financeiros do SaaS criado"
+            ],
+            "tools_mentioned": [
+              "Instagram",
+              "SaaS",
+              "Método PACTO"
+            ]
+          },
+          "context_pack_version": "1.1"
+        }
+      }
+    }
+  ],
+  "transcript_recovery": {
+    "job_id": "536cca42-312b-4431-85bf-05166f920968",
+    "note": "Aula05 recuperada na nova tentativa; contagem validada localmente 8/8."
+  }
+}
