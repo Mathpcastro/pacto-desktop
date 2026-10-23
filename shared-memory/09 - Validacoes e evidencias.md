@@ -68,3 +68,21 @@ Os dados das telas são fixtures escritas à mão. A arte usada nelas é a capa 
 Evidências: `Evidencias/fluxo-curso-real/` (cards, capas, texto, radar, modelador, CTA e log) e a subpasta `segunda-rodada/`, com a revisão de editor-chefe e as capas variadas.
 
 Limite observado: o negócio fictício de teste tem um contexto cheio de ressalvas de segurança, o que deixa a copy prudente. A avaliação final de voz precisa ser feita com um negócio real.
+
+
+## Valor do app — 23/10/2026
+
+| Verificação | Resultado | Evidência |
+|---|---|---|
+| Testes | 43 passaram (novos: valor, publicação/compartilhamento/Drive/stories, ritmo) | `npm test` |
+| Regressões do editor | 7 de 7 | `node scripts/renderer-regression.mjs` |
+| Telas | Publicar com comemoração; QR com link real na rede (página e PNG 200, link para ao fechar); Drive sem pasta; stories; Ritmo; biblioteca com oportunidades | `scripts/flow-screens.mjs`, `Evidencias/telas-valor/` |
+| Player das aulas | Toca no modo de desenvolvimento e no executável (`file://`), sem erro 153; "Ver na aula" abre em `start=334` | `scripts/player-check.mjs [--packaged]` |
+| Robustez | Sem login; app fechado no meio da geração (rascunho recuperado); Codex encerrado (reconecta com o login salvo); tela 1093×580 a 125% sem corte; lembrete do Windows | `scripts/robustness-proof.mjs`, `Evidencias/robustez/` |
+| 4 nichos reais | Advogada (Editorial/Tutorial), SaaS (Clean SaaS/Framework), confeiteira (Ilustrado/História → Método → Oferta), moda fitness (Creator/Lista Útil): onboarding, Radar 30/10, 4 cards, 1 capa, CTA/DM, stories, publicar | `scripts/niche-proof.mjs`, `Evidencias/nichos/` (capturas, cards, textos, vídeo das etapas e filmagem real da confeiteira) |
+| Executável empacotado | Smoke OK: 8 aulas, PNG 1080×1350, zero erros de página | `scripts/packaged-smoke.mjs` (precisa de `.cache/app-proof`, gerado por `scripts/app-proof.mjs`) |
+
+Limites:
+- A gravação de vídeo do Playwright trava o Electron, e a captura GDI do Windows grava preto. A filmagem real usa quadros do `capturePage`, a cerca de 4 fps e sem cursor.
+- Os minutos das aulas são estimados.
+- O compartilhamento pelo celular foi testado só pelo próprio computador, não num celular real.

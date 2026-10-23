@@ -60,6 +60,12 @@ node scripts/packaged-smoke.mjs
 
 As duas provas de inferência usam autenticação existente apenas em uma pasta temporária privada e a removem ao terminar. Nunca copiar autenticação para código, artifacts ou vault. Relatórios de teste ficam em `.cache/` e não são versionados. O script empacotado reutiliza a biblioteca real produzida pela prova do app; não simula imagens ou inferência.
 
+## Provas e verificações
+
+- `scripts/flow-screens.mjs`, `scripts/player-check.mjs` e `scripts/robustness-proof.mjs` usam dados locais (a robustez também usa o login existente, numa pasta temporária).
+- `scripts/niche-proof.mjs` roda 4 nichos reais pela interface, com a conta ChatGPT deste computador.
+- `scripts/packaged-smoke.mjs` precisa de `.cache/app-proof`, gerado por `scripts/app-proof.mjs`.
+
 ## Memória compartilhada
 
 Contexto e decisões ficam em `shared-memory/` e no vault Obsidian `Projetos/PACTO Desktop`. Antes de continuar, ler `00 - Comece aqui.md`, decisões e estado. Atualizar notas com resultados verificados e pendências reais. Credenciais ficam fora dessas notas.

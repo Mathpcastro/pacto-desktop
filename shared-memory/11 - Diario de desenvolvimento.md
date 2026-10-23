@@ -39,3 +39,8 @@ Pedido: o app deve guiar o preenchimento como o ChatGPT faz no curso e permitir 
 ## 23/10/2026 — fluxo texto → capa → carrossel (Claude)
 
 O usuário decidiu que a IA desenha tudo, mas só depois de o texto ser gerado, editado e aprovado, e de a capa ser escolhida entre 2 ou 3 opções. Pediu também Radar, Modelador e o restante do curso. Diagnóstico anterior: os cards traziam instruções no lugar da copy e o Copy Engine não era enviado. Implementado conforme o checkpoint em [[02 - Estado e proximos passos]]. A prova real foi interrompida pelo limite de uso da conta ChatGPT.
+
+
+## 23/10/2026 — fazer os R$47 valerem (Claude)
+
+Executado o plano de valor em 5 fases, com uma avaliação ao fim de cada uma. Pedido extra durante o trabalho: as aulas tocam dentro do app, num iframe. Os bugs encontrados pelos próprios testes estão em [[09 - Validacoes e evidencias]].

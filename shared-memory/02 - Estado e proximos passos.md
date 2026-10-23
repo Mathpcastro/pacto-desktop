@@ -81,3 +81,33 @@ Ajustes feitos depois da prova:
 - O destaque passou a exigir palavras inteiras, porque um destaque caiu no meio de "confirma".
 
 Instalador `PACTO Setup 0.1.0.exe` reconstruído (SHA-256 começa com `ee8a0f886c68f31d`), smoke do executável OK. Pendente: o usuário avaliar a copy com o próprio negócio e a própria voz, e o branding.
+
+
+## Checkpoint 23/10/2026 — valor do app (plano `docs/plans/2026-10-24-valor-do-app.md`, Claude)
+
+As 5 fases foram executadas, cada uma avaliada antes de seguir. Commits locais em `Mathpcastro/pacto-desktop`.
+
+1. **Base:** tamanho do carrossel (Automático, 4, 6, 8 ou 10 cards, servindo de modo econômico); "Marcar como publicado" e "Registrar resultado" sem usar a IA, com Replicar à parte; configurações locais; minuto estimado de cada etapa nas aulas (`resources/pacto/course-moments.json`, aproximado).
+2. **Publicar:**
+   - tela "Pronto para publicar", com comemoração no primeiro carrossel;
+   - QR code pela rede local (link temporário com token, expira em 30 minutos);
+   - "Salvar no Google Drive" (pasta `Meu Drive\PACTO`, ou outra pasta à escolha);
+   - stories da Aula 08, com arte 9:16 opcional.
+
+   Corrigido: o ZIP recusava `cta-e-dm.txt`.
+3. **Hábito:**
+   - o Radar roda sozinho depois do onboarding;
+   - a biblioteca vazia mostra as oportunidades de conteúdo;
+   - aba Ritmo, com meta da semana, carrosséis aguardando resultado, painel de vencedores acima da média e próximas ideias;
+   - lembrete diário do Windows quando há resultado pendente.
+4. **Curso no lugar certo:** "Ver na aula" em cada etapa. As aulas tocam **dentro do app** (iframe `youtube-nocookie`, que abre no minuto estimado e lista os trechos da aula).
+5. **Robustez e nichos:**
+   - todas as 5 verificações de robustez passaram;
+   - corrigido: a janela não cabia em 1366×768 com 125%;
+   - corrigido: sem conta, o botão mostrava "Escrevendo…";
+   - 4 nichos reais de ponta a ponta;
+   - filmagem real do fluxo da confeiteira.
+
+Instalador reconstruído (SHA-256 começa com `0b075db408b5250a`).
+
+Pendências: o usuário testar num Windows limpo e cronometrar os 30 minutos; branding; assinatura digital.

@@ -1,3 +1,5 @@
+import { appendFileSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { copyFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -70,11 +72,17 @@ const url = `http://127.0.0.1:${server.httpServer.address().port}`;
 async function until(page, predicate, arg, timeout) {
   const end = Date.now() + timeout;
   while (Date.now() < end) {
-    if (await page.evaluate(predicate, arg).catch(() => false)) return;
+    // A single evaluate must not hang the whole wait.
+    const ok = await Promise.race([page.evaluate(predicate, arg).catch(() => false), new Promise((r) => setTimeout(() => r(false), 20000))]);
+    if (ok) return;
     await new Promise((r) => setTimeout(r, 3000));
   }
   throw new Error("Tempo esgotado aguardando o aplicativo.");
 }
+// Progress goes straight to disk so a hang still shows where it stopped.
+const trace = (m) => appendFileSync(join(out, "progresso.log"), `${new Date().toISOString()} ${m}
+`);
+await mkdir(out, { recursive: true });
 const summary = [];
 for (const niche of niches.filter((n) => !only || n.slug === only)) {
   const dir = join(out, niche.slug);
@@ -83,15 +91,32 @@ for (const niche of niches.filter((n) => !only || n.slug === only)) {
   await mkdir(join(userData, "codex"), { recursive: true });
   await copyFile(join(process.env.CODEX_HOME || join(homedir(), ".codex"), "auth.json"), join(userData, "codex", "auth.json"));
   const log = [];
-  const step = (name, data = {}) => { log.push({ name, at: new Date().toISOString(), ...data }); console.log(JSON.stringify({ niche: niche.slug, name, ...data })); };
-  let app;
+  const step = (name, data = {}) => { trace(`${niche.slug} ${name} ${JSON.stringify(data)}`); log.push({ name, at: new Date().toISOString(), ...data }); console.log(JSON.stringify({ niche: niche.slug, name, ...data })); };
+  let app, recorder;
   let n = 0;
   const shot = async (page, name) => page.screenshot({ path: join(dir, `${String(++n).padStart(2, "0")}-${name}.png`) });
   try {
-    app = await _electron.launch({ args: ["."], cwd: root, env: { ...process.env, PACTO_USER_DATA: userData, PACTO_DEV_URL: url }, recordVideo: { dir: join(dir, "video"), size: { width: 1440, height: 940 } } });
+    app = await _electron.launch({ args: ["."], cwd: root, env: { ...process.env, PACTO_USER_DATA: userData, PACTO_DEV_URL: url } });
+    trace(`${niche.slug} launched`);
     const page = await app.firstWindow();
-    await page.setViewportSize({ width: 1440, height: 940 }).catch(() => {});
+    trace(`${niche.slug} window`);
+    // Playwright's recordVideo stalls page.evaluate in Electron and GDI capture sees a black
+    // GPU window, so frames come from the window itself and are encoded at the end.
+    const framesDir = join(dir, "frames");
+    await mkdir(framesDir, { recursive: true });
+    recorder = { running: true, frames: 0, started: Date.now() };
+    recorder.loop = (async () => {
+      while (recorder.running) {
+        const jpeg = await app.evaluate(async ({ BrowserWindow }) => {
+          const win = BrowserWindow.getAllWindows()[0];
+          return win ? (await win.webContents.capturePage()).toJPEG(82).toString("base64") : null;
+        }).catch(() => null);
+        if (jpeg) await writeFile(join(framesDir, `${String(recorder.frames++).padStart(6, "0")}.jpg`), Buffer.from(jpeg, "base64"));
+        await new Promise((r) => setTimeout(r, 180));
+      }
+    })();
     await until(page, async () => (await window.pacto.request("bootstrap")).account?.connected, null, 120000);
+    trace(`${niche.slug} connected`);
     const state = () => page.evaluate(() => window.pacto.request("bootstrap"));
     if (await page.getByRole("button", { name: "Continuar" }).isVisible().catch(() => false)) await page.getByRole("button", { name: "Continuar" }).click();
     for (const kind of ["brand", "design"]) {
@@ -182,6 +207,17 @@ for (const niche of niches.filter((n) => !only || n.slug === only)) {
     process.exitCode = 1;
   } finally {
     await writeFile(join(dir, "log.json"), JSON.stringify(log, null, 2));
+    if (recorder) {
+      recorder.running = false;
+      await recorder.loop;
+      const rate = Math.max(1, recorder.frames / ((Date.now() - recorder.started) / 1000)).toFixed(3);
+      await new Promise((r) => {
+        const ff = spawn("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", "-framerate", rate, "-i", join(dir, "frames", "%06d.jpg"), "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2,fps=30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", join(dir, "fluxo.mp4")], { stdio: "ignore" });
+        ff.once("exit", r);
+      });
+      await rm(join(dir, "frames"), { recursive: true, force: true });
+      trace(`${niche.slug} video ${recorder.frames} frames at ${rate} fps`);
+    }
     await app?.close().catch(() => {});
     await rm(userData, { recursive: true, force: true }).catch(() => {});
   }
