@@ -37,11 +37,11 @@ Criar um aplicativo Electron para Windows, vendido por R$47, que gera e gerencia
 
 ## Caminhos
 
-- Implementação isolada: `C:\Users\Admin2\Documents\pacto-desktop`, branch `codex/pacto-desktop`.
-- Aplicativo previsto em `desktop/` dentro dessa implementação.
-- Projeto original: `C:\Users\Admin2\Documents\carrosseis que vendem`; possui alterações anteriores que devem ser preservadas.
+- **Repositório atual (desde 23/10/2026):** `C:\Users\Admin2\Documents\pacto-app`, GitHub privado `Mathpcastro/pacto-desktop`, branch `main`. O app fica na raiz; as notas, em `shared-memory/`; o plano e a proposta, em `docs/plans/` e `docs/specs/`; o script de sincronização com o Obsidian, em `tools/pacto-obsidian.ps1`.
+- Histórico: o app começou em `desktop/` na worktree `C:\Users\Admin2\Documents\pacto-desktop` (branch `codex/pacto-desktop` do repositório do funil). Essa cópia não recebe mais trabalho novo.
+- Projeto original do funil: `C:\Users\Admin2\Documents\carrosseis que vendem`; possui alterações anteriores que devem ser preservadas.
 - Referência CutRoom: `C:\Users\Admin2\Documents\Claude Code Editor\cutroom`.
-- Proposta: `docs/superpowers/specs/2026-10-22-pacto-desktop-design.md`.
+- Proposta: `docs/specs/2026-10-22-pacto-desktop-design.md`.
 
 ## Acordo de colaboração
 
