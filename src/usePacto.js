@@ -19,6 +19,8 @@ const initial = {
   ideas: [],
   visualFixes: [],
   working: null,
+  settings: { weeklyGoal: 5, driveFolder: "", firstCompletedAt: "" },
+  courseMoments: [],
 };
 
 export function usePacto() {

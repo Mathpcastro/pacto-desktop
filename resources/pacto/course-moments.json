@@ -1,0 +1,104 @@
+{
+  "method": "posição do trecho na transcrição × duração do vídeo; aproximado",
+  "moments": [
+    {
+      "step": "brand",
+      "lessonId": "73OpTuUsCH8",
+      "lesson": "Aula 02   P Radar de Pautas",
+      "seconds": 30,
+      "label": "Contexto Oficial da Marca",
+      "summary": "A entrevista que ensina o ChatGPT o que você vende, para quem e por quê.",
+      "approximate": true
+    },
+    {
+      "step": "radar",
+      "lessonId": "73OpTuUsCH8",
+      "lesson": "Aula 02   P Radar de Pautas",
+      "seconds": 334,
+      "label": "Radar de Pautas",
+      "summary": "As quatro fontes de pauta e como transformar temas em ideias que valem um teste.",
+      "approximate": true
+    },
+    {
+      "step": "modelador",
+      "lessonId": "73OpTuUsCH8",
+      "lesson": "Aula 02   P Radar de Pautas",
+      "seconds": 340,
+      "label": "Modelador de Referências",
+      "summary": "Copie o motivo pelo qual uma referência funcionou, nunca o conteúdo.",
+      "approximate": true
+    },
+    {
+      "step": "architecture",
+      "lessonId": "-o3AEfDjBsQ",
+      "lesson": "Aula 03   A As 5 Arquiteturas",
+      "seconds": 1,
+      "label": "As 5 Arquiteturas",
+      "summary": "Escolha a sequência dos cards antes de escrever a copy.",
+      "approximate": true
+    },
+    {
+      "step": "copy",
+      "lessonId": "plr8iGMRnRo",
+      "lesson": "Aula 04   C Copy Engine",
+      "seconds": 26,
+      "label": "Copy Engine",
+      "summary": "Texto curto, humano e específico, e a revisão antes de virar imagem.",
+      "approximate": true
+    },
+    {
+      "step": "design",
+      "lessonId": "LWIanBtCUHg",
+      "lesson": "Aula 05   T Design Kit + Efeito Continuidade",
+      "seconds": 0,
+      "label": "Design Kit e Efeito Continuidade",
+      "summary": "A identidade visual que a IA repete em todos os cards.",
+      "approximate": true
+    },
+    {
+      "step": "correction",
+      "lessonId": "LWIanBtCUHg",
+      "lesson": "Aula 05   T Design Kit + Efeito Continuidade",
+      "seconds": 148,
+      "label": "Correção Visual Rápida",
+      "summary": "Corrija só o card que saiu errado, preservando o resto.",
+      "approximate": true
+    },
+    {
+      "step": "cover",
+      "lessonId": "32aNnLBXBrA",
+      "lesson": "Aula 06   Criando um Carrossel que Vende do Zero",
+      "seconds": 60,
+      "label": "Criando do zero: capa e cards",
+      "summary": "Da copy aprovada à capa e aos cards em 4:5.",
+      "approximate": true
+    },
+    {
+      "step": "cta",
+      "lessonId": "QRwxq7bqWwo",
+      "lesson": "Aula 07   O Comentário → DM → Oferta",
+      "seconds": 391,
+      "label": "Comentário → DM → Oferta",
+      "summary": "O CTA de palavra-chave, a entrega na DM e a ponte para a oferta.",
+      "approximate": true
+    },
+    {
+      "step": "stories",
+      "lessonId": "bvDw6TPoU8I",
+      "lesson": "Aula 08   Sistema Completo + Desafio de 30 Minutos",
+      "seconds": 111,
+      "label": "Stories: perguntas e oferta",
+      "summary": "Use os stories para caixa de perguntas e oferta, alternando.",
+      "approximate": true
+    },
+    {
+      "step": "replicator",
+      "lessonId": "bvDw6TPoU8I",
+      "lesson": "Aula 08   Sistema Completo + Desafio de 30 Minutos",
+      "seconds": 194,
+      "label": "Replicador de Vencedores",
+      "summary": "Volume → Sinal → Repetição: replique o motivo do vencedor.",
+      "approximate": true
+    }
+  ]
+}

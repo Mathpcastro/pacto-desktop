@@ -29,7 +29,9 @@ export function loadKnowledge(root = DEFAULT_KNOWLEDGE_ROOT) {
   const notion = JSON.parse(safeRead(root, 'notion-manifest.json'));
   const pages = notion.pages.map(page => ({...page,text:safeRead(root,page.file)}));
   const prompts = existsSync(join(root, 'extracted-prompts.json')) ? JSON.parse(safeRead(root, 'extracted-prompts.json')).prompts : [];
-  return {root,manifest,data,method,lessons,pages,prompts};
+  // Minutos estimados por etapa (scripts/course-moments.mjs); aproximados, sem timestamps no ASR.
+  const moments = existsSync(join(root, 'course-moments.json')) ? JSON.parse(safeRead(root, 'course-moments.json')).moments : [];
+  return {root,manifest,data,method,lessons,pages,prompts,moments};
 }
 
 // Presets visuais da Aula 05. O curso recomenda criar um kit próprio; os presets são só ponto de partida.

@@ -593,18 +593,25 @@ export function ResultsDialog({ project, request, busy, onClose, onIdeas }) {
     saves: project.results?.saves ?? "",
     sales: project.results?.sales ?? "",
   });
-  const [working, setWorking] = useState(false);
+  const [working, setWorking] = useState("");
+  const values = {
+    id: project.id,
+    comments: Number(metrics.comments) || 0,
+    saves: Number(metrics.saves) || 0,
+    sales: Number(metrics.sales) || 0,
+  };
   return (
     <Dialog
-      title="Este carrossel venceu?"
-      eyebrow="REPLICADOR DE VENCEDORES"
+      title="Como este carrossel foi?"
+      eyebrow="RESULTADO · VOLUME → SINAL → REPETIÇÃO"
       onClose={onClose}
     >
       <div className="dialog-fields">
         <p className="field-hint">
-          Volume → Sinal → Repetição. Informe os resultados e o PACTO gera 10
-          novas ideias preservando o motivo do desempenho: 3 variações próximas,
-          3 novos ângulos, 2 mais específicas e 2 adjacentes.
+          Registre comentários, salvamentos e vendas para acompanhar seus
+          vencedores na aba Ritmo. Se ele foi acima da média, o Replicador gera
+          10 ideias preservando o motivo: 3 variações próximas, 3 novos ângulos,
+          2 mais específicas e 2 adjacentes.
         </p>
         <div className="metric-fields">
           {[
@@ -631,30 +638,48 @@ export function ResultsDialog({ project, request, busy, onClose, onIdeas }) {
           Cancelar
         </button>
         <button
-          className="button primary"
-          disabled={busy || working}
+          className="button secondary"
+          disabled={busy || Boolean(working)}
           onClick={async () => {
-            setWorking(true);
+            setWorking("save");
             try {
-              await request("replicate", {
-                id: project.id,
-                comments: Number(metrics.comments) || 0,
-                saves: Number(metrics.saves) || 0,
-                sales: Number(metrics.sales) || 0,
-              });
-              onIdeas();
+              await request("recordResults", values);
+              onClose();
             } catch {
             } finally {
-              setWorking(false);
+              setWorking("");
             }
           }}
         >
-          {working ? (
+          {working === "save" ? (
+            <LoaderCircle className="spin" size={15} />
+          ) : (
+            <Check size={15} />
+          )}
+          Salvar resultado
+        </button>
+        <button
+          className="button primary"
+          disabled={busy || Boolean(working)}
+          onClick={async () => {
+            setWorking("replicate");
+            try {
+              await request("replicate", values);
+              onIdeas();
+            } catch {
+            } finally {
+              setWorking("");
+            }
+          }}
+        >
+          {working === "replicate" ? (
             <LoaderCircle className="spin" size={15} />
           ) : (
             <Trophy size={15} />
           )}
-          {working ? "Analisando o vencedor…" : "Gerar 10 novas ideias"}
+          {working === "replicate"
+            ? "Analisando o vencedor…"
+            : "Salvar e replicar"}
         </button>
       </div>
     </Dialog>

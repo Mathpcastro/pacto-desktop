@@ -29,6 +29,7 @@ export default function CreateProject({
     architectures.find((a) => a.name === initial?.architecture)?.id || "",
   );
   const [goal, setGoal] = useState("");
+  const [cardCount, setCardCount] = useState(0);
   const [editorialLine, setEditorialLine] = useState("");
   const [visualConcept, setVisualConcept] = useState("");
   const [busy, setBusy] = useState(false);
@@ -51,6 +52,7 @@ export default function CreateProject({
               goal,
               editorialLine: editorialLine.trim(),
               visualConcept: visualConcept.trim(),
+              cardCount,
             });
             onCreated(project.id);
           } catch {
@@ -100,6 +102,32 @@ export default function CreateProject({
               </div>
             </div>
           )}
+          <div className="field">
+            <span>Tamanho do carrossel</span>
+            <div className="goal-chips" role="radiogroup">
+              {[
+                [0, "Automático"],
+                [4, "4 cards"],
+                [6, "6 cards"],
+                [8, "8 cards"],
+                [10, "10 cards"],
+              ].map(([value, label]) => (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={cardCount === value}
+                  key={value}
+                  className={cardCount === value ? "selected" : ""}
+                  onClick={() => setCardCount(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="field-hint">
+              Menos cards gastam menos do limite da sua conta ChatGPT.
+            </p>
+          </div>
           {architectures.length > 0 && (
             <div className="field">
               <span>Tipo de carrossel · as 5 arquiteturas do método</span>

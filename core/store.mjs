@@ -46,14 +46,18 @@ const emptyInterview=()=>({messages:[],document:'',brandName:''});
 const slideText=['role','title','body','emphasis','visual','prompt'];
 const artText=['title','body','emphasis','visual','prompt'];
 const projectText={title:200,brief:30000,caption:30000,architectureId:100,goal:200,editorialLine:2000,visualConcept:4000};
+export const CARD_COUNTS=[0,4,6,8,10];
+function cardCount(value){const n=Number(value||0);if(!CARD_COUNTS.includes(n))throw new Error('Quantidade de cards inválida.');return n;}
+const defaultSettings=()=>({weeklyGoal:5,driveFolder:'',firstCompletedAt:''});
 export class Store {
-  constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
+  constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
   async init(){
     await mkdir(join(this.root,'images'),{recursive:true});
     try{this.data=JSON.parse(await readFile(join(this.root,'state.json'),'utf8'));if(!Array.isArray(this.data.projects))throw Error();}
     catch(error){if(error.code!=='ENOENT')throw new Error('A biblioteca local não pôde ser lida. Seus arquivos foram preservados.');}
     this.data.onboarding={brand:emptyInterview(),design:emptyInterview(),...this.data.onboarding};
     if(!Array.isArray(this.data.ideas))this.data.ideas=[];
+    this.data.settings={...defaultSettings(),...this.data.settings};
     // Projetos anteriores ao fluxo texto → capa → restante: arte existente vale como texto aprovado.
     for(const p of this.data.projects){if(p.textApproved===undefined)p.textApproved=p.slides.some(s=>s.image);if(!Array.isArray(p.coverOptions))p.coverOptions=[];}
     for(const p of this.data.projects)if(['planning','generating'].includes(p.status)){p.status='draft';p.slides=p.slides.map(s=>s.state==='generating'?{...s,state:s.previousState||(s.image?'complete':'draft')}:s);p.error='A operação foi interrompida. Você pode continuar deste rascunho.';}
@@ -84,14 +88,26 @@ export class Store {
     this.data.onboarding[kind]=next;await this.persist();return this.interview(kind);
   }
   async resetInterview(kind){this.interview(kind);this.data.onboarding[kind]=emptyInterview();await this.persist();return this.interview(kind);}
-  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept=''}){
-    const now=new Date().toISOString();const p={id:randomUUID(),title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
+  async saveSettings(patch){
+    if(!patch||typeof patch!=='object'||Array.isArray(patch))throw new Error('Configurações inválidas.');
+    const next={...this.data.settings};
+    for(const key of Object.keys(patch)){
+      if(key==='weeklyGoal'){const n=Number(patch[key]);if(!Number.isInteger(n)||n<1||n>50)throw new Error('Meta semanal inválida.');next.weeklyGoal=n;}
+      else if(key==='driveFolder')next.driveFolder=text(patch[key],1000);
+      else if(key==='firstCompletedAt')next.firstCompletedAt=text(patch[key],40);
+      else throw new Error('Configuração não permitida.');
+    }
+    this.data.settings=next;await this.persist();return this.state();
+  }
+  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0}){
+    const now=new Date().toISOString();const p={id:randomUUID(),title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
     this.data.projects.unshift(p);await this.persist();return this.get(p.id);
   }
   async saveProject(args){
     if(!args||typeof args!=='object')throw new Error('Projeto inválido.');
-    for(const key of Object.keys(args))if(!['id','slides',...Object.keys(projectText)].includes(key))throw new Error('Campo do projeto não permitido.');
+    for(const key of Object.keys(args))if(!['id','slides','cardCount',...Object.keys(projectText)].includes(key))throw new Error('Campo do projeto não permitido.');
     const patch={};for(const [key,max] of Object.entries(projectText))if(args[key]!==undefined)patch[key]=text(args[key],max);
+    if(args.cardCount!==undefined)patch.cardCount=cardCount(args.cardCount);
     if(args.slides!==undefined){patch.slides=this.validateSlides(args.slides,this.get(args.id).slides);if(patch.slides.some(s=>s.state==='outdated'))patch.status='ready';}
     return this.update(args.id,patch);
   }
