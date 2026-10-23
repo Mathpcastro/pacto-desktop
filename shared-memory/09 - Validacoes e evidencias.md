@@ -86,3 +86,8 @@ Limites:
 - A gravação de vídeo do Playwright trava o Electron, e a captura GDI do Windows grava preto. A filmagem real usa quadros do `capturePage`, a cerca de 4 fps e sem cursor.
 - Os minutos das aulas são estimados.
 - O compartilhamento pelo celular foi testado só pelo próprio computador, não num celular real.
+
+
+## Videoaula — 23/10/2026
+
+A pronúncia foi conferida transcrevendo dois trechos com o ElevenLabs (o reconhecimento de fala Scribe): o texto voltou igual ao roteiro. A sincronia foi conferida em 8 quadros do vídeo. O usuário aprovou a voz e o ritmo. Limites: o vídeo foi gravado a cerca de 4 quadros por segundo, sem cursor; serve de base para a edição em motion.

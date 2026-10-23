@@ -111,3 +111,14 @@ As 5 fases foram executadas, cada uma avaliada antes de seguir. Commits locais e
 Instalador reconstruído (SHA-256 começa com `0b075db408b5250a`).
 
 Pendências: o usuário testar num Windows limpo e cronometrar os 30 minutos; branding; assinatura digital.
+
+
+## Checkpoint 23/10/2026 — videoaula narrada (Claude)
+
+A videoaula v1 "Como usar o PACTO" (1 min 27 s) foi **aprovada pelo usuário**.
+
+- **Imagem:** a filmagem real do fluxo da confeiteira, com cada bloco acelerado para durar o tempo da sua fala.
+- **Voz:** clone instantâneo do ElevenLabs, "Matheus Castro · PACTO", criado a partir de 2 min 30 s da Aula 1 do Curso Codex.
+- **Narração:** 7 trechos gerados com o Eleven v4.
+- **Onde está:** `Evidencias/videoaula/`. Para remontar: `node scripts/videoaula.mjs <filmagem> <pasta-narracao> <saida>`.
+- **Chave do ElevenLabs:** fica só no `.env.local`, que está no `.gitignore`. Nunca registrar o valor dela.

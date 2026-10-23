@@ -44,3 +44,8 @@ O usuário decidiu que a IA desenha tudo, mas só depois de o texto ser gerado, 
 ## 23/10/2026 — fazer os R$47 valerem (Claude)
 
 Executado o plano de valor em 5 fases, com uma avaliação ao fim de cada uma. Pedido extra durante o trabalho: as aulas tocam dentro do app, num iframe. Os bugs encontrados pelos próprios testes estão em [[09 - Validacoes e evidencias]].
+
+
+## 23/10/2026 — videoaula com a voz do usuário (Claude)
+
+Instalado o MCP do ElevenLabs (o endereço certo é `api.us.elevenlabs.io/v1/mcp`). O conector não clona voz, então o clone foi feito pela API, com uma chave obtida pela CLI oficial. Na primeira tentativa a chave veio sem a permissão de criar vozes; o usuário liberou `voices_write`. A v1 foi aprovada.
