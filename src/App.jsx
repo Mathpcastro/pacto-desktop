@@ -348,6 +348,7 @@ export default function App() {
               setProjectId(null);
             }}
             visualFixes={state.visualFixes || []}
+            settings={state.settings}
           />
         ) : view === "ideas" ? (
           <Ideas

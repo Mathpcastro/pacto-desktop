@@ -66,6 +66,27 @@ try {
       await shot("03b-texto-revisao");
     }
     if (name === "05-carrossel") {
+      // Every card has art: the publish screen comes first, with the first-carousel celebration.
+      checks.push({ celebration: await page.getByText("SEU PRIMEIRO CARROSSEL QUE VENDE").isVisible() });
+      await page.getByRole("button", { name: "Enviar para o celular" }).click();
+      await page.locator(".share-qr").waitFor({ timeout: 15000 });
+      const url = await page.locator(".share-url").textContent();
+      const phone = await fetch(url).then(async (r) => ({ status: r.status, saveButton: (await r.text()).includes("Salvar todas no celular") }));
+      const image = await fetch(`${url}f/0`).then((r) => ({ status: r.status, type: r.headers.get("content-type") }));
+      checks.push({ shareUrl: url.replace(/\/[\w-]{32}\//, "/<token>/"), phone, image });
+      await shot("08-celular");
+      await page.getByRole("button", { name: "Concluir" }).click();
+      await page.waitForTimeout(300);
+      checks.push({ shareStoppedOnClose: await fetch(url).then(() => false).catch(() => true) });
+      await page.getByRole("button", { name: "Salvar no Google Drive" }).click();
+      await page.getByRole("button", { name: /Escolher outra pasta/ }).waitFor();
+      await page.waitForTimeout(500);
+      await shot("09-drive");
+      await page.getByRole("button", { name: "Concluir" }).click();
+      await page.getByRole("button", { name: /Stories de perguntas/ }).click();
+      await shot("10-stories");
+      await page.getByRole("button", { name: "Fechar", exact: true }).click();
+      await page.getByRole("button", { name: /Ajustar os cards/ }).click();
       // Correction needs a connected account; offline it must stay disabled.
       checks.push({ fixDisabledOffline: await page.getByRole("button", { name: "Corrigir" }).isDisabled() });
       await page.locator("summary[aria-label=\"Mais ações do projeto\"]").click();

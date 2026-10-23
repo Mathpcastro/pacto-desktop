@@ -2,7 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { text, validId, validateReference, INTERVIEWS } from './store.mjs';
 import { safeError } from './codex.mjs';
 import { DESIGN_PRESETS, promptText } from './knowledge.mjs';
-export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings'];
+import { ShareServer } from './share.mjs';
+import { findDriveFolders, writeCarouselFolder } from './drive.mjs';
+export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt'];
 export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma oferta'];
 // Problemas da Correção Visual Rápida (Aula 05), oferecidos como botões no editor.
 export const VISUAL_FIXES=['Texto vertical ou empilhado','Título pequeno','Texto excessivo','Hierarquia ruim','Falta CTA','Erro de ortografia','Ilustração não combina','Fora da identidade visual'];
@@ -13,6 +15,8 @@ export const PLAN_SCHEMA={type:'object',additionalProperties:false,required:['ti
 export const INTERVIEW_SCHEMA={type:'object',additionalProperties:false,required:['reply','complete','brandName','document'],properties:{reply:string,complete:{type:'boolean'},brandName:string,document:string}};
 const IDEA={type:'object',additionalProperties:false,required:['theme','hook','why','deliverable','connection','architecture','group','top','reason'],properties:{theme:string,hook:string,why:string,deliverable:string,connection:string,architecture:string,group:string,top:{type:'boolean'},reason:string}};
 export const IDEAS_SCHEMA={type:'object',additionalProperties:false,required:['analysis','ideas'],properties:{analysis:string,ideas:{type:'array',minItems:0,maxItems:40,items:IDEA}}};
+const STORY={type:'object',additionalProperties:false,required:['type','text','sticker','cta','visual'],properties:{type:string,text:string,sticker:string,cta:string,visual:string}};
+export const STORIES_SCHEMA={type:'object',additionalProperties:false,required:['stories'],properties:{stories:{type:'array',minItems:2,maxItems:8,items:STORY}}};
 export const CTA_SCHEMA={type:'object',additionalProperties:false,required:['keywords','firstCardCta','lastCardCta','freebie','dm1','dm2'],properties:{keywords:strings,firstCardCta:string,lastCardCta:string,freebie:string,dm1:string,dm2:string}};
 // Entrevistas guiadas que o curso faz dentro do projeto do ChatGPT: Aula 02 (contexto) e Aula 05 (Design Kit).
 const INTERVIEW={
@@ -26,7 +30,30 @@ const INSTRUCTION_BODY=/^\s*(fun[cç][aã]o|objetivo|card\s*\d+|descri[cç][aã]
 function parse(result,message){try{return JSON.parse(String(result.text||'').replace(/^```(?:json)?\s*|\s*```$/g,''));}catch{throw new Error(message);}}
 function count(value,min,max){const n=Number(value);if(!Number.isInteger(n)||n<min||n>max)throw new Error('Número inválido.');return n;}
 export class Runtime {
-  constructor({store,codex,knowledge,emit=()=>{},dialogs={}}){this.store=store;this.codex=codex;this.knowledge=knowledge;this.emit=emit;this.dialogs=dialogs;this.job=null;}
+  constructor({store,codex,knowledge,emit=()=>{},dialogs={},share=()=>new ShareServer(),drive={find:findDriveFolders,write:writeCarouselFolder}}){this.store=store;this.codex=codex;this.knowledge=knowledge;this.emit=emit;this.dialogs=dialogs;this.shareFactory=share;this.drive=drive;this.job=null;this.sharing=null;}
+  // Cópias normalizadas (1080×1350) para celular e Drive; o ZIP usa a mesma lista.
+  async exportedFiles(id){const files=this.store.exportFiles(id);return this.dialogs.normalizeFiles?await this.dialogs.normalizeFiles(files):files;}
+  lessonStories(){const lesson=this.knowledge.lessons?.find(l=>l.id==='bvDw6TPoU8I')?.text||'';const at=lesson.toLowerCase().indexOf('stories');return at<0?'':lesson.slice(Math.max(0,at-300),at+1500);}
+  async stories(id){
+    const p=this.store.get(id);if(!p.slides.length)throw new Error('Crie o texto do carrossel antes dos stories.');
+    this.ensureIdle(id);
+    return this.exclusive(id,'stories','Montando a sequência de stories…',async token=>{
+      const result=await this.codex.run({prompt:`${this.brandContext()}\nAULA 08 (trecho em inglês da transcrição; stories servem para caixa de perguntas e oferta, alternando pergunta → oferta → pergunta → oferta; não postar coisas aleatórias):\n${this.lessonStories()}\nAULA 07 — COMENTÁRIO → DM → OFERTA:\n${this.page('offer')}\nCARROSSEL PUBLICADO:\n${JSON.stringify({title:p.title,slides:p.slides.map(({role,title,body})=>({role,title,body})),caption:p.caption,cta:p.ctaKit})}\nTAREFA: crie de 4 a 6 stories para os dias depois deste carrossel, alternando "Caixa de perguntas" e "Oferta" (pode abrir com um story "Bastidor" que puxa o carrossel). Para cada story: type, text (texto curto que aparece na tela), sticker (texto do sticker de caixa de perguntas ou enquete; vazio na oferta), cta (ação: responder, comentar a palavra-chave, link), visual (cena 9:16 coerente com o Design Kit). Ofertas só do que existe no Contexto Oficial da Marca. Não invente provas ou números. Português do Brasil, linguagem natural. JSON conforme o esquema.`,outputSchema:STORIES_SCHEMA});
+      if(token.cancelled)return;
+      const answer=parse(result,'Os stories não vieram no formato esperado. Tente novamente.');
+      await this.publish(await this.store.saveStories(id,(answer.stories||[]).map(s=>({...s,id:randomUUID()}))));
+    });
+  }
+  async storyArt(token,storyId){
+    const p=this.store.get(token.id),story=p.stories.find(s=>s.id===storyId),profile=this.store.state().profile;
+    const references=[...(p.slides[0]?.image?[p.slides[0].image]:[]),...(profile?.references||[]).map(r=>r.dataUrl)].slice(0,4);
+    this.emit({type:'activity',message:'Gerando a arte do story…'});
+    const result=await this.codex.run({prompt:`Gere UMA imagem final com a ferramenta nativa image_gen.imagegen (tools.image_gen__imagegen via functions.exec é permitido). PNG VERTICAL para Stories do Instagram, proporção 9:16 (ou a mais alta disponível, 1024x1536), composição completa, sem telefone, sem mockup, sem interface do Instagram.\n${this.imageContext(token.id)}\nSTORY (${story.type}):\n${this.typography({title:story.text,body:story.cta,emphasis:'',role:story.type})}\n${story.sticker?'Deixe uma área livre e limpa no terço inferior para a pessoa colocar o sticker de caixa de perguntas no Instagram. NÃO desenhe o sticker.\n':''}Cena: ${story.visual}\n${references.length?'As imagens anexadas mostram a identidade aprovada (a primeira é a capa do carrossel): mantenha cores, traço, tipografia e personagens.':''}\nUse APENAS a ferramenta nativa image_gen.imagegen; invoque-a por functions.exec e devolva generatedImage(result). Não desenhe com código, SVG ou HTML.`,references});
+    if(token.cancelled)return;
+    if(!result.images.length)throw new Error('A geração nativa de imagens não está disponível nesta sessão da conta. Nenhuma arte foi criada.');
+    this.publish(await this.store.addStoryImage(token.id,storyId,result.images.at(-1)));
+    const current=this.store.get(token.id);await this.update(token.id,{status:current.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});
+  }
   state(){return {...this.store.state(),...this.codex.status,architectures:(this.knowledge.data?.architectures||[]).map(({id,name,useWhen,cards})=>({id,name,useWhen,cards:cards.map(c=>c.function)})),designPresets:DESIGN_PRESETS,goals:GOALS,visualFixes:VISUAL_FIXES,interviewing:this.job?.id==='onboarding'?this.job.kind:null,working:this.job&&['onboarding','ideas'].includes(this.job.id)?this.job.kind:null,course:this.knowledge.lessons.map(({id,title,url})=>({id,title,url})),courseMoments:this.knowledge.moments||[],knowledge:{lessons:this.knowledge.lessons.length,transcribed:this.knowledge.lessons.filter(l=>l.transcribed).length}};}
   publish(project){this.emit({type:'project',project});return project;}
   async update(id,patch){return this.publish(await this.store.update(id,patch));}
@@ -156,7 +183,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       case 'resetInterview':if(this.job?.id==='onboarding')throw new Error('Aguarde a entrevista terminar.');await this.store.resetInterview(args.kind);return this.state();
       case 'cancelInterview':case 'cancelWork':{
         const job=this.job;if(!job)return this.state();
-        if(['onboarding','ideas'].includes(job.id)||job.kind==='cta'){job.cancelled=true;await this.codex.cancel();return this.state();}
+        if(['onboarding','ideas'].includes(job.id)||['cta','stories'].includes(job.kind)){job.cancelled=true;await this.codex.cancel();return this.state();}
         await this.request('cancel',{id:job.id});return this.state();
       }
       case 'radar':return this.ideas('radar',{focus:args.focus?text(args.focus,1000).trim():''});
@@ -175,6 +202,23 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       case 'recordResults':await this.recordResults(args.id,args);return this.state();
       case 'markPublished':{const p=this.store.get(args.id);if(!p.slides.length)throw new Error('Este carrossel ainda não tem cards.');await this.update(p.id,{publishedAt:args.published===false?'':new Date().toISOString()});return this.state();}
       case 'saveSettings':await this.store.saveSettings(args);return this.state();
+      case 'shareToPhone':{
+        this.ensureIdle(args.id);const p=this.store.get(args.id),files=await this.exportedFiles(p.id);
+        await this.sharing?.stop();this.sharing=this.shareFactory();
+        const list=Object.entries(files).filter(([name])=>name.endsWith('.png')).map(([name,bytes])=>({name,bytes,type:'image/png'}));
+        return this.sharing.start({title:p.title,caption:p.caption,files:list});
+      }
+      case 'stopShare':await this.sharing?.stop();this.sharing=null;return {ok:true};
+      case 'chooseDriveFolder':{const folder=await this.dialogs.chooseFolder?.();if(!folder)return {cancelled:true};await this.store.saveSettings({driveFolder:text(folder,1000)});return this.state();}
+      case 'saveToDrive':{
+        this.ensureIdle(args.id);const p=this.store.get(args.id),settings=this.store.state().settings;
+        const base=settings.driveFolder||this.drive.find()[0];
+        if(!base)return {needsFolder:true};
+        const folder=await this.drive.write(base,p.title,await this.exportedFiles(p.id));
+        return {folder,base,count:p.slides.length};
+      }
+      case 'stories':return this.stories(args.id);
+      case 'generateStoryArt':{const p=this.store.get(args.id),storyId=validId(args.storyId);if(!(p.stories||[]).some(s=>s.id===storyId))throw new Error('Story não encontrado.');return this.begin(args.id,'story',{storyId});}
       case 'deleteIdeas':await this.store.deleteIdeaBatch(args.batchId);return this.state();
       case 'ctaKit':return this.ctaKit(args.id);
       case 'saveProject':this.ensureIdle(args.id);return this.publish(await this.store.saveProject(args));
@@ -229,7 +273,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     if(options.slideId&&!p.slides.some(s=>s.id===options.slideId))throw new Error('Slide não encontrado.');
     const token={id,kind,cancelled:false};this.job=token;
     try{
-      const patch={status:kind==='images'||kind==='covers'?'generating':'planning',error:null};
+      const patch={status:['images','covers','story'].includes(kind)?'generating':'planning',error:null};
       if(options.message)patch.messages=[...p.messages,{id:randomUUID(),role:'user',text:options.message}];
       const started=await this.update(id,patch);
       // Resolve the UI request before running inference. Events carry durable progress.
@@ -241,6 +285,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       if(token.cancelled)return;
       if(token.kind==='images')await this.images(token,options.slideId,options.fix);
       else if(token.kind==='covers')await this.covers(token,options.count);
+      else if(token.kind==='story')await this.storyArt(token,options.storyId);
       else{
         this.emit({type:'activity',message:token.kind==='plan'?'Escrevendo o texto do carrossel com o Copy Engine…':'Revisando seu carrossel…'});
         const size=this.store.get(token.id).cardCount;const task=token.kind==='plan'?`Crie o TEXTO completo do carrossel (${size?`exatamente ${size} cards`:'de 6 a 10 cards'}) seguindo pauta → arquitetura → Copy Engine. Nesta etapa não há imagens: o usuário vai revisar, editar e aprovar o texto antes de qualquer arte.`:`MENSAGEM DO USUÁRIO: ${options.message}`;

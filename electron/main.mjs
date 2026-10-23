@@ -6,7 +6,7 @@ import { Store, validateReference } from '../core/store.mjs';
 import { CodexClient, safeError } from '../core/codex.mjs';
 import { Runtime, ACTIONS } from '../core/runtime.mjs';
 import { loadKnowledge } from '../core/knowledge.mjs';
-import { normalizeExport } from '../core/export.mjs';
+import { normalizeExport, normalizeFiles } from '../core/export.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 if(process.env.PACTO_USER_DATA)app.setPath('userData',resolve(process.env.PACTO_USER_DATA));
 let window,loginWindow,runtime,codex;
@@ -33,6 +33,8 @@ app.whenReady().then(async()=>{
   codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected&&loginWindow&&!loginWindow.isDestroyed())loginWindow.close();}});
   runtime=new Runtime({store,codex,knowledge,emit,dialogs:{login,
     async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:'Exportar carrossel',defaultPath:`${suggested}.zip`,filters:[{name:'Carrossel ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
+    async normalizeFiles(files){return normalizeFiles(files,nativeImage);},
+    async chooseFolder(){const result=await dialog.showOpenDialog(window,{title:'Escolha a pasta sincronizada (ex.: Meu Drive)',properties:['openDirectory','createDirectory']});return result.canceled?null:result.filePaths[0]||null;},
     async openCourse(url){const u=new URL(url);if(u.protocol!=='https:'||u.hostname!=='www.youtube.com')throw new Error('Link do curso inválido.');await shell.openExternal(u.href);},
     async importReference(){const result=await dialog.showOpenDialog(window,{title:'Importar referência visual',properties:['openFile'],filters:[{name:'Imagens',extensions:['png','jpg','jpeg','webp']}]});if(result.canceled||!result.filePaths[0])return {cancelled:true};const file=result.filePaths[0];if((await stat(file)).size>20*1024*1024)throw new Error('Use uma referência de até 20 MB.');const bytes=await readFile(file);if(nativeImage.createFromBuffer(bytes).isEmpty())throw new Error('Não foi possível ler a imagem.');const extension=extname(file).toLowerCase();const mime=extension==='.png'?'png':extension==='.webp'?'webp':'jpeg';const ref=validateReference({name:file.split(/[\\/]/).at(-1),dataUrl:`data:image/${mime};base64,${bytes.toString('base64')}`});return ref;}
   }});
@@ -42,4 +44,4 @@ app.whenReady().then(async()=>{
   });
   await createWindow();void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
 }).catch(error=>{dialog.showErrorBox('Não foi possível abrir o PACTO',safeError(error).message);app.quit();});
-app.on('window-all-closed',()=>app.quit());app.on('before-quit',()=>codex?.stop());
+app.on('window-all-closed',()=>app.quit());app.on('before-quit',()=>{void runtime?.sharing?.stop();codex?.stop();});

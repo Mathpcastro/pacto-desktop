@@ -34,6 +34,7 @@ import {
   StageBar,
   projectStage,
 } from "./Flow.jsx";
+import { PublishScreen } from "./Publish.jsx";
 
 function editableContent(slide) {
   return {
@@ -266,6 +267,7 @@ export default function Editor({
   onNavigationGuard,
   onIdeas,
   visualFixes = [],
+  settings,
 }) {
   const [selectedId, setSelectedId] = useState(project.slides?.[0]?.id || null);
   const [panel, setPanel] = useState("edit");
@@ -275,6 +277,7 @@ export default function Editor({
   const [leaveTarget, setLeaveTarget] = useState(null);
   const [editInfo, setEditInfo] = useState(false);
   const [dialog, setDialog] = useState(null);
+  const [adjusting, setAdjusting] = useState(false);
   const [info, setInfo] = useState({
     title: project.title,
     brief: project.brief,
@@ -431,7 +434,7 @@ export default function Editor({
             )}
             {exporting ? "Exportando…" : "Exportar"}
           </button>
-          {stage === "slides" && (
+          {["slides", "done"].includes(stage) && (
             <button
               className="button primary"
               disabled={
@@ -550,6 +553,16 @@ export default function Editor({
                 setPanelOpen(true);
               }}
             />
+          ) : stage === "done" && !adjusting ? (
+            <PublishScreen
+              project={project}
+              request={request}
+              busy={busy}
+              settings={settings}
+              onEdit={() => setAdjusting(true)}
+              onNotice={onNotice}
+              onOpenDialog={setDialog}
+            />
           ) : stage === "cover" ? (
             <CoverPicker
               project={project}
@@ -627,6 +640,15 @@ export default function Editor({
                   </IconButton>
                 </div>
                 <div className="canvas-actions">
+                  {stage === "done" && (
+                    <button
+                      className="button secondary"
+                      disabled={dirty}
+                      onClick={() => setAdjusting(false)}
+                    >
+                      <Check size={15} /> Pronto para publicar
+                    </button>
+                  )}
                   {index === 0 && project.coverOptions?.length > 1 && (
                     <button
                       className="button ghost"

@@ -20,6 +20,7 @@ export function projectStage(project) {
   if (!slides.length) return "start";
   if (!project.textApproved) return "text";
   if (!slides[0].image) return "cover";
+  if (slides.every((s) => s.image && s.state === "complete")) return "done";
   return "slides";
 }
 
@@ -28,8 +29,9 @@ export function StageBar({ stage }) {
     ["text", "Texto"],
     ["cover", "Capa"],
     ["slides", "Carrossel"],
+    ["done", "Publicar"],
   ];
-  const order = ["start", "text", "cover", "slides"];
+  const order = ["start", "text", "cover", "slides", "done"];
   const current = order.indexOf(stage);
   return (
     <ol className="stage-bar" aria-label="Etapas do carrossel">

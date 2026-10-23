@@ -145,10 +145,27 @@ export class Store {
     slide.versions=[...(slide.versions||[]),{file,createdAt:new Date().toISOString()}];slide.image=image;slide.state='complete';
     return this.update(id,{slides:p.slides});
   }
-  async exportZip(id){const p=this.get(id);if(!p.slides.length||p.slides.some(s=>!s.image||s.state==='outdated'||s.state==='generating'))throw new Error('Carrossel incompleto. Atualize as imagens de todos os slides antes de exportar.');const files={};
+  // A mesma lista de arquivos serve ao ZIP, ao celular e à pasta do Google Drive.
+  exportFiles(id){const p=this.get(id);if(!p.slides.length||p.slides.some(s=>!s.image||s.state==='outdated'||s.state==='generating'))throw new Error('Carrossel incompleto. Atualize as imagens de todos os slides antes de exportar.');const files={};
     for(const [i,s]of p.slides.entries()){const bytes=pngBytes(Buffer.from(s.image.split(',')[1],'base64'));files[`${String(i+1).padStart(2,'0')}.png`]=bytes;}
     files['legenda.txt']=strToU8(p.caption||'');
     if(p.ctaKit){const k=p.ctaKit;files['cta-e-dm.txt']=strToU8([`Palavras-chave: ${k.keywords.join(', ')}`,`CTA do primeiro card: ${k.firstCardCta}`,`CTA do último card: ${k.lastCardCta}`,`Material gratuito: ${k.freebie}`,'',`DM 1:\n${k.dm1}`,'',`DM 2:\n${k.dm2}`].join('\n'));}
-    return zipSync(files,{level:0});
+    if(p.stories?.length){
+      files['stories.txt']=strToU8(p.stories.map((s,i)=>[`STORY ${i+1} — ${s.type}`,s.text,s.sticker?`Sticker: ${s.sticker}`:'',s.cta?`CTA: ${s.cta}`:''].filter(Boolean).join('\n')).join('\n\n'));
+      p.stories.forEach((s,i)=>{if(s.image)files[`stories/${String(i+1).padStart(2,'0')}.png`]=pngBytes(Buffer.from(s.image.split(',')[1],'base64'));});
+    }
+    return files;
+  }
+  async exportZip(id){return zipSync(this.exportFiles(id),{level:0});}
+  async saveStories(id,stories){
+    if(!Array.isArray(stories)||!stories.length||stories.length>10)throw new Error('Sequência de stories inválida.');
+    const clean=stories.map(s=>({id:validId(s.id||randomUUID()),type:text(String(s.type||'Story'),60),text:text(String(s.text||''),2000),sticker:text(String(s.sticker||''),500),cta:text(String(s.cta||''),500),visual:text(String(s.visual||''),2000)}));
+    return this.update(id,{stories:clean});
+  }
+  async addStoryImage(id,storyId,input){
+    const bytes=pngBytes(input),p=this.get(id),story=(p.stories||[]).find(s=>s.id===validId(storyId));if(!story)throw new Error('Story não encontrado.');
+    const file=`${randomUUID()}.png`;await writeFile(join(this.root,'images',file),bytes);
+    story.image=`data:image/png;base64,${bytes.toString('base64')}`;story.file=file;
+    return this.update(id,{stories:p.stories});
   }
 }
