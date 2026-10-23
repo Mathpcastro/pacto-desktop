@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification } from 'electron';
+import { reminder } from '../core/rhythm.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join, extname, resolve } from 'node:path';
 import { readFile, writeFile, stat } from 'node:fs/promises';
@@ -28,6 +29,7 @@ async function createWindow(){
   if(dev){const url=new URL(dev);if(url.hostname!=='127.0.0.1'||url.protocol!=='http:')throw new Error('URL de desenvolvimento inválida.');await window.loadURL(url.href);}
   else await window.loadFile(join(root,'dist','index.html'));
 }
+if(process.platform==='win32')app.setAppUserModelId('com.matheuscastro.pacto');
 app.whenReady().then(async()=>{
   const storage=join(app.getPath('userData'),'library');const store=await new Store(storage).init();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
   codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected&&loginWindow&&!loginWindow.isDestroyed())loginWindow.close();}});
@@ -42,6 +44,9 @@ app.whenReady().then(async()=>{
     if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!ACTIONS.includes(action))throw new Error('Solicitação não permitida.');
     try{return await runtime.request(action,args);}catch(error){throw safeError(error);}
   });
-  await createWindow();void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
+  await createWindow();
+  // Lembrete diário de Volume → Sinal → Repetição, só com o app aberto e resultado pendente.
+  const remind=reminder(store.state().projects,store.state().settings);
+  if(remind&&Notification.isSupported()){const note=new Notification({title:'PACTO · hora de medir',body:remind});note.on('click',()=>{window?.show();window?.focus();emit({type:'navigate',view:'rhythm'});});note.show();await store.saveSettings({lastReminderAt:new Date().toISOString()});}void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
 }).catch(error=>{dialog.showErrorBox('Não foi possível abrir o PACTO',safeError(error).message);app.quit();});
 app.on('window-all-closed',()=>app.quit());app.on('before-quit',()=>{void runtime?.sharing?.stop();codex?.stop();});

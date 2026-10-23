@@ -15,6 +15,7 @@ import {
   Palette,
   Radar,
   Sun,
+  Trophy,
   X,
 } from "lucide-react";
 import { RuntimeErrorContext, usePacto } from "./usePacto.js";
@@ -26,6 +27,8 @@ import Library from "./components/Library.jsx";
 import CreateProject from "./components/CreateProject.jsx";
 import Editor from "./components/Editor.jsx";
 import Ideas from "./components/Ideas.jsx";
+import Rhythm from "./components/Rhythm.jsx";
+import { rhythm } from "../core/rhythm.mjs";
 
 function readTheme() {
   try {
@@ -62,6 +65,16 @@ export default function App() {
   const project = state.projects.find((p) => p.id === projectId);
   const connected = Boolean(state.account?.connected);
   const hasProfile = Boolean(state.profile);
+  const pendingResults = rhythm(state.projects, state.settings).pending.length;
+  useEffect(() => {
+    const go = (event) =>
+      navigate(() => {
+        setView(event.detail);
+        setProjectId(null);
+      });
+    window.addEventListener("pacto:navigate", go);
+    return () => window.removeEventListener("pacto:navigate", go);
+  }, []);
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [view, hasProfile, projectId]);
@@ -138,7 +151,9 @@ export default function App() {
           {state.profile && available && (
             <nav className="main-nav" aria-label="Navegação principal">
               <button
-                className={!["profile", "ideas"].includes(view) ? "active" : ""}
+                className={
+                  !["profile", "ideas", "rhythm"].includes(view) ? "active" : ""
+                }
                 onClick={() =>
                   navigate(() => {
                     setView("library");
@@ -158,6 +173,20 @@ export default function App() {
                 }
               >
                 <Radar size={15} /> Pautas
+              </button>
+              <button
+                className={view === "rhythm" ? "active" : ""}
+                onClick={() =>
+                  navigate(() => {
+                    setView("rhythm");
+                    setProjectId(null);
+                  })
+                }
+              >
+                <Trophy size={15} /> Ritmo
+                {pendingResults > 0 && (
+                  <span className="nav-badge">{pendingResults}</span>
+                )}
               </button>
               <button
                 className={view === "profile" ? "active" : ""}
@@ -350,6 +379,14 @@ export default function App() {
             visualFixes={state.visualFixes || []}
             settings={state.settings}
           />
+        ) : view === "rhythm" ? (
+          <Rhythm
+            state={state}
+            request={request}
+            onOpen={openProject}
+            onIdeas={() => setView("ideas")}
+            onCreate={(idea) => setCreating(idea)}
+          />
         ) : view === "ideas" ? (
           <Ideas
             state={state}
@@ -359,6 +396,10 @@ export default function App() {
           />
         ) : (
           <Library
+            ideas={state.ideas}
+            working={state.working}
+            connected={connected}
+            onIdea={(idea) => setCreating(idea)}
             projects={state.projects}
             request={request}
             onOpen={openProject}

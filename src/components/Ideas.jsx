@@ -17,7 +17,7 @@ const sources = {
   replicador: { label: "Replicador de Vencedores", icon: Trophy },
 };
 
-function IdeaCard({ idea, onCreate }) {
+export function IdeaCard({ idea, onCreate }) {
   return (
     <article className={`idea-card ${idea.top ? "top" : ""}`}>
       <header>

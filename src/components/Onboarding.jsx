@@ -248,6 +248,8 @@ export default function Onboarding({
           references,
         },
       });
+      // A biblioteca abre com oportunidades do Radar, não vazia (roda em segundo plano).
+      if (connected && !profile) request("radar", {}).catch(() => {});
       onDone();
     } catch {
     } finally {

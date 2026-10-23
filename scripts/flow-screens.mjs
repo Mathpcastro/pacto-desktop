@@ -30,8 +30,13 @@ const data = {
     { ...base, id: "p-text", title: "Etapa texto", status: "ready", textApproved: false, coverOptions: [], slides },
     { ...base, id: "p-cover", title: "Etapa capa", status: "ready", textApproved: true, coverOptions: art ? [1, 2, 3].map((n) => ({ id: `c${n}`, file: "x.png", image: art, createdAt: now })) : [], slides },
     { ...base, id: "p-slides", title: "Etapa carrossel", status: "ready", textApproved: true, coverOptions: [], ctaKit: { keywords: ["GUIA", "ERROS", "ARGILA"], firstCardCta: "Salve antes de começar", lastCardCta: "Quer o guia? Comente GUIA", freebie: "Checklist dos 5 erros (precisa ser preparado)", dm1: "Aqui está o checklist que prometi.", dm2: "Se quiser fazer sua primeira peça com acompanhamento, o curso Primeira Peça..." }, slides: slides.map((s) => (art ? { ...s, image: art, state: "complete", versions: [] } : s)) },
+    { ...base, id: "p-win", title: "Vencedor de exemplo", status: "complete", textApproved: true, coverOptions: [], publishedAt: new Date(Date.now() - 6 * 864e5).toISOString(), results: { comments: 120, saves: 340, sales: 3, recordedAt: now }, slides: slides.map((s) => (art ? { ...s, image: art, state: "complete", versions: [] } : s)) },
+    { ...base, id: "p-mid", title: "Mediano de exemplo", status: "complete", textApproved: true, coverOptions: [], publishedAt: new Date(Date.now() - 8 * 864e5).toISOString(), results: { comments: 6, saves: 14, sales: 0, recordedAt: now }, slides: slides.map((s) => (art ? { ...s, image: art, state: "complete", versions: [] } : s)) },
+    { ...base, id: "p-wait", title: "Esperando resultado", status: "complete", textApproved: true, coverOptions: [], publishedAt: new Date(Date.now() - 3 * 864e5).toISOString(), slides: slides.map((s) => (art ? { ...s, image: art, state: "complete", versions: [] } : s)) },
   ],
 };
+// "empty" mode: a brand-new buyer right after onboarding, with Radar results and no carousel yet.
+if (process.argv[4] === "empty") data.projects = [];
 await writeFile(join(userData, "library", "state.json"), JSON.stringify(data));
 const server = await createServer({ root, server: { host: "127.0.0.1", port: 0, strictPort: false } });
 let application;
@@ -42,6 +47,27 @@ try {
   const page = await application.firstWindow();
   await page.setViewportSize({ width: 1440, height: 940 }).catch(() => {});
   const shot = (name) => page.screenshot({ path: join(out, `${name}.png`) });
+  if (process.argv[4] === "empty") {
+    await page.getByRole("heading", { name: "Comece por uma destas pautas." }).waitFor();
+    await page.waitForTimeout(800);
+    await shot("11-biblioteca-oportunidades");
+    checks.push({ opportunities: await page.locator(".opportunities .idea-card").count() });
+    console.log(JSON.stringify({ completed: true, checks }));
+    process.exit(0);
+  }
+  await page.waitForTimeout(800);
+  await shot("12-biblioteca-com-faixa");
+  checks.push({ strip: await page.locator(".opportunity-strip .idea-card").count(), badge: await page.locator(".nav-badge").textContent() });
+  await page.getByRole("button", { name: /Ritmo/ }).click();
+  await page.getByRole("heading", { name: /carrosséis publicados/ }).waitFor();
+  await page.waitForTimeout(600);
+  await shot("13-ritmo");
+  checks.push({ pending: await page.locator(".pending-list li").count(), above: await page.locator(".winners tr.above").count() });
+  await page.getByRole("button", { name: "Aumentar meta" }).click();
+  await page.locator(".goal-stepper strong", { hasText: "6" }).waitFor({ timeout: 10000 }).catch(() => {});
+  checks.push({ goalAfterClick: await page.locator(".goal-stepper strong").textContent() });
+  await page.locator(".rhythm").evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await shot("13b-ritmo-vencedores");
   await page.getByRole("button", { name: /Pautas/ }).click();
   await page.getByRole("heading", { name: "Fixture do Radar" }).waitFor();
   await page.waitForTimeout(800);

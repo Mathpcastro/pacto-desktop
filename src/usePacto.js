@@ -75,6 +75,10 @@ export function usePacto() {
       if (event.type === "state") accept(event.state);
       if (event.type === "project") accept(event.project);
       if (event.type === "activity") setActivity(event.message || "");
+      if (event.type === "navigate")
+        window.dispatchEvent(
+          new CustomEvent("pacto:navigate", { detail: event.view }),
+        );
     });
     request("bootstrap")
       .catch(() => {})

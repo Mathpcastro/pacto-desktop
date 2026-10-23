@@ -2555,6 +2555,179 @@
     gap: 14px;
     margin-top: 6px;
   }
+  .main-nav .nav-badge {
+    display: inline-grid;
+    place-items: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 5px;
+    margin-left: 6px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--paper);
+    font-size: 10px;
+  }
+  .opportunities {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    align-items: flex-start;
+    padding: 10px 0 40px;
+  }
+  .opportunities > header h2 {
+    font:
+      normal 26px Georgia,
+      serif;
+    margin: 10px 0 6px;
+  }
+  .opportunities > header p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 620px;
+  }
+  .opportunities > .idea-grid {
+    align-self: stretch;
+  }
+  .opportunity-strip {
+    margin: 0 0 24px;
+  }
+  .opportunity-strip > header {
+    margin-bottom: 10px;
+  }
+  .rhythm {
+    width: min(1180px, calc(100% - 112px));
+    margin: 0 auto 60px;
+  }
+  .rhythm > .library-heading {
+    margin-top: 40px;
+  }
+  .rhythm > .library-heading h1 em {
+    color: var(--accent);
+  }
+  .rhythm > .library-heading p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 14px;
+  }
+  .rhythm-goal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 22px 26px;
+    margin: 28px 0;
+  }
+  .rhythm-goal h2,
+  .rhythm-section > header h2 {
+    font:
+      normal 22px Georgia,
+      serif;
+    margin: 8px 0 12px;
+  }
+  .rhythm-goal > div:first-child {
+    flex: 1;
+  }
+  .goal-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--canvas);
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .goal-bar > i {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    border-radius: inherit;
+    transition: width 400ms ease;
+  }
+  .goal-stepper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .goal-stepper button {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--input);
+    display: grid;
+    place-items: center;
+  }
+  .goal-stepper strong {
+    font:
+      normal 28px Georgia,
+      serif;
+    min-width: 34px;
+    text-align: center;
+  }
+  .rhythm-section {
+    margin: 0 0 34px;
+  }
+  .rhythm-section > header .eyebrow {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .pending-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pending-list li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px 14px;
+    background: var(--surface);
+  }
+  .pending-list img {
+    width: 44px;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+  .pending-list li > div {
+    flex: 1;
+  }
+  .winners {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .winners th {
+    text-align: left;
+    font-size: 9px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .winners td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .winners tr.above td:first-child {
+    border-left: 2px solid var(--accent);
+  }
+  .winners .idea-badge {
+    margin-left: 8px;
+  }
+  .rhythm-foot {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
 }
 @layer responsive {
   @media (min-width: 1550px) {

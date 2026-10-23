@@ -48,7 +48,7 @@ const artText=['title','body','emphasis','visual','prompt'];
 const projectText={title:200,brief:30000,caption:30000,architectureId:100,goal:200,editorialLine:2000,visualConcept:4000};
 export const CARD_COUNTS=[0,4,6,8,10];
 function cardCount(value){const n=Number(value||0);if(!CARD_COUNTS.includes(n))throw new Error('Quantidade de cards inválida.');return n;}
-const defaultSettings=()=>({weeklyGoal:5,driveFolder:'',firstCompletedAt:''});
+const defaultSettings=()=>({weeklyGoal:5,driveFolder:'',firstCompletedAt:'',lastReminderAt:''});
 export class Store {
   constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
   async init(){
@@ -94,7 +94,7 @@ export class Store {
     for(const key of Object.keys(patch)){
       if(key==='weeklyGoal'){const n=Number(patch[key]);if(!Number.isInteger(n)||n<1||n>50)throw new Error('Meta semanal inválida.');next.weeklyGoal=n;}
       else if(key==='driveFolder')next.driveFolder=text(patch[key],1000);
-      else if(key==='firstCompletedAt')next.firstCompletedAt=text(patch[key],40);
+      else if(key==='firstCompletedAt'||key==='lastReminderAt')next[key]=text(patch[key],40);
       else throw new Error('Configuração não permitida.');
     }
     this.data.settings=next;await this.persist();return this.state();

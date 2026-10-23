@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Dialog from "./Dialog.jsx";
+import { IdeaCard } from "./Ideas.jsx";
 
 const statusLabels = {
   draft: "Rascunho",
@@ -42,7 +43,15 @@ export default function Library({
   onOpen,
   pending,
   onCreate,
+  ideas = [],
+  working,
+  connected,
+  onIdea,
 }) {
+  const radar = ideas.find((b) => b.source === "radar");
+  const opportunities = (radar?.ideas || []).filter((i) => i.top);
+  const radarRunning = working === "radar";
+  const generate = () => request("radar", {}).catch(() => {});
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [deleteProject, setDeleteProject] = useState(null);
@@ -88,6 +97,18 @@ export default function Library({
           <Plus size={17} /> Novo carrossel
         </button>
       </div>
+      {projects.length > 0 && opportunities.length > 0 && (
+        <section className="opportunity-strip">
+          <header>
+            <span className="eyebrow">PRÓXIMAS OPORTUNIDADES · RADAR</span>
+          </header>
+          <div className="idea-grid">
+            {opportunities.slice(0, 3).map((idea) => (
+              <IdeaCard key={idea.id} idea={idea} onCreate={onIdea} />
+            ))}
+          </div>
+        </section>
+      )}
       <div className="library-toolbar">
         <div className="tabs" role="tablist" aria-label="Filtrar carrosséis">
           {[
@@ -194,6 +215,47 @@ export default function Library({
             );
           })}
         </div>
+      ) : !search && filter === "all" ? (
+        <section className="opportunities">
+          <header>
+            <span className="eyebrow">SUAS OPORTUNIDADES DE CONTEÚDO</span>
+            <h2>
+              {opportunities.length
+                ? "Comece por uma destas pautas."
+                : radarRunning
+                  ? "Procurando pautas para o seu negócio…"
+                  : "Vamos encontrar suas primeiras pautas."}
+            </h2>
+            <p>
+              {opportunities.length
+                ? "O Radar leu o seu Contexto Oficial da Marca e marcou as 10 ideias mais fortes para testar primeiro."
+                : "O Radar usa o seu Contexto Oficial da Marca para sugerir 30 pautas e marcar as 10 mais fortes."}
+            </p>
+          </header>
+          {opportunities.length ? (
+            <div className="idea-grid">
+              {opportunities.map((idea) => (
+                <IdeaCard key={idea.id} idea={idea} onCreate={onIdea} />
+              ))}
+            </div>
+          ) : radarRunning ? (
+            <div className="assistant-working" role="status">
+              <LoaderCircle size={14} className="spin" />
+              <span>Isso leva um ou dois minutos.</span>
+            </div>
+          ) : (
+            <button
+              className="button primary"
+              disabled={!connected}
+              onClick={generate}
+            >
+              <Search size={16} /> Gerar minhas oportunidades
+            </button>
+          )}
+          <button className="text-button" onClick={onCreate}>
+            <Plus size={14} /> Ou crie um carrossel com o seu próprio tema
+          </button>
+        </section>
       ) : (
         <section className="empty-library">
           <PaperStack />
