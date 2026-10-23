@@ -4,222 +4,344 @@ Voz: Matheus Castro · PACTO (clone ElevenLabs) · modelo eleven_v4. Orçamento:
 
 | Aula | Tema | Nicho | Caracteres | Fala | Aula |
 |---|---|---|---|---|---|
-| 1 | O método e o atalho | os quatro nichos de relance | 2.220 | ~2:19 | 3:00 |
-| 2 | Fundação: contexto e Design Kit | Vibra Fit (moda fitness, preset Creator/Pessoal) | 3.164 | ~3:18 | 5:00 |
-| 3 | P · Pauta: Radar e Modelador | Prado Advocacia Trabalhista (preset Editorial) | 2.154 | ~2:15 | 4:00 |
-| 4 | A + C · Arquitetura e Copy | Doce Ofício (confeiteira, preset Ilustrado) | 2.486 | ~2:35 | 4:30 |
-| 5 | T · Tratamento visual | Doce Ofício (continua o projeto da aula 4) | 1.901 | ~1:59 | 4:00 |
-| 6 | O · Oferta e a rotina que vende | Agendei (software de agendamento, preset Clean SaaS) | 2.206 | ~2:18 | 3:30 |
-| | **Total** | | **14.131** | **~14:43** | **24:00** |
+| 1 | Do zero ao carrossel | os quatro nichos de relance | 1.984 | ~2:04 | 2:14 |
+| 2 | Fundação: contexto e Design Kit | Vibra Fit (moda fitness, preset Creator/Pessoal) | 2.841 | ~2:58 | 3:08 |
+| 3 | P · Pauta: Radar e Modelador | Prado Advocacia Trabalhista (preset Editorial) | 1.861 | ~1:56 | 2:06 |
+| 4 | A + C · Arquitetura e Copy | Doce Ofício (confeiteira, preset Ilustrado) | 2.575 | ~2:41 | 2:51 |
+| 5 | T · Tratamento visual | Doce Ofício (continua o projeto da aula 4) | 1.574 | ~1:38 | 1:48 |
+| 6 | O · Oferta e a rotina que vende | Agendei (software de agendamento, preset Clean SaaS) | 2.105 | ~2:12 | 2:22 |
+| 7 | Quando algo sai errado | os quatro nichos, conforme cada situação | 2.879 | ~2:60 | 3:10 |
+| 8 | O curso é opcional, e vale a pena | o menu O método e o player dentro do app | 1.142 | ~1:11 | 1:21 |
+| | **Total** | | **16.961** | **~17:40** | **19:00** |
 
-## Aula 1 — O método e o atalho
+## Aula 1 — Do zero ao carrossel
 
-Nicho: os quatro nichos de relance. Base: Aula 01, Aula 08. 2.220 caracteres, cerca de 2:19 de fala, para 3:00 de aula.
+Nicho: os quatro nichos de relance. Base: Aula 01, Aula 08. 1.984 caracteres, cerca de 2:04 de fala, para 2:14 de aula.
 
-**1. abertura** · _Tela: Cartela da aula 1 e a tela inicial do PACTO._
+**1. resultado** · _Tela: Sequência acelerada de um carrossel nascendo: pauta, texto, capa, cards prontos, tela Publique hoje._
 
-> Bem-vindo ao PACTO. No curso Carrossel que Vende, o caminho é longo: você cria um projeto no ChatGPT, copia prompts do Notion, cola documentos como fonte, configura uma instrução geral e assiste a oito aulas antes do primeiro post. Funciona, mas dá trabalho. Neste app, tudo isso já vem instalado. Nestes vinte e poucos minutos, eu te mostro o método inteiro do jeito mais curto que existe: fazendo, aqui dentro.
+> Isso aqui é um carrossel saindo do zero. Uma pauta, um texto revisado, uma capa escolhida e os cards prontos pra publicar, com a identidade da marca em todos eles. Até o fim deste minicurso, é isso que você vai ter no seu celular: o seu primeiro carrossel, publicado.
 
-**2. metodo** · _Tela: As cinco letras sobre a tela; capturas rápidas de cada etapa do app._
+**2. atalho** · _Tela: Tela inicial do PACTO._
 
-> O método tem cinco letras, e cada uma resolve um problema. P de Pauta: encontrar ideias que valem um teste, em vez de ficar travado sem saber o que postar. A de Arquitetura: escolher a sequência dos cards antes de escrever, pra não começar todo carrossel do zero. C de Copy: texto curto, humano e específico, sem cara de IA. T de Tratamento visual: uma identidade que se repete em todos os cards e combina com o seu produto. E O de Oferta: transformar o último card em comentário, DM e venda. Cada aula deste minicurso é uma dessas letras, mostrada dentro do app.
+> O PACTO é o método do curso Carrossel que Vende transformado em aplicativo. Os prompts, os documentos de contexto e a instrução que o curso ensina a montar no ChatGPT já estão instalados aqui dentro. Você não precisa montar nada. Só precisa responder e decidir.
 
-**3. filosofia** · _Tela: Biblioteca com vários carrosséis; aba Ritmo de relance._
+**3. letras** · _Tela: As cinco letras sobre a tela, cada uma com a área do app correspondente._
 
-> E tem uma ideia que atravessa tudo: não tente prever o vencedor. Produza rápido o suficiente pra encontrá-lo. O app existe justamente pra baixar o custo de testar ideias. Quanto mais carrosséis bons você publica, mais rápido descobre o que o seu público quer.
+> O método tem cinco letras. P de pauta, pra nunca ficar sem saber o que postar. A de arquitetura, a sequência dos cards. C de copy, um texto curto que soa como gente. T de tratamento visual, a sua identidade em cada card. E O de oferta, o caminho do comentário até a venda. Cada aula a seguir é uma dessas letras, feita dentro do app.
 
-**4. conta** · _Tela: Etapa de conectar o ChatGPT; janela de login; status Conta conectada._
+**4. mapa** · _Tela: Lista das oito aulas do minicurso, com a etapa de cada uma._
 
-> O primeiro passo é conectar a sua própria conta do ChatGPT. É ela que escreve e desenha por trás do app, então os recursos e os limites são os da sua conta. Você entra uma vez e pronto: não tem terminal, não tem chave de API, não tem prompt pra copiar.
+> Este minicurso segue o caminho que você vai fazer no app. Primeiro a fundação, onde o app aprende sobre o seu negócio. Depois uma aula pra cada letra, sempre com um exemplo real. Uma aula pra quando algo sair do esperado. E uma última sobre o curso completo. Cada aula termina com uma ação pequena, e quando você chegar ao fim, vai ter um carrossel publicado.
 
-**5. tour** · _Tela: Menu superior: Biblioteca, Pautas, Ritmo, Minha identidade; os quatro carrosséis de exemplo em sequência._
+**5. filosofia** · _Tela: Biblioteca com os quatro carrosséis de exemplo lado a lado._
 
-> Lá em cima ficam as quatro áreas. Na Biblioteca vivem os seus carrosséis. Em Pautas nascem as ideias. No Ritmo você acompanha o que publicou e o que venceu. E em Minha identidade fica tudo o que o app sabe sobre o seu negócio. Repara nestes quatro exemplos, que você vai ver ao longo das aulas: uma advogada, um software de agendamento, uma confeiteira e uma loja de roupa fitness. Mesmo método, identidades completamente diferentes.
+> E tem uma ideia que guia tudo: ninguém sabe qual post vai vencer. O jeito de descobrir é publicar com frequência e prestar atenção no que funciona. O app existe pra deixar cada teste rápido e barato. Estes quatro carrosséis, de uma advogada, de um software, de uma confeiteira e de uma loja fitness, saíram do mesmo método. Você vai acompanhar cada um nas próximas aulas.
 
-**6. aulas-no-app** · _Tela: Clique em Ver na aula; o player abre dentro do app no minuto do trecho._
+**6. conta** · _Tela: Etapa Conectar seu ChatGPT; janela de login; status Conta conectada._
 
-> E se em algum momento você quiser entender o porquê de uma etapa, procure o botão ver na aula. Ele abre a aula original aqui dentro, já no trecho que explica aquilo. O curso vira consulta, não pré-requisito.
+> Uma coisa importante antes de começar. O PACTO usa a sua própria conta do ChatGPT pra escrever e desenhar. Então os recursos e os limites de uso são os do seu plano. E ele não publica nem manda mensagem por você: o carrossel fica pronto, e quem aperta o botão no Instagram é você.
 
-**7. proximo** · _Tela: Cartela final: Aula 2, Fundação._
+**7. acao** · _Tela: Botão Conectar conta em destaque._
 
-> Na próxima aula, a gente monta a fundação de tudo: o contexto da sua marca e o seu design kit.
+> A sua primeira ação é essa: conecte a sua conta. Leva menos de um minuto. Na próxima aula, o app vai te conhecer.
 
 ## Aula 2 — Fundação: contexto e Design Kit
 
-Nicho: Vibra Fit (moda fitness, preset Creator/Pessoal). Base: Aula 02, Aula 05, Aula 08. 3.164 caracteres, cerca de 3:18 de fala, para 5:00 de aula.
+Nicho: Vibra Fit (moda fitness, preset Creator/Pessoal). Base: Aula 02, Aula 05, Aula 08. 2.841 caracteres, cerca de 2:58 de fala, para 3:08 de aula.
 
-**1. porque** · _Tela: Tela do onboarding, etapa Contexto Oficial da Marca._
+**1. progresso** · _Tela: Etapa 1 marcada como concluída na lista do onboarding._
 
-> A regra número um do método é simples: a IA só escreve bem sobre o que ela entende. Se você pula esta etapa, o radar de pautas devolve ideias genéricas, que poderiam servir pra qualquer nicho. Por isso, antes de qualquer carrossel, o app monta o Contexto Oficial da Marca. É o mesmo prompt da Aula 2, só que você não precisa copiar nada nem salvar o documento como fonte de projeto. Você faz isso uma vez só.
+> Conta conectada, primeira etapa feita. Agora vem a única parte que você faz uma vez só e nunca mais: ensinar o app sobre o seu negócio.
 
-**2. entrevista** · _Tela: Começar entrevista; a primeira rodada de perguntas aparece; a resposta é digitada._
+**2. porque** · _Tela: Etapa Contexto Oficial da Marca._
 
-> Ele faz uma entrevista curta, em rodadas de até quatro perguntas, no máximo doze no total. O que você vende, pra quem, em que nível esse público está, quais são as dores e os desejos dele, que transformação a sua oferta entrega, o que você pode dar de graça e qual é o tom da sua marca. Responda com o máximo de detalhe. Pode responder várias perguntas de uma vez, do seu jeito, como se estivesse conversando. Quanto mais detalhe aqui, melhor fica cada carrossel depois.
+> A regra é simples. A IA só escreve bem sobre o que entende. Sem contexto, ela devolve ideias que serviriam pra qualquer nicho. Por isso o app monta o Contexto Oficial da Marca, o mesmo documento que a Aula 2 ensina a criar no ChatGPT.
 
-**3. exemplo** · _Tela: Respostas da Vibra Fit na conversa._
+**3. entrevista** · _Tela: Começar entrevista; a primeira rodada de perguntas; a resposta digitada._
 
-> Olha o exemplo da Vibra Fit. Ela vende leggings e tops que não ficam transparentes no agachamento. O público são mulheres que treinam, cansadas de cós que desce e tecido que esquenta. E ela já avisou os limites: não fala de emagrecimento nem de corpo ideal. Esses limites são tão importantes quanto o resto, porque viram regras que a IA vai respeitar em todo texto.
+> Ele te entrevista em rodadas curtas, com até quatro perguntas por vez. O que você vende, pra quem, o que tira o sono desse público e o que ele quer conquistar. Responda com detalhe e do seu jeito, várias perguntas de uma vez se quiser. Cada detalhe que você dá aqui melhora todos os carrosséis depois.
 
-**4. documento** · _Tela: Documento Contexto Oficial da Marca na tela; rolagem pelas seções; uma linha editada._
+**4. boa-resposta** · _Tela: Duas respostas lado a lado: uma vaga e uma específica._
 
-> Quando ele tem informação suficiente, entrega o documento: negócio e oferta, público, territórios de conteúdo, ativos gratuitos, voz da marca, regras e um resumo operacional. Se a sua ideia de produto ainda é uma hipótese, ele registra isso. Leia com calma e corrija o que não representa o seu negócio. Esse documento vai acompanhar todos os seus carrosséis, então vale o minuto de atenção.
+> Uma dica que muda tudo: troque o geral pelo específico. Vendo roupa fitness diz pouco. Vendo leggings que não ficam transparentes no agachamento, pra mulheres que treinam e já desistiram de duas marcas, diz exatamente pra quem você fala. A IA só pode ser tão específica quanto a sua resposta.
 
-**5. continuidade** · _Tela: Etapa Design Kit; grade de pontos de partida; Creator/Pessoal selecionado._
+**5. limites** · _Tela: Resposta da Vibra Fit com os limites da marca._
 
-> Agora começa o T do método, com o Design Kit da Aula 5. O princípio é o Efeito Continuidade: o carrossel, a sua página e o seu produto precisam parecer a mesma experiência. Quando a pessoa sai do post e chega na oferta, ela não pode sentir que mudou de lugar. Você pode partir de um dos seis estilos prontos, como ilustrado, editorial ou tech, mas o curso recomenda criar o seu, com as cores que você já usa no produto.
+> A Vibra Fit vende leggings que não ficam transparentes no agachamento. E ela disse o que não quer: nada de emagrecimento, nada de corpo ideal. Esses limites viram regras. A IA respeita em todo texto, sem você precisar lembrar.
 
-**6. design-entrevista** · _Tela: Referência visual anexada; rodada de perguntas do Design Kit; resposta com cores e estilo._
+**6. documento** · _Tela: Documento Contexto Oficial da Marca; rolagem; uma frase corrigida._
 
-> Se tiver, anexe um print do seu produto, da sua página ou de um estilo de ilustração que você gosta. Depois responda: cores, se quer ilustração, foto ou mascote, a sensação visual e o que evitar. A Vibra Fit pediu preto, off-white e um laranja vibrante, com rabiscos, setas e anotações, como o feed de uma amiga que treina junto. E proibiu corpos idealizados.
+> No fim, ele entrega o documento com a sua oferta, o seu público, os temas que você domina, os materiais que pode dar de graça e o tom da sua marca. Leia e corrija o que não for você. Esse texto vai acompanhar cada post.
 
-**7. kit** · _Tela: Documento Design Kit Oficial: paleta, tipografia, capa, cards, prompt-base visual._
+**7. ativos** · _Tela: Seção Ativos que posso entregar gratuitamente no documento._
 
-> O resultado é o Design Kit Oficial: paleta, fundo, tipografia, como é a capa, como são os cards internos, o estilo do CTA, os espaçamentos, o que é proibido e um prompt-base visual. É ele que garante que o seu décimo carrossel tenha a mesma cara do primeiro, sem você precisar descrever o estilo toda vez.
+> Dê atenção especial à parte de materiais gratuitos. Um checklist, um guia, uma planilha, um modelo. Eles vão virar o motivo pra alguém comentar no seu post e chamar você na DM. Se você ainda não tem nenhum, tudo bem, mas anote ideias: o app usa essa lista quando montar a sua oferta.
 
-**8. instalado** · _Tela: Tela Projeto instalado com os três itens marcados; Entrar no estúdio._
+**8. continuidade** · _Tela: Etapa Design Kit; o estilo Creator/Pessoal selecionado; referência anexada._
 
-> Aprovou, e o projeto está instalado. Repara no terceiro item: o Prompt Mestre da Aula 8, a instrução geral que junta todo o método, já entra sozinho em toda geração. No curso, essa era a parte de colar instrução na configuração do projeto. Aqui, você só clica em entrar no estúdio. E se um dia o seu negócio mudar, é só voltar em Minha identidade e ajustar.
+> Agora a identidade visual, o Design Kit da Aula 5. A ideia por trás dele é o Efeito Continuidade: o carrossel, a sua página e o seu produto precisam parecer o mesmo lugar. Quem sai do post e chega na sua oferta não pode sentir que mudou de loja. Você pode partir de um estilo pronto, mas o melhor é usar as cores que você já tem. Se tiver um print do seu produto, anexe.
 
-**9. proximo** · _Tela: Cartela final: Aula 3, Pauta._
+**9. kit** · _Tela: Respostas sobre cores e estilo; documento Design Kit Oficial._
 
-> E no momento em que você entra, o radar já começa a trabalhar. É o assunto da próxima aula.
+> A Vibra Fit pediu preto, off-white e laranja, com rabiscos e anotações, como o feed de uma amiga que treina junto. O app transforma isso em regras de cor, tipografia, capa e cards. É por isso que o décimo carrossel vai ter a mesma cara do primeiro.
+
+**10. instalado** · _Tela: Tela Projeto instalado com os três itens marcados._
+
+> Pronto. Contexto, Design Kit e o Prompt Mestre da Aula 8, a instrução que junta o método inteiro, instalados. No curso, essa montagem leva uma aula inteira. Aqui, levou uns minutos de conversa.
+
+**11. mudar** · _Tela: Menu Minha identidade com os dois documentos._
+
+> E isso não fica congelado. Se o seu produto mudar, se você lançar uma oferta nova ou quiser outro visual, é só abrir Minha identidade e ajustar. Os próximos carrosséis já saem com a versão nova.
+
+**12. acao** · _Tela: Botão Entrar no estúdio._
+
+> Sua ação agora: faça a sua entrevista e aprove os dois documentos. Quando você entrar no estúdio, o radar já vai estar procurando pautas pra você.
 
 ## Aula 3 — P · Pauta: Radar e Modelador
 
-Nicho: Prado Advocacia Trabalhista (preset Editorial). Base: Aula 02, Swipe File. 2.154 caracteres, cerca de 2:15 de fala, para 4:00 de aula.
+Nicho: Prado Advocacia Trabalhista (preset Editorial). Base: Aula 02, Swipe File. 1.861 caracteres, cerca de 1:56 de fala, para 2:06 de aula.
 
-**1. fontes** · _Tela: Aba Pautas; cartela com as quatro fontes de pauta._
+**1. progresso** · _Tela: Biblioteca abrindo com as oportunidades de conteúdo._
 
-> A letra P é de pauta, e é onde a maioria das pessoas trava. A Aula 2 ensina quatro fontes. Modelar referências que funcionaram. Acompanhar tendências e assuntos com atenção recente. Transformar o seu próprio conteúdo, como dúvidas de clientes e bastidores. E pesquisar com IA, com contexto suficiente sobre o que você vende. No app, a primeira e a última viraram ferramentas: o Modelador e o Radar.
+> O seu negócio já está no app, e a biblioteca já não abre vazia: ela mostra oportunidades de conteúdo feitas pra você. É a letra P trabalhando.
 
-**2. radar** · _Tela: Campo de foco preenchido; Gerar 30 pautas; o lote aparece._
+**2. fontes** · _Tela: Aba Pautas; as quatro fontes de pauta._
 
-> O Radar lê o seu Contexto Oficial da Marca e propõe trinta pautas. Você pode dar um foco pra rodada. A Helena, que é advogada trabalhista, pediu dúvidas de quem acabou de ser demitido. E repara: ele não tenta adivinhar o que vai viralizar. O objetivo é volume de testes com ideias boas o suficiente pra publicar.
+> O curso ensina quatro fontes de pauta: modelar referências que funcionaram, acompanhar tendências, aproveitar o seu próprio conteúdo e pesquisar com IA. No app, duas delas viraram botões: o Radar e o Modelador.
 
-**3. top10** · _Tela: Filtro Mostrar só o Top 10; um cartão de pauta em destaque._
+**3. outras-fontes** · _Tela: Campo de tema da criação de carrossel recebendo um texto colado._
 
-> Das trinta, ele marca as dez mais fortes pra testar primeiro e explica por quê. Cada pauta traz o hook da capa, o motivo pra alguém parar, o que ela entrega de útil, qual problema do seu público ela conecta e a arquitetura sugerida. Repara que tudo gira em torno de utilidade: as pautas que mais vencem são as que entregam algo que a pessoa quer salvar.
+> E as outras duas fontes também cabem aqui. Viu uma tendência ou uma notícia do seu mercado? Cole no campo de tema ao criar o carrossel. Um cliente te fez uma pergunta boa? Ela é uma pauta pronta. O seu próprio conteúdo, um vídeo, uma aula, uma dúvida respondida no direct, vira carrossel do mesmo jeito.
 
-**4. formatos** · _Tela: Rolagem pelas pautas mostrando formatos diferentes._
+**4. radar** · _Tela: Campo de foco preenchido; Gerar 30 pautas; o lote aparece._
 
-> E você vai ver formatos variados: lista de ferramentas, erros comuns, passo a passo, checklist, antes e depois, mitos, perguntas frequentes. Isso vem do banco de formatos do curso. Variar o formato é uma forma barata de testar mais sem mudar de assunto.
+> O Radar lê o seu contexto e traz trinta pautas. A Helena, advogada trabalhista, pediu um foco: dúvidas de quem acabou de ser demitido. Das trinta, ele marca as dez mais fortes pra testar primeiro. Cada uma vem com o gancho da capa, o motivo pra alguém parar, o que ela entrega de útil e a arquitetura sugerida.
 
-**5. modelador** · _Tela: Aba Modelador de Referências; texto colado; print anexado; Modelar sem copiar._
+**5. utilidade** · _Tela: Cartões do Top 10 com formatos diferentes._
 
-> Viu um carrossel de outra pessoa que performou bem? Use o Modelador. Cole o texto ou anexe até quatro prints. A regra de ouro da Aula 2 é: copie o motivo pelo qual funcionou, nunca o conteúdo. Nem o texto, nem o design.
+> As pautas que mais vencem têm uma coisa em comum: entregam algo que a pessoa quer guardar. Checklist, passo a passo, erros comuns, lista de recursos. Se você ficar na dúvida entre duas, escolha a mais útil.
 
-**6. analise** · _Tela: Resultado do Modelador: motivo real, o que pode modelar, o que não copiar; dez pautas novas._
+**6. criterio** · _Tela: Cartão de pauta destacando o campo Por que para._
 
-> Ele explica o motivo real do desempenho: a dor que a referência ativou, a promessa, o nível de especificidade, por que alguém salvaria. Depois diz o que dá pra modelar e o que não deve ser copiado, e entrega dez pautas novas pro seu negócio, preservando só o princípio que deixou a referência forte.
+> E antes de escolher, faça a pergunta da Aula 2: essa pauta está ligada a uma dor, a um desejo ou a uma oportunidade do meu público? Se a resposta for não, ela pode até dar alcance, mas dificilmente leva alguém até a sua oferta. O Radar já traz essa ligação escrita em cada cartão.
 
-**7. biblioteca** · _Tela: Biblioteca com a faixa de oportunidades; clique em Criar carrossel; formulário pré-preenchido._
+**7. modelador** · _Tela: Aba Modelador; print colado; Modelar sem copiar; análise e dez pautas._
 
-> As melhores pautas também aparecem na Biblioteca como oportunidades de conteúdo, sempre à mão. Gostou de uma? Criar carrossel. O título, o tema, a entrega e a arquitetura sugerida já vêm preenchidos. Do zero a uma pauta pronta, foram menos de dois minutos.
+> E quando você vir um carrossel de outra pessoa indo muito bem, leve pro Modelador. Ele explica o motivo real do desempenho, separa o que você pode aproveitar do que não deve copiar, e cria dez pautas novas pro seu negócio. A regra da Aula 2 é essa: copie o motivo pelo qual funcionou, nunca o conteúdo.
 
-**8. proximo** · _Tela: Cartela final: Aula 4, Arquitetura e Copy._
+**8. acao** · _Tela: Cartão do Top 10; clique em Criar carrossel; formulário pré-preenchido._
 
-> Agora vem a parte que mais muda o resultado: arquitetura e copy.
+> Sua ação: abra o seu Top 10 e escolha uma pauta. Clique em criar carrossel. Na próxima aula, ela vira texto.
 
 ## Aula 4 — A + C · Arquitetura e Copy
 
-Nicho: Doce Ofício (confeiteira, preset Ilustrado). Base: Aula 03, Aula 04, Anatomia dos Vencedores. 2.486 caracteres, cerca de 2:35 de fala, para 4:30 de aula.
+Nicho: Doce Ofício (confeiteira, preset Ilustrado). Base: Aula 03, Aula 04, Anatomia dos Vencedores. 2.575 caracteres, cerca de 2:41 de fala, para 2:51 de aula.
 
-**1. arquitetura** · _Tela: Janela Qual é a sua próxima ideia; grade das cinco arquiteturas._
+**1. progresso** · _Tela: Janela de novo carrossel com a pauta já preenchida._
 
-> A letra A é de arquitetura, e a regra da Aula 3 é: escolha a sequência dos cards antes de escrever. Quem escreve primeiro e organiza depois acaba com um carrossel sem ritmo. São cinco. Lista útil, pra coleções de ferramentas, erros ou recursos. Tutorial, pra levar de A até B. Framework, pra apresentar um método ou um jeito novo de pensar. Estudo de caso, pra mostrar uma execução real, com bastidores. E História, Método e Oferta, pra criar conexão antes de apresentar o que você vende.
+> Você tem uma pauta escolhida. Agora vem a parte que mais separa um carrossel bom de um esquecível: a sequência e o texto.
 
-**2. escolha** · _Tela: História → Método → Oferta selecionada; objetivo Salvamentos; tamanho 4 cards; linha editorial e mascote._
+**2. arquitetura** · _Tela: Grade das cinco arquiteturas._
 
-> A Ana, da Doce Ofício, vai contar de quando cobrava só os ingredientes dos bolos. Então: História, Método e Oferta. Objetivo: salvamentos. E aqui você escolhe quantos cards quer. Menos cards gastam menos do limite da sua conta. Você também pode definir a linha editorial e o mascote. Se deixar em branco, o PACTO sugere pelo seu Design Kit. Na dúvida sobre a arquitetura, deixe o PACTO escolher.
+> A Aula 3 manda escolher a arquitetura antes de escrever. São cinco. Lista útil, pra juntar recursos ou erros. Tutorial, pra levar a pessoa de um ponto a outro. Framework, pra apresentar um método seu. Estudo de caso, pra mostrar algo que aconteceu de verdade. E história, método e oferta, pra criar conexão antes de vender.
 
-**3. texto-primeiro** · _Tela: Etapa Texto: Primeiro o texto, depois a arte; Gerar o texto do carrossel._
+**3. escolha** · _Tela: História → Método → Oferta, objetivo Salvamentos, 4 cards._
 
-> E agora a regra que mais protege o seu resultado: primeiro o texto, nunca a imagem. A IA escreve, você revisa, e só depois ela desenha. Imagem gerada em cima de texto ruim é retrabalho garantido.
+> A Ana, da Doce Ofício, vai contar de quando cobrava só os ingredientes do bolo. História, método e oferta, com o objetivo de ser salvo. E ela escolheu quatro cards, porque menos cards também gastam menos do limite da sua conta.
 
-**4. copy-engine** · _Tela: Quadro de texto: cards com função, título, texto, destaque e ilustração._
+**4. texto-primeiro** · _Tela: Gerar o texto do carrossel; o quadro de texto aparece._
 
-> A letra C é o Copy Engine da Aula 4, já embutido. Uma ideia por card. Frases curtas, com palavras que as pessoas usam de verdade. A capa promete algo específico. O card dois não repete a capa: ele faz um reframe, um contraste ou começa a entrega na hora. Os cards internos entregam uma micro-recompensa cada um. E o último card funciona como uma mini página de venda: desejo, entregável concreto e uma ação só.
+> E aqui está a regra que protege o seu resultado: primeiro o texto, depois a imagem. Arte bonita em cima de texto fraco é retrabalho garantido.
 
-**5. humanizacao** · _Tela: Mensagem de revisão final do assistente._
+**5. copy** · _Tela: Cards com função, título e texto._
 
-> Depois de escrever, ele revisa como editor-chefe. Tira as frases com cara de IA, como importância inflada, adjetivo vazio e aquele não é isso, é aquilo repetido. E nunca inventa número, prova ou resultado pra deixar o texto mais convincente. Se não tem prova, ele explica sem prometer.
+> O texto sai com o Copy Engine da Aula 4. Uma ideia por card, frases curtas. A capa faz uma promessa específica. O segundo card já entrega alguma coisa, sem repetir a capa. E o último funciona como uma mini página de venda: o que a pessoa quer, o que ela recebe e uma ação só. Depois, uma segunda revisão tira as frases com cara de robô e nada de inventar número ou prova.
 
-**6. edicao** · _Tela: Outras headlines de capa; um clique troca o título; um texto é editado._
+**6. card2** · _Tela: Card 2 do carrossel da Doce Ofício em destaque._
 
-> Tudo aqui é editável. Embaixo da capa, você tem outras headlines, cada uma com uma fórmula dos carrosséis vencedores, como dor mais comando ou número mais recurso. Um clique troca. E se uma frase não tem a sua cara, mude. Você conhece o seu público melhor do que qualquer IA.
+> O segundo card merece atenção, porque é ali que a pessoa decide se continua. A Anatomia dos vencedores mostra três caminhos. Reenquadrar o problema, contrastar o jeito errado com o certo, ou começar a entrega imediatamente. No carrossel da Ana, ele vira a história: nas primeiras encomendas, ela errou o preço e trabalhou sem perceber que estava se pagando mal.
 
-**7. revisao** · _Tela: Revisão humana: os seis itens marcados um a um; Aprovar texto e criar a capa._
+**7. prova** · _Tela: Comparação lado a lado: um título genérico e o título do PACTO._
 
-> Antes de aprovar, o app pede a revisão humana da Aula 4. A capa faria você parar? O card dois paga a promessa ou enrola? Tem algum card que dá pra tirar sem perder valor? Tem alguma frase que você jamais falaria? O último card deixa claro o que a pessoa recebe e o que precisa fazer? Só com tudo conferido você aprova. A IA acelera a escrita. O seu julgamento decide se vale publicar.
+> A diferença aparece na hora. Sem contexto, a IA escreve algo como dicas para precificar seus bolos. Com o método, saiu pare de cobrar só os ingredientes. Uma frase serve pra qualquer confeiteira. A outra só podia ser da Ana.
 
-**8. proximo** · _Tela: Cartela final: Aula 5, Tratamento visual._
+**8. editar** · _Tela: Outras headlines de capa; um clique troca; uma frase editada._
 
-> Texto aprovado. Agora a gente transforma isso em arte.
+> E nada aqui é definitivo. Debaixo da capa ficam outras opções de título, cada uma com uma fórmula dos carrosséis vencedores. Um clique troca. Se uma frase não tem a sua cara, você reescreve.
+
+**9. legenda** · _Tela: Campo de legenda com o pedido na primeira linha._
+
+> E a legenda vem junto, já com o pedido de comentário ou de salvamento na primeira linha, como o curso ensina. Ela complementa os cards, sem repetir o que já está neles. A linha editorial e o mascote também ficam aqui em cima, e você pode mudar os dois antes de aprovar.
+
+**10. revisao** · _Tela: Revisão humana: os seis itens marcados; Aprovar texto._
+
+> Antes de aprovar, o app faz as perguntas da Aula 4. A capa faria você parar? O segundo card cumpre a promessa? Tem alguma frase que você nunca falaria? A IA acelera a escrita, mas quem decide se vale publicar é você.
+
+**11. acao** · _Tela: Texto aprovado; etapa Capa aguardando._
+
+> Sua ação: gere o texto da sua pauta, revise e aprove. O seu carrossel já tem texto. Falta ele ganhar cara, e isso é a próxima aula.
 
 ## Aula 5 — T · Tratamento visual
 
-Nicho: Doce Ofício (continua o projeto da aula 4). Base: Aula 05, Aula 06. 1.901 caracteres, cerca de 1:59 de fala, para 4:00 de aula.
+Nicho: Doce Ofício (continua o projeto da aula 4). Base: Aula 05, Aula 06. 1.574 caracteres, cerca de 1:38 de fala, para 1:48 de aula.
 
-**1. capa-regra** · _Tela: Etapa Capa: Escolha a capa que faria você parar; seletor de 1, 2 ou 3 opções._
+**1. progresso** · _Tela: Etapa Capa com o título aprovado._
 
-> A letra T é o tratamento visual. A capa é a peça com a maior responsabilidade de parada, então ela precisa ser mais forte visualmente que os cards internos. Texto principal na horizontal, leitura rápida numa tela pequena, uma promessa forte e uma cena ou metáfora que acrescente ideia. Por isso o app gera a capa primeiro, e você pode pedir uma, duas ou três opções.
+> Texto aprovado. Agora a letra T, o tratamento visual, começando pela peça mais importante.
 
-**2. opcoes** · _Tela: Três capas com composições diferentes lado a lado._
+**2. capa** · _Tela: Seletor de 1, 2 ou 3 opções; três capas lado a lado._
 
-> Cada opção vem com uma composição diferente: uma cena com o mascote, uma metáfora visual e uma versão com o título dominando. O texto é exatamente o que você aprovou, sempre na horizontal e sem erro de acento. Repara como todas seguem o Design Kit: as cores, o traço em aquarela e o cupcake da Doce Ofício.
+> A capa é quem faz a pessoa parar de rolar o feed, então ela precisa ser mais forte que o resto. Título grande e na horizontal, fácil de ler no celular, e uma cena que acrescente alguma coisa à promessa. Você pede de uma a três opções, e cada uma vem com uma composição diferente, mas com o mesmo texto e a mesma identidade.
 
-**3. referencia** · _Tela: Usar esta capa; a capa entra no primeiro slide._
+**3. evitar** · _Tela: Uma capa com título curto e cena que acrescenta ideia._
 
-> Escolha a que faria você parar no meio do feed. Essa capa vira a referência de estilo do carrossel inteiro: cores, traço, tipografia e personagem. Não gostou de nenhuma? Gere outras opções, ou volte ao texto e ajuste a headline.
+> Duas coisas que o curso pede pra evitar na capa. Repetir no desenho exatamente o que o título já diz, e encher de elementos. Uma cena boa acrescenta uma ideia à promessa, e uma capa limpa se lê em um segundo, no meio do feed.
 
-**4. restante** · _Tela: Gerar restantes; os cards aparecendo um a um na lateral._
+**4. referencia** · _Tela: Usar esta capa; a capa entra no primeiro card._
 
-> Agora sim: gerar os restantes. Cada card sai em quatro por cinco, o formato do Instagram, legível no celular, com pouco texto, uma ideia por card e a mesma identidade da capa. Enquanto isso, você acompanha card por card aqui na lateral. É o Design Kit trabalhando por você.
+> Escolha a que faria você parar. Ela vira a referência do carrossel inteiro: cores, traço, letra e personagem. Não gostou de nenhuma? Peça outras.
 
-**5. correcao** · _Tela: Card com problema; Corrigir; chips Título pequeno e Texto excessivo; Corrigir este card._
+**5. restante** · _Tela: Gerar restantes; os cards surgindo na lateral._
 
-> Se um card sair errado, não refaça tudo. A Aula 5 ensina a correção visual rápida: corrija só o que está errado e preserve o resto. Aqui você marca o problema, como título pequeno, texto excessivo ou ilustração que não combina, escreve um detalhe se quiser, e só aquele card é refeito, mantendo cores, personagem e composição.
+> Agora o app desenha os outros cards, no formato do Instagram, com a mesma cara da capa. O cupcake da Doce Ofício aparece em todos, sem você pedir de novo.
 
-**6. ajustes** · _Tela: Ajustar slide: título editado; aviso de arte desatualizada._
+**6. correcao** · _Tela: Corrigir; marcar Título pequeno; Corrigir este card._
 
-> E se você quiser mudar uma palavra depois que a arte já saiu, tudo bem. O app marca aquele card como desatualizado e você gera só ele de novo. Nenhum carrossel sai incompleto ou com texto antigo.
+> Se um card sair estranho, não refaça tudo. A Aula 5 ensina a correção pontual: você marca o problema, como título pequeno ou texto demais, e só aquele card é refeito, preservando o resto.
 
-**7. pronto** · _Tela: Tela Pronto para publicar com os cards em sequência._
+**7. desatualizado** · _Tela: Ajustar slide com o título editado e o aviso de arte desatualizada._
 
-> Quando todos os cards estão prontos, o app te leva pra tela final, com o carrossel inteiro em sequência. No primeiro, tem até comemoração. Você merece.
+> E se você quiser trocar uma palavra depois que a arte saiu, tudo bem. O app marca aquele card como desatualizado e você gera só ele de novo. Assim, nenhum carrossel sai com texto antigo.
 
-**8. proximo** · _Tela: Cartela final: Aula 6, Oferta e rotina._
+**8. pico** · _Tela: Tela Você fez. Agora publique hoje, com os cards entrando em sequência._
 
-> Falta a última letra, a que transforma atenção em venda.
+> E olha isso. Quando o último card fica pronto, o app abre a tela final com o carrossel inteiro. É o seu primeiro carrossel com o Método PACTO, pronto pra ir pro ar.
+
+**9. acao** · _Tela: Tela final do carrossel._
+
+> Sua ação: escolha a sua capa e gere o resto. Na próxima aula, ele sai do computador e vai pro mundo.
 
 ## Aula 6 — O · Oferta e a rotina que vende
 
-Nicho: Agendei (software de agendamento, preset Clean SaaS). Base: Aula 07, Aula 08, Bônus de Replicação. 2.206 caracteres, cerca de 2:18 de fala, para 3:30 de aula.
+Nicho: Agendei (software de agendamento, preset Clean SaaS). Base: Aula 07, Aula 08, Bônus de Replicação. 2.105 caracteres, cerca de 2:12 de fala, para 2:22 de aula.
 
-**1. fluxo** · _Tela: Tela Pronto para publicar do Agendei; cartela Carrossel → CTA → Comentário → DM → Entrega → Oferta._
+**1. progresso** · _Tela: Tela Pronto para publicar do Agendei._
 
-> A letra O é de oferta, e a Aula 7 resume tudo numa linha: carrossel, CTA, comentário, DM, entrega e oferta. O carrossel não termina no último card. Ele gera uma ação que abre caminho pro que você vende. O comentário mostra quem se interessou, e a DM é onde a conversa começa.
+> Seu carrossel está pronto. Agora a última letra, O de oferta, e a rotina que transforma posts em vendas.
 
-**2. cta** · _Tela: Gerar CTA, DM e oferta; palavras-chave; DM 1 e DM 2._
+**2. fluxo** · _Tela: Carrossel → CTA → Comentário → DM → Entrega → Oferta._
 
-> Aqui o PACTO cria dez palavras-chave fáceis de comentar, o CTA do primeiro e do último card, uma ideia de material gratuito e duas mensagens de DM. A primeira entrega exatamente o que você prometeu, sem enrolação. A segunda conecta o material ao seu produto, sem parecer propaganda forçada. No Agendei, quem comenta recebe o checklist e, depois, o convite pros catorze dias grátis. Regra da aula: nunca esconda a entrega atrás da oferta.
+> A Aula 7 resume assim: o carrossel leva a um pedido de comentário, o comentário vira conversa na DM, a DM entrega um material e o material abre caminho pra oferta. O post não termina no último card.
 
-**3. stories** · _Tela: Stories de perguntas e oferta; a sequência aparece alternando os tipos._
+**3. cta** · _Tela: Gerar CTA, DM e oferta; palavras-chave; DM 1 e DM 2._
 
-> Depois do post, os stories. A Aula 8 recomenda usar os stories pra caixa de perguntas e oferta, alternando: pergunta, oferta, pergunta, oferta. Nada de postar coisa aleatória. O app monta essa sequência a partir do carrossel, e a arte de cada story é opcional, pra economizar o limite da sua conta.
+> Aqui o app prepara essa sequência. Uma palavra-chave fácil de comentar, o pedido no primeiro e no último card, e duas mensagens de DM. A primeira entrega o que você prometeu, sem rodeio. A segunda conecta o material ao seu produto. No Agendei, quem comenta recebe um checklist e, depois, o convite pro teste grátis. A regra é entregar primeiro e oferecer depois.
 
-**4. publicar** · _Tela: Enviar para o celular: QR code; Salvar no Google Drive; Copiar legenda._
+**4. palavra** · _Tela: Lista de palavras-chave sugeridas._
 
-> Na hora de publicar, aponte a câmera do celular pro QR code e salve as imagens direto no celular. Ou mande tudo pra pasta do Google Drive. A legenda já vem com o CTA na primeira linha, é só copiar. O app não publica nem manda DM sozinho: quem aperta o botão é você.
+> Sobre a palavra-chave, a Aula 7 é clara: simples e ligada ao conteúdo. Se o carrossel é sobre agenda, a palavra pode ser agenda ou checklist. Uma palavra estranha ou longa diminui os comentários, porque cria esforço pra pessoa.
 
-**5. ritmo** · _Tela: Marquei como publicado; aba Ritmo: meta da semana, aguardando resultado, vencedores._
+**5. stories** · _Tela: Stories de perguntas e oferta._
 
-> E aqui começa a rotina que faz o método funcionar: volume, sinal, repetição. Marque como publicado. Em dois ou três dias, o app te lembra de registrar comentários, salvamentos e vendas, as três métricas do curso. No Ritmo você define a sua meta da semana e vê quais carrosséis ficaram acima da sua média. Na fase de descoberta, o curso sugere de três a quatro por dia, se você tiver capacidade.
+> Pros dias seguintes, o app monta stories alternando caixa de perguntas e oferta, como recomenda a Aula 8. A arte de cada story é opcional.
 
-**6. replicar** · _Tela: Registrar resultado; Salvar e replicar; dez ideias novas na aba Pautas._
+**6. celular** · _Tela: Enviar para o celular: QR code; a página no celular; Copiar legenda._
 
-> Achou um vencedor? Replique. O app analisa o provável motivo do desempenho e gera dez ideias novas: três variações próximas, três novos ângulos do mesmo problema, duas versões mais específicas e duas ideias vizinhas pro mesmo público. Não é trocar palavras. É preservar o que fez o post vencer.
+> Agora, publicar. Aponte a câmera do celular pro QR code, com o celular no mesmo wi-fi, e salve as imagens direto na galeria. Ou mande pra sua pasta do Google Drive. A legenda já vem com o pedido de comentário na primeira linha.
 
-**7. fechamento** · _Tela: Cartela final do minicurso._
+**7. ritmo** · _Tela: Marquei como publicado; aba Ritmo com a meta e os vencedores._
 
-> Esse é o Método PACTO, do jeito mais curto possível: pauta, arquitetura, copy, tratamento visual e oferta, tudo num lugar só. Agora não tem mais desculpa. Abra o app, escolha uma das suas oportunidades e publique o seu primeiro carrossel hoje.
+> Depois de postar, marque como publicado. Em dois ou três dias, o app te lembra de anotar comentários, salvamentos e vendas. No Ritmo, você define quantos carrosséis quer por semana e vê quais ficaram acima da sua média. Volume, sinal, repetição.
+
+**8. metricas** · _Tela: Tabela de vencedores com as colunas de comentários, salvamentos e vendas._
+
+> E cada número conta uma coisa. Salvamento mostra que o conteúdo foi útil. Comentário mostra interesse no que você entrega. Venda mostra que a ponte até a oferta funcionou. Na fase de descoberta, o curso sugere testar de três a quatro carrosséis por dia, se você tiver fôlego. Se um post não vence, sem drama: publique o próximo.
+
+**9. replicar** · _Tela: Salvar e replicar; dez ideias novas._
+
+> Quando um post vence, replique. O app entende o que fez ele funcionar e cria dez ideias novas que preservam esse motivo, mudando o ângulo, o exemplo ou o recorte.
+
+**10. acao** · _Tela: Botão Enviar para o celular em destaque._
+
+> Sua ação: publique o seu carrossel hoje e marque como publicado. Esse é o passo que faz todo o resto valer a pena.
+
+## Aula 7 — Quando algo sai errado
+
+Nicho: os quatro nichos, conforme cada situação. Base: Aula 04, Aula 05, Aula 07. 2.879 caracteres, cerca de 2:60 de fala, para 3:10 de aula.
+
+**1. abertura** · _Tela: Cartela: Quando algo sai errado._
+
+> Uma hora alguma coisa vai sair diferente do esperado. Nesta aula estão as situações mais comuns e o que fazer em cada uma, pra você nunca ficar travado.
+
+**2. limite** · _Tela: Aviso O limite da sua conta foi atingido; projeto preservado._
+
+> Primeira: apareceu o aviso de que o limite da sua conta foi atingido. Isso é do seu plano do ChatGPT, não do app. Nada se perde. O carrossel fica salvo do jeito que estava, e quando o limite renovar você continua do mesmo ponto. Pra render mais, use carrosséis de quatro ou seis cards, peça uma opção de capa e gere a arte dos stories só quando for usar.
+
+**3. sessao** · _Tela: Status Conectar conta; botão de reconectar._
+
+> Segunda: o app pediu pra conectar a conta de novo. Às vezes a sessão expira. É só clicar em conectar. O seu trabalho continua lá.
+
+**4. fechou** · _Tela: Projeto reaberto com o aviso de operação interrompida._
+
+> Terceira: o computador desligou ou você fechou o app no meio de uma geração. Quando abrir de novo, o carrossel estará na biblioteca como rascunho, com tudo o que já tinha sido feito. É só continuar.
+
+**5. genericas** · _Tela: Minha identidade; o documento de contexto editado; Radar com foco._
+
+> Quarta: as pautas parecem genéricas. Quase sempre é contexto raso. Vá em Minha identidade e deixe o documento mais específico: quem é o seu público de verdade, o que ele já tentou, o que você entrega de diferente. Depois use o foco do Radar pra apontar um assunto. E lembre do Modelador: uma referência que funcionou é um ótimo ponto de partida.
+
+**6. texto** · _Tela: Quadro de texto; chat do assistente pedindo um ajuste; Refazer o texto._
+
+> Quinta: o texto não tem a sua cara. Edite direto no card, troque a headline pelas opções de baixo, ou peça um ajuste ao assistente, por exemplo, deixa mais direto e com humor. Se a linha editorial estiver errada, mude a linha e refaça o texto.
+
+**7. capa** · _Tela: Gerar outras opções; Voltar ao texto._
+
+> Sexta: nenhuma capa convenceu. Gere outras opções. Se ainda assim não funcionar, o problema costuma ser a headline: volte ao texto e escolha uma promessa mais forte.
+
+**8. card** · _Tela: Corrigir: Erro de ortografia, Fora da identidade visual; card marcado como desatualizado._
+
+> Sétima: um card saiu com erro de ortografia, com texto torto ou fora do estilo. Use o corrigir e marque exatamente o problema. E se o estilo estiver escapando em vários carrosséis, ajuste o Design Kit em Minha identidade.
+
+**9. inventou** · _Tela: Card de texto com uma informação destacada para conferência._
+
+> Mais uma: a IA escreveu algo que não é verdade sobre o seu negócio, como um prazo ou uma condição que você não oferece. O app é instruído a não inventar, mas a responsabilidade final é sua. Corrija no card antes de aprovar e, se for algo recorrente, acrescente a informação certa no seu contexto.
+
+**10. demora** · _Tela: Barra de progresso Gerando card 3 de 4 e o botão Cancelar._
+
+> E se a geração parecer demorada, é normal. Cada imagem leva perto de um minuto. Você pode acompanhar card por card e, se mudar de ideia, cancelar sem perder o que já ficou pronto.
+
+**11. celular** · _Tela: QR code; aviso de rede do Windows; Salvar no Google Drive; Exportar ZIP._
+
+> Oitava: o celular não abre o QR code. Confira se os dois estão no mesmo wi-fi e, se o Windows perguntar sobre a rede, permita o acesso em redes privadas. Se mesmo assim não abrir, salve no Google Drive ou exporte o arquivo e mande pra você mesmo.
+
+**12. material** · _Tela: Kit de CTA com o material gratuito marcado como precisa ser preparado._
+
+> E a última: o app sugeriu um material gratuito que você ainda não tem. Ele avisa quando o material precisa ser preparado. A regra da Aula 7 vale aqui: nunca prometa uma entrega que não existe. Prepare o material antes de publicar ou troque o pedido por salvar o post.
+
+**13. acao** · _Tela: Cartela final._
+
+> Guarde esta aula. Sempre que algo sair estranho, a resposta provavelmente está aqui.
+
+## Aula 8 — O curso é opcional, e vale a pena
+
+Nicho: o menu O método e o player dentro do app. Base: Aulas 01 a 08. 1.142 caracteres, cerca de 1:11 de fala, para 1:21 de aula.
+
+**1. opcional** · _Tela: Menu O método com as oito aulas._
+
+> Você não precisa assistir ao curso pra usar o PACTO. Tudo o que você viu aqui funciona sem ele. Mas eu recomendo, por um motivo simples: o app faz o trabalho, e o curso te dá o critério.
+
+**2. porque** · _Tela: Player dentro do app tocando um trecho da Aula 4._
+
+> Quando você entende por que uma capa funciona, você escolhe a capa certa mais rápido. Quando entende o Copy Engine, você melhora qualquer texto, feito por IA ou não. E quando entende o caminho do comentário até a venda, você consegue aplicar em qualquer rede, com ou sem aplicativo. Ninguém tira isso de você.
+
+**3. extras** · _Tela: Lista dos materiais extras: Swipe File, Anatomia dos vencedores, Replicação, Desafio de 30 minutos._
+
+> O curso ainda tem materiais que valem como consulta: o swipe file de ganchos e chamadas, a anatomia dos carrosséis que mais performaram e o desafio de publicar o primeiro carrossel em trinta minutos. O app usa esses materiais por trás, mas ler uma vez muda o seu olhar pra sempre.
+
+**4. como** · _Tela: Botão Ver na aula em uma etapa; o trecho tocando._
+
+> E você não precisa parar tudo pra estudar. Em cada etapa do app tem o botão ver na aula, que abre o trecho exato que explica aquilo. Se tiver tempo pra só três aulas, comece pela 2, de pautas, pela 4, de copy, e pela 7, de oferta.
+
+**5. fim** · _Tela: Cartela final do minicurso._
+
+> É isso. Agora você tem o método e a ferramenta. Abra o app, escolha uma oportunidade e publique o seu próximo carrossel. Te vejo no feed.
