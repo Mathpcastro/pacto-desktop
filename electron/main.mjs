@@ -8,9 +8,10 @@ import { CodexClient, safeError } from '../core/codex.mjs';
 import { Runtime, ACTIONS } from '../core/runtime.mjs';
 import { loadKnowledge } from '../core/knowledge.mjs';
 import { normalizeExport, normalizeFiles } from '../core/export.mjs';
+import { startUpdates } from './updater.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 if(process.env.PACTO_USER_DATA)app.setPath('userData',resolve(process.env.PACTO_USER_DATA));
-let window,loginWindow,runtime,codex;
+let window,loginWindow,runtime,codex,updates;
 function emit(event){if(window&&!window.isDestroyed())window.webContents.send('pacto:event',event);}
 function authUrlAllowed(raw){try{const u=new URL(raw);return u.protocol==='https:'&&(u.hostname==='auth.openai.com'||u.hostname==='auth0.openai.com'||u.hostname==='chatgpt.com'||u.hostname==='auth.chatgpt.com')||u.protocol==='http:'&&['localhost','127.0.0.1'].includes(u.hostname);}catch{return false;}}
 async function login(url){
@@ -53,10 +54,12 @@ app.whenReady().then(async()=>{
     async importReference(){const result=await dialog.showOpenDialog(window,{title:'Importar referência visual',properties:['openFile'],filters:[{name:'Imagens',extensions:['png','jpg','jpeg','webp']}]});if(result.canceled||!result.filePaths[0])return {cancelled:true};const file=result.filePaths[0];if((await stat(file)).size>20*1024*1024)throw new Error('Use uma referência de até 20 MB.');const bytes=await readFile(file);if(nativeImage.createFromBuffer(bytes).isEmpty())throw new Error('Não foi possível ler a imagem.');const extension=extname(file).toLowerCase();const mime=extension==='.png'?'png':extension==='.webp'?'webp':'jpeg';const ref=validateReference({name:file.split(/[\\/]/).at(-1),dataUrl:`data:image/${mime};base64,${bytes.toString('base64')}`});return ref;}
   }});
   ipcMain.handle('pacto:request',async(event,action,args)=>{
-    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!ACTIONS.includes(action))throw new Error('Solicitação não permitida.');
+    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'))throw new Error('Solicitação não permitida.');
+    if(action==='installUpdate'){updates?.install();return {ok:true};}
     try{return await runtime.request(action,args);}catch(error){throw safeError(error);}
   });
   await createWindow();
+  updates=startUpdates({app,emit,notify:body=>{if(Notification.isSupported())new Notification({title:'PACTO · atualização pronta',body}).show();}});
   // Lembrete diário de Volume → Sinal → Repetição, só com o app aberto e resultado pendente.
   const remind=reminder(store.state().projects,store.state().settings);
   if(remind&&Notification.isSupported()){const note=new Notification({title:'PACTO · hora de medir',body:remind});note.on('click',()=>{window?.show();window?.focus();emit({type:'navigate',view:'rhythm'});});note.show();await store.saveSettings({lastReminderAt:new Date().toISOString()});}void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));

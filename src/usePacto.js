@@ -30,6 +30,7 @@ export function usePacto() {
   const [error, setError] = useState("");
   const [bootstrapFailed, setBootstrapFailed] = useState(false);
   const [activity, setActivity] = useState("");
+  const [update, setUpdate] = useState(null);
   const [pending, setPending] = useState([]);
   const accept = useCallback((result) => {
     if (!result || typeof result !== "object") return;
@@ -75,6 +76,7 @@ export function usePacto() {
       if (event.type === "state") accept(event.state);
       if (event.type === "project") accept(event.project);
       if (event.type === "activity") setActivity(event.message || "");
+      if (event.type === "update") setUpdate(event);
       if (event.type === "navigate")
         window.dispatchEvent(
           new CustomEvent("pacto:navigate", { detail: event.view }),
@@ -98,6 +100,7 @@ export function usePacto() {
     bootstrapFailed,
     clearError: () => setError(""),
     activity,
+    update,
     available,
     pending,
     isPending: (action) => pending.some((item) => item.action === action),

@@ -14,6 +14,7 @@ import {
   Moon,
   Palette,
   Radar,
+  RefreshCw,
   Sun,
   Trophy,
   X,
@@ -48,6 +49,7 @@ export default function App() {
     error,
     clearError,
     activity,
+    update,
     available,
     pending,
     isPending,
@@ -278,6 +280,21 @@ export default function App() {
               <IconButton label="Fechar mensagem de erro" onClick={clearError}>
                 <X size={15} />
               </IconButton>
+            </div>
+          )}
+          {update?.status === "ready" && (
+            <div className="update-banner" role="status">
+              <RefreshCw size={16} />
+              <span>
+                A versão {update.version} do PACTO está pronta. Ela entra
+                quando você fechar o app.
+              </span>
+              <button
+                className="button secondary"
+                onClick={() => request("installUpdate").catch(() => {})}
+              >
+                Reiniciar e atualizar
+              </button>
             </div>
           )}
           {!available ? (

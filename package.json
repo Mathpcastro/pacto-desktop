@@ -17,6 +17,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@openai/codex": "0.163.0",
+    "electron-updater": "6.8.11",
     "fflate": "0.8.3",
     "lucide-react": "1.59.0",
     "qrcode": "1.5.4",
@@ -53,7 +54,14 @@
       "target": "nsis",
       "signExecutable": false
     },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://carrosseisquevendem.com.br/download/"
+      }
+    ],
     "nsis": {
+      "artifactName": "PACTO-Setup-${version}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true

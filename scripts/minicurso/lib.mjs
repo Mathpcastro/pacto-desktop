@@ -134,6 +134,7 @@ export class Recorder {
   async lessonCards() {
     const data = JSON.parse(await readFile(join(ROOT, "docs", "minicurso", "roteiros.json"), "utf8"));
     const i = data.lessons.findIndex((l) => l.id === this.lessonId), lesson = data.lessons[i], next = data.lessons[i + 1];
+    if (!lesson) return; // gravações fora do minicurso (ex.: vídeo da hero) não têm cartelas
     const n = String(lesson.number).padStart(2, "0");
     const letter = lesson.letter === "PACTO" ? "" : lesson.letter === "AC" ? "A·C" : lesson.letter;
     await this.card("abertura", cardHtml({ eyebrow: `PACTO EM 19 MINUTOS · AULA ${n}`, title: lesson.title.replace(/ · /, " · <em>").replace(/$/, lesson.title.includes(" · ") ? "</em>" : ""), subtitle: `Base no curso: ${lesson.sources.join(", ")}`, letter }));
