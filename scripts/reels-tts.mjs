@@ -1,15 +1,17 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Narração do Reels com a voz clonada, um MP3 por trecho, com o tempo de cada palavra
 // (para a legenda palavra por palavra e para cortar as cenas na fala certa).
 // Pula trechos já gerados. Usage: node scripts/reels-tts.mjs
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const data = JSON.parse(readFileSync(join(root, "docs", "reels", "roteiro.json"), "utf8"));
+// Roteiro padrão: docs/reels/roteiro.json. Outro roteiro: node scripts/reels-tts.mjs docs/instagram/posts.json
+const roteiroFile = process.argv[2] ? resolve(root, process.argv[2]) : join(root, "docs", "reels", "roteiro.json");
+const data = JSON.parse(readFileSync(roteiroFile, "utf8"));
 const env = Object.fromEntries(readFileSync(join(root, ".env.local"), "utf8").split(/\r?\n/).filter((l) => l.includes("=")).map((l) => [l.slice(0, l.indexOf("=")).trim(), l.slice(l.indexOf("=") + 1).trim().replace(/^["']|["']$/g, "")]));
-const dir = join(root, ".cache", "reels", "voz");
+const dir = join(root, ".cache", process.argv[2] ? basename(roteiroFile, ".json") : "reels", "voz");
 mkdirSync(dir, { recursive: true });
 const hash = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36);
 // Agrupa os tempos por caractere em palavras.

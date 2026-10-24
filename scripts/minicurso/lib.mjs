@@ -11,7 +11,7 @@ import { createServer } from "vite";
 // cada trecho do roteiro. Playwright recordVideo trava o Electron e a captura GDI
 // grava preto, por isso os quadros vêm da janela.
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-export const VAULT = "C:/Users/Admin2/Documents/Obsidian Vault/Projetos/PACTO Desktop";
+export const VAULT = "C:/Users/Admin2/Documents/Obsidian Vault/Projetos/Carrosseis Que Vendem";
 export const NICHES = join(VAULT, "Evidencias", "nichos");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

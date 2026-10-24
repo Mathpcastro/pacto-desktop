@@ -1,0 +1,30 @@
+{
+  "title": "@carrossell.pro · três posts do perfil",
+  "model": "eleven_v4",
+  "voice": "4XT3b7qYZZ1MI52Ll4WR",
+  "beats": {
+    "p1-abre": { "narration": "Isso é um carrossel pronto pra publicar. Ele saiu do Carrossell, o app que transforma o que o seu SaaS resolve em conteúdo pra apresentar a sua solução.", "screen": "4 cards reais em leque + símbolo e nome" },
+    "p1-dor": { "narration": "Se você lançou um SaaS e ainda precisa de assinantes, o problema quase nunca é o produto: é mostrar ele pra quem tem a dor.", "screen": "texto grande" },
+    "p1-identidade": { "narration": "Você conta o que vende e pra quem, uma vez só. O Carrossell guarda a identidade da sua marca e usa isso em tudo que cria.", "screen": "tela Minha identidade" },
+    "p1-entregas": { "narration": "A partir daí, ele ajuda a escolher a pauta, escreve o texto, cria as imagens e prepara o convite pra sua oferta. Você revisa, ajusta e aprova.", "screen": "4 recortes: radar, texto, capas, CTA" },
+    "p1-fecha": { "narration": "É um aplicativo pra computador, que roda com a sua própria conta do ChatGPT. O curso vem junto, se você quiser ir além. Conheça o Carrossell no link da bio.", "screen": "cartela de requisitos + símbolo" },
+
+    "p2-pauta": { "narration": "Um exemplo do começo ao fim, sem cortar etapa. Agendei, um SaaS de agendamento. Primeiro, a pauta: o Radar sugere trinta, a partir do contexto da marca, e eu escolho uma.", "screen": "Radar" },
+    "p2-texto": { "narration": "Ele escreve o texto card por card. Aqui eu mudo o título da capa na mão, porque o texto é editável. Nada vira imagem antes de eu aprovar.", "screen": "texto, edição, aprovar" },
+    "p2-capas": { "narration": "Depois vêm as opções de capa. Acelerei a espera aqui. Eu escolho a que faria o meu cliente parar, e ela vira a referência de estilo dos outros cards.", "screen": "3 capas, acelerado, escolha" },
+    "p2-pronto": { "narration": "Os cards restantes seguem o mesmo visual: a identidade é a da minha marca, não a do app.", "screen": "carrossel pronto" },
+    "p2-export": { "narration": "No fim, o convite pra oferta, o roteiro de DM e a exportação: pro celular pelo QR code, pro Google Drive ou em ZIP.", "screen": "CTA/DM + QR" },
+    "p2-fecha": { "narration": "Funciona, você edita, e o visual é o seu. Veja os detalhes e comece pelo link da bio.", "screen": "cartela" },
+
+    "p3-preco": { "narration": "Quarenta e sete reais, uma vez. Sem mensalidade do app. É isso que você paga pelo Carrossell.", "screen": "R$47 grande" },
+    "p3-inclui": { "narration": "Vem o aplicativo pra Windows e Mac, o método P.A.C.T.O. dentro dele, o curso Carrosséis Que Vendem e os prompts e materiais, pra quem preferir fazer no próprio ChatGPT.", "screen": "lista animada" },
+    "p3-passos": { "narration": "Pra começar: instala no computador, conecta a sua própria conta do ChatGPT e preenche as informações da sua marca. Daí é escolher uma pauta e aprovar.", "screen": "3 passos com telas" },
+    "p3-requisitos": { "narration": "Precisa de internet pra gerar, e as imagens usam os limites do seu plano do ChatGPT. Isso não está incluso no valor.", "screen": "cartela de requisitos" },
+    "p3-acesso": { "narration": "Você compra pelo link da bio e recebe na hora o acesso às aulas e o download do app. Conheça o Carrossell e comece pelo link da bio.", "screen": "cartela final" }
+  },
+  "variants": {
+    "P1": ["p1-abre", "p1-dor", "p1-identidade", "p1-entregas", "p1-fecha"],
+    "P2": ["p2-pauta", "p2-texto", "p2-capas", "p2-pronto", "p2-export", "p2-fecha"],
+    "P3": ["p3-preco", "p3-inclui", "p3-passos", "p3-requisitos", "p3-acesso"]
+  }
+}
