@@ -28,7 +28,7 @@ def speech_span(path):
 folder, out = sys.argv[1], sys.argv[2]
 meta = json.load(open(out, encoding="utf8")) if os.path.exists(out) else {}
 for name in sorted(os.listdir(folder)):
-    if not name.startswith("cena-") or not name.endswith(".mp4"):
+    if not name.endswith(".mp4"):
         continue
     path = os.path.join(folder, name)
     has_audio, duration = probe(path)

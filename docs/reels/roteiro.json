@@ -85,6 +85,54 @@
       "narration": "",
       "seconds": 3.2,
       "screen": "você apontando para cima; texto do gancho acima"
+    },
+    "u1-abre": {
+      "narration": "Toda manhã eu abro esse app, escolho uma dor do meu cliente e em alguns minutos tenho um carrossel pronto pra postar.",
+      "screen": "eu no computador (sem fala) → telas do app"
+    },
+    "u1-app": {
+      "narration": "Ele escreve o texto, desenha a capa e os cards no meu visual, e ainda monta o CTA e a DM.",
+      "screen": "telas do app"
+    },
+    "u1-prova": {
+      "narration": "Foi com esse funil, um carrossel por dia e sem tráfego pago, que o meu SaaS chegou a cento e doze assinantes.",
+      "screen": "eu reagindo + prints"
+    },
+    "u1-cta": {
+      "narration": "Se você lançou um SaaS e ainda não tem assinante, toca em saiba mais.",
+      "screen": "eu apontando para baixo"
+    },
+    "u2-antes": {
+      "narration": "Antes eu levava mais de uma hora pra montar um carrossel que ninguém salvava.",
+      "screen": "eu cansado no computador"
+    },
+    "u2-agora": {
+      "narration": "Agora eu abro esse app: ele acha a pauta, escreve o texto, desenha três capas pra eu escolher e monta o convite pra assinatura.",
+      "screen": "telas do app"
+    },
+    "u2-prova": {
+      "narration": "É o mesmo método que levou o meu SaaS a quatro mil de MRR em trinta dias.",
+      "screen": "eu + prints"
+    },
+    "u2-cta": {
+      "narration": "Toca em saiba mais pra rodar no seu SaaS.",
+      "screen": "eu apontando para baixo"
+    },
+    "u3-olha": {
+      "narration": "Olha o que esse app fez com uma pauta que eu digitei em dez segundos.",
+      "screen": "eu mostrando o celular → telas do app"
+    },
+    "u3-app": {
+      "narration": "Texto pronto, três opções de capa e o carrossel inteiro no visual da minha marca.",
+      "screen": "telas do app"
+    },
+    "u3-prova": {
+      "narration": "E esse é o painel do meu SaaS depois de trinta dias postando: cento e doze assinantes e quatro mil de MRR.",
+      "screen": "eu reagindo + prints"
+    },
+    "u3-cta": {
+      "narration": "Toca em saiba mais.",
+      "screen": "eu apontando para baixo"
     }
   },
   "variants": {
@@ -152,9 +200,27 @@
       "cena-app",
       "cena-prova",
       "cena-cta"
+    ],
+    "U1": [
+      "u1-abre",
+      "u1-app",
+      "u1-prova",
+      "u1-cta"
+    ],
+    "U2": [
+      "u2-antes",
+      "u2-agora",
+      "u2-prova",
+      "u2-cta"
+    ],
+    "U3": [
+      "u3-olha",
+      "u3-app",
+      "u3-prova",
+      "u3-cta"
     ]
   },
   "avatar": {
-    "note": "ganchos 1-4 são clipes do clone do usuário (Higgsfield Seedance 2.0) em public/pacto-reels/avatar/<beat>.mp4"
+    "note": "Clipes do clone sem fala (Seedance 2.5): cena-gancho (apontando para cima), aponta-baixo, ugc-laptop, ugc-celular, ugc-satisfeito. A voz é sempre a narração limpa do ElevenLabs."
   }
 }
