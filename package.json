@@ -72,8 +72,10 @@
     },
     "publish": [
       {
-        "provider": "generic",
-        "url": "https://carrosseisquevendem.com.br/download/"
+        "provider": "github",
+        "owner": "Mathpcastro",
+        "repo": "pacto-releases",
+        "releaseType": "release"
       }
     ],
     "nsis": {
