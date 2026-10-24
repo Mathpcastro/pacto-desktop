@@ -28,6 +28,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # O build usa node_modules/electron/dist (electronDist); garante o Electron do Mac lá.
+      - run: test -d node_modules/electron/dist/Electron.app || node node_modules/electron/install.js
       - run: npm test
       - run: npm run build
       - name: Prepare Apple notarization key
