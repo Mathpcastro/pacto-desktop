@@ -21,7 +21,7 @@ let server, app;
 try {
   await writeFile(pkgFile, original.replace(`"version": "${current}"`, `"version": "${next}"`));
   builder(["--win", "nsis", "--publish", "never"]);
-  for (const name of ["latest.yml", `PACTO-Setup-${next}.exe`, `PACTO-Setup-${next}.exe.blockmap`]) await cp(join(root, "release", name), join(feed, name));
+  for (const name of ["latest.yml", `Carrossell-Setup-${next}.exe`, `Carrossell-Setup-${next}.exe.blockmap`]) await cp(join(root, "release", name), join(feed, name));
   // O app-update.yml só sai no build do instalador; é ele que leva o endereço de produção.
   const updateConfig = await readFile(join(root, "release", "win-unpacked", "resources", "app-update.yml"), "utf8");
   console.log(JSON.stringify({ appUpdateYml: updateConfig.trim() }));
@@ -36,7 +36,7 @@ try {
   await new Promise((ok) => server.listen(0, "127.0.0.1", ok));
   const userData = await mkdtemp(join(tmpdir(), "pacto-update-user-"));
   await mkdir(userData, { recursive: true });
-  app = await _electron.launch({ executablePath: join(root, "release", "win-unpacked", "PACTO.exe"), env: { ...process.env, PACTO_USER_DATA: userData, PACTO_UPDATE_URL: `http://127.0.0.1:${server.address().port}/` } });
+  app = await _electron.launch({ executablePath: join(root, "release", "win-unpacked", "Carrossell.exe"), env: { ...process.env, PACTO_USER_DATA: userData, PACTO_UPDATE_URL: `http://127.0.0.1:${server.address().port}/` } });
   const page = await app.firstWindow();
   const started = Date.now();
   await page.locator(".update-banner").waitFor({ timeout: 300000 });

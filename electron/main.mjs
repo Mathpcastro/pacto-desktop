@@ -9,8 +9,11 @@ import { Runtime, ACTIONS } from '../core/runtime.mjs';
 import { loadKnowledge } from '../core/knowledge.mjs';
 import { normalizeExport, normalizeFiles } from '../core/export.mjs';
 import { startUpdates } from './updater.mjs';
+import { configureIdentity } from './identity.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
-if(process.env.PACTO_USER_DATA)app.setPath('userData',resolve(process.env.PACTO_USER_DATA));
+// 0.2.1 identifies itself as pacto-desktop, including the packaged Windows app.
+// Pin that historical directory before changing the commercial display name.
+configureIdentity(app,process.env.PACTO_USER_DATA);
 let window,runtime,codex,updates,awaitingLogin=false;
 function emit(event){if(window&&!window.isDestroyed())window.webContents.send('pacto:event',event);}
 function authUrlAllowed(raw){try{const u=new URL(raw);return u.protocol==='https:'&&['auth.openai.com','auth0.openai.com','chatgpt.com','auth.chatgpt.com'].includes(u.hostname);}catch{return false;}}
@@ -23,7 +26,7 @@ function returnFromLogin(){if(!awaitingLogin||!window||window.isDestroyed())retu
 async function createWindow(){
   // Fit small screens (e.g. 1366×768 at 125% leaves about 1093×580): never open or lock the window larger than the work area.
   const area=screen.getPrimaryDisplay().workAreaSize;
-  window=new BrowserWindow({width:Math.min(1440,area.width),height:Math.min(940,area.height),minWidth:Math.min(960,area.width),minHeight:Math.min(560,area.height),title:'PACTO',backgroundColor:'#f5f3ee',autoHideMenuBar:true,webPreferences:{preload:join(root,'electron','preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
+  window=new BrowserWindow({width:Math.min(1440,area.width),height:Math.min(940,area.height),minWidth:Math.min(960,area.width),minHeight:Math.min(560,area.height),title:'Carrossell',icon:join(root,'resources','branding','icon-256.png'),backgroundColor:'#f6f3ed',autoHideMenuBar:true,webPreferences:{preload:join(root,'electron','preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());
   // Lessons play in-app through the privacy-enhanced YouTube embed: only that
   // origin may load in a frame, and it only gets fullscreen.
@@ -57,9 +60,9 @@ app.whenReady().then(async()=>{
     try{return await runtime.request(action,args);}catch(error){throw safeError(error);}
   });
   await createWindow();
-  updates=startUpdates({app,emit,notify:body=>{if(Notification.isSupported())new Notification({title:'PACTO · atualização pronta',body}).show();}});
+  updates=startUpdates({app,emit,notify:body=>{if(Notification.isSupported())new Notification({title:'Carrossell · atualização pronta',icon:join(root,'resources','branding','icon-256.png'),body}).show();}});
   // Lembrete diário de Volume → Sinal → Repetição, só com o app aberto e resultado pendente.
   const remind=reminder(store.state().projects,store.state().settings);
-  if(remind&&Notification.isSupported()){const note=new Notification({title:'PACTO · hora de medir',body:remind});note.on('click',()=>{window?.show();window?.focus();emit({type:'navigate',view:'rhythm'});});note.show();await store.saveSettings({lastReminderAt:new Date().toISOString()});}void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
-}).catch(error=>{dialog.showErrorBox('Não foi possível abrir o PACTO',safeError(error).message);app.quit();});
+  if(remind&&Notification.isSupported()){const note=new Notification({title:'Carrossell · hora de medir',icon:join(root,'resources','branding','icon-256.png'),body:remind});note.on('click',()=>{window?.show();window?.focus();emit({type:'navigate',view:'rhythm'});});note.show();await store.saveSettings({lastReminderAt:new Date().toISOString()});}void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
+}).catch(error=>{dialog.showErrorBox('Não foi possível abrir o Carrossell',safeError(error).message);app.quit();});
 app.on('window-all-closed',()=>app.quit());app.on('before-quit',()=>{void runtime?.sharing?.stop();codex?.stop();});

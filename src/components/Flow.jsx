@@ -94,7 +94,7 @@ export function ProjectDirection({
         </span>
         <textarea
           rows={2}
-          placeholder="Ex.: direto, com humor leve, sempre mostrando o erro e o jeito certo. Vazio: o PACTO sugere."
+          placeholder="Ex.: direto, com humor leve, sempre mostrando o erro e o jeito certo. Vazio: o Carrossell sugere."
           value={form.editorialLine}
           onChange={(e) => setForm({ ...form, editorialLine: e.target.value })}
         />
@@ -105,7 +105,7 @@ export function ProjectDirection({
         </span>
         <textarea
           rows={2}
-          placeholder="Ex.: a tigelinha de barro sorridente aparece em todos os cards. Vazio: o PACTO sugere pelo seu Design Kit."
+          placeholder="Ex.: a tigelinha de barro sorridente aparece em todos os cards. Vazio: o Carrossell sugere pelo seu Design Kit."
           value={form.visualConcept}
           onChange={(e) => setForm({ ...form, visualConcept: e.target.value })}
         />
@@ -464,7 +464,7 @@ export function FixDialog({ project, slide, problems, request, onClose }) {
     >
       <div className="dialog-fields">
         <p className="field-hint">
-          O PACTO corrige só o que você marcar e preserva personagens, cores e
+          O Carrossell corrige só o que você marcar e preserva personagens, cores e
           composição que já funcionam.
         </p>
         <LessonLink step="correction" />
@@ -559,7 +559,7 @@ export function CtaDialog({ project, request, busy, onClose }) {
             </div>
           ))}
           <p className="field-hint">
-            Vai junto no ZIP exportado (cta-e-dm.txt). O PACTO não envia DMs nem
+            Vai junto no ZIP exportado (cta-e-dm.txt). O Carrossell não envia DMs nem
             publica: configure a automação na sua ferramenta.
           </p>
         </div>

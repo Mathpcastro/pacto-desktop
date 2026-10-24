@@ -31,6 +31,7 @@ import Ideas from "./components/Ideas.jsx";
 import Rhythm from "./components/Rhythm.jsx";
 import { CourseContext, LessonPlayer, formatMoment } from "./course.jsx";
 import { rhythm } from "../core/rhythm.mjs";
+import brandMark from "./assets/brand-mark.svg";
 
 function readTheme() {
   try {
@@ -148,7 +149,7 @@ export default function App() {
           <header className="app-header">
             <button
               className="wordmark"
-              aria-label="PACTO, início"
+              aria-label="Carrossell, início"
               onClick={() =>
                 navigate(() => {
                   setView("library");
@@ -156,7 +157,9 @@ export default function App() {
                 })
               }
             >
-              pacto<small>ESTÚDIO DE CARROSSÉIS</small>
+              <b className="brand-name">carrossell</b>
+              <img className="brand-symbol" src={brandMark} alt="" />
+              <small>ESTÚDIO DE CARROSSÉIS</small>
             </button>
             {state.profile && available && (
               <nav className="main-nav" aria-label="Navegação principal">
@@ -286,7 +289,7 @@ export default function App() {
             <div className="update-banner" role="status">
               <RefreshCw size={16} />
               <span>
-                A versão {update.version} do PACTO está pronta. Ela entra
+                A versão {update.version} do Carrossell está pronta. Ela entra
                 quando você fechar o app.
               </span>
               <button
@@ -301,7 +304,7 @@ export default function App() {
             <main className="desktop-only page-enter">
               <div className="desktop-symbol">
                 <Laptop size={42} strokeWidth={1} />
-                <span className="tiny-wordmark">p.</span>
+                <span className="tiny-wordmark"><img src={brandMark} alt="" width="14" height="14" /></span>
               </div>
               <span className="eyebrow">FEITO PARA O SEU COMPUTADOR</span>
               <h1>
@@ -310,7 +313,7 @@ export default function App() {
                 <em>No seu ritmo.</em>
               </h1>
               <p>
-                Abra o PACTO pelo aplicativo para computador para configurar sua
+                Abra o Carrossell pelo aplicativo para computador para configurar sua
                 marca, conectar sua conta e criar seus carrosséis.
               </p>
               <div className="desktop-note">
@@ -318,7 +321,7 @@ export default function App() {
                 <span>
                   Esta janela não tem acesso aos recursos do aplicativo.
                   <br />
-                  Use o atalho PACTO instalado no seu computador.
+                  Use o atalho Carrossell instalado no seu computador.
                 </span>
               </div>
             </main>
@@ -350,7 +353,7 @@ export default function App() {
                   </button>
                 )}
                 <span className="eyebrow">
-                  {state.profile ? "MINHA IDENTIDADE" : "BEM-VINDO AO PACTO"}
+                  {state.profile ? "MINHA IDENTIDADE" : "BEM-VINDO AO CARROSSELL"}
                 </span>
               </div>
               {manual ? (
@@ -439,7 +442,7 @@ export default function App() {
           {available && !loading && view !== "editor" && (
             <footer className="app-footer">
               <span>
-                PACTO <span className="footer-dot">·</span> Uma boa ideia merece
+                Carrossell <span className="footer-dot">·</span> Uma boa ideia merece
                 uma boa sequência.
               </span>
               <span>

@@ -157,7 +157,7 @@ export default function Rhythm({ state, request, onOpen, onIdeas, onCreate }) {
         ) : (
           <p className="field-hint">
             Seus resultados aparecem aqui, ordenados por salvamentos,
-            comentários e vendas. Com dois ou mais, o PACTO mostra quais ficaram
+            comentários e vendas. Com dois ou mais, o Carrossell mostra quais ficaram
             acima da sua média.
           </p>
         )}

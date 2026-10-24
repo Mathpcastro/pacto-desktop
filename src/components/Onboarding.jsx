@@ -79,7 +79,7 @@ function Interview({ kind, data, busy, connected, request, extra, children }) {
         {messages.map((message) => (
           <div key={message.id} className={`message message-${message.role}`}>
             <span className="eyebrow">
-              {message.role === "user" ? "VOCÊ" : "PACTO"}
+              {message.role === "user" ? "VOCÊ" : "CARROSSELL"}
             </span>
             <p>{message.text}</p>
           </div>
@@ -269,7 +269,7 @@ export default function Onboarding({
         </h1>
         <p>
           No curso, você cria um projeto no ChatGPT, responde duas entrevistas e
-          instala o Prompt Mestre. Aqui o PACTO faz o mesmo por você: conversa,
+          instala o Prompt Mestre. Aqui o Carrossell faz o mesmo por você: conversa,
           monta seus documentos oficiais e deixa tudo pronto para criar.
         </p>
         <ol className="step-list">
@@ -312,7 +312,7 @@ export default function Onboarding({
           </h2>
           <p>
             {current === "account"
-              ? "Como no curso, você usa a sua própria conta. O PACTO conversa com ela para entrevistar você e gerar seus carrosséis. Nada é publicado sem você."
+              ? "Como no curso, você usa a sua própria conta. O Carrossell conversa com ela para entrevistar você e gerar seus carrosséis. Nada é publicado sem você."
               : current === "ready"
                 ? "Contexto, Design Kit e Prompt Mestre ficam salvos neste computador e acompanham cada carrossel."
                 : copy[current].lead}
@@ -334,7 +334,7 @@ export default function Onboarding({
                 <p className="field-hint">
                   {connected
                     ? "Tudo certo. Vamos montar seu contexto."
-                    : "O login do ChatGPT abre no seu navegador. Depois de entrar, o PACTO volta sozinho, já conectado."}
+                    : "O login do ChatGPT abre no seu navegador. Depois de entrar, o Carrossell volta sozinho, já conectado."}
                 </p>
               </div>
               {!connected && (

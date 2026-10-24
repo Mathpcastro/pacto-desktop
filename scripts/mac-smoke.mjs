@@ -6,14 +6,14 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { _electron } from "playwright";
 
-// Teste do app empacotado para Mac (roda no GitHub Actions): abre o PACTO.app, confere
+// Teste do app empacotado para Mac (roda no GitHub Actions): abre o Carrossell.app, confere
 // que a interface carrega, que o Codex do Mac está dentro do pacote e salva um print.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const release = join(root, "release");
 const folder = (await readdir(release)).find((name) => /^mac(-arm64|-universal)?$/.test(name));
-if (!folder) throw new Error("Nenhum PACTO.app em release/.");
-const appPath = join(release, folder, "PACTO.app");
-const executable = join(appPath, "Contents", "MacOS", "PACTO");
+if (!folder) throw new Error("Nenhum Carrossell.app em release/.");
+const appPath = join(release, folder, "Carrossell.app");
+const executable = join(appPath, "Contents", "MacOS", "Carrossell");
 const codexTarget = process.arch === "arm64" ? "aarch64-apple-darwin" : "x86_64-apple-darwin";
 const codex = join(appPath, "Contents", "Resources", "app.asar.unpacked", "node_modules", "@openai", `codex-darwin-${process.arch}`, "vendor", codexTarget, "bin", "codex");
 if (!existsSync(codex)) throw new Error(`Codex do Mac ausente no pacote: ${codex}`);

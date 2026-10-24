@@ -15,7 +15,7 @@ export function startUpdates({app,emit,notify}){
   autoUpdater.on('update-available',info=>emit({type:'update',status:'downloading',version:info.version}));
   autoUpdater.on('update-downloaded',info=>{
     ready={type:'update',status:'ready',version:info.version};emit(ready);
-    notify(`A versão ${info.version} do PACTO foi baixada. Ela será instalada quando você fechar o app.`);
+    notify(`A versão ${info.version} do Carrossell foi baixada. Ela será instalada quando você fechar o app.`);
   });
   // Sem internet ou servidor fora do ar: tenta de novo na próxima rodada, sem incomodar.
   autoUpdater.on('error',error=>console.error('[atualização]',error?.message||error));

@@ -173,7 +173,7 @@ export default function Profile({
           <em>com você.</em>
         </h1>
         <p>
-          Conte um pouco sobre seu negócio. O PACTO usa esse contexto para
+          Conte um pouco sobre seu negócio. O Carrossell usa esse contexto para
           construir carrosséis com a sua voz.
         </p>
         <ol className="step-list">

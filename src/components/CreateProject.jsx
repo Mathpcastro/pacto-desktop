@@ -144,7 +144,7 @@ export default function CreateProject({
                   onClick={() => setArchitectureId("")}
                 >
                   <strong>
-                    <Sparkles size={13} /> Deixar o PACTO escolher
+                    <Sparkles size={13} /> Deixar o Carrossell escolher
                   </strong>
                   <small>A arquitetura mais adequada para o seu tema.</small>
                 </button>
@@ -172,7 +172,7 @@ export default function CreateProject({
               <input
                 value={editorialLine}
                 maxLength={600}
-                placeholder="Vazio: o PACTO sugere"
+                placeholder="Vazio: o Carrossell sugere"
                 onChange={(e) => setEditorialLine(e.target.value)}
               />
             </label>
@@ -184,7 +184,7 @@ export default function CreateProject({
               <input
                 value={visualConcept}
                 maxLength={600}
-                placeholder="Vazio: o PACTO sugere pelo Design Kit"
+                placeholder="Vazio: o Carrossell sugere pelo Design Kit"
                 onChange={(e) => setVisualConcept(e.target.value)}
               />
             </label>

@@ -1,0 +1,14 @@
+Use case: logo-brand. Create ONE exceptionally polished, landscape brand identity comparison board for a Brazilian desktop app named exactly "carrossell" (c a r r o s s e l l). The app helps entrepreneurs create Instagram carousels with a sales strategy using the P.A.C.T.O. method. Three columns presenting THREE GENUINELY DIFFERENT SYMBOL DIRECTIONS, all using the same lowercase bold custom geometric sans-serif wordmark, same color palette and same scale. Restrained Swiss graphic design, confident mature software brand, vector-like precision, balanced kerning, beautifully typeset. Warm off-white #F6F3ED background, graphite #191919 wordmarks, orange #FF5A36 symbols. Fine pale dividers, generous whitespace.
+
+Each column must show:
+Top small label "01", "02" or "03".
+A large original symbol beside the exact wordmark "carrossell".
+Below it the small tagline "Carrosséis com estratégia de venda."
+Below that a pair of app icon demonstrations: orange square with softly rounded corners holding the white symbol, and graphite square holding the orange symbol. The symbol must be simple enough for a 24px desktop app icon.
+At the bottom a small simplified desktop app sidebar/header snippet demonstrating this SAME logo on a dark sidebar, with just three readable navigation labels "Criar", "Biblioteca", "Método P.A.C.T.O." on white content area. This is a branding application sketch, not a full app redesign.
+
+Direction01: Two or three offset carousel cards whose combined silhouette and negative space unmistakably form a clean letter C, an ingenious simple geometric mark.
+Direction02: Three horizontal-progressing rounded carousel cards with an integrated forward chevron in the negative space, expressing swipe and sales progression. Different overall silhouette from01.
+Direction03: A single bold compact custom letter C ribbon/monogram with a geometric terminal suggesting a card turning forward. No card stack, different from01 and02.
+
+Only flat two dimensional vector-style artwork, no photorealism, no people, no 3D, no gradients, no shadows on the logos, no dollar signs, no shopping carts, no rocket, no target, no sparkles, no stock symbols, no generic circular arrows. Do not use an existing company logo. Do not add any invented slogans, extra footer copy or explanations. A well art-directed comparison sheet suitable for choosing a logo before vector production. Crisp accurate brand name spelling is essential.

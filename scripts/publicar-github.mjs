@@ -48,7 +48,7 @@ try {
   let exists = true;
   try { execFileSync("gh", ["release", "view", tag, "--repo", REPO], { stdio: "ignore" }); } catch { exists = false; }
   if (exists) gh(["release", "upload", tag, "--repo", REPO, "--clobber", ...files]);
-  else gh(["release", "create", tag, "--repo", REPO, "--title", `PACTO ${version}`, "--notes", `PACTO ${version} para Windows e Mac.`, "--latest", ...files]);
+  else gh(["release", "create", tag, "--repo", REPO, "--title", `Carrossell ${version}`, "--notes", `Carrossell ${version} para Windows e Mac.`, "--latest", ...files]);
   console.log(`Release ${tag} publicada em https://github.com/${REPO}/releases/tag/${tag}`);
   for (const name of ["PACTO-Windows.exe", ...(macDir ? ["PACTO-Mac-AppleSilicon.dmg", "PACTO-Mac-Intel.dmg"] : [])])
     console.log(`https://github.com/${REPO}/releases/latest/download/${name}`);

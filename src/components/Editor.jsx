@@ -181,7 +181,7 @@ function Assistant({ project, request, blocked, account, activity }) {
               className={`message message-${message.role}`}
             >
               <span className="eyebrow">
-                {message.role === "user" ? "VOCÊ" : "ASSISTENTE PACTO"}
+                {message.role === "user" ? "VOCÊ" : "ASSISTENTE CARROSSELL"}
               </span>
               <p>{message.text}</p>
             </article>

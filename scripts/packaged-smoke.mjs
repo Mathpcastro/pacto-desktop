@@ -7,7 +7,7 @@ const output=resolve('.cache/packaged-proof');await mkdir(output,{recursive:true
 const userData=resolve('.cache/app-proof');
 const exported=join(output,'exportado-pelo-app.zip');
 const env={...process.env,PACTO_USER_DATA:userData};delete env.ELECTRON_RUN_AS_NODE;delete env.PACTO_DEV_URL;
-const app=await electron.launch({executablePath:resolve('release/win-unpacked/PACTO.exe'),env});
+const app=await electron.launch({executablePath:resolve('release/win-unpacked/Carrossell.exe'),env});
 const errors=[];const report={completed:false,packaged:true};
 try{
   const page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));

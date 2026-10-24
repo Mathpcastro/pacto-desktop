@@ -232,7 +232,7 @@ function StoriesDialog({ project, request, busy, onClose }) {
           </div>
         ) : (
           <p className="dialog-copy flush">
-            O PACTO cria de 4 a 6 stories a partir deste carrossel e do seu
+            O Carrossell cria de 4 a 6 stories a partir deste carrossel e do seu
             Contexto Oficial da Marca.
           </p>
         )}

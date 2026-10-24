@@ -2,39 +2,45 @@
 @layer base {
   :root {
     font-family: "Segoe UI", sans-serif;
-    color: #242522;
-    background: #f5f3ee;
+    color-scheme: light;
+    color: #191919;
+    background: #f6f3ed;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    --paper: #f5f3ee;
+    --brand: #ff5a36;
+    --paper: #f6f3ed;
     --surface: #fcfbf8;
-    --ink: #242522;
-    --muted: #74756e;
-    --line: #deded6;
-    --accent: #bb512f;
-    --accent-hover: #a74426;
-    --accent-soft: #f3e5dc;
+    --ink: #191919;
+    --muted: #6d6a66;
+    --line: #dedbd5;
+    --accent: #bd3c1c;
+    --accent-hover: #a53216;
+    --on-accent: #fff9f5;
+    --accent-soft: #fbe5dc;
+    --danger: #b43f30;
     --sage: #607362;
-    --canvas: #e9e8e1;
+    --canvas: #e9e5de;
     --input: #fffefa;
-    --shadow: 0 18px 55px #24252212;
+    --shadow: 0 18px 55px #19191912;
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    color: #e9e8df;
-    background: #222420;
-    --paper: #222420;
-    --surface: #292c26;
-    --ink: #e9e8df;
-    --muted: #a8aba0;
-    --line: #3e4239;
-    --accent: #e48b68;
-    --accent-hover: #efa283;
-    --accent-soft: #423027;
+    color: #f6f3ed;
+    background: #191919;
+    --paper: #191919;
+    --surface: #242424;
+    --ink: #f6f3ed;
+    --muted: #b5b0a9;
+    --line: #41403e;
+    --accent: #ff5a36;
+    --accent-hover: #ff795c;
+    --on-accent: #191919;
+    --accent-soft: #3e2721;
+    --danger: #ff9c8e;
     --sage: #acc2a9;
-    --canvas: #1c1f1a;
-    --input: #272a24;
+    --canvas: #141414;
+    --input: #222222;
     --shadow: 0 18px 55px #0003;
   }
   * {
@@ -130,7 +136,7 @@
     color: var(--muted);
   }
   .danger-text {
-    color: #b43f30 !important;
+    color: var(--danger) !important;
   }
   .spin {
     animation: rotate 1s linear infinite;
@@ -174,6 +180,28 @@
     text-align: left;
     line-height: 0.9;
     padding: 0 30px 2px 0;
+  }
+  /* Keep the tutorial's original button footprint and Georgia type. */
+  .wordmark::before {
+    content: "";
+    display: block;
+    height: 0.9em;
+  }
+  .wordmark .brand-name {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font: inherit;
+    white-space: nowrap;
+    transform: scaleX(0.64);
+    transform-origin: left center;
+  }
+  .wordmark .brand-symbol {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 26px;
+    height: 31px;
   }
   .wordmark > span {
     font-family: "Segoe UI", sans-serif;
@@ -315,10 +343,7 @@
   }
   .button.primary {
     background: var(--accent);
-    color: #fff9f5;
-  }
-  [data-theme="dark"] .button.primary {
-    color: #241e19;
+    color: var(--on-accent);
   }
   .button.primary:hover:not(:disabled) {
     background: var(--accent-hover);
@@ -589,7 +614,7 @@
     font-size: 9px;
   }
   .status-error {
-    color: #b43f30;
+    color: var(--danger);
   }
   .status-complete {
     color: var(--sage);
@@ -708,7 +733,7 @@
     overflow-y: auto;
   }
   .dialog::backdrop {
-    background: #161a174d;
+    background: #19191966;
     backdrop-filter: blur(3px);
   }
   .dialog-wide {
@@ -861,7 +886,7 @@
   }
   .step-list > li.current > span {
     background: var(--accent);
-    color: var(--paper);
+    color: var(--on-accent);
     border-color: var(--accent);
   }
   .step-list > li.done > span {
@@ -1785,7 +1810,7 @@
   }
   .step-list > li.current .step-jump > span {
     background: var(--accent);
-    color: var(--paper);
+    color: var(--on-accent);
     border-color: var(--accent);
   }
   .step-list > li.done .step-jump > span {
@@ -1993,7 +2018,7 @@
   .stage-bar > li.current > span {
     background: var(--accent);
     border-color: var(--accent);
-    color: var(--paper);
+    color: var(--on-accent);
   }
   .stage-bar > li.done > span {
     border-color: var(--sage);
@@ -2581,7 +2606,7 @@
     margin-left: 6px;
     border-radius: 999px;
     background: var(--accent);
-    color: var(--paper);
+    color: var(--on-accent);
     font-size: 10px;
   }
   .opportunities {
@@ -2918,6 +2943,13 @@
     }
     .wordmark small {
       font-size: 6px;
+    }
+    .wordmark .brand-name {
+      transform: scaleX(0.55);
+    }
+    .wordmark .brand-symbol {
+      width: 16px;
+      right: -2px;
     }
     .main-nav {
       gap: 15px;
