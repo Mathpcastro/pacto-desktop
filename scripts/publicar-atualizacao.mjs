@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 // Copia a versão atual para a pasta /download/ do site, de onde os apps instalados
 // baixam a atualização (electron-updater, provedor "generic").
-// Uso: node scripts/publicar-atualizacao.mjs [--mac <pasta do artefato pacto-mac>] [--site <pasta download>]
+// Uso: node scripts/publicar-atualizacao.mjs [--mac <pasta do artefato pacto-mac> [--mac-sem-atualizacao]] [--site <pasta download>]
 // Windows vem de release/ (npm run dist); Mac vem do artefato "pacto-mac" do GitHub Actions.
 // Padrão do site: ../Método Pacto/download. Depois, gere o build do site e suba na Hostinger.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -22,10 +22,14 @@ async function feed(dir, file) {
 const plans = [];
 const winFiles = await feed(join(root, "release"), "latest.yml");
 plans.push({ dir: join(root, "release"), yml: "latest.yml", files: winFiles.flatMap((f) => [f, `${f}.blockmap`]), old: /^PACTO-Setup-.*\.exe(\.blockmap)?$/ });
+// Mac sem assinatura da Apple não se atualiza sozinho (exigência do Squirrel.Mac):
+// com --mac-sem-atualizacao, publica só os .dmg e nenhum latest-mac.yml.
+const macUnsigned = process.argv.includes("--mac-sem-atualizacao");
 if (macDir) {
   const macFiles = await feed(macDir, "latest-mac.yml");
   const extra = (await readdir(macDir)).filter((f) => f.endsWith(".blockmap"));
-  plans.push({ dir: macDir, yml: "latest-mac.yml", files: [...macFiles, ...extra], old: /^PACTO-.*-mac-.*\.(dmg|zip)(\.blockmap)?$/ });
+  const files = macUnsigned ? macFiles.filter((f) => f.endsWith(".dmg")) : [...macFiles, ...extra];
+  plans.push({ dir: macDir, yml: macUnsigned ? null : "latest-mac.yml", files, old: /^(PACTO-.*-mac-.*\.(dmg|zip)(\.blockmap)?|latest-mac\.yml)$/ });
 }
 await mkdir(target, { recursive: true });
 for (const plan of plans) {
@@ -33,7 +37,7 @@ for (const plan of plans) {
   for (const name of await readdir(target)) if (plan.old.test(name)) await rm(join(target, name));
   for (const name of new Set(plan.files)) await copyFile(join(plan.dir, name), join(target, name));
   // O .yml por último: os apps só enxergam a versão nova quando os arquivos já estão lá.
-  await copyFile(join(plan.dir, plan.yml), join(target, plan.yml));
+  if (plan.yml) await copyFile(join(plan.dir, plan.yml), join(target, plan.yml));
 }
 console.log(`Versão ${version} pronta em ${target}`);
 for (const name of (await readdir(target)).filter((n) => /\.(exe|dmg)$/.test(n)).sort()) console.log(`https://carrosseisquevendem.com.br/download/${name}`);
