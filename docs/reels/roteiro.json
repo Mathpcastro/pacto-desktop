@@ -1,0 +1,22 @@
+{
+  "title": "Reels do app PACTO · anúncio de tráfego pago",
+  "model": "eleven_v4",
+  "voice": "4XT3b7qYZZ1MI52Ll4WR",
+  "beats": {
+    "gancho-a": { "narration": "Nove mil e quatrocentos seguidores. Cento e doze assinantes. Quatro mil de MRR.", "screen": "números batendo um a um" },
+    "gancho-b": { "narration": "Você lançou o seu SaaS. E o primeiro assinante, de onde vem?", "screen": "texto grande da dor" },
+    "gancho-c": { "narration": "Pare de queimar caixa em tráfego pago pra achar o primeiro assinante.", "screen": "texto grande anti-tráfego" },
+    "resultado": { "narration": "Tudo com carrosséis feitos por IA. Sem tráfego pago e sem aparecer.", "screen": "cards reais em leque" },
+    "resultado-b": { "narration": "Eu cheguei a cento e doze assinantes e quatro mil de MRR com carrosséis feitos por IA. Sem tráfego pago e sem aparecer.", "screen": "números + cards reais em leque" },
+    "prova": { "narration": "Foi esse funil que escalou o meu SaaS.", "screen": "print do Instagram Insights com zoom" },
+    "virada": { "narration": "Se você lançou um SaaS e ninguém chega até ele, o que falta é o caminho.", "screen": "texto grande da dor" },
+    "app": { "narration": "Agora esse funil está num app. Ele acha a pauta, escreve o texto pra você aprovar, desenha três capas pra você escolher e monta o CTA e a DM que levam até a assinatura.", "screen": "4 recortes do app, cortados nas palavras: pauta, texto, capas, CTA" },
+    "oferta": { "narration": "O meu funil inteiro, pra você só copiar e colar. App, método e aulas por quarenta e sete reais, uma vez.", "screen": "oferta e preço" },
+    "cta": { "narration": "Toca em saiba mais.", "screen": "CTA final · Windows e Mac" }
+  },
+  "variants": {
+    "A": ["gancho-a", "resultado", "prova", "virada", "app", "oferta", "cta"],
+    "B": ["gancho-b", "resultado-b", "prova", "app", "oferta", "cta"],
+    "C": ["gancho-c", "resultado-b", "prova", "app", "oferta", "cta"]
+  }
+}
