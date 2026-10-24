@@ -60,5 +60,5 @@ for (const id of process.argv.slice(2)) {
   const name = `${String(lesson.number).padStart(2, "0")} - ${lesson.title.replace(/[:·]/g, "-").replace(/\s+/g, " ")}`;
   run(["-i", video, ...inputs, "-filter_complex", mix, "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", at.toFixed(3), "-movflags", "+faststart", join(outDir, `${name}.mp4`)]);
   writeFileSync(join(outDir, `${name}.srt`), cues.map(([a, b, c], k) => `${k + 1}\n${srtTime(a)} --> ${srtTime(b)}\n${c}\n`).join("\n"));
-  console.log(`${id}: ${at.toFixed(1)} s (${Math.floor(at / 60)}:${String(Math.round(at % 60)).padStart(2, "0")}) → ${name}.mp4`);
+  console.log(`${id}: ${at.toFixed(1)} s (${Math.floor(at / 60)}:${String(Math.floor(at % 60)).padStart(2, "0")}) → ${name}.mp4`);
 }

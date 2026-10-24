@@ -116,9 +116,11 @@ export class Recorder {
     await this.point(locator, pause);
     const box = await locator.boundingBox();
     if (box) await this.page.evaluate(([x, y]) => window.__recRipple?.(x, y), [box.x + box.width / 2, box.y + box.height / 2]);
-    await locator.click(); await sleep(500);
+    // A click that never settles must not stall a whole recording; if the click did land
+    // the element is usually gone already, so only retry when it is still there.
+    await locator.click({ timeout: 8000, noWaitAfter: true }).catch(async () => { if (await locator.count()) await locator.dispatchEvent("click", {}, { timeout: 5000 }); }); await sleep(500);
   }
-  async type(locator, text, delay = 28) { await this.click(locator); await locator.pressSequentially(text, { delay }); await sleep(400); }
+  async type(locator, text, delay = 28) { await this.click(locator); await locator.pressSequentially(text, { delay, timeout: 240000 }); await sleep(400); }
   async wait(ms) { await sleep(ms); }
   async until(predicate, arg, timeout = 600000) {
     const end = Date.now() + timeout;

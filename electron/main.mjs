@@ -29,8 +29,11 @@ async function createWindow(){
   // Lessons play in-app through the privacy-enhanced YouTube embed: only that
   // origin may load in a frame, and it only gets fullscreen.
   const lessonFrame=raw=>{try{const u=new URL(raw);return u.protocol==='https:'&&['www.youtube-nocookie.com','www.youtube.com','youtube.com'].includes(u.hostname);}catch{return false;}};
-  window.webContents.session.setPermissionRequestHandler((_contents,permission,callback,details)=>callback(permission==='fullscreen'&&lessonFrame(details?.requestingUrl||'')));
-  window.webContents.session.setPermissionCheckHandler((_contents,permission,origin)=>permission==='fullscreen'&&lessonFrame(origin||''));
+  // The app itself may only write to the clipboard ("Copiar legenda", DMs, stories).
+  const appPage=raw=>{try{const u=new URL(raw);return u.protocol==='file:'||(!app.isPackaged&&u.origin===new URL(process.env.PACTO_DEV_URL||'http://127.0.0.1').origin);}catch{return false;}};
+  const allowed=(permission,url)=>(permission==='fullscreen'&&lessonFrame(url))||(permission==='clipboard-sanitized-write'&&appPage(url));
+  window.webContents.session.setPermissionRequestHandler((_contents,permission,callback,details)=>callback(allowed(permission,details?.requestingUrl||'')));
+  window.webContents.session.setPermissionCheckHandler((_contents,permission,origin)=>allowed(permission,origin||''));
   window.webContents.on('will-frame-navigate',event=>{if(!event.isMainFrame&&!lessonFrame(event.url))event.preventDefault();});
   // From file:// the embed sends no Referer and YouTube refuses to play (error 153); identify the embed itself.
   window.webContents.session.webRequest.onBeforeSendHeaders({urls:['https://www.youtube-nocookie.com/embed/*']},(details,callback)=>{const headers={...details.requestHeaders};if(!headers.Referer)headers.Referer='https://www.youtube-nocookie.com/';callback({requestHeaders:headers});});

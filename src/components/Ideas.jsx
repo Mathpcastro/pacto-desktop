@@ -161,10 +161,7 @@ export default function Ideas({ state, request, isPending, onCreate }) {
             }}
           >
             <label className="field">
-              <span>
-                Referência que performou bem{" "}
-                <LessonLink step="modelador" compact />
-              </span>
+              <span>Referência que performou bem</span>
               <textarea
                 rows={4}
                 value={reference}
@@ -172,6 +169,7 @@ export default function Ideas({ state, request, isPending, onCreate }) {
                 onChange={(e) => setReference(e.target.value)}
               />
             </label>
+            <LessonLink step="modelador" />
             <div className="ideas-images">
               <button
                 type="button"
