@@ -71,8 +71,12 @@ test('LAN address prefers private IPv4', () => {
 
 test('Google Drive folder detection and safe writing', async t => {
   const {root} = await fixture(t);
-  const found = findDriveFolders({env:{USERPROFILE:'C:\\Users\\X'},exists:p=>p==='G:\\Meu Drive'||p==='C:\\Users\\X\\Google Drive'});
-  assert.deepEqual(found,['G:\\Meu Drive','C:\\Users\\X\\Google Drive']);
+  const found = findDriveFolders({platform:'win32',env:{USERPROFILE:'C:\\Users\\X'},exists:p=>p==='G:\\Meu Drive'||p===join('C:\\Users\\X','Google Drive')});
+  assert.deepEqual(found,['G:\\Meu Drive',join('C:\\Users\\X','Google Drive')]);
+  // macOS: uma pasta por conta em ~/Library/CloudStorage.
+  const cloud = join('/Users/x','Library','CloudStorage'), mine = join(cloud,'GoogleDrive-eu@gmail.com','Meu Drive');
+  const mac = findDriveFolders({platform:'darwin',env:{HOME:'/Users/x'},list:p=>p===cloud?['GoogleDrive-eu@gmail.com','Dropbox']:[],exists:p=>p===mine});
+  assert.deepEqual(mac,[mine]);
   const folder = await writeCarouselFolder(root,'Meu: carrossel/teste',{'01.png':png,'legenda.txt':Buffer.from('L'),'stories/01.png':png});
   assert.equal(folder,join(root,'PACTO','Meu carrosselteste'));
   assert.deepEqual((await readdir(folder)).sort(),['01.png','legenda.txt','stories']);

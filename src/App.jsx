@@ -310,7 +310,7 @@ export default function App() {
                 <em>No seu ritmo.</em>
               </h1>
               <p>
-                Abra o PACTO pelo aplicativo para Windows para configurar sua
+                Abra o PACTO pelo aplicativo para computador para configurar sua
                 marca, conectar sua conta e criar seus carrosséis.
               </p>
               <div className="desktop-note">

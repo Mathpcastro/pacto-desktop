@@ -56,8 +56,9 @@ function ShareDialog({ project, request, onClose }) {
             </ol>
             <p className="field-hint">
               O link mostra só este carrossel ({shared.count} imagens) e expira
-              em 30 minutos ou quando você fechar esta janela. Se o Windows
-              perguntar sobre a rede, permita o acesso em redes privadas.
+              em 30 minutos ou quando você fechar esta janela. Se o sistema
+              perguntar sobre a rede, permita o acesso: no Windows, em redes
+              privadas; no Mac, aceite as conexões de entrada.
             </p>
             <code className="share-url">{shared.url}</code>
           </>

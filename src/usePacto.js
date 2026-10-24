@@ -45,7 +45,7 @@ export function usePacto() {
     async (action, args = {}) => {
       if (!available)
         throw new Error(
-          "O aplicativo para Windows é necessário para esta ação.",
+          "O aplicativo para computador é necessário para esta ação.",
         );
       const token = `${action}-${Date.now()}-${Math.random()}`;
       setPending((items) => [...items, { token, action }]);
