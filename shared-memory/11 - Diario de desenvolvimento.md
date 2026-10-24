@@ -49,3 +49,26 @@ Executado o plano de valor em 5 fases, com uma avaliação ao fim de cada uma. P
 ## 23/10/2026 — videoaula com a voz do usuário (Claude)
 
 Instalado o MCP do ElevenLabs (o endereço certo é `api.us.elevenlabs.io/v1/mcp`). O conector não clona voz, então o clone foi feito pela API, com uma chave obtida pela CLI oficial. Na primeira tentativa a chave veio sem a permissão de criar vozes; o usuário liberou `voices_write`. A v1 foi aprovada.
+
+
+## 23/10/2026 — minicurso em 8 aulas (Claude)
+
+O usuário pediu o método resumido em cerca de 19 minutos, só com tela e a voz dele, um nicho por aula. Pediu sem pausas silenciosas, com uma aula completa sobre problemas e uma mini-aula dizendo que o curso é opcional, mas vale a pena. O piloto foi aprovado e as aulas 2 a 8 foram gravadas, narradas e montadas. Dois bugs reais do app apareceram durante a gravação (área de transferência e o link dentro do rótulo) e estão em [[09 - Validacoes e evidencias]]. Restam cerca de 15,9 mil caracteres de crédito no ElevenLabs.
+
+
+## 24/10/2026 — landing do app e atualização automática (Claude)
+
+O usuário pediu uma landing para o app reaproveitando a prova da página atual, com copy pela skill Revenue-Centric Design e um vídeo na hero. A v1 tratava o curso como dificuldade; o usuário corrigiu: vender o app como facilidade, a dor é não saber como conseguir o primeiro assinante, e mais prova social (32 mil no YouTube, 3,4 mil → 18 mil no Instagram). A v2 foi aprovada e virou a página `/app/`. No meio do trabalho o usuário pediu atualização automática para quem baixar o app; foi feita com `electron-updater` e provada de ponta a ponta.
+
+
+## 24/10/2026 — Reels de tráfego pago (Claude)
+
+O usuário pediu um anúncio em Reels mostrando o app por dentro com a copy da página. Roteiro aprovado com três ganchos para teste. Narração gerada com timestamps por palavra (a legenda e os cortes do app seguem a fala), trilha pelo Higgsfield CLI a pedido do usuário. Primeira passada de quadros mostrou o recorte do app sem aplicar e o print do Instagram cortado; corrigidos antes do render final.
+
+## 24/10/2026 — Operação comercial e novo nome
+
+Nesta conversa foram organizadas as oito aulas do app na Cakto e acrescentada a aula 00 de instalação, com links fixos Windows/Mac. Foram programadas dez mensagens na Uazapi e dez no Telegram, somente Chat Geral, de 24/10 às 20h a 29/10 às 10h, com a oferta R$97 → R$47 e link da landing do app. As filas foram verificadas.
+
+Depois, criadas duas aulas textuais de mentoria: uma ao final do módulo do app e outra ao final do método normal. Copy explica o trabalho direto de Matheus no funil personalizado e os possíveis ajustes de aquisição/conversão no SaaS, com CTA para aplicação. Ambas foram salvas como rascunho.
+
+O usuário pediu registrar tudo no Obsidian e renomear o projeto para **Funil CQV**. Pasta, índice, estado, referências e script de sincronização ajustados; adicionadas notas 20/21/22 e provas locais selecionadas, sem credenciais. Os históricos do aplicativo, materiais, minicurso e reels foram preservados.

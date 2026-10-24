@@ -4,7 +4,7 @@
 
 Profiles also accept optional string fields `freebie`, `differentiators`, `territories`. Slide indexes are 1-based. `versions` is read-only metadata for preserved native image revisions; the renderer cannot inject image bytes through `saveProject`. References enter through `importReference` and profile validation.
 
-`PACTO_USER_DATA` overrides the app data folder for integration tests. `PACTO_DEV_URL` accepts only a local `http://127.0.0.1` URL in unpackaged development. Neither setting bypasses authentication. The app uses its own CODEX_HOME; account connect/logout never changes the global Codex login. Browser OAuth is displayed in an isolated app window.
+`PACTO_USER_DATA` overrides the app data folder for integration tests. `PACTO_DEV_URL` accepts only a local `http://127.0.0.1` URL in unpackaged development. Neither setting bypasses authentication. The app uses its own CODEX_HOME; account connect/logout never changes the global Codex login. Browser OAuth opens in the user's default browser (only `https` OpenAI/ChatGPT auth hosts are accepted); Codex's local callback completes the login and the app window is brought back to front.
 
 Export is refused until every slide has a real PNG matching its current copy; edited content marks art as `outdated` until regenerated. The Electron save flow normalizes exported copies to 1080 × 1350 pixels using native raster resizing; source aspect ratio must be within 0.02 of 4:5. Images outside that tolerance require regeneration rather than cropping. Raw native originals and all revisions remain unchanged. The native save dialog returns `cancelled:true` when dismissed. Output contains `01.png` etc. plus `legenda.txt`.
 

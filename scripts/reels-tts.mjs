@@ -27,12 +27,14 @@ function words(text, alignment) {
 let spent = 0;
 const manifest = {};
 for (const [id, beat] of Object.entries(data.beats)) {
-  const base = join(dir, `${id}-${hash(beat.narration)}`);
+  // Trechos sem fala (ex.: gancho só com texto) não vão ao ElevenLabs.
+  if (!beat.narration) { manifest[id] = { file: null, seconds: beat.seconds || 3, text: "", words: [] }; continue; }
+  const base = join(dir, `${id}-${hash(beat.narration + (beat.speed ? `@${beat.speed}` : ""))}`);
   if (!existsSync(`${base}.json`)) {
     const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${data.voice}/with-timestamps?output_format=mp3_44100_192`, {
       method: "POST",
       headers: { "xi-api-key": env.ELEVENLABS_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ text: beat.narration, model_id: data.model, language_code: "pt", voice_settings: { stability: 0.45, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true } }),
+      body: JSON.stringify({ text: beat.narration, model_id: data.model, language_code: "pt", voice_settings: { stability: 0.45, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true, ...(beat.speed ? { speed: beat.speed } : {}) } }),
     });
     if (!res.ok) throw new Error(`${id}: ${res.status} ${(await res.text()).slice(0, 200)}`);
     const body = await res.json();

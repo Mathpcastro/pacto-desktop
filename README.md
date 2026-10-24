@@ -68,4 +68,4 @@ As duas provas de inferência usam autenticação existente apenas em uma pasta 
 
 ## Memória compartilhada
 
-Contexto e decisões ficam em `shared-memory/` e no vault Obsidian `Projetos/PACTO Desktop`. Antes de continuar, ler `00 - Comece aqui.md`, decisões e estado. Atualizar notas com resultados verificados e pendências reais. Credenciais ficam fora dessas notas.
+Contexto e decisões ficam em `shared-memory/` e no vault Obsidian `Projetos/Funil CQV`. Antes de continuar, ler `00 - Comece aqui.md`, decisões e estado. Atualizar notas com resultados verificados e pendências reais. Credenciais ficam fora dessas notas.

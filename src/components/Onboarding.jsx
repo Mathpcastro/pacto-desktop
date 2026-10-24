@@ -334,7 +334,7 @@ export default function Onboarding({
                 <p className="field-hint">
                   {connected
                     ? "Tudo certo. Vamos montar seu contexto."
-                    : "Uma janela de login do ChatGPT vai abrir. Depois de entrar, volte para cá."}
+                    : "O login do ChatGPT abre no seu navegador. Depois de entrar, o PACTO volta sozinho, já conectado."}
                 </p>
               </div>
               {!connected && (

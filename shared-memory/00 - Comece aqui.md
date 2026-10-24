@@ -1,11 +1,15 @@
 ---
-project: pacto-desktop
-status: em-desenvolvimento
+project: funil-cqv
+status: em-operacao
 tags: [pacto, projeto, memoria-compartilhada]
 ---
-# P.A.C.T.O. Desktop
+# Funil CQV
 
 Memória compartilhada entre Codex e Claude. Leia [[01 - Decisoes]] e [[02 - Estado e proximos passos]] antes de trabalhar. Confirme fatos mutáveis no código e nos resultados; estas notas não comprovam entregas por si mesmas.
+
+Projeto renomeado de PACTO Desktop para **Funil CQV** em 24/10/2026, a pedido do usuário. Abrange o funil Carrosséis Que Vendem: site, app PACTO, cursos, divulgação e mentoria. O app e os repositórios mantêm seus nomes.
+
+**Última consolidação:** [[20 - Entregas e operacao 2026-10-24]]. Campanhas em [[21 - Campanha WhatsApp e Telegram]]; mentoria em [[22 - Mentoria e aulas na Cakto]].
 
 ## Mapa do projeto
 
@@ -25,6 +29,12 @@ Memória compartilhada entre Codex e Claude. Leia [[01 - Decisoes]] e [[02 - Est
 - [[14 - Prompts originais]] — índice dos 19 prompts preservados.
 - [[15 - Entrega e provas reais]] — instalador, hashes, telas e resultados de ponta a ponta.
 - [[16 - Roteiro de fidelidade ao curso]] — diagnóstico de copy/tipografia, recursos faltantes e prioridades.
+- [[17 - Minicurso roteiros]] — roteiros das oito aulas do app.
+- [[18 - Landing do app (copy v2)]] — texto e decisões da landing; histórico.
+- [[19 - Instalacao para compradores]] — links fixos e primeira abertura.
+- [[20 - Entregas e operacao 2026-10-24]] — operação, área de membros e pendências atuais.
+- [[21 - Campanha WhatsApp e Telegram]] — textos, horários e evidências dos 20 agendamentos.
+- [[22 - Mentoria e aulas na Cakto]] — escopo, copy e estado das duas aulas.
 - `Materiais/` — 13 páginas originais da Biblioteca Oficial do Notion.
 - `Transcricoes/` — oito retornos textuais do Pauta, com idioma e origem.
 - `Anexos/` — print original da biblioteca, preservado sem alteração.
@@ -47,4 +57,4 @@ Criar um aplicativo Electron para Windows, vendido por R$47, que gera e gerencia
 
 Antes de editar, ler estado e decisões. Ao terminar uma etapa, atualizar notas com arquivos alterados, validações realmente executadas e pendências. Não substituir trabalho de outro agente sem ler o estado atual. Não registrar tokens, senhas, chaves ou respostas brutas de autenticação.
 
-As notas são arquivos Markdown compartilhados, não sincronização automática de histórico de chat. O MCP já foi configurado tanto no Codex quanto no Claude Code; uma consulta do Claude confirmou `Connected`. O MCP configurado aponta ao vault pai `Obsidian Vault`; os caminhos destas notas começam por `Projetos/PACTO Desktop/`. Este diretório também foi registrado no Obsidian como vault próprio, com configuração `.obsidian` separada. A conexão HTTP continua sendo a do vault pai, que deve permanecer acessível para usar o mesmo endpoint.
+As notas são arquivos Markdown compartilhados, não sincronização automática de histórico de chat. O MCP já foi configurado tanto no Codex quanto no Claude Code; uma consulta do Claude confirmou `Connected`. O MCP configurado aponta ao vault pai `Obsidian Vault`; os caminhos destas notas começam por `Projetos/Funil CQV/`. Este diretório também foi registrado no Obsidian como vault próprio, com configuração `.obsidian` separada. A conexão HTTP continua sendo a do vault pai, que deve permanecer acessível para usar o mesmo endpoint.

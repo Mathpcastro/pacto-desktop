@@ -11,17 +11,15 @@ import { normalizeExport, normalizeFiles } from '../core/export.mjs';
 import { startUpdates } from './updater.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 if(process.env.PACTO_USER_DATA)app.setPath('userData',resolve(process.env.PACTO_USER_DATA));
-let window,loginWindow,runtime,codex,updates;
+let window,runtime,codex,updates,awaitingLogin=false;
 function emit(event){if(window&&!window.isDestroyed())window.webContents.send('pacto:event',event);}
-function authUrlAllowed(raw){try{const u=new URL(raw);return u.protocol==='https:'&&(u.hostname==='auth.openai.com'||u.hostname==='auth0.openai.com'||u.hostname==='chatgpt.com'||u.hostname==='auth.chatgpt.com')||u.protocol==='http:'&&['localhost','127.0.0.1'].includes(u.hostname);}catch{return false;}}
+function authUrlAllowed(raw){try{const u=new URL(raw);return u.protocol==='https:'&&['auth.openai.com','auth0.openai.com','chatgpt.com','auth.chatgpt.com'].includes(u.hostname);}catch{return false;}}
+// OAuth runs in the user's default browser; Codex's local callback server completes the login and the app is brought back to front.
 async function login(url){
   if(!authUrlAllowed(url))throw new Error('Endereço de autenticação inválido.');
-  if(loginWindow&&!loginWindow.isDestroyed()){loginWindow.focus();return;}
-  loginWindow=new BrowserWindow({width:560,height:760,title:'Conectar sua conta ChatGPT',parent:window,autoHideMenuBar:true,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,partition:'persist:pacto-auth'}});
-  loginWindow.webContents.setWindowOpenHandler(({url})=>{if(authUrlAllowed(url))void loginWindow.loadURL(url);return {action:'deny'};});
-  loginWindow.webContents.on('will-navigate',(event,target)=>{if(!authUrlAllowed(target))event.preventDefault();});
-  loginWindow.on('closed',()=>{loginWindow=null;});await loginWindow.loadURL(url);
+  awaitingLogin=true;await shell.openExternal(url);
 }
+function returnFromLogin(){if(!awaitingLogin||!window||window.isDestroyed())return;awaitingLogin=false;if(window.isMinimized())window.restore();window.show();window.setAlwaysOnTop(true);window.focus();window.setAlwaysOnTop(false);}
 async function createWindow(){
   // Fit small screens (e.g. 1366×768 at 125% leaves about 1093×580): never open or lock the window larger than the work area.
   const area=screen.getPrimaryDisplay().workAreaSize;
@@ -45,7 +43,7 @@ async function createWindow(){
 if(process.platform==='win32')app.setAppUserModelId('com.matheuscastro.pacto');
 app.whenReady().then(async()=>{
   const storage=join(app.getPath('userData'),'library');const store=await new Store(storage).init();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
-  codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected&&loginWindow&&!loginWindow.isDestroyed())loginWindow.close();}});
+  codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
   runtime=new Runtime({store,codex,knowledge,emit,dialogs:{login,
     async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:'Exportar carrossel',defaultPath:`${suggested}.zip`,filters:[{name:'Carrossel ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
     async normalizeFiles(files){return normalizeFiles(files,nativeImage);},

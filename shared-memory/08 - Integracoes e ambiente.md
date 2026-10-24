@@ -7,9 +7,9 @@
 - Token guardado apenas na variável de ambiente de usuário Windows `OBSIDIAN_MCP_TOKEN`.
 - Não colocar o valor do token nesta nota, no Git, em screenshots de configuração ou em logs.
 - O token enviado inicialmente no chat deve ser substituído pelo usuário quando conveniente; nenhum valor foi copiado ao vault.
-- Vault do projeto: `C:\Users\Admin2\Documents\Obsidian Vault\Projetos\PACTO Desktop`.
+- Vault do projeto: `C:\Users\Admin2\Documents\Obsidian Vault\Projetos\Funil CQV`.
 - O endpoint fornecido é do vault pai; mantê-lo disponível para o mesmo MCP funcionar.
-- Script de sincronização: `scripts/pacto-obsidian.ps1 -Sync`, lê a variável local e grava apenas notas do projeto com precondição de conteúdo.
+- Script de sincronização: `C:\Users\Admin2\Documents\pacto-app\tools\pacto-obsidian.ps1 -Sync`, lê a variável local e grava apenas notas do projeto com precondição de conteúdo.
 
 ## Claude Code
 

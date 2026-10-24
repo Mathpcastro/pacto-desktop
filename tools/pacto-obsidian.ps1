@@ -14,7 +14,7 @@ function Invoke-PactoObsidian($Tool, $Arguments) {
 if ($Sync) {
     $pactoRepo = Split-Path $PSScriptRoot -Parent
     foreach ($pactoNote in Get-ChildItem -LiteralPath (Join-Path $pactoRepo 'shared-memory') -Filter '*.md' -File) {
-        $pactoPath = 'Projetos/PACTO Desktop/' + $pactoNote.Name
+        $pactoPath = 'Projetos/Funil CQV/' + $pactoNote.Name
         $pactoFile = Join-Path 'C:\Users\Admin2\Documents\Obsidian Vault' $pactoPath
         $pactoArguments = @{path=$pactoPath;content=[IO.File]::ReadAllText($pactoNote.FullName)}
         if (Test-Path -LiteralPath $pactoFile) {
@@ -30,5 +30,5 @@ if ($Sync) {
     }
 } else {
     Invoke-PactoObsidian 'get_server_info' @{} | ConvertTo-Json -Depth 8
-    Invoke-PactoObsidian 'list_vault_files' @{directory='Projetos/PACTO Desktop';limit=30} | ConvertTo-Json -Depth 8
+    Invoke-PactoObsidian 'list_vault_files' @{directory='Projetos/Funil CQV';limit=30} | ConvertTo-Json -Depth 8
 }

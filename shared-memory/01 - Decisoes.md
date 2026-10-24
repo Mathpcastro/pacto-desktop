@@ -29,3 +29,12 @@
 - A IA desenha o card inteiro, com texto, como no curso. O app não diagrama texto por conta própria.
 - Ordem obrigatória: 1) pauta escolhida no Radar, no Modelador ou no Replicador; 2) texto gerado, editável e aprovado pela pessoa, com linha editorial e mascote, desenho ou efeito, definidos por ela ou sugeridos pelo app; 3) capa com 2 ou 3 opções para escolher; 4) restante do carrossel só depois do texto e da capa aprovados.
 - Identidade visual do app (ícone e paleta): ainda sem resposta do usuário.
+
+## 24/10/2026 — Funil CQV, distribuição e divulgação
+
+- Projeto documental renomeado para **Funil CQV**, ampliando o registro para site, app, cursos, campanhas e mentoria. Marca PACTO do app preservada.
+- Binários públicos em `Mathpcastro/pacto-releases`, código privado; Hostinger hospeda só o site.
+- Divulgação expressamente autorizada no grupo WhatsApp identificado e no **Chat Geral (1)** do grupo Telegram indicado. Essa autorização específica de campanha não altera a regra de publicação manual de carrosséis do app.
+- Mensagens curtas às 10h/20h, benefícios reais, case do Setup identificado como case, oferta R$97 → R$47 e link `/app/`. Foram agendadas dez por canal, em sequência finita.
+- Mentoria: aplicação personalizada do funil com Matheus e possíveis ajustes no SaaS conforme diagnóstico/escopo; contratação à parte. Uma aula textual em cada módulo principal; ambas rascunho.
+- Detalhes em [[20 - Entregas e operacao 2026-10-24]], [[21 - Campanha WhatsApp e Telegram]] e [[22 - Mentoria e aulas na Cakto]].

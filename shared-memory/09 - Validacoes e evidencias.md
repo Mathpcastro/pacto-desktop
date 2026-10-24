@@ -91,3 +91,65 @@ Limites:
 ## Videoaula — 23/10/2026
 
 A pronúncia foi conferida transcrevendo dois trechos com o ElevenLabs (o reconhecimento de fala Scribe): o texto voltou igual ao roteiro. A sincronia foi conferida em 8 quadros do vídeo. O usuário aprovou a voz e o ritmo. Limites: o vídeo foi gravado a cerca de 4 quadros por segundo, sem cursor; serve de base para a edição em motion.
+
+
+## Minicurso — 23/10/2026
+
+| Verificação | Resultado |
+|---|---|
+| Aulas | 01 2:14 · 02 3:11 · 03 2:08 · 04 3:00 · 05 1:53 · 06 2:27 · 07 3:16 · 08 1:20 = 19:31 |
+| Gravação | App real no Electron, cursor desenhado, cerca de 10 quadros por segundo pelo `capturePage`. As gerações (CTA, stories, Radar, Replicador, entrevista) usam a conta ChatGPT de verdade |
+| Conferência | Folha de quadros de cada aula revisada: sincronia, molduras, cartelas, nenhum corte de tela |
+| Testes depois das correções | 43 testes, 7 de 7 regressões do editor, build ok |
+
+Bugs reais do app encontrados na gravação e corrigidos:
+- "Copiar legenda" e os outros botões de copiar não faziam nada: o controle de permissões negava a escrita na área de transferência até para o próprio app. Agora `clipboard-sanitized-write` é liberado só para a página do app; a aula 06 confirma que a legenda chega à área de transferência.
+- Na tela Pautas, o link da aula ficava dentro do rótulo do campo e confundia leitores de tela. O link saiu do rótulo.
+
+Limites: os minutos citados das aulas originais são estimados. Os números de resultado da aula 06 (48/156/3 e outros) são de exemplo, para mostrar o painel.
+
+
+## Landing do app e atualização automática — 24/10/2026
+
+| Verificação | Resultado |
+|---|---|
+| Página `/app/` | Desktop (1440) e celular (375) sem rolagem lateral; vídeo carrega e toca em loop; rotas `/`, `/app`, `/app/`, `/mentoria/` e o vídeo (com Range) respondem; build do site gera `dist/app` |
+| Vídeo da hero | 40,5 s, 4 MB, H.264; capturas reais do app, marcado "acelerado · esperas cortadas" |
+| Atualização automática | `scripts/update-proof.mjs`: instalador 0.1.1 servido localmente; app empacotado 0.1.0 encontrou, baixou e mostrou "Reiniciar e atualizar" em 16 s. `app-update.yml` do instalador aponta para `carrosseisquevendem.com.br/download/`. O teste não instala nada e apaga o cache |
+| App | 43 testes, 7 de 7 regressões do editor |
+
+Limite: a instalação em si (o NSIS trocando a versão) não foi executada no teste, para não mexer no PACTO instalado do usuário.
+
+
+## Versão 0.2.0 Windows + Mac — 24/10/2026
+
+| Verificação | Resultado |
+|---|---|
+| Mac Apple Silicon (macos-15) | Build, 43 testes, app empacotado abre no onboarding, Codex `aarch64-apple-darwin` presente; assinatura ad-hoc |
+| Mac Intel (macos-15-intel) | Build, testes, app abre, Codex `x86_64-apple-darwin` presente; sem assinatura |
+| Windows | `PACTO-Setup-0.2.0.exe`, `app-update.yml` aponta para `/download/` |
+| Zip da Hostinger | Extraído e rodado com o `server.js`: `/`, `/app` (301 → `/app/`), `/mentoria/`, vídeo e os 3 instaladores respondem 206 com Range |
+
+Limite: ninguém instalou o .dmg num Mac real; o teste roda o app já empacotado nos Macs do GitHub.
+
+### Instaladores no GitHub (pacto-releases) — 24/10/2026
+- Release `v0.2.0` pública com 8 arquivos; os 3 links fixos (`releases/latest/download/PACTO-Windows.exe`, `PACTO-Mac-AppleSilicon.dmg`, `PACTO-Mac-Intel.dmg`) respondem sem login, com download em partes.
+- App Windows 0.2.0 empacotado consultou o feed do GitHub pelo próprio electron-updater: `{"remote":"0.2.0","available":false}`, sem erro. A troca de versão (download + aviso) já estava provada com `scripts/update-proof.mjs`.
+- Mac refeito no Actions com o novo `app-update.yml`: os dois apps abrem, Codex presente.
+
+### Reels do app — 24/10/2026
+| Verificação | Resultado |
+|---|---|
+| Formato | 1080×1920, 30 fps, H.264; A 40,9 s · B 37,0 s · C 36,9 s |
+| Áudio | −14,0 a −14,2 LUFS, pico −1,2 a −1,6 dBTP (medido com `loudnorm` após a normalização) |
+| Conferência | Folha de 16 quadros por variação: gancho, leque de carrosséis reais, print do Insights, dor, 4 cortes do app nas palavras certas, oferta, CTA. Um quadro suspeito (legenda "duplicada") renderizado isolado: era artefato da amostragem |
+Limites: trechos do app acelerados (avisado na cartela final); o vídeo não foi testado dentro do gerenciador de anúncios do Meta.
+
+## 24/10/2026 — Site, área de membros e campanhas
+
+- `/app/` e `/mentoria/`: HTTP 200 na consolidação; ZIP Hostinger com as duas rotas e sem `/download/`.
+- Cakto: oito vídeos no módulo do app, aula inicial de instalação e duas aulas de mentoria em texto; estas duas reabertas e conferidas como rascunho, sem vídeo e com link da aplicação. Contagens finais: dez aulas app, nove método.
+- Uazapi: dez campanhas com grupo, texto, horário e contagem conferidos via API; estado `scheduled` no arquivo de verificação.
+- Telegram: dez mensagens somente Chat Geral (tópico 1), texto/preço/link/horário/grupo conferidos; persistência confirmada após recarregar no Web A.
+- Evidências em `Evidencias/operacao-2026-10-24/`. Agendar não equivale a confirmar a entrega; publicação das aulas de mentoria e instalação em Mac físico não foram comprovadas.
+- A renomeação preservou todos os arquivos existentes; caminhos de sincronização e referências foram ajustados. Ver [[20 - Entregas e operacao 2026-10-24]].

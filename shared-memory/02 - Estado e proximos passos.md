@@ -1,5 +1,28 @@
 # Estado e próximos passos
 
+## Estado atual consolidado — 24/10/2026
+
+Este checkpoint prevalece sobre as descrições históricas abaixo. Projeto agora chamado **Funil CQV**; aplicativo continua PACTO.
+
+- Landing do app em https://carrosseisquevendem.com.br/app/; a home `/` é outra página. `/app/` e `/mentoria/` responderam HTTP 200 na conferência desta consolidação.
+- Instaladores da versão 0.2.0 no GitHub público `Mathpcastro/pacto-releases`; código privado. Windows com atualização automática; Mac sem assinatura Apple e atualização manual.
+- ZIP Hostinger `Documents\Método Pacto\hostinger-cqv-app-2026-10-24.zip`: 6.758.805 bytes, inclui `public/app/index.html` e `public/mentoria/index.html`, sem `/download/`.
+- Minicurso de oito vídeos criado na Cakto, mais a aula 00 em texto com instalação e três downloads. A aula de mentoria acrescentada ao final deixa o módulo do app com dez aulas.
+- Módulo normal do método: oito aulas existentes mais a nova aula de mentoria, total nove. As duas novas aulas de mentoria foram salvas como **rascunho, não visíveis aos alunos**; publicação não confirmada.
+- Divulgação: dez mensagens agendadas via Uazapi no grupo WhatsApp autorizado e dez pela conta pessoal no Telegram, somente no Chat Geral. Janela finita: 24/10 às 20h até 29/10 às 10h, horário de Brasília. Não há recorrência diária ilimitada configurada.
+- Detalhes e provas: [[20 - Entregas e operacao 2026-10-24]], [[21 - Campanha WhatsApp e Telegram]], [[22 - Mentoria e aulas na Cakto]].
+
+### Próximos passos atuais
+
+- [ ] Revisar e publicar as duas aulas de mentoria na Cakto quando desejar disponibilizá-las aos alunos.
+- [ ] Acompanhar a execução dos agendamentos; fila confirmada não equivale a entrega confirmada. Definir nova campanha após o último horário, se desejado.
+- [ ] Testar instalação do `.dmg` em Mac físico; testes nos runners GitHub não substituem essa validação.
+- [ ] Decidir sobre conta Apple Developer e assinatura/notarização para habilitar atualização automática no Mac.
+- [ ] Manter o preço promocional coerente com o checkout; a campanha não cria expiração automática da oferta.
+
+## Histórico de implementação
+
+
 Checkpoint final desta implementação: 23/10/2026. Primeira versão local 0.1.0 construída e testada. Não houve publicação, push, merge ou mudança no funil original.
 
 ## Entregue no computador
@@ -122,3 +145,56 @@ A videoaula v1 "Como usar o PACTO" (1 min 27 s) foi **aprovada pelo usuário**.
 - **Narração:** 7 trechos gerados com o Eleven v4.
 - **Onde está:** `Evidencias/videoaula/`. Para remontar: `node scripts/videoaula.mjs <filmagem> <pasta-narracao> <saida>`.
 - **Chave do ElevenLabs:** fica só no `.env.local`, que está no `.gitignore`. Nunca registrar o valor dela.
+
+
+## Minicurso "PACTO em 19 minutos" — 23/10/2026
+
+Entregue: 8 aulas narradas com a voz clonada do usuário (ElevenLabs `eleven_v4`), só tela, um nicho por aula, com legenda `.srt`. Total de 19:31. Arquivos em `Evidencias/minicurso/`; roteiros em [[17 - Minicurso roteiros]]. O piloto (aula 01) foi aprovado pelo usuário; as aulas 02 a 08 ainda aguardam a revisão dele.
+
+Para refazer uma aula: `node scripts/minicurso-tts.mjs aula-0N` (só gera as falas novas), depois `node scripts/minicurso/aula-0N.mjs` (grava) e `node scripts/minicurso-montar.mjs aula-0N` (monta). Não rode `npm run build` durante uma gravação: o Vite recarrega a página quando `dist/index.html` muda.
+
+- [ ] Usuário revisar as aulas 02 a 08.
+- [ ] Decidir onde o minicurso fica (dentro do app, área de membros ou YouTube não listado).
+
+
+## Landing do app e atualização automática — 24/10/2026
+
+**Landing `/app/`** (no site estático `Documents/Método Pacto`, ao lado da home, que não mudou): copy v2 aprovada pelo usuário ([[18 - Landing do app (copy v2)]]), vídeo da hero de 40 s e abas com capturas reais do app (exemplo Agendei). Ainda não está publicada: o usuário sobe o build (`npm run build` → `dist/`) na Hostinger.
+
+**Vídeo da hero:** composição `PactoHeroDemo` no projeto Remotion (`src/pactoapp/`), feita a partir de `scripts/minicurso/hero.mjs` (gravação real; 2 das 3 capas geradas ao vivo). Render com `--bundle-cache=false`. Cópia em `Evidencias/landing-app/hero.mp4`.
+
+**Atualização automática** (`electron-updater`, provedor genérico em `https://carrosseisquevendem.com.br/download/`): o app instalado procura versão nova ao abrir e a cada 4 h, baixa em segundo plano, avisa e instala ao fechar (ou no botão "Reiniciar e atualizar"). Para lançar uma versão: subir `version` no package.json → `npm run dist` → `node scripts/publicar-atualizacao.mjs` → build do site → subir na Hostinger. Os compradores que instalarem a partir de agora recebem as próximas versões sozinhos; quem tiver a 0.1.0 antiga (sem updater) precisa instalar uma vez de novo.
+
+- [ ] Usuário enviar o print atual do perfil do Instagram (só abre logado).
+- [ ] Confirmar plano ChatGPT mínimo, garantia, Mac, assinatura digital e tempo até o primeiro carrossel.
+- [ ] Publicar `/app/` e a pasta `/download/` na Hostinger.
+
+
+## Versão 0.2.0 para Windows e Mac — 24/10/2026
+
+- Windows: `PACTO-Setup-0.2.0.exe` com atualização automática (provada de 0.1.0 → 0.1.1).
+- Mac: builds Apple Silicon e Intel no GitHub Actions (`.github/workflows/build-mac.yml`), ambos abertos e testados nos runners (onboarding carrega, Codex do Mac no pacote). **Sem assinatura da Apple**: o comprador libera na primeira abertura e o Mac não se atualiza sozinho. Com conta Apple Developer (US$ 99/ano), basta cadastrar os segredos CSC_LINK, CSC_KEY_PASSWORD, APPLE_API_KEY, APPLE_API_KEY_ID e APPLE_API_ISSUER no repositório: o workflow passa a assinar e notarizar, e aí publicar com `--mac` sem `--mac-sem-atualizacao`.
+- Site: `hostinger-cqv-app-com-downloads-2026-10-24.zip` (785 MB, com instaladores) e `hostinger-cqv-app-2026-10-24.zip` (7 MB, sem). Mesmo formato do deploy anterior (Web App Node: `server.js` + `public/`). Testado extraído com o próprio Express.
+- Texto de instalação para a área de membros: [[19 - Instalacao para compradores]].
+
+- [ ] Usuário subir o zip na Hostinger e conferir os 3 links.
+- [ ] Decidir sobre a conta Apple Developer.
+
+
+### Instaladores no GitHub — 24/10/2026 (substitui a pasta /download/ da Hostinger)
+
+A pedido do usuário, os instaladores saíram da Hostinger e foram para o repositório **público** `Mathpcastro/pacto-releases` (só binários; o código segue privado em `pacto-desktop`). A atualização automática do Windows lê as releases de lá (`provider: github`). Links fixos para a área de membros, sempre na versão mais nova:
+- Windows: https://github.com/Mathpcastro/pacto-releases/releases/latest/download/PACTO-Windows.exe
+- Mac Apple Silicon: https://github.com/Mathpcastro/pacto-releases/releases/latest/download/PACTO-Mac-AppleSilicon.dmg
+- Mac Intel: https://github.com/Mathpcastro/pacto-releases/releases/latest/download/PACTO-Mac-Intel.dmg
+
+Para lançar versão: subir `version` → `npm run dist` → rodar o workflow "Build macOS" → baixar o artefato `pacto-mac` → `node scripts/publicar-github.mjs --mac <pasta> --mac-sem-atualizacao` (tirar a flag quando o Mac for assinado). O zip da Hostinger agora é só o site: `hostinger-cqv-app-2026-10-24.zip` (7 MB).
+
+
+## Reels de tráfego pago do app — 24/10/2026
+
+Três variações em 1080×1920 (mesmo corpo, ganchos diferentes), em `Evidencias/reels/`: **A** prova (40,9 s), **B** dor (37,0 s), **C** anti-tráfego (36,9 s). Narração na voz clonada (ElevenLabs v4, 795 caracteres; restam cerca de 15,1 mil), legenda palavra por palavra pelos timestamps, trilha instrumental gerada no Higgsfield (Sonilo Music, 42 s, 2 créditos). Áudio normalizado em −14 LUFS.
+
+Fontes: `pacto-app/docs/reels/roteiro.json` (roteiro e variações), `pacto-app/scripts/reels-tts.mjs` (narração com tempos), composição `PactoReels-A/B/C` em `Remotion/src/pactoreels/ReelsAd.tsx`. Render: `npx remotion render PactoReels-A out/x.mp4 --bundle-cache=false`, depois `loudnorm`.
+
+- [ ] Usuário escolher o gancho (ou testar os três) e subir no gerenciador com o botão "Saiba mais" apontando para a página /app/.
