@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 
 // Publica a versão atual como release no repositório público de instaladores.
 // Os apps instalados leem o latest.yml dessa release (electron-updater, provedor "github"),
-// e a área de membros usa os nomes fixos, que sempre baixam a versão mais nova:
+// e os nomes PACTO são aliases legados usados pelos links existentes da área de membros.
+// Também são publicados aliases Carrossell para os novos links e downloads diretos:
 //   https://github.com/Mathpcastro/pacto-releases/releases/latest/download/PACTO-Windows.exe
 // Uso: node scripts/publicar-github.mjs [--mac <pasta do artefato pacto-mac> [--mac-sem-atualizacao]]
 // Windows vem de release/ (npm run dist); Mac vem do artefato "pacto-mac" do GitHub Actions.
@@ -32,11 +33,14 @@ try {
   const [installer] = await feed(release, "latest.yml");
   await add(release, installer); await add(release, `${installer}.blockmap`); await add(release, "latest.yml");
   await add(release, installer, "PACTO-Windows.exe");
+  await add(release, installer, "Carrossell-Windows.exe");
   if (macDir) {
     const macFiles = await feed(macDir, "latest-mac.yml");
     for (const name of macFiles.filter((f) => f.endsWith(".dmg"))) await add(macDir, name);
     await add(macDir, macFiles.find((f) => /arm64\.dmg$/.test(f)), "PACTO-Mac-AppleSilicon.dmg");
+    await add(macDir, macFiles.find((f) => /arm64\.dmg$/.test(f)), "Carrossell-Mac-AppleSilicon.dmg");
     await add(macDir, macFiles.find((f) => /x64\.dmg$/.test(f)), "PACTO-Mac-Intel.dmg");
+    await add(macDir, macFiles.find((f) => /x64\.dmg$/.test(f)), "Carrossell-Mac-Intel.dmg");
     if (!macUnsigned) {
       for (const name of macFiles.filter((f) => f.endsWith(".zip"))) await add(macDir, name);
       for (const name of (await readdir(macDir)).filter((f) => f.endsWith(".blockmap"))) await add(macDir, name);
@@ -50,7 +54,7 @@ try {
   if (exists) gh(["release", "upload", tag, "--repo", REPO, "--clobber", ...files]);
   else gh(["release", "create", tag, "--repo", REPO, "--title", `Carrossell ${version}`, "--notes", `Carrossell ${version} para Windows e Mac.`, "--latest", ...files]);
   console.log(`Release ${tag} publicada em https://github.com/${REPO}/releases/tag/${tag}`);
-  for (const name of ["PACTO-Windows.exe", ...(macDir ? ["PACTO-Mac-AppleSilicon.dmg", "PACTO-Mac-Intel.dmg"] : [])])
+  for (const name of ["Carrossell-Windows.exe", "PACTO-Windows.exe", ...(macDir ? ["Carrossell-Mac-AppleSilicon.dmg", "Carrossell-Mac-Intel.dmg", "PACTO-Mac-AppleSilicon.dmg", "PACTO-Mac-Intel.dmg"] : [])])
     console.log(`https://github.com/${REPO}/releases/latest/download/${name}`);
 } finally {
   await rm(stage, { recursive: true, force: true });
