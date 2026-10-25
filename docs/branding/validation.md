@@ -60,3 +60,14 @@ Os dados do smoke e da prova de interface são fixtures manuais isoladas, sem no
 - Rasters/ícones: `node_modules/.bin/electron scripts/render-brand-assets.cjs`.
 - Prova visual: `node scripts/brand-proof.mjs before` antes da alteração; `node scripts/brand-proof.mjs after` depois.
 - Smoke local: `node scripts/brand-packaged-proof.mjs`.
+
+
+## Publicação da versão 0.2.2 — 24/10/2026
+
+O checkpoint local acima foi concluído em `0.2.1` e depois publicado como atualização `0.2.2`.
+
+- Código enviado à `main` privada `Mathpcastro/pacto-desktop`, commit `d46a9ac`; tag fonte `v0.2.2`.
+- Release pública latest: https://github.com/Mathpcastro/pacto-releases/releases/tag/v0.2.2 . Downloads versionados e aliases legados/Carrossell verificados com HTTP 200.
+- Windows: `Carrossell-Setup-0.2.2.exe`, 224.894.285 bytes; SHA-256 `167BCD1E10CFE5706A6F15992BC42AE5C812372A8B1E996C07FA8073860DC0F4`. `npm test`: 45/45; renderer regression: 7/7; smoke do app empacotado e prova de branding aprovados.
+- Mac Apple Silicon: `Carrossell-0.2.2-mac-arm64.dmg`, 269.438.747 bytes. Mac Intel: `Carrossell-0.2.2-mac-x64.dmg`, 284.434.537 bytes. Workflow com testes, empacotamento e smoke nas duas arquiteturas: https://github.com/Mathpcastro/pacto-desktop/actions/runs/40148827680.
+- Os instaladores estão sem assinatura de código. O Mac não foi notarizado, atualiza manualmente e ainda precisa de instalação validada em Mac físico; Windows pode mostrar o aviso do SmartScreen.
