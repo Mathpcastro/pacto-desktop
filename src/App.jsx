@@ -15,6 +15,7 @@ import {
   Palette,
   Radar,
   RefreshCw,
+  Settings2,
   Sun,
   Trophy,
   X,
@@ -29,15 +30,44 @@ import CreateProject from "./components/CreateProject.jsx";
 import Editor from "./components/Editor.jsx";
 import Ideas from "./components/Ideas.jsx";
 import Rhythm from "./components/Rhythm.jsx";
+import PreferencesDialog from "./components/PreferencesDialog.jsx";
 import { CourseContext, LessonPlayer, formatMoment } from "./course.jsx";
 import { rhythm } from "../core/rhythm.mjs";
 import brandMark from "./assets/brand-mark.svg";
 
-function readTheme() {
+const DEFAULT_PREFERENCES = {
+  theme: "light",
+  palette: "carrossell",
+  font: "system",
+  scale: 100,
+};
+
+function readPreferences() {
   try {
-    return localStorage.getItem("pacto-theme") || "light";
+    const saved = JSON.parse(
+      localStorage.getItem("carrossell-preferences") || "{}",
+    ) || {};
+    const legacyTheme = localStorage.getItem("pacto-theme");
+    return {
+      theme: ["light", "dark"].includes(saved.theme)
+        ? saved.theme
+        : legacyTheme === "dark"
+          ? "dark"
+          : DEFAULT_PREFERENCES.theme,
+      palette: ["carrossell", "ocean", "forest", "violet"].includes(
+        saved.palette,
+      )
+        ? saved.palette
+        : DEFAULT_PREFERENCES.palette,
+      font: ["system", "arial", "verdana", "georgia"].includes(saved.font)
+        ? saved.font
+        : DEFAULT_PREFERENCES.font,
+      scale: [100, 105, 110, 115, 120, 125].includes(saved.scale)
+        ? saved.scale
+        : DEFAULT_PREFERENCES.scale,
+    };
   } catch {
-    return "light";
+    return { ...DEFAULT_PREFERENCES };
   }
 }
 
@@ -56,7 +86,9 @@ export default function App() {
     isPending,
     bootstrapFailed,
   } = runtime;
-  const [theme, setTheme] = useState(readTheme);
+  const [preferences, setPreferences] = useState(readPreferences);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const theme = preferences.theme;
   const [view, setView] = useState("library");
   const [projectId, setProjectId] = useState(null);
   const [creating, setCreating] = useState(false);
@@ -85,10 +117,22 @@ export default function App() {
   }, [view, hasProfile, projectId]);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.palette = preferences.palette;
+    if (preferences.font === "system")
+      delete document.documentElement.dataset.uiFont;
+    else document.documentElement.dataset.uiFont = preferences.font;
+    document.documentElement.style.setProperty(
+      "--app-zoom",
+      String(preferences.scale / 100),
+    );
     try {
       localStorage.setItem("pacto-theme", theme);
+      localStorage.setItem(
+        "carrossell-preferences",
+        JSON.stringify(preferences),
+      );
     } catch {}
-  }, [theme]);
+  }, [preferences, theme]);
   useEffect(() => {
     if (!notice) return undefined;
     const timeout = setTimeout(() => setNotice(""), 7000);
@@ -135,6 +179,8 @@ export default function App() {
     setProjectId(id);
     setView("editor");
   };
+  const updatePreferences = (patch) =>
+    setPreferences((current) => ({ ...current, ...patch }));
   const accountAction = () =>
     request(connected ? "disconnect" : "connect").catch(() => {});
   return (
@@ -226,9 +272,19 @@ export default function App() {
                 label={
                   theme === "light" ? "Ativar tema escuro" : "Ativar tema claro"
                 }
-                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                onClick={() =>
+                  updatePreferences({
+                    theme: theme === "light" ? "dark" : "light",
+                  })
+                }
               >
                 {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
+              </IconButton>
+              <IconButton
+                label="Preferências de aparência e leitura"
+                onClick={() => setPreferencesOpen(true)}
+              >
+                <Settings2 size={17} />
               </IconButton>
               {available && (
                 <details className="account-menu">
@@ -530,6 +586,14 @@ export default function App() {
                 </span>
               </footer>
             </Dialog>
+          )}
+          {preferencesOpen && (
+            <PreferencesDialog
+              preferences={preferences}
+              onChange={updatePreferences}
+              onReset={() => setPreferences({ ...DEFAULT_PREFERENCES })}
+              onClose={() => setPreferencesOpen(false)}
+            />
           )}
           {notice && (
             <div className="toast" role="status">
