@@ -137,6 +137,15 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Ensure the Windows Electron binary is installed
+        shell: pwsh
+        run: |
+          $electronBinary = "node_modules/electron/dist/electron.exe"
+          if (-not (Test-Path -LiteralPath $electronBinary)) {
+            node node_modules/electron/install.js
+            if ($LASTEXITCODE -ne 0) { throw "Could not download the Windows Electron binary." }
+          }
+          if (-not (Test-Path -LiteralPath $electronBinary)) { throw "Missing $electronBinary after install." }
       - run: npm test
       - run: npm run dist
       - name: Verify Windows updater files
