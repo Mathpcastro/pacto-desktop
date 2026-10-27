@@ -47,7 +47,12 @@ jobs:
             fi
             echo "Continuing existing draft $tag."
           else
-            target=$(gh api "repos/$RELEASE_REPO/git/ref/tags/v0.2.2" --jq '.object.sha')
+            base_tag=$(gh release view --repo "$RELEASE_REPO" --json tagName --jq '.tagName')
+            if [[ -z "$base_tag" ]]; then
+              echo "::error::Could not find a published release to anchor the new tag."
+              exit 1
+            fi
+            target=$(gh api "repos/$RELEASE_REPO/git/ref/tags/$base_tag" --jq '.object.sha')
             gh release create "$tag" \
               --repo "$RELEASE_REPO" \
               --title "Carrossell $version" \
