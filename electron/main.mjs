@@ -28,7 +28,7 @@ function returnFromLogin(){if(!awaitingLogin||!window||window.isDestroyed())retu
 async function createWindow(){
   // Fit small screens (e.g. 1366×768 at 125% leaves about 1093×580): never open or lock the window larger than the work area.
   const area=screen.getPrimaryDisplay().workAreaSize;
-  window=new BrowserWindow({width:Math.min(1440,area.width),height:Math.min(940,area.height),minWidth:Math.min(960,area.width),minHeight:Math.min(560,area.height),title:'Carrossell',icon:join(root,'resources','branding','icon-256.png'),backgroundColor:'#f6f3ed',autoHideMenuBar:true,webPreferences:{preload:join(root,'electron','preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
+  window=new BrowserWindow({width:Math.min(1440,area.width),height:Math.min(940,area.height),minWidth:Math.min(960,area.width),minHeight:Math.min(560,area.height),title:'Carrossell',icon:join(root,'resources','branding','icon-256.png'),backgroundColor:'#f6f3ed',autoHideMenuBar:true,...(process.platform==='darwin'?{titleBarStyle:'hiddenInset',trafficLightPosition:{x:18,y:20}}:{titleBarStyle:'hidden',titleBarOverlay:{color:'#fcfbf8',symbolColor:'#191919',height:55}}),webPreferences:{preload:join(root,'electron','preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   // Clique direito com Recortar, Copiar e Colar: compradores colam o contexto da marca pelo menu.
   window.webContents.on('context-menu',(_event,params)=>{
@@ -75,8 +75,10 @@ app.whenReady().then(async()=>{
     async importReference(){const result=await dialog.showOpenDialog(window,{title:'Importar referência visual',properties:['openFile'],filters:[{name:'Imagens',extensions:['png','jpg','jpeg','webp']}]});if(result.canceled||!result.filePaths[0])return {cancelled:true};const file=result.filePaths[0];if((await stat(file)).size>20*1024*1024)throw new Error('Use uma referência de até 20 MB.');const bytes=await readFile(file);if(nativeImage.createFromBuffer(bytes).isEmpty())throw new Error('Não foi possível ler a imagem.');const extension=extname(file).toLowerCase();const mime=extension==='.png'?'png':extension==='.webp'?'webp':'jpeg';const ref=validateReference({name:file.split(/[\\/]/).at(-1),dataUrl:`data:image/${mime};base64,${bytes.toString('base64')}`});return ref;}
   }});
   ipcMain.handle('pacto:request',async(event,action,args)=>{
-    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'))throw new Error('Solicitação não permitida.');
+    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'||action==='titleBar'))throw new Error('Solicitação não permitida.');
     if(action==='installUpdate'){updates?.install();return {ok:true};}
+    // Cores dos botões de janela acompanham o tema e a paleta escolhidos no app.
+    if(action==='titleBar'){const color=String(args?.color||''),symbol=String(args?.symbol||'');if(process.platform!=='darwin'&&/^#[0-9a-f]{6}$/i.test(color)&&/^#[0-9a-f]{6}$/i.test(symbol))window.setTitleBarOverlay({color,symbolColor:symbol,height:55});return {ok:true};}
     try{return await runtime.request(action,args);}catch(error){throw safeError(error);}
   });
   await createWindow();

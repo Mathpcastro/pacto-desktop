@@ -77,6 +77,15 @@ export default function App() {
     root.dataset.palette = preferences.palette;
     delete root.dataset.uiFont;
     root.style.setProperty("--app-zoom", String(preferences.scale / 100));
+    root.dataset.platform = /Mac/i.test(navigator.platform) ? "mac" : "win";
+    // Botões de janela do Windows com as cores da barra do app (tema e paleta).
+    const probe = document.createElement("i");
+    probe.style.cssText = "position:fixed;visibility:hidden;background:var(--panel);color:var(--ink)";
+    document.body.append(probe);
+    const hex = (rgb) => "#" + (rgb.match(/\d+/g) || []).slice(0, 3).map((n) => Number(n).toString(16).padStart(2, "0")).join("");
+    const { backgroundColor, color } = getComputedStyle(probe);
+    probe.remove();
+    window.pacto?.request("titleBar", { color: hex(backgroundColor), symbol: hex(color) }).catch(() => {});
     try {
       localStorage.setItem("pacto-theme", preferences.theme);
       localStorage.setItem("carrossell-preferences", JSON.stringify(preferences));

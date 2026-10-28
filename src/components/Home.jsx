@@ -234,25 +234,6 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) create();
           }}
         />
-        {format === "carrossel" && (
-          <div className="attach-row">
-            <button type="button" className="ghost-btn" onClick={attach} disabled={attachments.length >= 6}>
-              <ImagePlus size={16} /> Anexar foto de referência ou o que você quer que vá no carrossel
-            </button>
-            {attachments.length > 0 && (
-              <div className="attach-list" aria-label="Imagens anexadas">
-                {attachments.map((img, i) => (
-                  <figure key={`${img.name}-${i}`} title={img.name}>
-                    <img src={img.dataUrl} alt={img.name} />
-                    <button type="button" aria-label={`Remover ${img.name}`} onClick={() => setAttachments((l) => l.filter((_, j) => j !== i))}>
-                      <X size={12} />
-                    </button>
-                  </figure>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
         <div className="row">
           {menu("format", "Formato", FORMAT_LABEL[format], FORMATS, setFormat)}
           {format === "carrossel" && menu("style", "Estilo", STYLE_LIST.find((s) => s[0] === style)[1], STYLE_LIST, setStyle)}
@@ -265,11 +246,6 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
               {more ? "Menos opções" : "Mais opções"}
             </button>
           )}
-          <span className="spacer" />
-          <button className="btn primary" disabled={creating || !text.trim()} onClick={create} title="Ctrl + Enter">
-            {creating ? <Spinner /> : <Sparkles size={16} />}
-            {creating ? "Criando…" : format === "carrossel" ? "Criar carrossel" : format === "material" ? "Criar material" : "Criar apresentação"}
-          </button>
         </div>
         {more && format === "carrossel" && (
           <div className="composer-more">
@@ -287,7 +263,33 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
             </label>
           </div>
         )}
-        {!connected && <p className="hint">Conecte sua conta ChatGPT no menu do avatar para o Carrossell escrever e gerar as artes.</p>}
+        <div className="composer-foot">
+          {format === "carrossel" && (
+            <div className="attach-row">
+              <button type="button" className="ghost-btn" onClick={attach} disabled={attachments.length >= 6}>
+                <ImagePlus size={16} /> Anexar foto de referência ou o que você quer que vá no carrossel
+              </button>
+              {attachments.length > 0 && (
+                <div className="attach-list" aria-label="Imagens anexadas">
+                  {attachments.map((img, i) => (
+                    <figure key={`${img.name}-${i}`} title={img.name}>
+                      <img src={img.dataUrl} alt={img.name} />
+                      <button type="button" aria-label={`Remover ${img.name}`} onClick={() => setAttachments((l) => l.filter((_, j) => j !== i))}>
+                        <X size={12} />
+                      </button>
+                    </figure>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <span className="spacer" />
+          <button className="btn primary" disabled={creating || !text.trim()} onClick={create} title="Ctrl + Enter">
+            {creating ? <Spinner /> : <Sparkles size={16} />}
+            {creating ? "Criando…" : format === "carrossel" ? "Criar carrossel" : format === "material" ? "Criar material" : "Criar apresentação"}
+          </button>
+          {!connected && <p className="hint">Conecte sua conta ChatGPT no menu do avatar para o Carrossell escrever e gerar as artes.</p>}
+        </div>
       </section>
       <div className="home-grid">
         <section className="section" aria-label="Ideias">
