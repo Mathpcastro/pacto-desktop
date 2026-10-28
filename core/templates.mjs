@@ -123,7 +123,9 @@ body{font-family:${SYSTEM};overflow:hidden}
 .photo.empty{display:grid;place-items:center;background:repeating-linear-gradient(135deg,#00000010 0 18px,#0000 18px 36px),#d9d4cc;color:#00000080;font:600 30px ${SYSTEM}}
 h1{font-family:${DISPLAY};font-weight:800;letter-spacing:-0.025em;line-height:1.04;text-wrap:balance}
 p.body{line-height:1.38;white-space:pre-line;text-wrap:pretty}
-.pill{display:inline-flex;align-items:center;gap:14px;border:3px solid currentColor;border-radius:999px;padding:16px 34px;font:700 32px ${SYSTEM}}`;
+.pill{display:inline-flex;align-items:center;gap:14px;border:3px solid currentColor;border-radius:999px;padding:16px 34px;font:700 32px ${SYSTEM}}
+.media{display:block;width:100%;min-height:0;flex:0 1 auto;max-height:560px;object-fit:cover;border-radius:28px}
+.media.contain{object-fit:contain;background:#ffffff;padding:36px}`;
 
 // Um card 1080×1350. variant muda o esquema de cor ou a composição (opções de capa).
 export function slideHtml({ style, slide, index = 0, total = 1, brand = {}, media = {}, variant = 0, fonts }) {
@@ -132,6 +134,9 @@ export function slideHtml({ style, slide, index = 0, total = 1, brand = {}, medi
   const title = slide.title || "";
   const body = slide.body || "";
   const titleHtml = marked(title, slide.emphasis);
+  // Imagem escolhida para o card (produto, logo, print): aparece inteira e sem cortes quando é logo.
+  const asset = slide.assetImage || "";
+  const mediaTag = (h) => (asset ? `<img class="media ${slide.assetKind === "logo" ? "contain" : ""}" style="max-height:${h}px" src="${esc(asset)}" alt="">` : "");
   let css = "", html = "";
   if (style === "tweet") {
     const scheme = [
@@ -140,8 +145,8 @@ export function slideHtml({ style, slide, index = 0, total = 1, brand = {}, medi
       { bg: p.soft, fg: p.ink, sub: p.ink + "b3" },
     ][variant % 3];
     const text = body ? `${title}\n\n${body}` : title;
-    css = `.card{background:${scheme.bg};color:${scheme.fg};justify-content:center;padding:0 96px;gap:44px}.tw{font-size:${fit(text, 68, 44, 60, 320)}px;line-height:1.36;white-space:pre-line;font-weight:400}`;
-    html = `${who(brand, 104, scheme.fg, scheme.sub)}<p class="tw">${esc(text)}</p>`;
+    css = `.card{background:${scheme.bg};color:${scheme.fg};justify-content:center;padding:0 96px;gap:${asset ? 36 : 44}px}.tw{font-size:${asset ? fit(text, 52, 34, 60, 320) : fit(text, 68, 44, 60, 320)}px;line-height:1.36;white-space:pre-line;font-weight:400}.media{border:2px solid ${scheme.sub}40}`;
+    html = `${who(brand, 104, scheme.fg, scheme.sub)}<p class="tw">${esc(text)}</p>${mediaTag(560)}`;
   } else if (style === "texto" || style === "textopreto") {
     const order = style === "texto" ? [0, 1, 2] : [1, 0, 2];
     const scheme = [
@@ -150,11 +155,11 @@ export function slideHtml({ style, slide, index = 0, total = 1, brand = {}, medi
       { bg: p.accent, fg: onColor(p.accent, p.ink), hl: p.ink },
     ][order[variant % 3]];
     css = `.card{background:${scheme.bg};color:${scheme.fg};justify-content:center;align-items:center;text-align:center;padding:0 110px;gap:40px}
-h1{font-family:${SYSTEM};font-weight:800;font-size:${fit(title, 92, 56, 30, 140)}px;line-height:1.16;letter-spacing:-0.015em}
+h1{font-family:${SYSTEM};font-weight:800;font-size:${asset ? fit(title, 76, 48, 30, 140) : fit(title, 92, 56, 30, 140)}px;line-height:1.16;letter-spacing:-0.015em}
 mark{${variant % 3 === 2 ? `background:${p.ink};color:${p.paper};padding:0 .12em;border-radius:.08em;-webkit-box-decoration-break:clone;box-decoration-break:clone` : `color:${scheme.hl}`}}p.body{font-size:38px;opacity:.72}`;
-    html = `<h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}`;
+    html = `<h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}${mediaTag(520)}`;
   } else if (style === "fototexto") {
-    const photo = scenePhoto(media, slide.photo, index);
+    const photo = asset || scenePhoto(media, slide.photo, index);
     const scheme = [
       { bg: p.soft, fg: p.ink, top: true },
       { bg: p.soft, fg: p.ink, top: false },
@@ -163,7 +168,7 @@ mark{${variant % 3 === 2 ? `background:${p.ink};color:${p.paper};padding:0 .12em
     css = `.card{background:${scheme.bg};color:${scheme.fg};flex-direction:${scheme.top ? "column" : "column-reverse"}}
 .txt{flex:1;display:flex;flex-direction:column;justify-content:center;gap:30px;padding:90px 96px 60px}
 h1{font-size:${fit(title, 82, 54, 28, 130)}px}mark{color:${p.accent}}p.body{font-size:36px;opacity:.85}
-.ph{height:46%;flex:none}`;
+.ph{height:46%;flex:none}${asset && slide.assetKind === "logo" ? ".ph .photo{object-fit:contain;background:#fff;padding:60px}" : ""}`;
     html = `<div class="txt"><h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}</div><div class="ph">${photoTag(photo, "Cena aprovada")}</div>`;
   } else if (style === "fundo") {
     const face = (media.faces || []).find((f) => f.id === slide.photo) || (media.faces || [])[index % Math.max(1, (media.faces || []).length)];
@@ -176,7 +181,7 @@ h1{font-size:${fit(title, 96, 60, 24, 120)}px;text-shadow:0 4px 30px #0008}mark{
 p.body{font-size:38px;text-shadow:0 2px 18px #000a}.spacer{flex:1}`;
     const pills = `<span class="pill" style="font-size:30px;padding:12px 30px">@${esc((brand.handle || "seuperfil").replace(/^@/, ""))}</span>`;
     const end = cover ? `<span class="pill">arrasta pro lado ›</span>` : "";
-    html = `<div class="bg">${photoTag(face?.dataUrl, "Sua foto")}</div><div class="shade"></div><div class="ov ${variant % 3 === 2 ? "left" : ""}">${pills}${variant % 3 === 1 ? '<div class="spacer"></div>' : ""}<h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}${variant % 3 === 1 ? "" : '<div class="spacer"></div>'}${end}</div>`;
+    html = `<div class="bg">${photoTag(asset || face?.dataUrl, "Sua foto")}</div><div class="shade"></div><div class="ov ${variant % 3 === 2 ? "left" : ""}">${pills}${variant % 3 === 1 ? '<div class="spacer"></div>' : ""}<h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}${variant % 3 === 1 ? "" : '<div class="spacer"></div>'}${end}</div>`;
   } else if (style === "recorte") {
     const face = (media.faces || []).find((f) => f.id === slide.photo) || (media.faces || [])[0];
     const scheme = [

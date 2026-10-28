@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -427,6 +427,102 @@ try {
   });
   await page.getByRole("button", { name: "Voltar ao início" }).click();
   await shot(page, "17-inicio-escuro");
+  await page.evaluate(() => {
+    document.documentElement.dataset.theme = "light";
+  });
+
+  phase = "8 · Imagens da marca e anexos";
+  // O seletor de arquivo devolve fotos geradas no próprio teste, uma por clique.
+  const files = [];
+  for (const [name, hue] of [["logo-agendei.png", 160], ["caixa-do-produto.png", 30], ["print-do-app.png", 210], ["foto-extra.png", 300]]) {
+    const file = join(userData, name);
+    await writeFile(file, Buffer.from((await fakePhoto(page, hue)).split(",")[1], "base64"));
+    files.push(file);
+  }
+  await application.evaluate(({ dialog }, list) => {
+    let next = 0;
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [list[next++ % list.length]] });
+  }, files);
+  await page.getByRole("button", { name: "Marca", exact: true }).click();
+  await page.getByRole("button", { name: "Adicionar imagem" }).click();
+  await page.getByRole("button", { name: "Adicionar imagem" }).click();
+  await check("Marca: logo e produto entram como Imagens da marca, com o tipo certo", async () => {
+    await expect(page.getByLabel("Tipo de logo-agendei")).toHaveValue("logo");
+    await expect(page.getByLabel("Tipo de caixa-do-produto")).toHaveValue("produto");
+    await page.getByLabel("Tipo de caixa-do-produto").selectOption("outro");
+    await expect(page.getByLabel("Tipo de caixa-do-produto")).toHaveValue("outro");
+    await page.getByLabel("Tipo de caixa-do-produto").selectOption("produto");
+    const s = await page.evaluate(() => window.pacto.request("bootstrap"));
+    assert.deepEqual(s.media.assets.map((a) => a.kind), ["logo", "produto"]);
+  });
+  await page.getByText("Imagens da marca").scrollIntoViewIfNeeded();
+  await shot(page, "18-imagens-da-marca");
+  await page.getByRole("button", { name: "Início", exact: true }).click();
+  await page.getByRole("button", { name: "Anexar foto de referência ou o que você quer que vá no carrossel" }).click();
+  await check("Início: o anexo aparece na barra antes de criar", async () => {
+    await expect(page.getByLabel("Imagens anexadas").locator("figure")).toHaveCount(1);
+  });
+  await shot(page, "19-anexo-na-barra");
+  await page.getByLabel("Tema ou ideia").fill("Conheça o Agendei por dentro: a tela de agenda e o que vem no plano.");
+  await page.getByRole("button", { name: /Estilo/ }).click();
+  await page.getByRole("menuitemradio", { name: /^Tweet/ }).click();
+  await page.getByRole("button", { name: "Criar carrossel" }).click();
+  await page.getByRole("navigation", { name: "Etapas" }).waitFor();
+  const attachedId = await page.evaluate(async () => (await window.pacto.request("bootstrap")).projects[0].id);
+  await check("criar leva o anexo para o projeto e limpa a barra", async () => {
+    const p = await page.evaluate(async (id) => (await window.pacto.request("bootstrap")).projects.find((x) => x.id === id), attachedId);
+    assert.equal(p.attachments.length, 1);
+    assert.equal(p.attachments[0].name, "print-do-app.png");
+  });
+  await page.evaluate(async (id) => {
+    await window.pacto.request("saveProject", { id, slides: [
+      { id: "a1", role: "Capa", title: "O Agendei por dentro", body: "", emphasis: "por dentro" },
+      { id: "a2", role: "Tela", title: "A agenda do dia inteira numa tela", body: "Cada horário com o nome, o serviço e a confirmação.", emphasis: "" },
+      { id: "a3", role: "Oferta", title: "Teste 14 dias grátis", body: "Comente AGENDA que eu te mando o link.", emphasis: "14 dias" },
+    ] });
+    await window.pacto.request("approveText", { id });
+    await window.pacto.request("generateCovers", { id });
+  }, attachedId);
+  await expect(page.locator(".cover-opt")).toHaveCount(3, { timeout: 30000 });
+  await page.getByRole("button", { name: "Usar esta capa" }).click();
+  await expect(page.getByRole("button", { name: "Ir para publicar" })).toBeVisible({ timeout: 30000 });
+  await page.locator(".thumb").nth(1).click();
+  await page.getByRole("button", { name: /Editar card 2/ }).click();
+  const pick = page.getByRole("group", { name: "Imagem no card" });
+  await check("o card mostra Nenhuma, o anexo e as imagens da marca para escolher", async () => {
+    await expect(pick.getByRole("button", { name: "Nenhuma" })).toHaveAttribute("aria-pressed", "true");
+    for (const name of ["print-do-app.png", "logo-agendei", "caixa-do-produto"]) await expect(pick.getByRole("button", { name })).toBeVisible();
+  });
+  await pick.getByRole("button", { name: "print-do-app.png" }).click();
+  await check("escolher a imagem marca o card para atualizar e a prévia já mostra a imagem", async () => {
+    await expect(pick.getByRole("button", { name: "print-do-app.png" })).toHaveAttribute("aria-pressed", "true");
+    const p = await page.evaluate(async (id) => (await window.pacto.request("bootstrap")).projects.find((x) => x.id === id), attachedId);
+    const html = await page.locator(".stage-frame iframe").getAttribute("srcdoc");
+    assert.ok(html.includes(p.attachments[0].dataUrl.slice(0, 200)), "prévia sem a imagem");
+    await expect.poll(async () => (await page.evaluate(async (id) => (await window.pacto.request("bootstrap")).projects.find((x) => x.id === id), attachedId)).slides[1].asset, { timeout: 8000 }).toBe(p.attachments[0].id);
+  });
+  await shot(page, "20-imagem-no-card");
+  await page.getByRole("button", { name: "Enviar imagem para este card" }).click();
+  await check("enviar imagem pelo card anexa ao projeto e já seleciona", async () => {
+    await expect(pick.locator("button[aria-pressed=true]")).toHaveAttribute("aria-label", "foto-extra.png");
+    const p = await page.evaluate(async (id) => (await window.pacto.request("bootstrap")).projects.find((x) => x.id === id), attachedId);
+    assert.equal(p.attachments.length, 2);
+  });
+  await page.keyboard.press("Escape");
+  await page.locator(".topbar .btn.primary").click();
+  await check("atualizar monta o card com a imagem escolhida em 1080×1350", async () => {
+    await expect(page.getByRole("button", { name: "Ir para publicar" })).toBeVisible({ timeout: 30000 });
+    const p = await page.evaluate(async (id) => (await window.pacto.request("bootstrap")).projects.find((x) => x.id === id), attachedId);
+    assert.equal(p.slides[1].state, "complete");
+    assert.deepEqual(await png1080(page, p.slides[1].image), [1080, 1350]);
+  });
+  await page.locator(".thumb").nth(1).click();
+  await shot(page, "21-card-com-imagem");
+  await check("Marca e estúdio com imagens: texto ≥ 13px, sem rolagem aninhada", async () => {
+    const a = await audit(page);
+    assert.equal(a.smallCount, 0, a.small.join(" | "));
+    assert.deepEqual(a.nested, []);
+  });
 
   const failed = results.filter((r) => !r.passed);
   console.log(JSON.stringify({ out, userData, passed: results.length - failed.length, failed: failed.length, results }, null, 2));

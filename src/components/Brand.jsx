@@ -62,6 +62,7 @@ function DocSection({ title, value, onSave, hint, extra }) {
 export default function Brand({ state, request, isPending, onRedo, onManual, onNotice }) {
   const profile = state.profile || {};
   const media = state.media || { faces: [], scenes: [], verified: true };
+  const assets = media.assets || [];
   const brand = state.brandInfo || {};
   const colors = palette(profile.designKit || "");
   const connected = Boolean(state.account?.connected);
@@ -230,6 +231,43 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
               )}
             </div>
             <p className="hint">Envie fotos suas: de frente, trabalhando, sorrindo, em pé. Fotos de outras pessoas só com autorização delas. O Carrossell não gera rostos de pessoas reais nem famosas.</p>
+          </div>
+          <div className="sub">
+            <div className="sub-head">
+              <b>Imagens da marca</b>
+              <span className="hint">{assets.length} de 12 · logo, produtos e o que pode aparecer nos cards</span>
+            </div>
+            <div className="photo-grid">
+              {assets.map((a) => (
+                <div className="tile" key={a.id}>
+                  <div className="pic asset">
+                    <img src={a.dataUrl} alt={a.name} />
+                    <button className="icon-only" aria-label={`Remover ${a.name}`} onClick={() => saveMedia({ removeAsset: a.id })}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <span className="tile-name" title={a.name}>{a.name}</span>
+                  <select aria-label={`Tipo de ${a.name}`} value={a.kind} onChange={(e) => saveMedia({ asset: { id: a.id, kind: e.target.value } })}>
+                    <option value="logo">Logo</option>
+                    <option value="produto">Produto</option>
+                    <option value="outro">Outra imagem</option>
+                  </select>
+                </div>
+              ))}
+              {assets.length < 12 && (
+                <button
+                  className="add-tile"
+                  onClick={async () => {
+                    const ref = await pickImage();
+                    if (ref && (await saveMedia({ addAssets: [{ name: ref.name.replace(/\.[a-z]+$/i, ""), dataUrl: ref.dataUrl, kind: assets.some((x) => x.kind === "logo") ? "produto" : "logo" }] }))) onNotice("Imagem adicionada à marca.");
+                  }}
+                >
+                  <Plus size={20} />
+                  Adicionar imagem
+                </button>
+              )}
+            </div>
+            <p className="hint">O logo vira referência em toda arte com IA. Produtos e outras imagens aparecem no card que você escolher, ou o Carrossell escolhe ao escrever o texto. Nos estilos prontos, a imagem entra no próprio card.</p>
           </div>
           <div className="sub">
             <div className="sub-head">

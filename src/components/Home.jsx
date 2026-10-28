@@ -118,6 +118,7 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
   const [focus, setFocus] = useState("");
   const [reference, setReference] = useState("");
   const [images, setImages] = useState([]);
+  const [attachments, setAttachments] = useState([]);
   const [measuring, setMeasuring] = useState(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -168,9 +169,11 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
         architectureId: format === "carrossel" ? architectureId : "",
         editorialLine: more ? editorialLine.trim() : "",
         visualConcept: more ? visualConcept.trim() : "",
+        attachments: format === "carrossel" ? attachments : [],
       });
       if (connected) await request("generatePlan", { id: project.id }).catch(() => {});
       setText("");
+      setAttachments([]);
       onOpen(project.id);
     } catch {
     } finally {
@@ -204,6 +207,13 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
       )}
     </div>
   );
+  // Imagens do carrossel: referência ou algo que deve aparecer num card (produto, logo, print).
+  const attach = async () => {
+    try {
+      const ref = await request("importReference");
+      if (ref?.dataUrl) setAttachments((list) => [...list, { name: ref.name, dataUrl: ref.dataUrl }].slice(0, 6));
+    } catch {}
+  };
   const addImage = async () => {
     try {
       const ref = await request("importReference");
@@ -224,6 +234,25 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) create();
           }}
         />
+        {format === "carrossel" && (
+          <div className="attach-row">
+            <button type="button" className="ghost-btn" onClick={attach} disabled={attachments.length >= 6}>
+              <ImagePlus size={16} /> Anexar foto de referência ou o que você quer que vá no carrossel
+            </button>
+            {attachments.length > 0 && (
+              <div className="attach-list" aria-label="Imagens anexadas">
+                {attachments.map((img, i) => (
+                  <figure key={`${img.name}-${i}`} title={img.name}>
+                    <img src={img.dataUrl} alt={img.name} />
+                    <button type="button" aria-label={`Remover ${img.name}`} onClick={() => setAttachments((l) => l.filter((_, j) => j !== i))}>
+                      <X size={12} />
+                    </button>
+                  </figure>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <div className="row">
           {menu("format", "Formato", FORMAT_LABEL[format], FORMATS, setFormat)}
           {format === "carrossel" && menu("style", "Estilo", STYLE_LIST.find((s) => s[0] === style)[1], STYLE_LIST, setStyle)}

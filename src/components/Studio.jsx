@@ -257,6 +257,12 @@ export default function Studio({ project, state, request, pending, activity, onB
   const labels = doc ? ["Roteiro", "Capa", format === "material" ? "Páginas" : "Slides", "Exportar"] : ["Texto", "Capa", "Carrossel", "Publicar"];
   const unit = doc ? (format === "material" ? "página" : "slide") : "card";
   const pendingImages = slides.filter((s) => !s.image || s.state !== "complete").length;
+  // Imagens que podem aparecer num card: anexos deste carrossel e imagens da marca.
+  const allAssets = [...(project.attachments || []).map((a) => ({ ...a, kind: "anexo" })), ...(media.assets || [])];
+  const withAsset = (s) => {
+    const a = s.asset && allAssets.find((x) => x.id === s.asset);
+    return a ? { ...s, assetImage: a.dataUrl, assetKind: a.kind } : s;
+  };
   const approvedScenes = media.scenes.filter((s) => s.status === "approved" && (s.images?.length || s.image)).map((s) => ({ ...s, images: s.images?.length ? s.images : [s.image] }));
   const sceneInUse = approvedScenes.find((s) => s.id === String(drafts.find((d) => d.photo)?.photo || "").split("#")[0]) || approvedScenes[0];
   const outdated = slides.filter((s) => s.image && s.state === "outdated").length;
@@ -271,9 +277,18 @@ export default function Studio({ project, state, request, pending, activity, onB
     setView(next);
   };
   const renderSlide = (s, i, variant = project.styleVariant || 0) =>
-    slideHtml({ style: project.style, slide: s, index: i, total: drafts.length, brand, media, variant, fonts: TEMPLATE_FONTS });
+    slideHtml({ style: project.style, slide: withAsset(s), index: i, total: drafts.length, brand, media, variant, fonts: TEMPLATE_FONTS });
   const pageHtml = (i, variant = project.styleVariant || 0) =>
     documentHtml({ format, pages: drafts, brand, coverVariant: variant, fonts: TEMPLATE_FONTS, only: i });
+  // Envia uma imagem nova para este carrossel e a coloca no card aberto.
+  const attachToCard = async (slideId) => {
+    if (dirty) await save();
+    const ref = await request("importReference").catch(() => null);
+    if (!ref?.dataUrl) return;
+    const saved = await infer("saveProject", { attachments: [...(project.attachments || []), { name: ref.name, dataUrl: ref.dataUrl }] });
+    const added = saved?.attachments?.at(-1);
+    if (added) edit(slideId, "asset", added.id);
+  };
   const approve = async () => {
     if (!(await save())) return;
     const ok = await infer("approveText");
@@ -978,6 +993,31 @@ export default function Studio({ project, state, request, pending, activity, onB
                         <span>Ilustração</span>
                         <Grow value={selected.visual} onChange={(e) => edit(selected.id, "visual", e.target.value)} />
                       </label>
+                    )}
+                    {!doc && (
+                      <div className="fld">
+                        <span>
+                          Imagem no card <small>o que deve aparecer</small>
+                        </span>
+                        <div className="photo-pick asset-pick" role="group" aria-label="Imagem no card">
+                          <button className="none" aria-pressed={!selected.asset} onClick={() => edit(selected.id, "asset", "")}>
+                            Nenhuma
+                          </button>
+                          {allAssets.map((a) => (
+                            <button key={a.id} aria-label={a.name} title={a.name} aria-pressed={selected.asset === a.id} onClick={() => edit(selected.id, "asset", a.id)}>
+                              <img src={a.dataUrl} alt="" />
+                            </button>
+                          ))}
+                          <button className="none" aria-label="Enviar imagem para este card" title="Enviar imagem" disabled={busy} onClick={() => attachToCard(selected.id)}>
+                            <ImagePlus size={16} />
+                          </button>
+                        </div>
+                        {!allAssets.length && (
+                          <button className="link-btn" onClick={onBrand}>
+                            Cadastrar logo e produtos na Marca
+                          </button>
+                        )}
+                      </div>
                     )}
                     {!doc && view === "carrossel" && project.style === "fototexto" && (
                       <div className="fld">

@@ -44,14 +44,19 @@ const documents=['brandContext','designKit'];
 export const INTERVIEWS=['brand','design'];
 const emptyInterview=()=>({messages:[],document:'',brandName:''});
 // Campos de texto do card. Mudar o que aparece na arte deixa a imagem desatualizada.
-const slideText=['role','title','body','emphasis','visual','prompt','photo','layout'];
-const artText=['title','body','emphasis','visual','prompt','photo','layout'];
+const slideText=['role','title','body','emphasis','visual','prompt','photo','layout','asset'];
+const artText=['title','body','emphasis','visual','prompt','photo','layout','asset'];
 const projectText={title:200,brief:30000,caption:30000,architectureId:100,goal:200,editorialLine:2000,visualConcept:4000};
 function style(value){const v=String(value||'ia');if(!STYLES.includes(v))throw new Error('Estilo inválido.');return v;}
 function format(value){const v=String(value||'carrossel');if(!FORMATS.includes(v))throw new Error('Formato inválido.');return v;}
 function variant(value){const n=Number(value||0);if(!Number.isInteger(n)||n<0||n>2)throw new Error('Variante inválida.');return n;}
-// Perfil e fotos da marca: foto de perfil, fotos com o rosto e cenas aprovadas para fotos simples.
-const emptyMedia=()=>({displayName:'',handle:'',verified:true,avatar:'',faces:[],scenes:[]});
+// Perfil e fotos da marca: foto de perfil, fotos com o rosto, cenas aprovadas para fotos simples
+// e imagens da marca (logo e produtos) que podem aparecer nos cards.
+const emptyMedia=()=>({displayName:'',handle:'',verified:true,avatar:'',faces:[],scenes:[],assets:[]});
+export const ASSET_KINDS=['logo','produto','outro'];
+function assetKind(value){const v=String(value||'outro');if(!ASSET_KINDS.includes(v))throw new Error('Tipo de imagem inválido.');return v;}
+// Imagens anexadas ao criar o carrossel: referência ou algo que deve aparecer num card.
+export function validateAttachments(list){if(!Array.isArray(list)||list.length>6)throw new Error('Anexe até seis imagens.');return list.map(a=>({id:a.id?validId(a.id):randomUUID(),...validateReference(a)}));}
 const SCENE_STATUS=['pending','approved','rejected'];
 function imageUrl(value){if(!value)return '';return validateReference({name:'imagem',dataUrl:value}).dataUrl;}
 export const CARD_COUNTS=[0,4,6,8,10];
@@ -69,8 +74,9 @@ export class Store {
     this.data.media={...emptyMedia(),...this.data.media};
     // Cada cena guarda uma série de fotos do mesmo ambiente; a primeira é a capa da série.
     for(const sc of this.data.media.scenes){if(!Array.isArray(sc.images))sc.images=sc.image?[sc.image]:[];}
+    if(!Array.isArray(this.data.media.assets))this.data.media.assets=[];
     // Projetos anteriores ao fluxo texto → capa → restante: arte existente vale como texto aprovado.
-    for(const p of this.data.projects){if(p.textApproved===undefined)p.textApproved=p.slides.some(s=>s.image);if(!Array.isArray(p.coverOptions))p.coverOptions=[];if(!p.format)p.format='carrossel';if(!p.style)p.style='ia';if(p.styleVariant===undefined)p.styleVariant=0;if(p.sourceId===undefined)p.sourceId='';}
+    for(const p of this.data.projects){if(p.textApproved===undefined)p.textApproved=p.slides.some(s=>s.image);if(!Array.isArray(p.coverOptions))p.coverOptions=[];if(!p.format)p.format='carrossel';if(!p.style)p.style='ia';if(p.styleVariant===undefined)p.styleVariant=0;if(p.sourceId===undefined)p.sourceId='';if(!Array.isArray(p.attachments))p.attachments=[];}
     for(const p of this.data.projects)if(['planning','generating'].includes(p.status)){p.status='draft';p.slides=p.slides.map(s=>s.state==='generating'?{...s,state:s.previousState||(s.image?'complete':'draft')}:s);p.error='A operação foi interrompida. Você pode continuar deste rascunho.';}
     await this.persist();return this;
   }
@@ -110,15 +116,16 @@ export class Store {
     }
     this.data.settings=next;await this.persist();return this.state();
   }
-  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId=''}){
-    const now=new Date().toISOString();const f=format(kind);const p={id:randomUUID(),format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
+  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId='',attachments=[]}){
+    const now=new Date().toISOString();const f=format(kind);const p={id:randomUUID(),format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
     this.data.projects.unshift(p);await this.persist();return this.get(p.id);
   }
   async saveProject(args){
     if(!args||typeof args!=='object')throw new Error('Projeto inválido.');
-    for(const key of Object.keys(args))if(!['id','slides','cardCount','style',...Object.keys(projectText)].includes(key))throw new Error('Campo do projeto não permitido.');
+    for(const key of Object.keys(args))if(!['id','slides','cardCount','style','attachments',...Object.keys(projectText)].includes(key))throw new Error('Campo do projeto não permitido.');
     const patch={};for(const [key,max] of Object.entries(projectText))if(args[key]!==undefined)patch[key]=text(args[key],max);
     if(args.cardCount!==undefined)patch.cardCount=cardCount(args.cardCount);
+    if(args.attachments!==undefined)patch.attachments=validateAttachments(args.attachments);
     // Trocar o estilo apaga as artes atuais (o histórico de versões fica) e a capa volta a ser escolhida.
     if(args.style!==undefined){const current=this.get(args.id);const next=style(args.style);if(current.format!=='carrossel'&&next!=='ia')throw new Error('Estilo só se aplica a carrosséis.');if(next!==current.style){patch.style=next;patch.styleVariant=0;patch.coverOptions=[];patch.slides=current.slides.map(({image,state,previousState,...s})=>s);patch.status=current.slides.length?'ready':'draft';}}
     if(args.slides!==undefined){patch.slides=this.validateSlides(args.slides,patch.slides||this.get(args.id).slides);if(patch.slides.some(s=>s.state==='outdated'))patch.status='ready';}
@@ -167,6 +174,9 @@ export class Store {
       else if(key==='addScenes'){if(!Array.isArray(value)||value.length>12)throw new Error('Cenas inválidas.');for(const sc of value)next.scenes.push({id:randomUUID(),label:text(String(sc.label||''),160),prompt:text(String(sc.prompt||''),2000),status:'pending',image:'',images:[]});next.scenes=next.scenes.slice(-30);}
       else if(key==='scene'){const sc=next.scenes.find(x=>x.id===validId(value?.id));if(!sc)throw new Error('Cena não encontrada.');if(value.status!==undefined){if(!SCENE_STATUS.includes(value.status))throw new Error('Situação inválida.');sc.status=value.status;}if(!Array.isArray(sc.images))sc.images=sc.image?[sc.image]:[];if(value.image!==undefined){sc.image=imageUrl(value.image);sc.images=sc.image?[sc.image,...sc.images.filter(i=>i!==sc.image)].slice(0,10):[];}if(value.addImage!==undefined){const url=imageUrl(value.addImage);if(url){sc.images=[...sc.images,url].slice(-10);sc.image=sc.images[0];}}if(value.removeImage!==undefined){const n=Number(value.removeImage);if(!Number.isInteger(n))throw new Error('Foto inválida.');sc.images=sc.images.filter((_,i)=>i!==n);sc.image=sc.images[0]||'';}}
       else if(key==='removeScene'){validId(value);next.scenes=next.scenes.filter(x=>x.id!==value);}
+      else if(key==='addAssets'){if(!Array.isArray(value))throw new Error('Imagens inválidas.');for(const a of value)next.assets.push({id:randomUUID(),...validateReference({name:text(String(a.name||'Imagem'),120),dataUrl:a.dataUrl}),kind:assetKind(a.kind)});if(next.assets.length>12)throw new Error('Use até doze imagens da marca.');}
+      else if(key==='asset'){const a=next.assets.find(x=>x.id===validId(value?.id));if(!a)throw new Error('Imagem não encontrada.');if(value.name!==undefined)a.name=text(String(value.name),120);if(value.kind!==undefined)a.kind=assetKind(value.kind);}
+      else if(key==='removeAsset'){validId(value);next.assets=next.assets.filter(x=>x.id!==value);}
       else throw new Error('Campo da marca não permitido.');
     }
     this.data.media=next;await this.persist();return this.media();
