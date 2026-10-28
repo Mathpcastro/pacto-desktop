@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification, screen, Menu } from 'electron';
 import { reminder } from '../core/rhythm.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join, extname, resolve } from 'node:path';
@@ -28,7 +28,15 @@ async function createWindow(){
   // Fit small screens (e.g. 1366×768 at 125% leaves about 1093×580): never open or lock the window larger than the work area.
   const area=screen.getPrimaryDisplay().workAreaSize;
   window=new BrowserWindow({width:Math.min(1440,area.width),height:Math.min(940,area.height),minWidth:Math.min(960,area.width),minHeight:Math.min(560,area.height),title:'Carrossell',icon:join(root,'resources','branding','icon-256.png'),backgroundColor:'#f6f3ed',autoHideMenuBar:true,webPreferences:{preload:join(root,'electron','preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
-  window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());
+  window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
+  // Clique direito com Recortar, Copiar e Colar: compradores colam o contexto da marca pelo menu.
+  window.webContents.on('context-menu',(_event,params)=>{
+    const f=params.editFlags||{};
+    const items=params.isEditable
+      ?[{label:'Desfazer',role:'undo',enabled:f.canUndo!==false},{label:'Refazer',role:'redo',enabled:f.canRedo!==false},{type:'separator'},{label:'Recortar',role:'cut',enabled:f.canCut!==false},{label:'Copiar',role:'copy',enabled:f.canCopy!==false},{label:'Colar',role:'paste',enabled:f.canPaste!==false},{label:'Selecionar tudo',role:'selectAll'}]
+      :params.selectionText?.trim()?[{label:'Copiar',role:'copy'},{label:'Selecionar tudo',role:'selectAll'}]:[];
+    if(items.length)Menu.buildFromTemplate(items).popup({window});
+  });window.webContents.on('will-navigate',event=>event.preventDefault());
   // Lessons play in-app through the privacy-enhanced YouTube embed: only that
   // origin may load in a frame, and it only gets fullscreen.
   const lessonFrame=raw=>{try{const u=new URL(raw);return u.protocol==='https:'&&['www.youtube-nocookie.com','www.youtube.com','youtube.com'].includes(u.hostname);}catch{return false;}};
@@ -45,7 +53,15 @@ async function createWindow(){
   else await window.loadFile(join(root,'dist','index.html'));
 }
 if(process.platform==='win32')app.setAppUserModelId('com.matheuscastro.pacto');
+// Menu Editar explícito: Ctrl/Cmd+C, V, X, A e Z funcionam em qualquer sistema, inclusive no Mac.
+function appMenu(){
+  const edit={label:'Editar',submenu:[{label:'Desfazer',role:'undo'},{label:'Refazer',role:'redo'},{type:'separator'},{label:'Recortar',role:'cut'},{label:'Copiar',role:'copy'},{label:'Colar',role:'paste'},{label:'Colar sem formatação',role:'pasteAndMatchStyle'},{label:'Selecionar tudo',role:'selectAll'}]};
+  const view={label:'Exibir',submenu:[{label:'Aumentar',role:'zoomIn'},{label:'Diminuir',role:'zoomOut'},{label:'Tamanho original',role:'resetZoom'},{type:'separator'},{label:'Tela cheia',role:'togglefullscreen'}]};
+  const mac=process.platform==='darwin'?[{label:'Carrossell',submenu:[{role:'about',label:'Sobre o Carrossell'},{type:'separator'},{role:'hide',label:'Ocultar'},{role:'quit',label:'Sair'}]}]:[];
+  return Menu.buildFromTemplate([...mac,edit,view,{label:'Janela',submenu:[{label:'Minimizar',role:'minimize'},{label:'Fechar',role:'close'}]}]);
+}
 app.whenReady().then(async()=>{
+  Menu.setApplicationMenu(appMenu());
   const storage=join(app.getPath('userData'),'library');const store=await new Store(storage).init();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
   codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
   const render=createRenderer({folder:join(app.getPath('userData'),'render'),fontsDir:join(root,'node_modules','@fontsource','archivo','files')});
