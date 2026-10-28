@@ -3,9 +3,11 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  ClipboardCopy,
   FileText,
   ImagePlus,
   LoaderCircle,
+  MessagesSquare,
   RotateCcw,
   Send,
   Sparkles,
@@ -13,9 +15,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { LessonLink } from "../course.jsx";
-import { Grow, Markdown, Spinner } from "../ui.jsx";
+import { Grow, Markdown, Spinner, copyText } from "../ui.jsx";
 
 const steps = [
+  { id: "start", label: "O que você vende?", short: "Produto" },
   { id: "account", label: "Conectar seu ChatGPT", short: "Conta" },
   { id: "brand", label: "Contexto Oficial da Marca", short: "Contexto" },
   { id: "design", label: "Design Kit Oficial", short: "Design Kit" },
@@ -149,7 +152,12 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
   const { profile, account, onboarding = {}, architectures = [] } = state;
   const presets = state.designPresets || [];
   const connected = Boolean(account?.connected);
-  const [step, setStep] = useState(profile || connected ? 1 : 0);
+  const inInterview = ["brand", "design"].find((k) => onboarding[k]?.messages?.some((m) => m.role === "user") && !onboarding[k]?.document);
+  const [step, setStep] = useState(inInterview ? steps.findIndex((s) => s.id === inInterview) : 0);
+  const [what, setWhat] = useState("");
+  const [promptText, setPromptText] = useState("");
+  const [pasted, setPasted] = useState("");
+  const [copied, setCopied] = useState(false);
   const [docs, setDocs] = useState({
     brand: onboarding.brand?.document || profile?.brandContext || "",
     design: onboarding.design?.document || profile?.designKit || "",
@@ -173,6 +181,40 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
   }, [onboarding.brand?.brandName, brand]);
   const current = steps[step].id;
   const busy = (kind) => state.interviewing === kind || isPending("interview");
+  const index = (id) => steps.findIndex((s) => s.id === id);
+  const quickBusy = state.interviewing === "quick" || isPending("quickSetup");
+  // Caminho 1: lê o link (ou a descrição) e monta os dois documentos com a conta conectada.
+  const generate = async () => {
+    if (!what.trim()) return;
+    try {
+      if (!connected) {
+        const s = await request("connect");
+        if (!s?.account?.connected) return;
+      }
+      const s = await request("quickSetup", { input: what.trim() });
+      setDocs({ brand: s.onboarding.brand.document, design: s.onboarding.design.document });
+      if (s.onboarding.brand.brandName) setBrand(s.onboarding.brand.brandName);
+      setStep(index("ready"));
+    } catch {}
+  };
+  // Caminho 2: prompt para a IA da pessoa, com o que ela vende já dentro.
+  const openPrompt = async () => {
+    if (!what.trim()) return;
+    try {
+      const r = await request("setupPrompt", { input: what.trim() });
+      setPromptText(r.prompt);
+      setCopied(false);
+    } catch {}
+  };
+  const usePasted = async () => {
+    try {
+      const s = await request("importSetup", { text: pasted });
+      setDocs({ brand: s.onboarding.brand.document, design: s.onboarding.design.document });
+      if (s.onboarding.brand.brandName) setBrand(s.onboarding.brand.brandName);
+      setPasted("");
+      setStep(index("ready"));
+    } catch {}
+  };
   const redo = async (kind) => {
     try {
       await request("resetInterview", { kind });
@@ -182,7 +224,7 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
   const approve = async (kind) => {
     try {
       await request("saveInterview", { kind, document: docs[kind] });
-      setStep(step + 1);
+      setStep(kind === "brand" && docs.design.trim() ? index("ready") : step + 1);
     } catch {}
   };
   const addReference = async () => {
@@ -209,9 +251,11 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
     }
   };
   const ready = docs.brand.trim() && docs.design.trim();
-  const title = current === "account" ? "Conecte sua conta do ChatGPT" : current === "ready" ? "Tudo pronto para criar" : copy[current].title;
+  const title = current === "start" ? "O que você vende?" : current === "account" ? "Conecte sua conta do ChatGPT" : current === "ready" ? "Tudo pronto para criar" : copy[current].title;
   const lead =
-    current === "account"
+    current === "start"
+      ? "Cole o link da página do produto ou descreva em uma frase. O Carrossell monta o seu Contexto da Marca e o Design Kit a partir disso. Dá para melhorar tudo depois, em Marca › Otimizar."
+      : current === "account"
       ? "Como no curso, você usa a sua própria conta. O Carrossell conversa com ela para entrevistar você e criar seus carrosséis. Nada é publicado sem você."
       : current === "ready"
         ? "Contexto, Design Kit e Prompt Mestre ficam salvos neste computador e acompanham cada projeto."
@@ -221,14 +265,14 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
       <header className="wizard-head">
         <span className="eyebrow">{profile ? "SUA MARCA" : "SEU PROJETO, MONTADO COM VOCÊ"}</span>
         <nav className="steps" aria-label="Etapas da configuração">
-          {steps.map((item, index) => (
+          {steps.map((item, i) => (
             <button
               key={item.id}
               type="button"
-              className={step > index ? "done" : ""}
-              aria-current={step === index ? "step" : undefined}
-              disabled={index > 0 && !connected && !profile}
-              onClick={() => setStep(index)}
+              className={step > i ? "done" : ""}
+              aria-current={step === i ? "step" : undefined}
+              disabled={item.id !== "start" && !connected && !profile && !(item.id === "ready" && ready)}
+              onClick={() => setStep(i)}
             >
               {item.short}
             </button>
@@ -238,6 +282,78 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
         <p className="page-sub">{lead}</p>
         {(current === "brand" || current === "design") && <LessonLink step={current} />}
       </header>
+      {current === "start" && (
+        <div className="wizard-body">
+          <label className="fld">
+            <span>Link ou descrição do que você vende</span>
+            <Grow
+              aria-label="O que você vende"
+              value={what}
+              maxLength={2000}
+              disabled={quickBusy}
+              placeholder="https://seuproduto.com.br  ou  agenda online para clínicas pequenas, R$ 49 por mês"
+              onChange={(e) => (setWhat(e.target.value), setPromptText(""))}
+            />
+          </label>
+          <div className="choice-grid paths" role="group" aria-label="Como montar a sua marca">
+            <button type="button" className="path main" disabled={!what.trim() || quickBusy} onClick={generate}>
+              <b>
+                <Sparkles size={16} /> Gerar com a minha conta
+              </b>
+              <small>Recomendado. {connected ? "Lê o link e monta tudo em 1 a 3 minutos." : "Conecta o seu ChatGPT e monta tudo em 1 a 3 minutos."}</small>
+            </button>
+            <button type="button" className="path" disabled={!what.trim() || quickBusy} onClick={openPrompt}>
+              <b>
+                <ClipboardCopy size={16} /> Copiar prompt para o meu ChatGPT ou Claude
+              </b>
+              <small>Usa o que a sua IA já sabe sobre você. Depois cole a resposta aqui.</small>
+            </button>
+            <button type="button" className="path" disabled={quickBusy} onClick={() => setStep(index(connected ? "brand" : "account"))}>
+              <b>
+                <MessagesSquare size={16} /> Responder a entrevista
+              </b>
+              <small>Opcional e mais detalhada. Também dá para fazer depois, para melhorar a copy.</small>
+            </button>
+          </div>
+          {quickBusy && (
+            <div className="work-strip" role="status" style={{ borderRadius: 12 }}>
+              <Spinner />
+              <span>Lendo o que você vende e montando o Contexto da Marca e o Design Kit… leva de 1 a 3 minutos.</span>
+              <button className="ghost-btn" type="button" onClick={() => request("cancelInterview").catch(() => {})}>
+                <Square size={12} /> Parar
+              </button>
+            </div>
+          )}
+          {promptText && !quickBusy && (
+            <div className="card-box prompt-panel" aria-label="Prompt para a sua IA">
+              <div className="row">
+                <b style={{ flex: 1 }}>1. Copie e cole no ChatGPT ou no Claude</b>
+                <button
+                  type="button"
+                  className="btn small primary"
+                  onClick={async () => {
+                    await copyText(promptText);
+                    setCopied(true);
+                  }}
+                >
+                  {copied ? <Check size={14} /> : <ClipboardCopy size={14} />} {copied ? "Copiado" : "Copiar prompt"}
+                </button>
+              </div>
+              <pre className="prompt-box">{promptText}</pre>
+              <label className="fld">
+                <span>2. Cole aqui a resposta completa da sua IA</span>
+                <Grow aria-label="Resposta da sua IA" value={pasted} placeholder="Cole tudo, inclusive as linhas === CONTEXTO DA MARCA === e === DESIGN KIT ===" onChange={(e) => setPasted(e.target.value)} />
+              </label>
+              <div className="row">
+                <span className="spacer" />
+                <button type="button" className="btn primary" disabled={pasted.trim().length < 200 || isPending("importSetup")} onClick={usePasted}>
+                  Usar esta resposta <ArrowRight size={15} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {current === "account" && (
         <div className="card-box account-card">
           <span className={`account-dot ${connected ? "on" : ""}`} aria-hidden="true" />
@@ -288,10 +404,20 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
             <span>Nome da marca</span>
             <input value={brand} maxLength={160} placeholder="Como sua marca se chama" onChange={(e) => setBrand(e.target.value)} />
           </label>
+          {["brand", "design"].map((kind) =>
+            docs[kind].trim() ? (
+              <details className="card-box doc-peek" key={kind}>
+                <summary>
+                  {copy[kind].title} <small>ver e corrigir</small>
+                </summary>
+                <DocumentReview kind={kind} value={docs[kind]} busy={busy(kind)} onChange={(value) => setDocs((d) => ({ ...d, [kind]: value }))} onRedo={() => (redo(kind), setStep(index(connected ? kind : "account")))} />
+              </details>
+            ) : null,
+          )}
           <div className="card-box" style={{ gap: 10 }}>
             {[
-              ["Contexto Oficial da Marca", docs.brand.trim(), 1],
-              ["Design Kit Oficial", docs.design.trim(), 2],
+              ["Contexto Oficial da Marca", docs.brand.trim(), index("brand")],
+              ["Design Kit Oficial", docs.design.trim(), index("design")],
               ["Prompt Mestre do método P.A.C.T.O.", true],
             ].map(([label, done, target]) => (
               <div className="row" key={label}>
@@ -338,7 +464,7 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
         )}
         <span className="spacer" />
         {current === "account" && (
-          <button className="btn primary" type="button" disabled={!connected} onClick={() => setStep(1)}>
+          <button className="btn primary" type="button" disabled={!connected} onClick={() => setStep(index("brand"))}>
             Continuar <ArrowRight size={16} />
           </button>
         )}

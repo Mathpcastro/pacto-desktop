@@ -112,6 +112,38 @@ try {
     assert.deepEqual(a.nested, []);
   });
   await shot(page, "00-primeiro-uso");
+  await check("primeira tela pergunta o que a pessoa vende, com os 3 caminhos", async () => {
+    await expect(page.getByRole("heading", { name: "O que você vende?" })).toBeVisible();
+    const paths = page.getByRole("group", { name: "Como montar a sua marca" });
+    for (const name of [/Gerar com a minha conta/, /Copiar prompt para o meu ChatGPT ou Claude/, /Responder a entrevista/]) await expect(paths.getByRole("button", { name })).toBeVisible();
+    await expect(paths.getByRole("button", { name: /Gerar com a minha conta/ })).toBeDisabled();
+  });
+  await page.getByLabel("O que você vende").fill("agendei.app");
+  await page.getByRole("button", { name: /Copiar prompt para o meu ChatGPT ou Claude/ }).click();
+  await check("o prompt copiável leva o link e os marcadores da resposta", async () => {
+    const text = await page.locator(".prompt-box").innerText();
+    assert.match(text, /vender o produto deste link: https:\/\/agendei\.app\//);
+    assert.match(text, /=== CONTEXTO DA MARCA ===/);
+    assert.match(text, /=== DESIGN KIT ===/);
+  });
+  await shot(page, "00b-prompt-copiavel");
+  const pastedBrand = "# CONTEXTO OFICIAL DA MARCA\n\n## Negócio\nAgenda online e lembretes por WhatsApp para clínicas pequenas. " + "Texto de teste escrito à mão, não gerado por IA. ".repeat(6);
+  const pastedDesign = "# DESIGN KIT OFICIAL\n\n## Paleta\n- Verde-menta #3CC8A0: destaques\n- Grafite #1E2328: títulos\n" + "Regra de consistência de teste. ".repeat(6);
+  await page.getByLabel("Resposta da sua IA").fill(`Pronto:\n=== NOME DA MARCA ===\nAgendei\n=== CONTEXTO DA MARCA ===\n${pastedBrand}\n=== DESIGN KIT ===\n${pastedDesign}`);
+  await page.getByRole("button", { name: "Usar esta resposta" }).click();
+  await check("colar a resposta leva à tela final com nome e os dois documentos para revisar", async () => {
+    await expect(page.getByRole("heading", { name: "Tudo pronto para criar" })).toBeVisible();
+    await expect(page.getByLabel("Nome da marca")).toHaveValue("Agendei");
+    await page.locator("details.doc-peek").first().locator("summary").click();
+    await expect(page.locator("details.doc-peek").first()).toContainText("Agenda online e lembretes");
+    await expect(page.locator("details.doc-peek")).toHaveCount(2);
+  });
+  await shot(page, "00c-revisar-e-entrar");
+  await check("onboarding novo: texto ≥ 13px e sem rolagem aninhada", async () => {
+    const a = await audit(page);
+    assert.equal(a.smallCount, 0, a.small.join(" | "));
+    assert.deepEqual(a.nested, []);
+  });
 
   phase = "1 · Marca e base";
   const brandContext = "# CONTEXTO OFICIAL DA MARCA\n## Agendei\n\n### Negócio\nAgenda online e lembretes por WhatsApp para **clínicas pequenas**.\n\n### Público\n- Donas de clínicas de estética\n- Fisioterapeutas com 1 a 5 profissionais\n\n_Texto de teste escrito à mão, não gerado por IA._";
@@ -430,6 +462,39 @@ try {
   await page.evaluate(() => {
     document.documentElement.dataset.theme = "light";
   });
+
+  phase = "9 · Otimizar e feedback";
+  await page.getByRole("button", { name: "Marca", exact: true }).click();
+  const optimize = page.getByRole("region", { name: "Otimizar o Carrossell" });
+  await optimize.getByLabel("Feedback para o Carrossell").fill("Nunca use emoji nos textos");
+  await optimize.getByRole("button", { name: "Ensinar" }).click();
+  await optimize.getByLabel("Feedback para o Carrossell").fill("Capas com fundo escuro");
+  await optimize.getByRole("radio", { name: "Visual" }).click();
+  await optimize.getByRole("button", { name: "Ensinar" }).click();
+  await check("Marca › Otimizar guarda o feedback por área e lista o que aprendeu", async () => {
+    const list = optimize.getByRole("list", { name: "O que o Carrossell já aprendeu" });
+    await expect(list.locator("li")).toHaveCount(2);
+    const s = await page.evaluate(() => window.pacto.request("bootstrap"));
+    assert.deepEqual(s.feedback.map((f) => [f.area, f.text]), [["visual", "Capas com fundo escuro"], ["texto", "Nunca use emoji nos textos"]]);
+  });
+  await shot(page, "22-otimizar");
+  await optimize.getByRole("button", { name: "Remover: Capas com fundo escuro" }).click();
+  await check("remover um aprendizado tira da lista", async () => {
+    await expect(optimize.getByRole("list", { name: "O que o Carrossell já aprendeu" }).locator("li")).toHaveCount(1);
+  });
+  await page.getByRole("button", { name: "Início", exact: true }).click();
+  await page.getByRole("button", { name: /Abrir 4 informações/ }).click();
+  await page.getByRole("button", { name: "Mais ações do projeto" }).click();
+  await page.getByRole("button", { name: /Ensinar o Carrossell/ }).click();
+  await page.getByLabel("O que mudar").fill("Menos texto por card");
+  await page.locator("dialog[open]").getByRole("button", { name: "Ensinar" }).click();
+  await check("Ensinar o Carrossell no estúdio grava o feedback ligado ao carrossel", async () => {
+    await expect(page.locator("dialog[open]")).toHaveCount(0);
+    const s = await page.evaluate(() => window.pacto.request("bootstrap"));
+    const item = s.feedback.find((f) => f.text === "Menos texto por card");
+    assert.ok(item && item.area === "texto" && item.projectId);
+  });
+  await page.getByRole("button", { name: "Voltar ao início" }).click();
 
   phase = "8 · Imagens da marca e anexos";
   // O seletor de arquivo devolve fotos geradas no próprio teste, uma por clique.

@@ -62,14 +62,17 @@ function imageUrl(value){if(!value)return '';return validateReference({name:'ima
 export const CARD_COUNTS=[0,4,6,8,10];
 function cardCount(value){const n=Number(value||0);if(!CARD_COUNTS.includes(n))throw new Error('Quantidade de cards inválida.');return n;}
 const defaultSettings=()=>({weeklyGoal:5,driveFolder:'',firstCompletedAt:'',lastReminderAt:''});
+// Feedback da pessoa para a ferramenta: entra em todas as gerações seguintes da área marcada.
+export const FEEDBACK_AREAS=['texto','visual','geral'];
 export class Store {
-  constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],media:emptyMedia(),settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
+  constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],media:emptyMedia(),feedback:[],settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
   async init(){
     await mkdir(join(this.root,'images'),{recursive:true});
     try{this.data=JSON.parse(await readFile(join(this.root,'state.json'),'utf8'));if(!Array.isArray(this.data.projects))throw Error();}
     catch(error){if(error.code!=='ENOENT')throw new Error('A biblioteca local não pôde ser lida. Seus arquivos foram preservados.');}
     this.data.onboarding={brand:emptyInterview(),design:emptyInterview(),...this.data.onboarding};
     if(!Array.isArray(this.data.ideas))this.data.ideas=[];
+    if(!Array.isArray(this.data.feedback))this.data.feedback=[];
     this.data.settings={...defaultSettings(),...this.data.settings};
     this.data.media={...emptyMedia(),...this.data.media};
     // Cada cena guarda uma série de fotos do mesmo ambiente; a primeira é a capa da série.
@@ -181,6 +184,14 @@ export class Store {
     }
     this.data.media=next;await this.persist();return this.media();
   }
+  feedback(){return structuredClone(this.data.feedback);}
+  async addFeedback({text:value,area='geral',projectId=''}){
+    const clean=text(String(value??''),600).trim();if(clean.length<3)throw new Error('Escreva o que o Carrossell deve fazer diferente.');
+    if(!FEEDBACK_AREAS.includes(area))throw new Error('Área do feedback inválida.');
+    const item={id:randomUUID(),text:clean,area,projectId:projectId?validId(projectId):'',createdAt:new Date().toISOString()};
+    this.data.feedback=[item,...this.data.feedback].slice(0,40);await this.persist();return this.feedback();
+  }
+  async removeFeedback(id){validId(id);this.data.feedback=this.data.feedback.filter(f=>f.id!==id);await this.persist();return this.feedback();}
   ideaBatches(){return structuredClone(this.data.ideas);}
   async saveIdeaBatch(batch){this.data.ideas=[batch,...this.data.ideas].slice(0,40);await this.persist();return batch;}
   async deleteIdeaBatch(id){validId(id);this.data.ideas=this.data.ideas.filter(b=>b.id!==id);await this.persist();}

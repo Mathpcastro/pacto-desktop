@@ -8,6 +8,7 @@ import {
   Copy,
   Download,
   FileText,
+  GraduationCap,
   ImagePlus,
   MoreHorizontal,
   PlayCircle,
@@ -241,6 +242,8 @@ export default function Studio({ project, state, request, pending, activity, onB
   const [fixes, setFixes] = useState([]);
   const [note, setNote] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [teaching, setTeaching] = useState(false);
+  const [lesson, setLesson] = useState({ text: "", area: "texto" });
   const [checks, setChecks] = useState(() => reviewed.get(project.id) || []);
   const [title, setTitle] = useState(project.title);
   const titleFocused = useRef(false);
@@ -487,6 +490,10 @@ export default function Studio({ project, state, request, pending, activity, onB
             <div className="popover right">
               <button className="opt" onClick={async () => { pop.setOpen(null); const c = await infer("duplicate"); if (c?.id) onOpen(c.id); }}>
                 <b><Copy size={15} /> Duplicar</b>
+              </button>
+              <button className="opt" onClick={() => { pop.setOpen(null); setTeaching(true); }}>
+                <b><GraduationCap size={15} /> Ensinar o Carrossell</b>
+                <small>O que mudar nos próximos carrosséis</small>
               </button>
               <button className="opt" disabled={!connected || busy || !slides.length} onClick={() => { pop.setOpen(null); infer("generatePlan"); setView("texto"); }}>
                 <b><WandSparkles size={15} /> {doc ? "Refazer o roteiro" : "Refazer o texto"}</b>
@@ -1195,6 +1202,38 @@ export default function Studio({ project, state, request, pending, activity, onB
               Excluir
             </button>
           </div>
+        </Dialog>
+      )}
+      {teaching && (
+        <Dialog title="O que o Carrossell deve fazer diferente?" eyebrow="ENSINAR O CARROSSELL" onClose={() => setTeaching(false)}>
+          <form
+            className="feedback-form"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (lesson.text.trim().length < 3) return;
+              try {
+                await request("addFeedback", { text: lesson.text.trim(), area: lesson.area, projectId: project.id });
+                setTeaching(false);
+                setLesson({ text: "", area: "texto" });
+                onNotice("Anotado. Vale para os próximos carrosséis; veja e edite em Marca › Otimizar.");
+              } catch {}
+            }}
+          >
+            <Grow aria-label="O que mudar" value={lesson.text} maxLength={600} placeholder="Ex.: capa com promessa mais específica; menos texto por card; ilustrações mais simples" onChange={(e) => setLesson((l) => ({ ...l, text: e.target.value }))} />
+            <div className="row">
+              <div className="seg" role="radiogroup" aria-label="Vale para" style={{ margin: 0 }}>
+                {[["texto", "Texto"], ["visual", "Visual"], ["geral", "Tudo"]].map(([k, l]) => (
+                  <button type="button" key={k} role="radio" aria-checked={lesson.area === k} aria-pressed={lesson.area === k} onClick={() => setLesson((x) => ({ ...x, area: k }))}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+              <span className="spacer" />
+              <button className="btn primary" disabled={lesson.text.trim().length < 3}>
+                Ensinar
+              </button>
+            </div>
+          </form>
         </Dialog>
       )}
     </div>

@@ -70,6 +70,10 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
   const [name, setName] = useState(media.displayName || "");
   const [handle, setHandle] = useState(media.handle || "");
   const [newScene, setNewScene] = useState("");
+  const [tip, setTip] = useState("");
+  const [area, setArea] = useState("texto");
+  const feedback = state.feedback || [];
+  const AREA_LABEL = { texto: "Texto", visual: "Visual", geral: "Tudo" };
   useEffect(() => {
     setName(media.displayName || "");
     setHandle(media.handle || "");
@@ -105,9 +109,61 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           Preencher em formulário
         </button>
         <button className="btn" onClick={onRedo}>
-          <RefreshCw size={15} /> Refazer entrevista
+          <RefreshCw size={15} /> Refazer pelo link ou entrevista
         </button>
       </div>
+      <section className="card-box optimize" aria-label="Otimizar o Carrossell">
+        <div className="section-head">
+          <h2>Otimizar o Carrossell</h2>
+          <span className="hint">O que você ensinar aqui vale para todos os próximos carrosséis.</span>
+        </div>
+        <form
+          className="feedback-form"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (tip.trim().length < 3) return;
+            try {
+              await request("addFeedback", { text: tip.trim(), area });
+              setTip("");
+              onNotice("Anotado. Os próximos carrosséis seguem isso.");
+            } catch {}
+          }}
+        >
+          <Grow aria-label="Feedback para o Carrossell" value={tip} maxLength={600} placeholder="Ex.: textos mais curtos e diretos; nunca use emoji; capas com fundo escuro; sempre cite o teste grátis de 14 dias" onChange={(e) => setTip(e.target.value)} />
+          <div className="row">
+            <div className="seg" role="radiogroup" aria-label="Vale para" style={{ margin: 0 }}>
+              {Object.entries(AREA_LABEL).map(([k, l]) => (
+                <button type="button" key={k} role="radio" aria-checked={area === k} aria-pressed={area === k} onClick={() => setArea(k)}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <span className="spacer" />
+            <button className="btn small primary" disabled={tip.trim().length < 3}>
+              Ensinar
+            </button>
+          </div>
+        </form>
+        {feedback.length > 0 && (
+          <ul className="feedback-list" aria-label="O que o Carrossell já aprendeu">
+            {feedback.map((f) => (
+              <li key={f.id}>
+                <span className="chip">{AREA_LABEL[f.area] || f.area}</span>
+                <span>{f.text}</span>
+                <button type="button" className="icon-only" aria-label={`Remover: ${f.text}`} onClick={() => request("removeFeedback", { id: f.id }).catch(() => {})}>
+                  <X size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="row">
+          <span className="hint" style={{ flex: 1 }}>Quer copy ainda mais certeira? Responda a entrevista completa ou atualize pelo link do produto.</span>
+          <button className="btn small" onClick={onRedo}>
+            Melhorar Contexto e Design Kit
+          </button>
+        </div>
+      </section>
       {busyMedia && (
         <div className="work-strip" role="status">
           <Spinner />
