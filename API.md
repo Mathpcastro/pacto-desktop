@@ -11,3 +11,13 @@ Export is refused until every slide has a real PNG matching its current copy; ed
 `generateSlides` without a `slideId` generates only missing or outdated images; an explicit `slideId` regenerates that slide and preserves older revisions. Conversational replies and Radar requests can return no new slides without changing an existing approved plan. Missing briefing details should produce concise questions before a plan is invented.
 
 Codex runs in a private home, with OS shell, inherited plugins/MCPs and host skills disabled. Native `image_gen.imagegen` is invoked through the sandboxed `functions.exec` wrapper when the selected model requires code-mode. That wrapper host must remain enabled for image generation; it is separate from OS shell execution.
+
+## Formatos, estilos e marca (estúdio, 28/10/2026)
+
+`createProject` aceita `format` (`carrossel`, `material`, `apresentacao`), `style` (`ia`, `tweet`, `texto`, `textopreto`, `fototexto`, `fundo`, `recorte`; documentos ficam sempre em `ia`) e `sourceId` (carrossel de origem de um material gratuito). `saveProject` aceita `style`; trocar de estilo apaga as artes atuais (as versões ficam no histórico) e a capa volta a ser escolhida. Cards e páginas também aceitam `photo` (id de cena aprovada ou de foto do rosto) e `layout` (`cover`, `text`, `checklist`, `quote`, `steps`, `cta`).
+
+Estilos de modelo e documentos não chamam a IA para a arte: `generateCovers` devolve 3 opções renderizadas (`coverOptions[].variant` 0–2), `chooseCover` grava a variante em `styleVariant` e, nos carrosséis, já monta todos os cards; `generateSlides` refaz os cards desatualizados na hora. Os PNGs saem do mesmo HTML da prévia (`core/templates.mjs`), renderizado numa janela oculta (`electron/render.mjs`) em 1080 × 1350.
+
+`generatePlan` em documentos usa `DOC_SCHEMA` (páginas com `layout`). `exportPdf` salva o PDF do documento (A4 ou 16:9, texto selecionável) ou o PDF do carrossel pronto, uma página por card; com `drive:true`, grava na pasta do Google Drive.
+
+`saveMedia` atualiza por partes o perfil e as fotos da marca: `displayName`, `handle`, `verified` (padrão ligado), `avatar`, `addFaces`/`removeFace` (até 10), `addScenes`/`scene` (`pending`, `approved`, `rejected`)/`removeScene`. `suggestScenes` pede 6 cenas sem rostos ao modelo; `sceneImage` gera a foto de uma cena (aprova a cena); `faceOnColor` recorta uma foto do rosto sobre a cor do card. O estado traz `media` e `brandInfo` (nome, @, selo, foto e paleta extraída do Design Kit).

@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { zipSync, strToU8, unzlibSync } from 'fflate';
+import { STYLES, FORMATS, LAYOUTS } from './templates.mjs';
 
 export function text(value, max=30000) {
   if (typeof value!=='string'||value.length>max) throw new Error('Campo deve ser texto dentro do limite permitido.');
@@ -43,14 +44,21 @@ const documents=['brandContext','designKit'];
 export const INTERVIEWS=['brand','design'];
 const emptyInterview=()=>({messages:[],document:'',brandName:''});
 // Campos de texto do card. Mudar o que aparece na arte deixa a imagem desatualizada.
-const slideText=['role','title','body','emphasis','visual','prompt'];
-const artText=['title','body','emphasis','visual','prompt'];
+const slideText=['role','title','body','emphasis','visual','prompt','photo','layout'];
+const artText=['title','body','emphasis','visual','prompt','photo','layout'];
 const projectText={title:200,brief:30000,caption:30000,architectureId:100,goal:200,editorialLine:2000,visualConcept:4000};
+function style(value){const v=String(value||'ia');if(!STYLES.includes(v))throw new Error('Estilo inválido.');return v;}
+function format(value){const v=String(value||'carrossel');if(!FORMATS.includes(v))throw new Error('Formato inválido.');return v;}
+function variant(value){const n=Number(value||0);if(!Number.isInteger(n)||n<0||n>2)throw new Error('Variante inválida.');return n;}
+// Perfil e fotos da marca: foto de perfil, fotos com o rosto e cenas aprovadas para fotos simples.
+const emptyMedia=()=>({displayName:'',handle:'',verified:true,avatar:'',faces:[],scenes:[]});
+const SCENE_STATUS=['pending','approved','rejected'];
+function imageUrl(value){if(!value)return '';return validateReference({name:'imagem',dataUrl:value}).dataUrl;}
 export const CARD_COUNTS=[0,4,6,8,10];
 function cardCount(value){const n=Number(value||0);if(!CARD_COUNTS.includes(n))throw new Error('Quantidade de cards inválida.');return n;}
 const defaultSettings=()=>({weeklyGoal:5,driveFolder:'',firstCompletedAt:'',lastReminderAt:''});
 export class Store {
-  constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
+  constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],media:emptyMedia(),settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
   async init(){
     await mkdir(join(this.root,'images'),{recursive:true});
     try{this.data=JSON.parse(await readFile(join(this.root,'state.json'),'utf8'));if(!Array.isArray(this.data.projects))throw Error();}
@@ -58,8 +66,11 @@ export class Store {
     this.data.onboarding={brand:emptyInterview(),design:emptyInterview(),...this.data.onboarding};
     if(!Array.isArray(this.data.ideas))this.data.ideas=[];
     this.data.settings={...defaultSettings(),...this.data.settings};
+    this.data.media={...emptyMedia(),...this.data.media};
+    // Cada cena guarda uma série de fotos do mesmo ambiente; a primeira é a capa da série.
+    for(const sc of this.data.media.scenes){if(!Array.isArray(sc.images))sc.images=sc.image?[sc.image]:[];}
     // Projetos anteriores ao fluxo texto → capa → restante: arte existente vale como texto aprovado.
-    for(const p of this.data.projects){if(p.textApproved===undefined)p.textApproved=p.slides.some(s=>s.image);if(!Array.isArray(p.coverOptions))p.coverOptions=[];}
+    for(const p of this.data.projects){if(p.textApproved===undefined)p.textApproved=p.slides.some(s=>s.image);if(!Array.isArray(p.coverOptions))p.coverOptions=[];if(!p.format)p.format='carrossel';if(!p.style)p.style='ia';if(p.styleVariant===undefined)p.styleVariant=0;if(p.sourceId===undefined)p.sourceId='';}
     for(const p of this.data.projects)if(['planning','generating'].includes(p.status)){p.status='draft';p.slides=p.slides.map(s=>s.state==='generating'?{...s,state:s.previousState||(s.image?'complete':'draft')}:s);p.error='A operação foi interrompida. Você pode continuar deste rascunho.';}
     await this.persist();return this;
   }
@@ -99,16 +110,18 @@ export class Store {
     }
     this.data.settings=next;await this.persist();return this.state();
   }
-  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0}){
-    const now=new Date().toISOString();const p={id:randomUUID(),title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
+  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId=''}){
+    const now=new Date().toISOString();const f=format(kind);const p={id:randomUUID(),format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
     this.data.projects.unshift(p);await this.persist();return this.get(p.id);
   }
   async saveProject(args){
     if(!args||typeof args!=='object')throw new Error('Projeto inválido.');
-    for(const key of Object.keys(args))if(!['id','slides','cardCount',...Object.keys(projectText)].includes(key))throw new Error('Campo do projeto não permitido.');
+    for(const key of Object.keys(args))if(!['id','slides','cardCount','style',...Object.keys(projectText)].includes(key))throw new Error('Campo do projeto não permitido.');
     const patch={};for(const [key,max] of Object.entries(projectText))if(args[key]!==undefined)patch[key]=text(args[key],max);
     if(args.cardCount!==undefined)patch.cardCount=cardCount(args.cardCount);
-    if(args.slides!==undefined){patch.slides=this.validateSlides(args.slides,this.get(args.id).slides);if(patch.slides.some(s=>s.state==='outdated'))patch.status='ready';}
+    // Trocar o estilo apaga as artes atuais (o histórico de versões fica) e a capa volta a ser escolhida.
+    if(args.style!==undefined){const current=this.get(args.id);const next=style(args.style);if(current.format!=='carrossel'&&next!=='ia')throw new Error('Estilo só se aplica a carrosséis.');if(next!==current.style){patch.style=next;patch.styleVariant=0;patch.coverOptions=[];patch.slides=current.slides.map(({image,state,previousState,...s})=>s);patch.status=current.slides.length?'ready':'draft';}}
+    if(args.slides!==undefined){patch.slides=this.validateSlides(args.slides,patch.slides||this.get(args.id).slides);if(patch.slides.some(s=>s.state==='outdated'))patch.status='ready';}
     return this.update(args.id,patch);
   }
   validateSlides(slides,previous=[]){
@@ -117,6 +130,7 @@ export class Store {
       const id=validId(s.id||randomUUID());if(seen.has(id))throw new Error('Slide repetido.');seen.add(id);
       const old=previous.find(p=>p.id===id);const result={id,index:i+1};
       for(const k of slideText)result[k]=text(s[k]??'',12000);
+      if(result.layout&&!LAYOUTS.includes(result.layout))result.layout='text';
       if(old?.image){result.image=old.image;result.versions=old.versions;result.state=artText.some(k=>result[k]!==(old[k]??''))?'outdated':old.state;}
       return result;
     });
@@ -125,15 +139,37 @@ export class Store {
   async duplicate(id){const original=this.get(id),copy={...original,id:randomUUID(),title:`${original.title} (cópia)`,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};copy.status=copy.slides.length&&copy.slides.every(s=>s.image)?'complete':copy.slides.length?'ready':'draft';delete copy.error;this.data.projects.unshift(copy);await this.persist();return this.get(copy.id);}
   async delete(id){this.get(id);this.data.projects=this.data.projects.filter(p=>p.id!==id);await this.persist();return this.state();}
   // Opções de capa ficam no projeto até a pessoa escolher uma (fluxo: texto aprovado → capa → restante).
-  async addCoverOption(id,input){
+  async addCoverOption(id,input,meta={}){
     const bytes=pngBytes(input),p=this.get(id);const file=`${randomUUID()}.png`;await writeFile(join(this.root,'images',file),bytes);
-    const option={id:randomUUID(),file,image:`data:image/png;base64,${bytes.toString('base64')}`,createdAt:new Date().toISOString()};
-    return this.update(id,{coverOptions:[...(p.coverOptions||[]),option].slice(-6)});
+    const option={id:randomUUID(),file,image:`data:image/png;base64,${bytes.toString('base64')}`,createdAt:new Date().toISOString(),...(meta.variant!==undefined?{variant:variant(meta.variant)}:{})};
+    return this.update(id,{coverOptions:[...(meta.replace?[]:(p.coverOptions||[])),option].slice(-6)});
   }
   async chooseCover(id,optionId){
     const p=this.get(id),option=(p.coverOptions||[]).find(o=>o.id===validId(optionId));if(!option)throw new Error('Opção de capa não encontrada.');
     if(!p.slides.length)throw new Error('Crie o texto antes de escolher a capa.');
+    if(option.variant!==undefined)await this.update(id,{styleVariant:option.variant});
     return this.addImage(id,p.slides[0].id,Buffer.from(option.image.split(',')[1],'base64'));
+  }
+  media(){return structuredClone(this.data.media);}
+  // Atualiza o perfil e as fotos da marca por partes, sem reenviar tudo.
+  async saveMedia(patch){
+    if(!patch||typeof patch!=='object'||Array.isArray(patch))throw new Error('Dados da marca inválidos.');
+    const next=this.media();
+    for(const key of Object.keys(patch)){
+      const value=patch[key];
+      if(key==='displayName')next.displayName=text(value,80);
+      else if(key==='handle')next.handle=text(value,60).replace(/^@+/,'').replace(/\s+/g,'');
+      else if(key==='verified')next.verified=Boolean(value);
+      else if(key==='avatar')next.avatar=imageUrl(value);
+      else if(key==='addFaces'){if(!Array.isArray(value))throw new Error('Fotos inválidas.');for(const f of value)next.faces.push({id:randomUUID(),name:text(String(f.name||'Foto'),120),dataUrl:validateReference(f).dataUrl,onColor:{}});if(next.faces.length>10)throw new Error('Use até dez fotos com o seu rosto.');}
+      else if(key==='removeFace'){validId(value);next.faces=next.faces.filter(f=>f.id!==value);}
+      else if(key==='faceOnColor'){const face=next.faces.find(f=>f.id===validId(value?.id));if(!face)throw new Error('Foto não encontrada.');if(!/^#[0-9a-f]{6}$/i.test(String(value.color)))throw new Error('Cor inválida.');face.onColor={...(face.onColor||{}),[value.color.toLowerCase()]:imageUrl(value.dataUrl)};}
+      else if(key==='addScenes'){if(!Array.isArray(value)||value.length>12)throw new Error('Cenas inválidas.');for(const sc of value)next.scenes.push({id:randomUUID(),label:text(String(sc.label||''),160),prompt:text(String(sc.prompt||''),2000),status:'pending',image:'',images:[]});next.scenes=next.scenes.slice(-30);}
+      else if(key==='scene'){const sc=next.scenes.find(x=>x.id===validId(value?.id));if(!sc)throw new Error('Cena não encontrada.');if(value.status!==undefined){if(!SCENE_STATUS.includes(value.status))throw new Error('Situação inválida.');sc.status=value.status;}if(!Array.isArray(sc.images))sc.images=sc.image?[sc.image]:[];if(value.image!==undefined){sc.image=imageUrl(value.image);sc.images=sc.image?[sc.image,...sc.images.filter(i=>i!==sc.image)].slice(0,10):[];}if(value.addImage!==undefined){const url=imageUrl(value.addImage);if(url){sc.images=[...sc.images,url].slice(-10);sc.image=sc.images[0];}}if(value.removeImage!==undefined){const n=Number(value.removeImage);if(!Number.isInteger(n))throw new Error('Foto inválida.');sc.images=sc.images.filter((_,i)=>i!==n);sc.image=sc.images[0]||'';}}
+      else if(key==='removeScene'){validId(value);next.scenes=next.scenes.filter(x=>x.id!==value);}
+      else throw new Error('Campo da marca não permitido.');
+    }
+    this.data.media=next;await this.persist();return this.media();
   }
   ideaBatches(){return structuredClone(this.data.ideas);}
   async saveIdeaBatch(batch){this.data.ideas=[batch,...this.data.ideas].slice(0,40);await this.persist();return batch;}

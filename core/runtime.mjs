@@ -4,7 +4,8 @@ import { safeError } from './codex.mjs';
 import { DESIGN_PRESETS, promptText } from './knowledge.mjs';
 import { ShareServer } from './share.mjs';
 import { findDriveFolders, writeCarouselFolder } from './drive.mjs';
-export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt'];
+import { TEMPLATE_STYLES, FACE_STYLES, SIZES, LAYOUTS, palette, slideHtml, documentHtml, imagesPdfHtml } from './templates.mjs';
+export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf'];
 export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma oferta'];
 // Problemas da Correção Visual Rápida (Aula 05), oferecidos como botões no editor.
 export const VISUAL_FIXES=['Texto vertical ou empilhado','Título pequeno','Texto excessivo','Hierarquia ruim','Falta CTA','Erro de ortografia','Ilustração não combina','Fora da identidade visual'];
@@ -17,6 +18,9 @@ const IDEA={type:'object',additionalProperties:false,required:['theme','hook','w
 export const IDEAS_SCHEMA={type:'object',additionalProperties:false,required:['analysis','ideas'],properties:{analysis:string,ideas:{type:'array',minItems:0,maxItems:40,items:IDEA}}};
 const STORY={type:'object',additionalProperties:false,required:['type','text','sticker','cta','visual'],properties:{type:string,text:string,sticker:string,cta:string,visual:string}};
 export const STORIES_SCHEMA={type:'object',additionalProperties:false,required:['stories'],properties:{stories:{type:'array',minItems:2,maxItems:8,items:STORY}}};
+const PAGE={type:'object',additionalProperties:false,required:['id','layout','role','title','body','emphasis'],properties:{id:string,layout:{type:'string',enum:LAYOUTS},role:string,title:string,body:string,emphasis:string}};
+export const DOC_SCHEMA={type:'object',additionalProperties:false,required:['title','caption','reply','pages'],properties:{title:string,caption:string,reply:string,pages:{type:'array',minItems:0,maxItems:12,items:PAGE}}};
+export const SCENES_SCHEMA={type:'object',additionalProperties:false,required:['scenes'],properties:{scenes:{type:'array',minItems:1,maxItems:8,items:{type:'object',additionalProperties:false,required:['label','prompt'],properties:{label:string,prompt:string}}}}};
 export const CTA_SCHEMA={type:'object',additionalProperties:false,required:['keywords','firstCardCta','lastCardCta','freebie','dm1','dm2'],properties:{keywords:strings,firstCardCta:string,lastCardCta:string,freebie:string,dm1:string,dm2:string}};
 // Entrevistas guiadas que o curso faz dentro do projeto do ChatGPT: Aula 02 (contexto) e Aula 05 (Design Kit).
 const INTERVIEW={
@@ -54,7 +58,88 @@ export class Runtime {
     this.publish(await this.store.addStoryImage(token.id,storyId,result.images.at(-1)));
     const current=this.store.get(token.id);await this.update(token.id,{status:current.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});
   }
-  state(){return {...this.store.state(),...this.codex.status,architectures:(this.knowledge.data?.architectures||[]).map(({id,name,useWhen,cards})=>({id,name,useWhen,cards:cards.map(c=>c.function)})),designPresets:DESIGN_PRESETS,goals:GOALS,visualFixes:VISUAL_FIXES,interviewing:this.job?.id==='onboarding'?this.job.kind:null,working:this.job&&['onboarding','ideas'].includes(this.job.id)?this.job.kind:null,course:this.knowledge.lessons.map(({id,title,url})=>({id,title,url})),courseMoments:this.knowledge.moments||[],knowledge:{lessons:this.knowledge.lessons.length,transcribed:this.knowledge.lessons.filter(l=>l.transcribed).length}};}
+  // Dados da marca usados pelos modelos: nome, @, selo, foto de perfil e paleta do Design Kit.
+  brand(){const {profile,media,onboarding}=this.store.state();return {name:media.displayName||profile?.brand||onboarding?.brand?.brandName||'',handle:media.handle||'',verified:media.verified!==false,avatar:media.avatar||'',palette:palette(profile?.designKit||'')};}
+  renderer(){if(!this.dialogs.render)throw new Error('A renderização dos modelos não está disponível nesta janela.');return this.dialogs.render;}
+  isTemplate(p){return p.format!=='carrossel'||TEMPLATE_STYLES.includes(p.style);}
+  slideMarkup(p,slide,index,variant){return slideHtml({style:p.style,slide,index,total:p.slides.length,brand:this.brand(),media:this.store.media(),variant,fonts:this.renderer().fonts});}
+  pageMarkup(p,{only=null,variant=p.styleVariant||0}={}){return documentHtml({format:p.format,pages:p.slides,brand:this.brand(),coverVariant:variant,fonts:this.renderer().fonts,only});}
+  checkFaces(p){if(FACE_STYLES.includes(p.style)&&!this.store.media().faces.length)throw new Error('Envie ao menos uma foto com o seu rosto em Marca › Perfil e fotos para usar este estilo.');}
+  // Opções de capa sem IA: o mesmo texto em três esquemas do modelo escolhido.
+  async renderCovers(id){
+    this.ensureIdle(id);const p=this.store.get(id);if(!p.textApproved)throw new Error('Aprove o texto antes de gerar a capa.');this.checkFaces(p);
+    const size=SIZES[p.format];let current=p;
+    for(let variant=0;variant<3;variant++){
+      const html=p.format==='carrossel'?this.slideMarkup(p,p.slides[0],0,variant):this.pageMarkup(p,{only:0,variant});
+      current=await this.store.addCoverOption(id,await this.renderer().png(html,size),{variant,replace:variant===0});
+    }
+    return this.update(id,{status:current.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});
+  }
+  // Cards dos estilos de modelo: montados na hora, sem gastar o limite da conta.
+  async renderSlides(id,slideId=null,all=false){
+    this.ensureIdle(id);let p=this.store.get(id);this.checkFaces(p);
+    const todo=p.slides.filter(s=>slideId?s.id===slideId:all||!s.image||s.state!=='complete');
+    if(todo.length>1)p=await this.update(id,{status:'generating'});
+    try{
+      for(const slide of todo){
+        p=this.store.get(id);const index=p.slides.findIndex(s=>s.id===slide.id);
+        p=await this.store.addImage(id,slide.id,await this.renderer().png(this.slideMarkup(p,p.slides[index],index,p.styleVariant||0),SIZES.carrossel));
+      }
+    }catch(error){await this.update(id,{status:'ready',error:safeError(error).message});throw error;}
+    return this.update(id,{status:p.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});
+  }
+  async pdf(p){
+    if(p.format==='carrossel'){const files=await this.exportedFiles(p.id);const images=Object.keys(files).filter(n=>/^\d{2}\.png$/.test(n)).sort().map(n=>`data:image/png;base64,${Buffer.from(files[n]).toString('base64')}`);return this.renderer().pdf(imagesPdfHtml(images,p.title),SIZES.carrossel);}
+    if(!p.textApproved||!p.slides.length)throw new Error('Aprove o roteiro antes de exportar o PDF.');
+    return this.renderer().pdf(this.pageMarkup(p),SIZES[p.format]);
+  }
+  // Sugestões de cenas para fotos simples (UGC) a partir do Contexto da Marca; a pessoa aprova antes do uso.
+  async suggestScenes(){
+    return this.exclusive('media','scenes','Sugerindo cenas para as suas fotos…',async token=>{
+      const known=this.store.media().scenes.map(s=>s.label);
+      const result=await this.codex.run({prompt:`${this.brandContext()}\nTAREFA: sugira 6 cenas para fotos simples e orgânicas, no estilo UGC (foto de celular, luz natural, sem produção), que combinem com esta marca e possam ilustrar carrosséis do tipo texto em cima e foto embaixo. Exemplos do tipo de cena: café na mesa, árvore ao entardecer, mesa de trabalho, celular com mensagem. Regras: nenhuma cena mostra rosto de pessoas, pessoas reais ou famosas, marcas de terceiros ou texto legível. label: nome curto da cena em português (até 6 palavras). prompt: descrição visual completa para gerar a foto, em português. ${known.length?`Não repita estas cenas: ${known.join('; ')}.`:''} JSON conforme o esquema.`,outputSchema:SCENES_SCHEMA});
+      if(token.cancelled)return;
+      const answer=parse(result,'As cenas não vieram no formato esperado. Tente novamente.');
+      const scenes=(Array.isArray(answer.scenes)?answer.scenes:[]).slice(0,8).map(sc=>({label:text(String(sc.label||''),160),prompt:text(String(sc.prompt||''),2000)})).filter(sc=>sc.label.trim());
+      if(!scenes.length)throw new Error('Nenhuma cena foi sugerida. Tente novamente.');
+      await this.store.saveMedia({addScenes:scenes});
+    });
+  }
+  // Série de fotos do mesmo ambiente: a primeira define o lugar; as próximas variam ângulo, distância e momento,
+  // como um carrossel de fotos orgânicas tiradas no mesmo lugar.
+  async sceneImage(sceneId,total=1){
+    const scene=this.store.media().scenes.find(s=>s.id===validId(sceneId));if(!scene)throw new Error('Cena não encontrada.');
+    const shots=['plano aberto mostrando o ambiente inteiro','detalhe bem de perto de um objeto do ambiente','vista de cima, como quem fotografa a mesa','outro canto do mesmo ambiente','um objeto do ambiente em uso, só com mãos ou sem pessoas','contraluz suave perto da janela do mesmo ambiente','enquadramento lateral baixo, mais intimista','fim do dia no mesmo ambiente, luz mais quente'];
+    return this.exclusive('media','scene',total>1?`Gerando ${total} fotos do mesmo ambiente…`:'Gerando a foto da cena…',async token=>{
+      for(let k=0;k<total;k++){
+        if(token.cancelled)return;
+        const current=this.store.media().scenes.find(s=>s.id===scene.id);if(!current)return;
+        const anchor=current.images?.[0]||'',n=current.images?.length||0;
+        this.emit({type:'activity',message:total>1?`Gerando foto ${k+1} de ${total} do ambiente…`:'Gerando a foto da cena…'});
+        const base='Formato horizontal 1536x1024. Estilo: foto simples e orgânica tirada com celular, luz natural, enquadramento casual, cores reais, sem filtros exagerados, aparência de conteúdo UGC autêntico. Sem rostos de pessoas, sem pessoas reais ou famosas, sem texto, sem logotipos, sem moldura, sem mockup.';
+        const prompt=anchor
+          ?`Gere UMA nova foto com a ferramenta nativa image_gen.imagegen (tools.image_gen__imagegen via functions.exec é permitido; use num_last_images_to_include: 1). A imagem anexada é a primeira foto da série: fotografe o MESMO AMBIENTE (mesmo lugar, mesmos móveis, objetos, cores e luz), como outra foto tirada no mesmo momento por quem estava lá. Não repita o enquadramento: ${shots[n%shots.length]}. ${base}\nCena: ${scene.label}. ${scene.prompt}\nDevolva generatedImage(result).`
+          :`Gere UMA foto com a ferramenta nativa image_gen.imagegen (tools.image_gen__imagegen via functions.exec é permitido). ${base}\nCena: ${scene.label}. ${scene.prompt}\nUse APENAS a ferramenta nativa image_gen.imagegen; invoque-a por functions.exec e devolva generatedImage(result).`;
+        const result=await this.codex.run({prompt,...(anchor?{references:[anchor]}:{})});
+        if(token.cancelled)return;
+        if(!result.images.length)throw new Error('A geração nativa de imagens não está disponível nesta sessão da conta. Nenhuma foto foi criada.');
+        await this.store.saveMedia({scene:{id:scene.id,status:'approved',addImage:`data:image/png;base64,${Buffer.from(result.images.at(-1)).toString('base64')}`}});
+        this.emit({type:'state',state:this.state()});
+      }
+    });
+  }
+  // Recorte da foto: a mesma pessoa sobre um fundo liso na cor do card, para o estilo "Capa com sua foto".
+  async faceOnColor(faceId,color){
+    const face=this.store.media().faces.find(f=>f.id===validId(faceId));if(!face)throw new Error('Foto não encontrada.');
+    if(!/^#[0-9a-f]{6}$/i.test(String(color)))throw new Error('Cor inválida.');
+    return this.exclusive('media','cutout','Recortando a sua foto…',async token=>{
+      const result=await this.codex.run({prompt:`Edite a foto anexada com a ferramenta nativa image_gen.imagegen (tools.image_gen__imagegen via functions.exec é permitido; use num_last_images_to_include: 1). Mantenha EXATAMENTE a mesma pessoa, o mesmo rosto, cabelo, roupa e expressão, da cintura para cima. Remova todo o fundo e substitua por uma cor sólida, lisa e uniforme ${color} ocupando toda a imagem, sem sombra no fundo, sem gradiente, sem texto. Formato vertical 1024x1536. Devolva generatedImage(result).`,references:[face.dataUrl]});
+      if(token.cancelled)return;
+      if(!result.images.length)throw new Error('A geração nativa de imagens não está disponível nesta sessão da conta. A foto não foi recortada.');
+      await this.store.saveMedia({faceOnColor:{id:face.id,color,dataUrl:`data:image/png;base64,${Buffer.from(result.images.at(-1)).toString('base64')}`}});
+    });
+  }
+  state(){return {...this.store.state(),...this.codex.status,architectures:(this.knowledge.data?.architectures||[]).map(({id,name,useWhen,cards})=>({id,name,useWhen,cards:cards.map(c=>c.function)})),designPresets:DESIGN_PRESETS,goals:GOALS,visualFixes:VISUAL_FIXES,interviewing:this.job?.id==='onboarding'?this.job.kind:null,working:this.job&&['onboarding','ideas','media'].includes(this.job.id)?this.job.kind:null,brandInfo:this.brand(),course:this.knowledge.lessons.map(({id,title,url})=>({id,title,url})),courseMoments:this.knowledge.moments||[],knowledge:{lessons:this.knowledge.lessons.length,transcribed:this.knowledge.lessons.filter(l=>l.transcribed).length}};}
   publish(project){this.emit({type:'project',project});return project;}
   async update(id,patch){return this.publish(await this.store.update(id,patch));}
   ensureIdle(id){if(this.job&&(!id||this.job.id===id))throw new Error('Aguarde ou cancele a operação em andamento.');}
@@ -177,13 +262,13 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       case 'saveProfile':await this.store.saveProfile(args.profile);return this.state();
       case 'connect':await this.codex.connect(this.dialogs.login);return this.state();
       case 'disconnect':if(this.job)await this.request('cancelWork',{});await this.codex.disconnect();return this.state();
-      case 'createProject':if(args.architectureId&&!(this.knowledge.data?.architectures||[]).some(a=>a.id===args.architectureId))throw new Error('Arquitetura não encontrada.');if(args.goal&&!GOALS.includes(args.goal))throw new Error('Objetivo inválido.');return this.publish(await this.store.createProject(args));
+      case 'createProject':if(args.sourceId)this.store.get(args.sourceId);if(args.architectureId&&!(this.knowledge.data?.architectures||[]).some(a=>a.id===args.architectureId))throw new Error('Arquitetura não encontrada.');if(args.goal&&!GOALS.includes(args.goal))throw new Error('Objetivo inválido.');return this.publish(await this.store.createProject(args));
       case 'interview':{const preset=args.preset?text(args.preset,100):'';if(preset&&!DESIGN_PRESETS.some(p=>p.id===preset))throw new Error('Preset inválido.');if(args.references!==undefined&&(!Array.isArray(args.references)||args.references.length>6))throw new Error('Use até seis referências.');const references=args.kind==='design'?(args.references||[]).map(r=>validateReference(r).dataUrl):[];return this.interview(args.kind,args.finish?FINISH_INTERVIEW:args.text===undefined?'':text(args.text,12000).trim(),preset,references);}
       case 'saveInterview':await this.store.saveInterview(args.kind,{document:args.document});return this.state();
       case 'resetInterview':if(this.job?.id==='onboarding')throw new Error('Aguarde a entrevista terminar.');await this.store.resetInterview(args.kind);return this.state();
       case 'cancelInterview':case 'cancelWork':{
         const job=this.job;if(!job)return this.state();
-        if(['onboarding','ideas'].includes(job.id)||['cta','stories'].includes(job.kind)){job.cancelled=true;await this.codex.cancel();return this.state();}
+        if(['onboarding','ideas','media'].includes(job.id)||['cta','stories'].includes(job.kind)){job.cancelled=true;await this.codex.cancel();return this.state();}
         await this.request('cancel',{id:job.id});return this.state();
       }
       case 'radar':return this.ideas('radar',{focus:args.focus?text(args.focus,1000).trim():''});
@@ -218,6 +303,11 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
         return {folder,base,count:p.slides.length};
       }
       case 'stories':return this.stories(args.id);
+      case 'saveMedia':{if(this.job?.id==='media')throw new Error('Aguarde a foto terminar.');await this.store.saveMedia(args);return this.state();}
+      case 'suggestScenes':return this.suggestScenes();
+      case 'sceneImage':return this.sceneImage(args.id,count(args.count??1,1,8));
+      case 'faceOnColor':return this.faceOnColor(args.id,args.color);
+      case 'exportPdf':{this.ensureIdle(args.id);const p=this.store.get(args.id);const bytes=await this.pdf(p);if(args.drive){const settings=this.store.state().settings,base=settings.driveFolder||this.drive.find()[0];if(!base)return {needsFolder:true};const folder=await this.drive.write(base,p.title,{[`${p.format==='carrossel'?'carrossel':p.format==='material'?'material':'apresentacao'}.pdf`]:bytes});return {folder,base};}return this.dialogs.savePdf(p,bytes);}
       case 'generateStoryArt':{const p=this.store.get(args.id),storyId=validId(args.storyId);if(!(p.stories||[]).some(s=>s.id===storyId))throw new Error('Story não encontrado.');return this.begin(args.id,'story',{storyId});}
       case 'deleteIdeas':await this.store.deleteIdeaBatch(args.batchId);return this.state();
       case 'ctaKit':return this.ctaKit(args.id);
@@ -233,13 +323,16 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       }
       case 'generateCovers':{
         const p=this.store.get(args.id);if(!p.textApproved)throw new Error('Aprove o texto antes de gerar a capa.');
+        if(this.isTemplate(p))return this.renderCovers(p.id);
         return this.begin(args.id,'covers',{count:count(args.count??3,1,3)});
       }
-      case 'chooseCover':this.ensureIdle(args.id);{const p=await this.store.chooseCover(args.id,args.optionId);return this.update(p.id,{status:p.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});}
+      case 'chooseCover':this.ensureIdle(args.id);{const p=await this.store.chooseCover(args.id,args.optionId);if(p.format==='carrossel'&&TEMPLATE_STYLES.includes(p.style))return this.renderSlides(p.id);return this.update(p.id,{status:p.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});}
       case 'generateSlides':{
         const p=this.store.get(args.id);if(!p.textApproved)throw new Error('Aprove o texto antes de gerar as imagens.');
         const slideId=args.slideId?validId(args.slideId):null;
         if(!slideId&&!p.slides[0]?.image)throw new Error('Escolha a capa antes de gerar o restante do carrossel.');
+        if(p.format!=='carrossel')throw new Error('Documentos não têm imagens por página.');
+        if(TEMPLATE_STYLES.includes(p.style))return this.renderSlides(p.id,slideId,Boolean(args.all));
         let fix=null;
         if(args.fix!==undefined){
           if(!slideId)throw new Error('A correção visual é feita em um card por vez.');
@@ -286,6 +379,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       if(token.kind==='images')await this.images(token,options.slideId,options.fix);
       else if(token.kind==='covers')await this.covers(token,options.count);
       else if(token.kind==='story')await this.storyArt(token,options.storyId);
+      else if(this.store.get(token.id).format!=='carrossel')await this.docPlan(token,options);
       else{
         this.emit({type:'activity',message:token.kind==='plan'?'Escrevendo o texto do carrossel com o Copy Engine…':'Revisando seu carrossel…'});
         const size=this.store.get(token.id).cardCount;const task=token.kind==='plan'?`Crie o TEXTO completo do carrossel (${size?`exatamente ${size} cards`:'de 6 a 10 cards'}) seguindo pauta → arquitetura → Copy Engine. Nesta etapa não há imagens: o usuário vai revisar, editar e aprovar o texto antes de qualquer arte.`:`MENSAGEM DO USUÁRIO: ${options.message}`;
@@ -317,6 +411,23 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       }
     }catch(error){if(!token.cancelled){const p=this.store.get(token.id);await this.update(token.id,{slides:p.slides.map(s=>s.state==='generating'?{...s,state:s.previousState||(s.image?'complete':'draft')}:s),status:'error',error:safeError(error).message}).catch(()=>{});}}
     finally{if(this.job===token)this.job=null;this.emit({type:'activity',message:''});}
+  }
+  // Material gratuito (A4) e apresentação (16:9): roteiro de páginas com o Contexto da Marca.
+  async docPlan(token,options){
+    const p=this.store.get(token.id),material=p.format==='material';
+    this.emit({type:'activity',message:token.kind==='plan'?(material?'Escrevendo o material gratuito…':'Escrevendo a apresentação…'):'Revisando o roteiro…'});
+    const source=p.sourceId?this.store.state().projects.find(x=>x.id===p.sourceId):null;
+    const size=p.cardCount?`exatamente ${p.cardCount} páginas`:material?'de 4 a 6 páginas':'de 5 a 8 slides';
+    const task=token.kind==='plan'?`Crie o roteiro completo (${size}).`:`MENSAGEM DO USUÁRIO: ${options.message}`;
+    const prompt=`${this.knowledge.method}\n${this.brandContext()}\n${material?`AULA 07 — COMENTÁRIO → DM → OFERTA:\n${this.page('offer')}\n`:''}${source?`CARROSSEL QUE PEDE ESTE MATERIAL:\n${JSON.stringify({title:source.title,slides:source.slides.map(({role,title,body})=>({role,title,body})),cta:source.ctaKit})}\n`:''}DOCUMENTO: ${material?'MATERIAL GRATUITO em PDF A4, entregue por DM a quem comentar a palavra-chave. Precisa entregar valor prático imediato (checklist, modelo, passo a passo) e terminar com um próximo passo que conecta à oferta do Contexto Oficial da Marca, sem pressão.':'APRESENTAÇÃO em PDF 16:9 da marca ou da oferta, para mandar por e-mail ou WhatsApp ou apresentar numa reunião: problema, solução, como funciona, para quem é e próximo passo.'}\nPROJETO:\n${JSON.stringify({title:p.title,brief:p.brief,pages:p.slides.map(({id,layout,role,title,body,emphasis})=>({id,layout,role,title,body,emphasis})),messages:p.messages.slice(-8)})}\nTAREFA: ${task}\nREGRAS DE SAÍDA: pages é a lista de páginas. layout: cover (só a primeira), text, checklist (body com um item por linha), quote (modelo de mensagem ou citação para copiar), steps (body com até 3 passos, um por linha, no formato "Título — descrição"), cta (último: próximo passo). role: rótulo curto da página (ex.: "Checklist", "Modelo pronto"). title: título curto e específico. body: o texto final que o leitor lê, sem instruções. emphasis: palavras inteiras do título para destacar. caption: mensagem curta para enviar junto com o PDF. reply: em poucas linhas, o que conferir antes de aprovar. Nunca invente provas, números, depoimentos ou resultados. Português do Brasil, linguagem humana. Em revisão, preserve os ids e o que não foi pedido para mudar. JSON conforme o esquema.`;
+    const result=await this.codex.run({prompt,outputSchema:DOC_SCHEMA});
+    if(token.cancelled)return;
+    const plan=parse(result,'A resposta do assistente não continha um roteiro válido. Tente novamente.');
+    const pages=(Array.isArray(plan.pages)?plan.pages:[]).map((x,i)=>({id:/^[a-zA-Z0-9_-]{1,100}$/.test(String(x.id||''))?x.id:randomUUID(),layout:LAYOUTS.includes(x.layout)?x.layout:i===0?'cover':'text',role:x.role,title:x.title,body:x.body,emphasis:x.emphasis,visual:'',prompt:''}));
+    if(!pages.length){const reply=text(String(plan.reply||''),20000);if(!reply.trim())throw new Error('O assistente não retornou uma resposta. Tente reformular sua mensagem.');await this.update(token.id,{status:p.slides.length?'ready':'draft',error:null,messages:[...p.messages,{id:randomUUID(),role:'assistant',text:reply}]});return;}
+    if(pages.length<2)throw new Error('O roteiro precisa de pelo menos duas páginas.');
+    const slides=this.store.validateSlides(pages,p.slides);
+    await this.update(token.id,{title:text(String(plan.title||''),200)||p.title,caption:text(String(plan.caption||''),30000)||p.caption,slides,...(token.kind==='plan'?{textApproved:false,coverOptions:[]}:{}),status:'ready',messages:[...p.messages,{id:randomUUID(),role:'assistant',text:text(String(plan.reply||'Roteiro pronto. Revise e edite as páginas antes de aprovar.'),10000)}]});
   }
   imagePrompt(token,slide,{references,fix,variant}){
     const p=this.store.get(token.id);

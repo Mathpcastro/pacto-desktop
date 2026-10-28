@@ -1,70 +1,34 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  AlertCircle,
-  ArrowDownToLine,
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  Check,
-  ExternalLink,
-  FolderOpen,
-  Laptop,
-  LoaderCircle,
-  LogOut,
-  Moon,
-  Palette,
-  Radar,
-  RefreshCw,
-  Settings2,
-  Sun,
-  Trophy,
-  X,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AlertCircle, ArrowLeft, Check, Home as HomeIcon, Laptop, LogOut, Palette, RefreshCw, Search, X } from "lucide-react";
 import { RuntimeErrorContext, usePacto } from "./usePacto.js";
-import IconButton from "./components/IconButton.jsx";
 import Dialog from "./components/Dialog.jsx";
 import Profile from "./components/Profile.jsx";
 import Onboarding from "./components/Onboarding.jsx";
-import Library from "./components/Library.jsx";
-import CreateProject from "./components/CreateProject.jsx";
-import Editor from "./components/Editor.jsx";
-import Ideas from "./components/Ideas.jsx";
-import Rhythm from "./components/Rhythm.jsx";
-import PreferencesDialog from "./components/PreferencesDialog.jsx";
+import Home from "./components/Home.jsx";
+import Brand from "./components/Brand.jsx";
+import Studio from "./components/Studio.jsx";
+import CommandPalette from "./components/CommandPalette.jsx";
 import { CourseContext, LessonPlayer, formatMoment } from "./course.jsx";
 import { rhythm } from "../core/rhythm.mjs";
+import { Spinner, usePopover } from "./ui.jsx";
 import brandMark from "./assets/brand-mark.svg";
 
-const DEFAULT_PREFERENCES = {
-  theme: "light",
-  palette: "carrossell",
-  font: "system",
-  scale: 100,
-};
+const DEFAULT_PREFERENCES = { theme: "light", palette: "carrossell", scale: 100 };
+const PALETTES = [
+  ["carrossell", "Carrossell", "#ff5a36"],
+  ["ocean", "Oceano", "#28769c"],
+  ["forest", "Floresta", "#4a7e53"],
+  ["violet", "Ametista", "#7659a6"],
+];
 
 function readPreferences() {
   try {
-    const saved = JSON.parse(
-      localStorage.getItem("carrossell-preferences") || "{}",
-    ) || {};
+    const saved = JSON.parse(localStorage.getItem("carrossell-preferences") || "{}") || {};
     const legacyTheme = localStorage.getItem("pacto-theme");
     return {
-      theme: ["light", "dark"].includes(saved.theme)
-        ? saved.theme
-        : legacyTheme === "dark"
-          ? "dark"
-          : DEFAULT_PREFERENCES.theme,
-      palette: ["carrossell", "ocean", "forest", "violet"].includes(
-        saved.palette,
-      )
-        ? saved.palette
-        : DEFAULT_PREFERENCES.palette,
-      font: ["system", "arial", "verdana", "georgia"].includes(saved.font)
-        ? saved.font
-        : DEFAULT_PREFERENCES.font,
-      scale: [100, 105, 110, 115, 120, 125].includes(saved.scale)
-        ? saved.scale
-        : DEFAULT_PREFERENCES.scale,
+      theme: ["light", "dark"].includes(saved.theme) ? saved.theme : legacyTheme === "dark" ? "dark" : DEFAULT_PREFERENCES.theme,
+      palette: PALETTES.some(([id]) => id === saved.palette) ? saved.palette : DEFAULT_PREFERENCES.palette,
+      scale: [100, 105, 110, 115, 120, 125].includes(saved.scale) ? saved.scale : DEFAULT_PREFERENCES.scale,
     };
   } catch {
     return { ...DEFAULT_PREFERENCES };
@@ -73,548 +37,295 @@ function readPreferences() {
 
 export default function App() {
   const runtime = usePacto();
-  const {
-    state,
-    request,
-    loading,
-    error,
-    clearError,
-    activity,
-    update,
-    available,
-    pending,
-    isPending,
-    bootstrapFailed,
-  } = runtime;
+  const { state, request, loading, error, clearError, activity, update, available, pending, isPending, bootstrapFailed } = runtime;
   const [preferences, setPreferences] = useState(readPreferences);
-  const [preferencesOpen, setPreferencesOpen] = useState(false);
-  const theme = preferences.theme;
-  const [view, setView] = useState("library");
+  const [view, setView] = useState("home");
   const [projectId, setProjectId] = useState(null);
-  const [creating, setCreating] = useState(false);
+  const [setup, setSetup] = useState(null);
+  const [palette, setPalette] = useState(false);
+  const [projectCommands, setProjectCommands] = useState([]);
   const [courseOpen, setCourseOpen] = useState(false);
   const [video, setVideo] = useState(null);
-  const [manual, setManual] = useState(false);
   const [notice, setNotice] = useState("");
-  const navigationGuard = useRef(null);
-  const navigate = (proceed) =>
-    navigationGuard.current ? navigationGuard.current(proceed) : proceed();
+  const composerRef = useRef(null);
+  const menu = usePopover();
   const project = state.projects.find((p) => p.id === projectId);
   const connected = Boolean(state.account?.connected);
   const hasProfile = Boolean(state.profile);
   const pendingResults = rhythm(state.projects, state.settings).pending.length;
+  const editing = view === "studio" && project;
+  const goHome = () => {
+    setView("home");
+    setProjectId(null);
+    setSetup(null);
+  };
+  const openProject = (id) => {
+    setProjectId(id);
+    setView("studio");
+  };
   useEffect(() => {
-    const go = (event) =>
-      navigate(() => {
-        setView(event.detail);
-        setProjectId(null);
-      });
+    const go = (event) => {
+      setView(event.detail === "rhythm" || event.detail === "ideas" ? "home" : event.detail);
+      setProjectId(null);
+    };
     window.addEventListener("pacto:navigate", go);
     return () => window.removeEventListener("pacto:navigate", go);
   }, []);
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, [view, hasProfile, projectId]);
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.dataset.palette = preferences.palette;
-    if (preferences.font === "system")
-      delete document.documentElement.dataset.uiFont;
-    else document.documentElement.dataset.uiFont = preferences.font;
-    document.documentElement.style.setProperty(
-      "--app-zoom",
-      String(preferences.scale / 100),
-    );
+    const root = document.documentElement;
+    root.dataset.theme = preferences.theme;
+    root.dataset.palette = preferences.palette;
+    delete root.dataset.uiFont;
+    root.style.setProperty("--app-zoom", String(preferences.scale / 100));
     try {
-      localStorage.setItem("pacto-theme", theme);
-      localStorage.setItem(
-        "carrossell-preferences",
-        JSON.stringify(preferences),
-      );
+      localStorage.setItem("pacto-theme", preferences.theme);
+      localStorage.setItem("carrossell-preferences", JSON.stringify(preferences));
     } catch {}
-  }, [preferences, theme]);
+  }, [preferences]);
   useEffect(() => {
     if (!notice) return undefined;
-    const timeout = setTimeout(() => setNotice(""), 7000);
-    return () => clearTimeout(timeout);
+    const t = setTimeout(() => setNotice(""), 6000);
+    return () => clearTimeout(t);
   }, [notice]);
   useEffect(() => {
-    const closeMenus = (event) =>
-      document
-        .querySelectorAll(
-          "details.account-menu[open], details.action-menu[open]",
-        )
-        .forEach((menu) => {
-          if (
-            event.type === "keydown"
-              ? event.key === "Escape"
-              : !menu.contains(event.target)
-          )
-            menu.open = false;
-        });
-    document.addEventListener("click", closeMenus);
-    document.addEventListener("keydown", closeMenus);
-    return () => {
-      document.removeEventListener("click", closeMenus);
-      document.removeEventListener("keydown", closeMenus);
-    };
-  }, []);
-  useEffect(() => {
     const onKey = (event) => {
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        event.key.toLowerCase() === "n" &&
-        state.profile &&
-        available &&
-        !document.querySelector("dialog[open]")
-      ) {
+      const mod = event.ctrlKey || event.metaKey;
+      if (mod && event.key.toLowerCase() === "k" && hasProfile && available) {
         event.preventDefault();
-        setCreating(true);
+        setPalette((v) => !v);
+      } else if (mod && event.key.toLowerCase() === "n" && hasProfile && available && !document.querySelector("dialog[open]")) {
+        event.preventDefault();
+        goHome();
+        setTimeout(() => composerRef.current?.focus(), 50);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state.profile, available]);
-  const openProject = (id) => {
-    setProjectId(id);
-    setView("editor");
-  };
-  const updatePreferences = (patch) =>
-    setPreferences((current) => ({ ...current, ...patch }));
-  const accountAction = () =>
-    request(connected ? "disconnect" : "connect").catch(() => {});
+  }, [hasProfile, available]);
+  const set = (patch) => setPreferences((current) => ({ ...current, ...patch }));
+  const commands = useMemo(
+    () => [
+      ...projectCommands.map((c) => (editing ? c : { ...c, hidden: true })),
+      { id: "new", label: "Novo carrossel", hint: "Ctrl + N", run: () => (goHome(), setTimeout(() => composerRef.current?.focus(), 50)) },
+      { id: "home", label: "Ir para o Início", run: goHome },
+      { id: "brand", label: "Abrir Marca", hint: "Contexto, Design Kit e fotos", run: () => (setView("brand"), setProjectId(null)) },
+      { id: "radar", label: "Gerar 30 pautas com o Radar", hint: "Aula 02", disabled: !connected, run: () => (goHome(), request("radar", {}).catch(() => {})) },
+      { id: "scenes", label: "Sugerir cenas para fotos simples", hint: "Marca", disabled: !connected, run: () => (setView("brand"), request("suggestScenes").catch(() => {})) },
+      { id: "theme", label: preferences.theme === "dark" ? "Usar tema claro" : "Usar tema escuro", run: () => set({ theme: preferences.theme === "dark" ? "light" : "dark" }) },
+      { id: "course", label: "Abrir as aulas do método", hint: "Opcional", run: () => setCourseOpen(true) },
+      { id: "account", label: connected ? "Desconectar a conta ChatGPT" : "Conectar a conta ChatGPT", run: () => request(connected ? "disconnect" : "connect").catch(() => {}) },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [projectCommands, editing, connected, preferences.theme],
+  );
+  const accountMenu = (
+    <div className="pop-anchor">
+      <button className="avatar-btn" aria-label={connected ? "Conta conectada e preferências" : "Conectar conta e preferências"} aria-expanded={menu.open === "account"} onClick={() => menu.toggle("account")}>
+        {state.media?.avatar ? <img src={state.media.avatar} alt="" /> : (state.brandInfo?.name || "C").charAt(0).toUpperCase()}
+        <span className={`dot ${connected ? "on" : ""}`} />
+      </button>
+      {menu.open === "account" && (
+        <div className="popover right" style={{ minWidth: 280 }}>
+          <div className="head">Conta ChatGPT</div>
+          <button className="opt" disabled={isPending("connect") || isPending("disconnect")} onClick={() => request(connected ? "disconnect" : "connect").catch(() => {})}>
+            <b>
+              {connected ? <LogOut size={15} /> : <RefreshCw size={15} />}
+              {isPending("connect") ? "Conectando…" : connected ? "Desconectar" : "Conectar minha conta"}
+            </b>
+            <small>{connected ? state.account.label || "Conectada · usada para escrever e gerar" : "Use a sua conta para escrever e gerar as artes"}</small>
+          </button>
+          <hr />
+          <div className="head">Tema</div>
+          <div className="seg">
+            {[
+              ["light", "Claro"],
+              ["dark", "Escuro"],
+            ].map(([k, l]) => (
+              <button key={k} aria-pressed={preferences.theme === k} onClick={() => set({ theme: k })}>
+                {l}
+              </button>
+            ))}
+          </div>
+          <div className="head">Cor do app</div>
+          <div className="seg">
+            {PALETTES.map(([id, label, color]) => (
+              <button key={id} aria-pressed={preferences.palette === id} aria-label={label} title={label} onClick={() => set({ palette: id })}>
+                <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 99, background: color, verticalAlign: "-1px" }} />
+              </button>
+            ))}
+          </div>
+          <div className="head">Tamanho do texto</div>
+          <div className="seg">
+            {[100, 110, 115, 125].map((z) => (
+              <button key={z} aria-pressed={preferences.scale === z} onClick={() => set({ scale: z })}>
+                {z}%
+              </button>
+            ))}
+          </div>
+          <hr />
+          <button className="opt" disabled={!state.course.length} onClick={() => (menu.setOpen(null), setCourseOpen(true))}>
+            <b>Aulas do método</b>
+            <small>Opcional · {state.course.length} aulas</small>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+  let body;
+  if (!available)
+    body = (
+      <main className="shell-main">
+        <div className="page" style={{ textAlign: "center", justifyItems: "center" }}>
+          <Laptop size={42} strokeWidth={1} />
+          <h1 className="page-title">Abra o Carrossell pelo aplicativo</h1>
+          <p className="page-sub">Esta janela não tem acesso aos recursos do aplicativo. Use o atalho Carrossell instalado no seu computador.</p>
+        </div>
+      </main>
+    );
+  else if (loading)
+    body = (
+      <main className="shell-main">
+        <div className="loading">
+          <Spinner />
+          <b>Abrindo seu estúdio…</b>
+        </div>
+      </main>
+    );
+  else if (bootstrapFailed)
+    body = (
+      <main className="shell-main">
+        <div className="loading">
+          <AlertCircle size={28} />
+          <b>Não foi possível abrir o estúdio.</b>
+          <button className="btn" onClick={() => request("bootstrap").catch(() => {})}>
+            Tentar novamente
+          </button>
+        </div>
+      </main>
+    );
+  else if (!hasProfile || setup)
+    body = (
+      <main className="shell-main">
+        <div className="setup-wrap">
+          {hasProfile && (
+            <button className="ghost-btn" style={{ margin: "16px 0 0 20px" }} onClick={() => setSetup(null)}>
+              <ArrowLeft size={15} /> Voltar para a Marca
+            </button>
+          )}
+          {setup === "manual" ? (
+            <Profile profile={state.profile} account={state.account} request={request} busy={isPending("connect")} onDone={() => (setSetup(null), setView(hasProfile ? "brand" : "home"), hasProfile && setNotice("Sua marca foi atualizada."))} onCancel={() => setSetup(hasProfile ? null : "interview")} />
+          ) : (
+            <Onboarding state={state} request={request} isPending={isPending} onManual={() => setSetup("manual")} onDone={() => (setSetup(null), setView("home"), hasProfile && setNotice("Sua marca foi atualizada."))} onCancel={hasProfile ? () => setSetup(null) : undefined} />
+          )}
+        </div>
+      </main>
+    );
+  else if (editing)
+    body = (
+      <Studio
+        key={project.id}
+        project={project}
+        state={state}
+        request={request}
+        pending={pending}
+        activity={activity}
+        onBack={goHome}
+        onOpen={openProject}
+        onNotice={setNotice}
+        onCommands={setProjectCommands}
+        onBrand={() => (setView("brand"), setProjectId(null))}
+      />
+    );
+  else
+    body = (
+      <main className="shell-main">
+        {view === "brand" ? (
+          <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} />
+        ) : (
+          <Home state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} composerRef={composerRef} connected={connected} />
+        )}
+      </main>
+    );
   return (
     <RuntimeErrorContext.Provider value={error}>
-      <CourseContext.Provider
-        value={{
-          moments: state.courseMoments || [],
-          play: available ? setVideo : null,
-        }}
-      >
-        <div className={`app ${view === "editor" && project ? "editing" : ""}`}>
-          <header className="app-header">
-            <button
-              className="wordmark"
-              aria-label="Carrossell, início"
-              onClick={() =>
-                navigate(() => {
-                  setView("library");
-                  setProjectId(null);
-                })
-              }
-            >
-              <b className="brand-name">carrossell</b>
-              <img className="brand-symbol" src={brandMark} alt="" />
-              <small>ESTÚDIO DE CARROSSÉIS</small>
-            </button>
-            {state.profile && available && (
-              <nav className="main-nav" aria-label="Navegação principal">
-                <button
-                  className={
-                    !["profile", "ideas", "rhythm"].includes(view)
-                      ? "active"
-                      : ""
-                  }
-                  onClick={() =>
-                    navigate(() => {
-                      setView("library");
-                      setProjectId(null);
-                    })
-                  }
-                >
-                  <FolderOpen size={15} /> Biblioteca
-                </button>
-                <button
-                  className={view === "ideas" ? "active" : ""}
-                  onClick={() =>
-                    navigate(() => {
-                      setView("ideas");
-                      setProjectId(null);
-                    })
-                  }
-                >
-                  <Radar size={15} /> Pautas
-                </button>
-                <button
-                  className={view === "rhythm" ? "active" : ""}
-                  onClick={() =>
-                    navigate(() => {
-                      setView("rhythm");
-                      setProjectId(null);
-                    })
-                  }
-                >
-                  <Trophy size={15} /> Ritmo
-                  {pendingResults > 0 && (
-                    <span className="nav-badge">{pendingResults}</span>
-                  )}
-                </button>
-                <button
-                  className={view === "profile" ? "active" : ""}
-                  onClick={() => navigate(() => setView("profile"))}
-                >
-                  <Palette size={15} /> Minha identidade
-                </button>
-              </nav>
-            )}
-            <div className="header-tools">
-              <button
-                className="course-link"
-                disabled={!available || !state.course.length}
-                onClick={() => setCourseOpen(true)}
-              >
-                <BookOpen size={16} />
-                <span>O método</span>
-                <span className="optional">OPCIONAL</span>
+      <CourseContext.Provider value={{ moments: state.courseMoments || [], play: available ? setVideo : null }}>
+        <div className="shell">
+          {editing ? null : (
+            <header className="topbar" ref={menu.ref}>
+              <button className="brandmark" aria-label="Carrossell, início" onClick={goHome}>
+                <img src={brandMark} alt="" />
+                carrossell
               </button>
-              <span className="header-separator" />
-              <IconButton
-                label={
-                  theme === "light" ? "Ativar tema escuro" : "Ativar tema claro"
-                }
-                onClick={() =>
-                  updatePreferences({
-                    theme: theme === "light" ? "dark" : "light",
-                  })
-                }
-              >
-                {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
-              </IconButton>
-              <IconButton
-                label="Preferências de aparência e leitura"
-                onClick={() => setPreferencesOpen(true)}
-              >
-                <Settings2 size={17} />
-              </IconButton>
-              {available && (
-                <details className="account-menu">
-                  <summary
-                    aria-label={
-                      connected
-                        ? `Conta conectada: ${state.account.label || "ChatGPT"}`
-                        : "Opções de conexão"
-                    }
-                  >
-                    <span
-                      className={`status-dot ${connected ? "connected" : ""}`}
-                    />
-                    <span>
-                      {connected ? "Conta conectada" : "Conectar conta"}
-                    </span>
-                  </summary>
-                  <div>
-                    <span className="eyebrow">CONTA CHATGPT</span>
-                    <p>
-                      {connected
-                        ? state.account.label || "Conta conectada"
-                        : "Use sua conta para criar com o Codex."}
-                    </p>
-                    <button
-                      className="button secondary full"
-                      disabled={isPending("connect") || isPending("disconnect")}
-                      onClick={accountAction}
-                    >
-                      {isPending("connect") ? (
-                        <LoaderCircle size={15} className="spin" />
-                      ) : connected ? (
-                        <LogOut size={15} />
-                      ) : (
-                        <ArrowRight size={15} />
-                      )}
-                      {isPending("connect")
-                        ? "Conectando…"
-                        : connected
-                          ? "Desconectar"
-                          : "Conectar minha conta"}
-                    </button>
-                  </div>
-                </details>
+              {hasProfile && available && !setup && (
+                <nav className="topnav" aria-label="Navegação principal">
+                  <button aria-current={view !== "brand" ? "page" : undefined} onClick={goHome}>
+                    <HomeIcon size={16} /> Início
+                    {pendingResults > 0 && <span className="count-badge" aria-label={`${pendingResults} resultados para registrar`}>{pendingResults}</span>}
+                  </button>
+                  <button aria-current={view === "brand" ? "page" : undefined} onClick={() => setView("brand")}>
+                    <Palette size={16} /> Marca
+                  </button>
+                </nav>
               )}
-            </div>
-          </header>
-          {error && (
-            <div className="error-banner" role="alert">
-              <AlertCircle size={17} />
-              <span>{error}</span>
-              <IconButton label="Fechar mensagem de erro" onClick={clearError}>
-                <X size={15} />
-              </IconButton>
-            </div>
+              <span className="spacer" />
+              {hasProfile && available && (
+                <button className="cmd-btn" aria-label="Abrir comandos" onClick={() => setPalette(true)}>
+                  <Search size={15} />
+                  <span className="label">Buscar ou fazer algo</span>
+                  <kbd>Ctrl K</kbd>
+                </button>
+              )}
+              {available && accountMenu}
+            </header>
           )}
-          {update?.status === "ready" && (
-            <div className="update-banner" role="status">
+          {editing ? null : update?.status === "ready" ? (
+            <div className="notice-strip info" role="status">
               <RefreshCw size={16} />
-              <span>
-                A versão {update.version} do Carrossell está pronta. Ela entra
-                quando você fechar o app.
-              </span>
-              <button
-                className="button secondary"
-                onClick={() => request("installUpdate").catch(() => {})}
-              >
+              <span>A versão {update.version} do Carrossell está pronta. Ela entra quando você fechar o app.</span>
+              <button className="btn small" onClick={() => request("installUpdate").catch(() => {})}>
                 Reiniciar e atualizar
               </button>
             </div>
-          )}
-          {!available ? (
-            <main className="desktop-only page-enter">
-              <div className="desktop-symbol">
-                <Laptop size={42} strokeWidth={1} />
-                <span className="tiny-wordmark"><img src={brandMark} alt="" width="14" height="14" /></span>
-              </div>
-              <span className="eyebrow">FEITO PARA O SEU COMPUTADOR</span>
-              <h1>
-                Seu estúdio.
-                <br />
-                <em>No seu ritmo.</em>
-              </h1>
-              <p>
-                Abra o Carrossell pelo aplicativo para computador para configurar sua
-                marca, conectar sua conta e criar seus carrosséis.
-              </p>
-              <div className="desktop-note">
-                <ArrowDownToLine size={18} />
-                <span>
-                  Esta janela não tem acesso aos recursos do aplicativo.
-                  <br />
-                  Use o atalho Carrossell instalado no seu computador.
-                </span>
-              </div>
-            </main>
-          ) : loading ? (
-            <main className="loading-screen" role="status">
-              <LoaderCircle className="spin" size={25} />
-              <p>Abrindo seu estúdio…</p>
-            </main>
-          ) : bootstrapFailed ? (
-            <main className="loading-screen">
-              <AlertCircle size={28} />
-              <h2>Não foi possível abrir o estúdio.</h2>
-              <button
-                className="button secondary"
-                onClick={() => request("bootstrap").catch(() => {})}
-              >
-                Tentar novamente
-              </button>
-            </main>
-          ) : !state.profile || view === "profile" ? (
-            <>
-              <div className="profile-page-top">
-                {state.profile && (
-                  <button
-                    className="text-button"
-                    onClick={() => setView("library")}
-                  >
-                    <ArrowLeft size={14} /> Voltar à biblioteca
-                  </button>
-                )}
-                <span className="eyebrow">
-                  {state.profile ? "MINHA IDENTIDADE" : "BEM-VINDO AO CARROSSELL"}
-                </span>
-              </div>
-              {manual ? (
-                <Profile
-                  profile={state.profile}
-                  account={state.account}
-                  request={request}
-                  busy={isPending("connect")}
-                  onDone={() => {
-                    setManual(false);
-                    setView("library");
-                    if (state.profile)
-                      setNotice("Sua identidade foi atualizada.");
-                  }}
-                  onCancel={() => setManual(false)}
-                />
-              ) : (
-                <Onboarding
-                  state={state}
-                  request={request}
-                  isPending={isPending}
-                  onManual={() => setManual(true)}
-                  onDone={() => {
-                    setView("library");
-                    if (state.profile)
-                      setNotice("Sua identidade foi atualizada.");
-                  }}
-                  onCancel={
-                    state.profile ? () => setView("library") : undefined
-                  }
-                />
-              )}
-            </>
-          ) : view === "editor" && project ? (
-            <Editor
-              onNavigationGuard={(guard) => {
-                navigationGuard.current = guard;
-              }}
-              key={project.id}
-              project={project}
-              request={request}
-              account={state.account}
-              activity={activity}
-              pending={pending}
-              onBack={() => {
-                setView("library");
-                setProjectId(null);
-              }}
-              onOpen={openProject}
-              onNotice={setNotice}
-              onIdeas={() => {
-                setView("ideas");
-                setProjectId(null);
-              }}
-              visualFixes={state.visualFixes || []}
-              settings={state.settings}
-            />
-          ) : view === "rhythm" ? (
-            <Rhythm
-              state={state}
-              request={request}
-              onOpen={openProject}
-              onIdeas={() => setView("ideas")}
-              onCreate={(idea) => setCreating(idea)}
-            />
-          ) : view === "ideas" ? (
-            <Ideas
-              state={state}
-              request={request}
-              isPending={isPending}
-              onCreate={(idea) => setCreating(idea)}
-            />
           ) : (
-            <Library
-              ideas={state.ideas}
-              working={state.working}
-              connected={connected}
-              onIdea={(idea) => setCreating(idea)}
-              projects={state.projects}
-              request={request}
-              onOpen={openProject}
-              onCreate={() => setCreating(true)}
-              pending={pending.length > 0}
-            />
+            <div />
           )}
-          {available && !loading && view !== "editor" && (
-            <footer className="app-footer">
-              <span>
-                Carrossell <span className="footer-dot">·</span> Uma boa ideia merece
-                uma boa sequência.
-              </span>
-              <span>
-                <span className="local-dot" /> Projetos salvos neste dispositivo
-              </span>
-            </footer>
-          )}
-          {creating && (
-            <CreateProject
-              request={request}
-              initial={creating === true ? null : creating}
-              architectures={state.architectures || []}
-              goals={state.goals || []}
-              onClose={() => setCreating(false)}
-              onCreated={(id) => {
-                setCreating(false);
-                openProject(id);
-              }}
-            />
-          )}
-          {courseOpen && (
-            <Dialog
-              title="O método, no seu tempo."
-              eyebrow="CURSO P.A.C.T.O."
-              onClose={() => setCourseOpen(false)}
-              wide
-            >
-              <p className="course-intro">
-                Você pode criar direto no estúdio. Se quiser aprofundar seu
-                processo, as aulas estão aqui.
-              </p>
-              <div className="course-list">
-                {state.course.map((lesson, index) => (
-                  <button
-                    key={lesson.id}
-                    onClick={() => {
-                      setCourseOpen(false);
-                      setVideo({ lessonId: lesson.id, seconds: 0 });
-                    }}
-                  >
-                    <span className="mono">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <span>{lesson.title}</span>
-                    <ExternalLink size={16} />
+          {body}
+        </div>
+        {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+        {(error || notice) && (
+          <div className="snack" role={error ? "alert" : "status"} style={error ? { background: "var(--danger)", color: "#fff" } : undefined}>
+            {error ? <AlertCircle size={17} /> : <Check size={17} />}
+            <span>{error || notice}</span>
+            <button className="icon-only" aria-label="Fechar aviso" onClick={() => (error ? clearError() : setNotice(""))}>
+              <X size={15} />
+            </button>
+          </div>
+        )}
+        {courseOpen && (
+          <Dialog title="O método, no seu tempo." eyebrow="CURSO P.A.C.T.O. · OPCIONAL" onClose={() => setCourseOpen(false)} wide>
+            <div className="course-cols">
+              <div style={{ display: "grid", alignContent: "start" }}>
+                <span className="eyebrow" style={{ padding: "0 10px 6px" }}>AULAS</span>
+                {state.course.map((lesson, i) => (
+                  <button key={lesson.id} onClick={() => (setCourseOpen(false), setVideo({ lessonId: lesson.id, seconds: 0 }))}>
+                    <span className="mono">{String(i + 1).padStart(2, "0")}</span>
+                    <span>{lesson.title.replace(/\s+/g, " ")}</span>
                   </button>
                 ))}
               </div>
-              {state.courseMoments?.length > 0 && (
-                <div className="course-moments">
-                  <span className="eyebrow">
-                    CADA ETAPA DO APP NA AULA CERTA
-                  </span>
-                  {state.courseMoments.map((m) => (
-                    <button
-                      key={m.step}
-                      onClick={() => {
-                        setCourseOpen(false);
-                        setVideo({
-                          lessonId: m.lessonId,
-                          seconds: m.seconds,
-                          step: m.step,
-                        });
-                      }}
-                    >
-                      <span>{m.label}</span>
-                      <small>
-                        {m.lesson.replace(/\s+/g, " ").slice(0, 32)} · ~
-                        {formatMoment(m.seconds)}
-                      </small>
-                    </button>
-                  ))}
-                  <p className="field-hint">
-                    Minutos aproximados: as transcrições não têm marcação de
-                    tempo.
-                  </p>
-                </div>
-              )}
-              <footer className="course-footer">
-                <BookOpen size={14} />
-                <span>
-                  {state.knowledge?.transcribed || 0} de{" "}
-                  {state.knowledge?.lessons || state.course.length} aulas
-                  transcritas na base do assistente
-                </span>
-              </footer>
-            </Dialog>
-          )}
-          {preferencesOpen && (
-            <PreferencesDialog
-              preferences={preferences}
-              onChange={updatePreferences}
-              onReset={() => setPreferences({ ...DEFAULT_PREFERENCES })}
-              onClose={() => setPreferencesOpen(false)}
-            />
-          )}
-          {notice && (
-            <div className="toast" role="status">
-              <Check size={17} />
-              <span>{notice}</span>
-              <IconButton label="Fechar aviso" onClick={() => setNotice("")}>
-                <X size={15} />
-              </IconButton>
+              <div style={{ display: "grid", alignContent: "start" }}>
+                <span className="eyebrow" style={{ padding: "0 10px 6px" }}>CADA ETAPA NA AULA CERTA</span>
+                {(state.courseMoments || []).slice(0, 10).map((m) => (
+                  <button key={m.step} onClick={() => (setCourseOpen(false), setVideo({ lessonId: m.lessonId, seconds: m.seconds, step: m.step }))}>
+                    <span className="mono">~{formatMoment(m.seconds)}</span>
+                    <span>{m.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
-          {video && (
-            <LessonPlayer
-              video={video}
-              course={state.course}
-              moments={state.courseMoments || []}
-              request={request}
-              onSeek={setVideo}
-              onClose={() => setVideo(null)}
-            />
-          )}
-        </div>
+          </Dialog>
+        )}
+        {video && <LessonPlayer video={video} course={state.course} moments={state.courseMoments || []} request={request} onSeek={setVideo} onClose={() => setVideo(null)} />}
       </CourseContext.Provider>
     </RuntimeErrorContext.Provider>
   );

@@ -10,6 +10,7 @@ import { loadKnowledge } from '../core/knowledge.mjs';
 import { normalizeExport, normalizeFiles } from '../core/export.mjs';
 import { startUpdates } from './updater.mjs';
 import { configureIdentity } from './identity.mjs';
+import { createRenderer } from './render.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 // 0.2.1 identifies itself as pacto-desktop, including the packaged Windows app.
 // Pin that historical directory before changing the commercial display name.
@@ -47,7 +48,9 @@ if(process.platform==='win32')app.setAppUserModelId('com.matheuscastro.pacto');
 app.whenReady().then(async()=>{
   const storage=join(app.getPath('userData'),'library');const store=await new Store(storage).init();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
   codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
-  runtime=new Runtime({store,codex,knowledge,emit,dialogs:{login,
+  const render=createRenderer({folder:join(app.getPath('userData'),'render'),fontsDir:join(root,'node_modules','@fontsource','archivo','files')});
+  runtime=new Runtime({store,codex,knowledge,emit,dialogs:{login,render,
+    async savePdf(project,bytes){const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'documento';const result=await dialog.showSaveDialog(window,{title:'Salvar PDF',defaultPath:`${suggested}.pdf`,filters:[{name:'PDF',extensions:['pdf']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,bytes);return {path:result.filePath};},
     async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:'Exportar carrossel',defaultPath:`${suggested}.zip`,filters:[{name:'Carrossel ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
     async normalizeFiles(files){return normalizeFiles(files,nativeImage);},
     async chooseFolder(){const result=await dialog.showOpenDialog(window,{title:'Escolha a pasta sincronizada (ex.: Meu Drive)',properties:['openDirectory','createDirectory']});return result.canceled?null:result.filePaths[0]||null;},
