@@ -156,23 +156,23 @@ export class Recorder {
   }
 }
 
-// Visual das cartelas, com a identidade da interface do PACTO (não a do comprador).
+// Visual das cartelas, com a identidade da interface do Carrossell (não a do comprador).
 export const cardHtml = ({ eyebrow, title, subtitle = "", items = [], letter = "" }) => `<!doctype html><html><head><meta charset="utf-8"><style>
-html{overflow:hidden}body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#f5f3ee;color:#242522;font-family:"Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center}
-main{width:1500px}.eye{font:600 22px Consolas,monospace;letter-spacing:6px;color:#bb512f}
-h1{font:normal 104px/1.05 Georgia,serif;letter-spacing:-3px;margin:28px 0 22px}h1 em{color:#bb512f}
+html{overflow:hidden}body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#f6f3ed;color:#191919;font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center}
+main{width:1500px}.eye{font:600 22px Consolas,monospace;letter-spacing:6px;color:#c93a19}
+h1{font:700 100px/1.05 "Segoe UI Variable Display","Segoe UI",sans-serif;letter-spacing:-3px;margin:28px 0 22px}h1 em{font-style:normal;color:#ff5a36}
 p{font-size:32px;line-height:1.5;color:#74756e;max-width:1200px;margin:0}
 ul{list-style:none;padding:0;margin:48px 0 0;display:grid;grid-template-columns:repeat(${Math.min(5, Math.max(1, items.length))},1fr);gap:22px}
-li{background:#fcfbf8;border:2px solid #deded6;border-radius:10px;padding:26px 24px}li b{display:block;font:normal 64px Georgia,serif;color:#bb512f}li span{font-size:24px;line-height:1.35;color:#242522}
-.letter{position:absolute;right:90px;top:70px;font:normal 160px Georgia,serif;color:#bb512f;opacity:.18}
-.mark{position:absolute;left:90px;bottom:60px;font:600 30px Georgia,serif}.mark small{display:block;font:600 14px Consolas,monospace;letter-spacing:4px;color:#74756e}
-</style></head><body>${letter ? `<div class="letter">${letter}</div>` : ""}<main><div class="eye">${eyebrow}</div><h1>${title}</h1>${subtitle ? `<p>${subtitle}</p>` : ""}${items.length ? `<ul>${items.map((i) => `<li><b>${i[0]}</b><span>${i[1]}</span></li>`).join("")}</ul>` : ""}</main><div class="mark">pacto<small>ESTÚDIO DE CARROSSÉIS</small></div><script>document.documentElement.style.zoom = innerWidth / 1920;</script></body></html>`;
+li{background:#fcfbf8;border:2px solid #deded6;border-radius:10px;padding:26px 24px}li b{display:block;font:700 60px "Segoe UI",sans-serif;color:#ff5a36}li span{font-size:24px;line-height:1.35;color:#242522}
+.letter{position:absolute;right:90px;top:70px;font:700 160px "Segoe UI",sans-serif;color:#ff5a36;opacity:.16}
+.mark{position:absolute;left:90px;bottom:60px;font:700 32px "Segoe UI",sans-serif;letter-spacing:-1px}.mark small{display:block;font:600 14px Consolas,monospace;letter-spacing:4px;color:#74756e}
+</style></head><body>${letter ? `<div class="letter">${letter}</div>` : ""}<main><div class="eye">${eyebrow}</div><h1>${title}</h1>${subtitle ? `<p>${subtitle}</p>` : ""}${items.length ? `<ul>${items.map((i) => `<li><b>${i[0]}</b><span>${i[1]}</span></li>`).join("")}</ul>` : ""}</main><div class="mark">carrossell<small>MÉTODO P.A.C.T.O.</small></div><script>document.documentElement.style.zoom = innerWidth / 1920;</script></body></html>`;
 
 // Moldura 1920×1080: barra superior com a aula; a janela do app entra embaixo.
 export const frameHtml = ({ label, letter, fast }) => `<!doctype html><html><head><meta charset="utf-8"><style>
 html{overflow:hidden}body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#e9e8e1;font-family:"Segoe UI",sans-serif}
-header{height:66px;display:flex;align-items:center;gap:22px;padding:0 40px;background:#242522;color:#f5f3ee}
-.badge{font:normal 30px Georgia,serif;color:#e48b68;min-width:20px}.label{font-size:21px;letter-spacing:.3px}
-.fast{margin-left:auto;font:600 15px Consolas,monospace;letter-spacing:3px;background:#bb512f;color:#fff;padding:7px 14px;border-radius:999px}
-.brand{margin-left:${fast ? "22px" : "auto"};font:600 20px Georgia,serif;color:#f5f3ee}
-</style></head><body><header>${letter ? `<span class="badge">${letter}</span>` : ""}<span class="label">${label}</span>${fast ? '<span class="fast">▶▶ ACELERADO</span>' : ""}<span class="brand">pacto</span></header><script>document.documentElement.style.zoom = innerWidth / 1920;</script></body></html>`;
+header{height:66px;display:flex;align-items:center;gap:22px;padding:0 40px;background:#191919;color:#f6f3ed}
+.badge{font:700 28px "Segoe UI",sans-serif;color:#ff5a36;min-width:20px}.label{font-size:21px;letter-spacing:.3px}
+.fast{margin-left:auto;font:600 15px Consolas,monospace;letter-spacing:3px;background:#ff5a36;color:#191919;padding:7px 14px;border-radius:999px}
+.brand{margin-left:${fast ? "22px" : "auto"};font:700 22px "Segoe UI",sans-serif;letter-spacing:-.5px;color:#f6f3ed}
+</style></head><body><header>${letter ? `<span class="badge">${letter}</span>` : ""}<span class="label">${label}</span>${fast ? '<span class="fast">▶▶ ACELERADO</span>' : ""}<span class="brand">carrossell</span></header><script>document.documentElement.style.zoom = innerWidth / 1920;</script></body></html>`;

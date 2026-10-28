@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Recorder, cardHtml, emptyOnboarding } from "./lib.mjs";
 
-// Aula 2 — Fundação: entrevista real do Contexto Oficial da Marca e do Design Kit (Vibra Fit).
+// Aula 2 — Fundação (interface 0.3): entrevista real do Contexto Oficial da Marca e do Design Kit (Vibra Fit).
 const brand = [
   "Somos a Vibra Fit, loja online de roupas fitness femininas: leggings, tops e conjuntos com tecido que não fica transparente no agachamento. Vendemos pelo site e pelo Instagram, peças de R$ 89 a R$ 189.",
   "Público: mulheres de 20 a 40 anos que treinam em academia ou correm. Dores: legging transparente, cós que desce no treino, tecido que esquenta. Desejo: treinar confiante e confortável. Diferencial: teste de agachamento em todas as peças e tabela de medidas detalhada.",
@@ -19,15 +19,16 @@ try {
   const state = () => page.evaluate(() => window.pacto.request("bootstrap"));
   const turn = (kind, count) => rec.until(async ({ kind, count }) => { const s = await window.pacto.request("bootstrap"); return !s.interviewing && (s.onboarding[kind].messages.filter((m) => m.role === "assistant").length >= count || s.onboarding[kind].document); }, { kind, count });
   const answer = async (text) => { await rec.type(page.getByLabel("Sua resposta"), text, 12); await rec.click(page.getByRole("button", { name: "Enviar resposta" })); };
+  const steps = page.getByRole("navigation", { name: "Etapas da configuração" });
 
   rec.mark("progresso");
-  await rec.point(page.locator(".step-list li").first(), 1500);
+  await rec.point(steps, 1500);
   await rec.click(page.getByRole("button", { name: "Continuar" }));
   await rec.wait(1500);
 
   rec.mark("porque");
   await rec.point(page.getByRole("heading", { name: "Contexto Oficial da Marca" }), 1500);
-  await rec.point(page.locator(".form-heading p"), 2500);
+  await rec.point(page.locator(".wizard-head .page-sub"), 2500);
 
   rec.mark("entrevista");
   await rec.click(page.getByRole("button", { name: /Começar entrevista/ }));
@@ -49,21 +50,22 @@ try {
   }
 
   rec.mark("documento");
-  await page.locator(".document-text").waitFor();
-  await rec.point(page.locator(".document-text"), 2000);
-  await page.locator(".document-text").evaluate((el) => el.scrollTo({ top: el.scrollHeight * 0.18, behavior: "smooth" }));
+  await page.locator(".doc-view").waitFor();
+  await rec.point(page.locator(".doc-view"), 2000);
+  await page.locator(".doc-view h3, .doc-view h4").nth(1).scrollIntoViewIfNeeded().catch(() => {});
   await rec.wait(2500);
 
   rec.mark("ativos");
-  await page.locator(".document-text").evaluate((el) => { const at = el.value.search(/Ativos|gratuit/i); el.scrollTo({ top: Math.max(0, (at / el.value.length) * el.scrollHeight - 60), behavior: "smooth" }); });
-  await rec.wait(4000);
+  const assets = page.locator(".doc-view").getByText(/Ativos|gratuit/i).first();
+  await assets.scrollIntoViewIfNeeded().catch(() => {});
+  await rec.point(assets, 3500);
   await rec.click(page.getByRole("button", { name: "Aprovar e continuar" }));
 
   rec.mark("continuidade");
   await page.getByRole("heading", { name: "Design Kit Oficial" }).waitFor();
-  await rec.point(page.locator(".preset-grid button").first(), 1200);
-  await rec.click(page.getByRole("button", { name: /^Creator/ }));
-  await rec.point(page.locator(".reference-add").first(), 2500);
+  await rec.point(page.locator(".choice-grid button").first(), 1200);
+  await rec.click(page.getByRole("radio", { name: /^Creator/ }));
+  await rec.point(page.locator(".add-tile").first(), 2500);
 
   rec.mark("kit");
   await rec.click(page.getByRole("button", { name: /Começar entrevista do Design Kit/ }));
@@ -75,26 +77,26 @@ try {
     await rec.click(page.getByRole("button", { name: "Gerar o documento agora" }));
     await rec.until(async () => Boolean((await window.pacto.request("bootstrap")).onboarding.design.document), null);
   }
-  await page.locator(".document-text").waitFor();
-  await rec.point(page.locator(".document-text"), 3000);
+  await page.locator(".doc-view").waitFor();
+  await rec.point(page.locator(".doc-view"), 3000);
   await rec.click(page.getByRole("button", { name: "Aprovar e continuar" }));
 
   rec.mark("instalado");
-  await page.getByRole("heading", { name: "Seu projeto está instalado." }).waitFor();
-  for (const item of await page.locator(".install-summary li").all()) await rec.point(item, 900);
+  await page.getByRole("heading", { name: "Tudo pronto para criar" }).waitFor();
+  for (const item of await page.locator(".wizard-body .card-box .row").all()) await rec.point(item, 900);
   await rec.wait(1500);
 
   rec.mark("mudar");
   await rec.click(page.getByRole("button", { name: "Entrar no estúdio" }));
   await rec.wait(2000);
-  await rec.click(page.locator(".main-nav button", { hasText: "Minha identidade" }));
-  await rec.wait(3500);
-  await rec.click(page.locator(".main-nav button", { hasText: "Biblioteca" }));
+  await rec.click(page.getByRole("button", { name: "Marca", exact: true }));
+  await rec.point(page.getByRole("region", { name: "Contexto da marca" }), 1800);
+  await rec.point(page.getByRole("region", { name: "Design Kit" }), 1800);
 
   rec.mark("acao");
-  await rec.point(page.locator(".opportunities, .library-heading").first(), 3000);
-  await rec.wait(3000);
-  // Save the onboarding results for reference.
+  await rec.click(page.getByRole("button", { name: "Início", exact: true }));
+  await rec.point(page.getByRole("heading", { name: "O que vamos publicar hoje?" }), 3000);
+  await rec.wait(2500);
   const s = await state();
   await writeFile(join(rec.dir, "documentos.json"), JSON.stringify({ brand: s.profile?.brandContext, design: s.profile?.designKit }, null, 2));
   await rec.close();

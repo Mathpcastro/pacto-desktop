@@ -33,7 +33,7 @@
         {
           "id": "atalho",
           "screen": "Tela inicial do PACTO.",
-          "narration": "O PACTO é o método do curso Carrossel que Vende transformado em aplicativo. Os prompts, os documentos de contexto e a instrução que o curso ensina a montar no ChatGPT já estão instalados aqui dentro. Você não precisa montar nada. Só precisa responder e decidir."
+          "narration": "O Carrossell é o método do curso Carrossel que Vende transformado em aplicativo. Os prompts, os documentos de contexto e a instrução que o curso ensina a montar no ChatGPT já estão instalados aqui dentro. Você não precisa montar nada. Só precisa responder e decidir."
         },
         {
           "id": "letras",
@@ -53,7 +53,7 @@
         {
           "id": "conta",
           "screen": "Etapa Conectar seu ChatGPT; janela de login; status Conta conectada.",
-          "narration": "Uma coisa importante antes de começar. O PACTO usa a sua própria conta do ChatGPT pra escrever e desenhar. Então os recursos e os limites de uso são os do seu plano. E ele não publica nem manda mensagem por você: o carrossel fica pronto, e quem aperta o botão no Instagram é você."
+          "narration": "Uma coisa importante antes de começar. O Carrossell usa a sua própria conta do ChatGPT pra escrever e desenhar. Então os recursos e os limites de uso são os do seu plano. E ele não publica nem manda mensagem por você: o carrossel fica pronto, e quem aperta o botão no Instagram é você."
         },
         {
           "id": "acao",
@@ -128,7 +128,7 @@
         {
           "id": "mudar",
           "screen": "Menu Minha identidade com os dois documentos.",
-          "narration": "E isso não fica congelado. Se o seu produto mudar, se você lançar uma oferta nova ou quiser outro visual, é só abrir Minha identidade e ajustar. Os próximos carrosséis já saem com a versão nova."
+          "narration": "E isso não fica congelado. Se o seu produto mudar, se você lançar uma oferta nova ou quiser outro visual, é só abrir Marca e ajustar. Os próximos carrosséis já saem com a versão nova."
         },
         {
           "id": "acao",
@@ -366,7 +366,7 @@
         {
           "id": "ritmo",
           "screen": "Marquei como publicado; aba Ritmo com a meta e os vencedores.",
-          "narration": "Depois de postar, marque como publicado. Em dois ou três dias, o app te lembra de anotar comentários, salvamentos e vendas. No Ritmo, você define quantos carrosséis quer por semana e vê quais ficaram acima da sua média. Volume, sinal, repetição."
+          "narration": "Depois de postar, marque como publicado. Em dois ou três dias, o app te lembra de anotar comentários, salvamentos e vendas. No Início, você define quantos carrosséis quer por semana e vê quais ficaram acima da sua média. Volume, sinal, repetição."
         },
         {
           "id": "metricas",
@@ -421,7 +421,7 @@
         {
           "id": "genericas",
           "screen": "Minha identidade; o documento de contexto editado; Radar com foco.",
-          "narration": "Quarta: as pautas parecem genéricas. Quase sempre é contexto raso. Vá em Minha identidade e deixe o documento mais específico: quem é o seu público de verdade, o que ele já tentou, o que você entrega de diferente. Depois use o foco do Radar pra apontar um assunto. E lembre do Modelador: uma referência que funcionou é um ótimo ponto de partida."
+          "narration": "Quarta: as pautas parecem genéricas. Quase sempre é contexto raso. Vá em Marca e deixe o documento mais específico: quem é o seu público de verdade, o que ele já tentou, o que você entrega de diferente. Depois use o foco do Radar pra apontar um assunto. E lembre do Modelador: uma referência que funcionou é um ótimo ponto de partida."
         },
         {
           "id": "texto",
@@ -436,7 +436,7 @@
         {
           "id": "card",
           "screen": "Corrigir: Erro de ortografia, Fora da identidade visual; card marcado como desatualizado.",
-          "narration": "Sétima: um card saiu com erro de ortografia, com texto torto ou fora do estilo. Use o corrigir e marque exatamente o problema. E se o estilo estiver escapando em vários carrosséis, ajuste o Design Kit em Minha identidade."
+          "narration": "Sétima: um card saiu com erro de ortografia, com texto torto ou fora do estilo. Use o corrigir e marque exatamente o problema. E se o estilo estiver escapando em vários carrosséis, ajuste o Design Kit em Marca."
         },
         {
           "id": "inventou",
@@ -479,7 +479,7 @@
         {
           "id": "opcional",
           "screen": "Menu O método com as oito aulas.",
-          "narration": "Você não precisa assistir ao curso pra usar o PACTO. Tudo o que você viu aqui funciona sem ele. Mas eu recomendo, por um motivo simples: o app faz o trabalho, e o curso te dá o critério."
+          "narration": "Você não precisa assistir ao curso pra usar o Carrossell. Tudo o que você viu aqui funciona sem ele. Mas eu recomendo, por um motivo simples: o app faz o trabalho, e o curso te dá o critério."
         },
         {
           "id": "porque",
@@ -494,12 +494,61 @@
         {
           "id": "como",
           "screen": "Botão Ver na aula em uma etapa; o trecho tocando.",
-          "narration": "E você não precisa parar tudo pra estudar. Em cada etapa do app tem o botão ver na aula, que abre o trecho exato que explica aquilo. Se tiver tempo pra só três aulas, comece pela 2, de pautas, pela 4, de copy, e pela 7, de oferta."
+          "narration": "E você não precisa parar tudo pra estudar. Em cada etapa do app tem o ícone de play, ver na aula, que abre o trecho exato que explica aquilo. Se tiver tempo pra só três aulas, comece pela 2, de pautas, pela 4, de copy, e pela 7, de oferta."
         },
         {
           "id": "fim",
           "screen": "Cartela final do minicurso.",
           "narration": "É isso. Agora você tem o método e a ferramenta. Abra o app, escolha uma oportunidade e publique o seu próximo carrossel. Te vejo no feed."
+        }
+      ]
+    },
+    {
+      "id": "aula-09",
+      "number": 9,
+      "title": "Estilos, fotos e PDFs",
+      "letter": "T",
+      "niche": "Agendei",
+      "sources": [
+        "Aula 05",
+        "Aula 07"
+      ],
+      "targetSeconds": 120,
+      "beats": [
+        {
+          "id": "abertura",
+          "screen": "Cartela: Estilos, fotos e PDFs.",
+          "narration": "Além da arte desenhada pela IA, o Carrossell tem outros jeitos de montar o seu carrossel. E alguns nem gastam o limite da sua conta."
+        },
+        {
+          "id": "estilos",
+          "screen": "Troca de estilos na etapa Carrossel.",
+          "narration": "No topo do carrossel você troca o estilo em um clique. Tweet, com o seu nome e o selo. Só texto, no branco ou no preto. Texto com foto. Foto de fundo. Ou a sua foto na capa. Esses estilos o próprio app monta na hora, sem gerar imagem."
+        },
+        {
+          "id": "marca",
+          "screen": "Marca › Perfil e fotos.",
+          "narration": "Pra isso, abra Marca, em Perfil e fotos. Coloque a sua foto de perfil, o seu arroba e, se quiser aparecer, algumas fotos suas."
+        },
+        {
+          "id": "cenas",
+          "screen": "Cenas aprovadas e a série de fotos.",
+          "narration": "Pro estilo Texto com foto, o app sugere cenas que combinam com o seu negócio. Você aprova as que gostar, e cada cena vira uma série de fotos do mesmo lugar, com ângulos diferentes. Cada card usa uma foto da série, como um carrossel de fotos de verdade."
+        },
+        {
+          "id": "pdf",
+          "screen": "Material gratuito: roteiro, capa e PDF.",
+          "narration": "E o carrossel não precisa terminar numa lista em texto. Na aba Comentário e DM, crie o material gratuito em PDF com as cores e o tom da sua marca. Você aprova o roteiro, escolhe a capa e baixa o arquivo pra mandar na DM."
+        },
+        {
+          "id": "apresentacao",
+          "screen": "Formato Apresentação e PDF para o LinkedIn.",
+          "narration": "Na barra de criar, o mesmo vale pra uma apresentação da sua empresa ou da sua oferta, em PDF, pronta pra mandar por e-mail ou WhatsApp. E qualquer carrossel pronto também sai em PDF pro LinkedIn."
+        },
+        {
+          "id": "acao",
+          "screen": "Início com a barra de criar.",
+          "narration": "Escolha um estilo que combine com você, aprove duas ou três cenas e transforme o material do seu próximo carrossel em PDF."
         }
       ]
     }

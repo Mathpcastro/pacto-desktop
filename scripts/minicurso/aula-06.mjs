@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Recorder, NICHES, cardHtml, emptyOnboarding, nicheProfile, nicheProject } from "./lib.mjs";
 
-// Aula 6 — O: CTA/DM e stories ao vivo, QR code real, Ritmo e Replicador (Agendei).
+// Aula 6 — O (interface 0.3): CTA/DM e stories ao vivo, QR code real, meta da semana e Replicador (Agendei).
 // Os resultados dos outros carrosséis são números de exemplo para mostrar o painel.
 const day = 864e5, ago = (d) => new Date(Date.now() - d * day).toISOString();
 const rec = await new Recorder("aula-06").init();
@@ -20,73 +20,66 @@ try {
   };
   const page = await rec.open(await rec.userData({ auth: true, state }));
   await rec.until(async () => (await window.pacto.request("bootstrap")).account?.connected, null, 120000);
-  const nav = (name) => page.locator(".main-nav button", { hasText: name });
+  const tab = (name) => page.getByRole("tab", { name });
+  const saas = () => page.evaluate(async () => (await window.pacto.request("bootstrap")).projects.find((p) => p.id === "p-saas"));
 
   rec.mark("progresso");
   await rec.click(page.getByRole("button", { name: /^Abrir 6 dados/ }));
+  await page.getByLabel("Prévia no Instagram").waitFor();
   await rec.wait(2500);
 
   rec.image("fluxo", await rec.card("fluxo", cardHtml({ eyebrow: "AULA 07 · O CARROSSEL NÃO TERMINA NO ÚLTIMO CARD", title: "Do comentário <em>à venda.</em>", items: [["1", "Carrossel"], ["2", "Pedido de comentário"], ["3", "Conversa na DM"], ["4", "Entrega do material"], ["5", "Oferta"]], letter: "O" })));
 
   rec.mark("cta");
-  await rec.click(page.getByRole("button", { name: /Gerar CTA, DM e oferta/ }));
-  await rec.click(page.getByRole("button", { name: "Gerar estratégia" }));
+  await rec.click(tab("Comentário e DM"));
+  await rec.click(page.getByRole("button", { name: /Gerar palavras-chave/ }));
   await rec.until(async () => Boolean((await window.pacto.request("bootstrap")).projects.find((p) => p.id === "p-saas").ctaKit), null);
   await rec.wait(1200);
-  await rec.point(page.locator(".cta-item").nth(3), 2000);
-  await rec.point(page.locator(".cta-item").nth(4), 2500);
+  await rec.point(page.getByText("DM 1 · entrega"), 2000);
+  await rec.point(page.getByText("DM 2 · ponte para a oferta"), 2500);
 
   rec.mark("palavra");
-  await page.locator(".cta-kit .architecture-chips").scrollIntoViewIfNeeded();
-  await rec.point(page.locator(".cta-kit .architecture-chips span").first(), 2500);
-  await rec.click(page.getByRole("button", { name: "Fechar", exact: true }));
+  await page.locator(".kw").scrollIntoViewIfNeeded();
+  await rec.point(page.locator(".kw span").first(), 2500);
 
   rec.mark("stories");
-  await rec.click(page.getByRole("button", { name: /Stories de perguntas/ }));
-  await rec.click(page.getByRole("button", { name: "Criar stories" }));
+  await rec.click(tab("Stories"));
+  await rec.click(page.getByRole("button", { name: /Criar stories/ }));
   await rec.until(async () => ((await window.pacto.request("bootstrap")).projects.find((p) => p.id === "p-saas").stories || []).length > 0, null);
   await rec.wait(1000);
-  for (const item of (await page.locator(".story-item").all()).slice(0, 3)) await rec.point(item, 1000);
-  await rec.click(page.getByRole("button", { name: "Fechar", exact: true }));
+  for (const item of (await page.locator(".story").all()).slice(0, 3)) await rec.point(item, 1000);
 
   rec.mark("celular");
+  await rec.click(tab("Enviar"));
   await rec.click(page.getByRole("button", { name: "Enviar para o celular" }));
-  await page.locator(".share-qr").waitFor({ timeout: 20000 });
-  await rec.point(page.locator(".share-qr"), 2500);
-  await rec.point(page.locator(".share-steps"), 2000);
-  await rec.click(page.getByRole("button", { name: "Concluir" }));
-  await rec.click(page.getByRole("button", { name: /Copiar legenda/ }));
+  await page.locator(".qr img").waitFor({ timeout: 20000 });
+  await rec.point(page.locator(".qr img"), 2500);
+  await rec.point(page.locator(".qr ol"), 2000);
+  await rec.click(page.locator(".box").filter({ hasText: "Legenda" }).getByRole("button", { name: "Copiar" }));
   await rec.wait(1200);
   const copied = await rec.app.evaluate(({ clipboard }) => clipboard.readText());
-  console.log(JSON.stringify({ clipboardHasCaption: copied.length > 20 }));
+  console.log(JSON.stringify({ clipboardHasCaption: copied.length > 20, caption: (await saas()).caption.length }));
 
   rec.mark("ritmo");
-  await rec.click(page.getByRole("button", { name: /Marquei como publicado/ }));
+  await rec.click(page.getByRole("button", { name: "Marquei como publicado" }));
   await rec.wait(1200);
-  await rec.click(page.getByRole("button", { name: "Voltar para a biblioteca" }));
-  await rec.click(nav("Ritmo"));
-  await rec.wait(1200);
-  await rec.point(page.locator(".rhythm-goal"), 2000);
+  await rec.click(page.getByRole("button", { name: "Voltar ao início" }));
+  await rec.wait(800);
+  await rec.point(page.locator(".week-top"), 2000);
   await rec.click(page.getByRole("button", { name: "Aumentar meta" }));
-  await rec.point(page.locator(".pending-list li").first(), 2000);
+  await rec.point(page.locator(".pending-item").first(), 2000);
 
   rec.mark("metricas");
   await page.locator(".winners").scrollIntoViewIfNeeded();
-  await rec.point(page.locator(".winners th").nth(2), 1300);
-  await rec.point(page.locator(".winners th").nth(1), 1300);
-  await rec.point(page.locator(".winners th").nth(3), 1300);
-  await rec.point(page.locator(".winners tr.above .idea-badge").first(), 2500);
+  for (const w of await page.locator(".winner").all()) await rec.point(w, 1300);
 
   rec.mark("replicar");
-  await rec.click(page.locator(".winners tr.above").first().getByRole("button", { name: "Replicar" }));
-  await rec.click(page.getByRole("button", { name: /Salvar e replicar/ }));
+  await rec.click(page.locator(".winner").first().getByRole("button", { name: "Replicar" }));
   await rec.until(async () => { const s = await window.pacto.request("bootstrap"); return !s.working && s.ideas.some((b) => b.source === "replicador"); }, null);
   await rec.wait(1500);
-  await rec.point(page.locator(".idea-batch").first().locator("header h2"), 1500);
-  for (const card of (await page.locator(".idea-batch").first().locator(".idea-card").all()).slice(0, 3)) await rec.point(card, 700);
+  for (const idea of (await page.locator(".idea").all()).slice(0, 4)) await rec.point(idea, 700);
 
   rec.mark("acao");
-  await rec.click(nav("Biblioteca"));
   await rec.click(page.getByRole("button", { name: /^Abrir 6 dados/ }));
   await rec.point(page.getByRole("button", { name: "Enviar para o celular" }), 3500);
   await rec.close();
