@@ -278,7 +278,15 @@ export default function App() {
               {available && accountMenu}
             </header>
           )}
-          {editing ? null : update?.status === "ready" ? (
+          {editing ? null : update?.status === "manual" ? (
+            <div className="notice-strip info" role="status">
+              <RefreshCw size={16} />
+              <span>A versão {update.version} do Carrossell está disponível. Baixe, abra e arraste para Aplicativos; seus projetos continuam salvos.</span>
+              <button className="btn small" onClick={() => request("installUpdate").catch(() => {})}>
+                Baixar
+              </button>
+            </div>
+          ) : update?.status === "ready" ? (
             <div className="notice-strip info" role="status">
               <RefreshCw size={16} />
               <span>A versão {update.version} do Carrossell está pronta. Ela entra quando você fechar o app.</span>

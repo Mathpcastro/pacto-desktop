@@ -79,7 +79,7 @@ app.whenReady().then(async()=>{
     try{return await runtime.request(action,args);}catch(error){throw safeError(error);}
   });
   await createWindow();
-  updates=startUpdates({app,emit,notify:body=>{if(Notification.isSupported())new Notification({title:'Carrossell · atualização pronta',icon:join(root,'resources','branding','icon-256.png'),body}).show();}});
+  updates=startUpdates({app,emit,notify:(body,title='Carrossell · atualização pronta')=>{if(Notification.isSupported())new Notification({title,icon:join(root,'resources','branding','icon-256.png'),body}).show();},open:url=>{const u=new URL(url);if(u.protocol==='https:'&&u.hostname==='github.com'||u.protocol==='http:'&&u.hostname==='127.0.0.1')return shell.openExternal(u.href);}});
   // Lembrete diário de Volume → Sinal → Repetição, só com o app aberto e resultado pendente.
   const remind=reminder(store.state().projects,store.state().settings);
   if(remind&&Notification.isSupported()){const note=new Notification({title:'Carrossell · hora de medir',icon:join(root,'resources','branding','icon-256.png'),body:remind});note.on('click',()=>{window?.show();window?.focus();emit({type:'navigate',view:'rhythm'});});note.show();await store.saveSettings({lastReminderAt:new Date().toISOString()});}void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));

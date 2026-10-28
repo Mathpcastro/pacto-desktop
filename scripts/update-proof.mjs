@@ -39,13 +39,15 @@ try {
   app = await _electron.launch({ executablePath: join(root, "release", "win-unpacked", "Carrossell.exe"), env: { ...process.env, PACTO_USER_DATA: userData, PACTO_UPDATE_URL: `http://127.0.0.1:${server.address().port}/` } });
   const page = await app.firstWindow();
   const started = Date.now();
-  await page.locator(".update-banner").waitFor({ timeout: 300000 });
-  const text = (await page.locator(".update-banner").innerText()).replace(/\s+/g, " ");
+  const banner = page.getByRole("status").filter({ hasText: "está pronta" });
+  await banner.waitFor({ timeout: 300000 });
+  const text = (await banner.innerText()).replace(/\s+/g, " ");
   console.log(JSON.stringify({ from: current, to: next, seconds: Math.round((Date.now() - started) / 1000), banner: text, button: await page.getByRole("button", { name: "Reiniciar e atualizar" }).isVisible() }));
 } finally {
   // Encerrar sem "quit": com autoInstallOnAppQuit, fechar normalmente instalaria a versão de teste.
   // No Windows, kill() deixa os processos filhos vivos; taskkill /T encerra a árvore inteira.
-  const pid = app?.process().pid;
+  let pid;
+  try { pid = app?.process().pid; } catch {}
   if (pid) try { execFileSync("taskkill", ["/F", "/T", "/PID", String(pid)], { stdio: "ignore" }); } catch {}
   server?.close();
   await rm(join(process.env.LOCALAPPDATA || tmpdir(), "pacto-desktop-updater"), { recursive: true, force: true });
