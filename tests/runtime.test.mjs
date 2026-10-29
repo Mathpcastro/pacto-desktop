@@ -91,6 +91,11 @@ test('Codex ignores failures and completion from another thread or turn',async()
   client.receive({method:'item/completed',params:{threadId:'foreign',turnId:'owned-turn',item:{type:'agentMessage',text:'foreign'}}});assert.equal(client.active.text.length,0);
   client.receive({method:'turn/completed',params:{threadId:'owned',turn:{id:'owned-turn',status:'completed'}}});assert.equal(done,1);
 });
+test('Codex cancel ends the call right away even if the interrupted turn never reports back',async()=>{
+  const {CodexClient}=await import('../core/codex.mjs');const client=new CodexClient({home:tmpdir(),workspace:tmpdir()});let ended=null;
+  client.active={threadId:'owned',turnId:'owned-turn',finish:error=>{ended=error;},text:[],images:[]};
+  await client.cancel();assert.match(ended?.message||'',/cancelada/);assert.equal(client.active.cancelled,true);
+});
 test('runtime never reports success when native image generation returns no pixels',async t=>{
   const {Runtime}=await import('../core/runtime.mjs');const {store}=await fixture(t);const p=await store.createProject({title:'A',brief:'B'});
   await store.saveProject({id:p.id,slides:[{id:'one',title:'A',body:'B',visual:'C',prompt:'D'}]});

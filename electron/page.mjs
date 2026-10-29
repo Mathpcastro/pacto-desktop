@@ -17,6 +17,11 @@ const EXTRACT = `(() => {
   return { title: document.title || meta('og:title'), description: meta('description') || meta('og:description'), text: text.slice(0, 30000), colors };
 })()`;
 
+function within(promise, ms, message) {
+  let timer;
+  return Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); })]).finally(() => clearTimeout(timer));
+}
+
 export async function readPage(url, { timeout = 30000 } = {}) {
   const target = new URL(url);
   if (!['http:', 'https:'].includes(target.protocol)) throw new Error('Use um link http ou https.');
@@ -29,12 +34,13 @@ export async function readPage(url, { timeout = 30000 } = {}) {
   win.webContents.setAudioMuted(true);
   try {
     const load = win.loadURL(target.href, { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0 Safari/537.36' });
-    await Promise.race([load, new Promise((_, reject) => setTimeout(() => reject(new Error('A página demorou demais para abrir.')), timeout))]);
+    await within(load, timeout, 'A página demorou demais para abrir.');
     // Sites em React/Next montam o conteúdo depois do carregamento.
     await new Promise((resolve) => setTimeout(resolve, 2500));
-    const data = await win.webContents.executeJavaScript(EXTRACT, true);
-    const shot = await win.webContents.capturePage({ x: 0, y: 0, width: 1280, height: 900 });
-    return { ...data, url: win.webContents.getURL(), screenshot: shot.isEmpty() ? '' : shot.toDataURL() };
+    const data = await within(win.webContents.executeJavaScript(EXTRACT, true), 15000, 'A página demorou demais para responder.');
+    // O print só ajuda o Design Kit: se a janela oculta não pintar, segue sem ele.
+    const shot = await within(win.webContents.capturePage({ x: 0, y: 0, width: 1280, height: 900 }), 10000, '').catch(() => null);
+    return { ...data, url: win.webContents.getURL(), screenshot: !shot || shot.isEmpty() ? '' : shot.toDataURL() };
   } catch (error) {
     throw new Error(`Não consegui abrir a página (${error.message.replace(/^Error:\s*/, '').slice(0, 120)}). Confira o link ou escreva uma frase sobre o que você vende.`);
   } finally {

@@ -108,6 +108,55 @@ test("quickSetup works from a sentence and refuses an empty page", async (t) => 
   await assert.rejects(runtime.request("quickSetup", { input: "app.exemplo.com/login" }), /quase não tem texto/);
 });
 
+test("stopping quickSetup frees the app at once, even while the page or the Codex is still busy", async (t) => {
+  const store = await fixture(t);
+  let releasePage;
+  const page = new Promise((resolve) => { releasePage = resolve; });
+  const replies = [{ reply: "", complete: true, brandName: "Agendei", document: brandDoc }, { reply: "", complete: true, brandName: "Agendei", document: designDoc }];
+  let run = 0;
+  const runtime = new Runtime({
+    store,
+    knowledge,
+    codex: { status: { account: { connected: true } }, cancel: async () => {}, run: async () => { run++; return { text: JSON.stringify(replies.shift()) }; } },
+    dialogs: { readPage: () => page },
+  });
+  const first = runtime.request("quickSetup", { input: "agendei.app" });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(runtime.state().interviewing, "quick");
+  const stopped = await runtime.request("cancelInterview");
+  assert.equal(stopped.interviewing, null, "a tela libera os botões sem esperar a página");
+  // A segunda tentativa não esbarra em "Aguarde ou cancele a operação em andamento".
+  const retry = await runtime.request("quickSetup", { input: "bolos caseiros por encomenda" });
+  assert.equal(retry.onboarding.design.document, designDoc.trim());
+  // A leitura antiga termina depois e não chama o Codex nem sobrescreve nada.
+  releasePage({ title: "Outro", text: "Texto antigo. ".repeat(30), colors: [] });
+  await first;
+  assert.equal(run, 2);
+  assert.equal(runtime.state().onboarding.brand.brandName, "Agendei");
+});
+
+test("stopping during the Design Kit step keeps the context and never saves a late Design Kit", async (t) => {
+  const store = await fixture(t);
+  let releaseDesign;
+  const runtime = new Runtime({
+    store,
+    knowledge,
+    codex: {
+      status: { account: { connected: true } },
+      cancel: async () => {},
+      run: async (o) => (/Aula 05/.test(o.prompt) ? new Promise((resolve) => { releaseDesign = () => resolve({ text: JSON.stringify({ reply: "", complete: true, brandName: "", document: designDoc }) }); }) : { text: JSON.stringify({ reply: "", complete: true, brandName: "Doce Ofício", document: brandDoc }) }),
+    },
+  });
+  const pending = runtime.request("quickSetup", { input: "bolos caseiros por encomenda em Curitiba" });
+  while (!releaseDesign) await new Promise((resolve) => setImmediate(resolve));
+  const stopped = await runtime.request("cancelInterview");
+  assert.equal(stopped.interviewing, null);
+  assert.equal(stopped.onboarding.brand.document, brandDoc.trim());
+  releaseDesign();
+  await pending;
+  assert.equal(runtime.state().onboarding.design.document, "");
+});
+
 test("feedback is stored by area and reaches the copy and image prompts that match", async (t) => {
   const store = await fixture(t);
   const runtime = new Runtime({ store, knowledge, codex: { status: { account: { connected: false } }, run: async () => ({}) } });

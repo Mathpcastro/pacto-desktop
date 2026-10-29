@@ -454,7 +454,15 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
             <ArrowLeft size={16} /> Voltar
           </button>
         ) : onCancel ? (
-          <button type="button" className="ghost-btn" onClick={onCancel}>
+          <button
+            type="button"
+            className="ghost-btn"
+            onClick={() => {
+              // Fechar no meio da geração também para o trabalho; senão ele segura o app em segundo plano.
+              if (state.interviewing) request("cancelInterview").catch(() => {});
+              onCancel();
+            }}
+          >
             Cancelar
           </button>
         ) : (

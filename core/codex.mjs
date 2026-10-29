@@ -127,7 +127,8 @@ export class CodexClient {
       return {text:a.text.join('\n'),images,model:this.selected.model||this.selected.id};
     }catch(error){throw safeError(error);}finally{clearTimeout(a.timer);if(this.active===a)this.active=null;}
   }
-  async cancel(){const a=this.active;if(!a)return;a.cancelled=true;if(a.threadId&&a.turnId&&this.child)await this.request('turn/interrupt',{threadId:a.threadId,turnId:a.turnId}).catch(()=>{});}
+  // Encerra a chamada na hora em vez de esperar o turn/completed, que pode demorar ou nem chegar; eventos da thread antiga são ignorados.
+  async cancel(){const a=this.active;if(!a)return;a.cancelled=true;const interrupt=a.threadId&&a.turnId&&this.child?this.request('turn/interrupt',{threadId:a.threadId,turnId:a.turnId},10000).catch(()=>{}):null;if(a.finish){clearTimeout(a.timer);a.finish(new Error('Operação cancelada.'));}await interrupt;}
   fail(error){for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(error);}this.pending.clear();if(this.active?.finish){clearTimeout(this.active.timer);this.active.finish(error);}}
   stop(){const child=this.child;this.child=null;this.lines?.close();this.fail(new Error('A conexão foi encerrada.'));child?.kill();}
 }

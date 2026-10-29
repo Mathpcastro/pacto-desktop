@@ -235,6 +235,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       const brandDoc=text(String(brand.document||''),40000).trim();if(brandDoc.length<200)throw new Error('O Contexto da Marca veio incompleto. Tente de novo ou escreva mais detalhes sobre o que você vende.');
       const brandName=text(String(brand.brandName||page?.title||''),200).trim();
       await this.store.saveInterview('brand',{messages:[{id:randomUUID(),role:'assistant',text:`Contexto montado a partir ${url?'da página do seu produto':'da sua descrição'}. Revise e corrija o que estiver como HIPÓTESE.`}],document:brandDoc,brandName});
+      if(token.cancelled)return;
       this.emit({type:'state',state:this.state()});
       this.emit({type:'activity',message:'Montando o seu Design Kit…'});
       const second=await this.codex.run({prompt:`PROMPT OFICIAL DO CURSO (Aula 05):\n${promptText(this.knowledge,INTERVIEW.design.prompt)}\n\n${rules}\nO Design Kit deve partir das cores, da tipografia e do estilo que o produto já tem (Efeito Continuidade).${page?.screenshot?' A imagem anexada é o topo da página do produto.':''} As artes serão produzidas pela geração nativa de imagens: descreva técnica, traço, paleta e consistência entre cards, com títulos sempre em linhas horizontais.\n\nCONTEXTO OFICIAL DA MARCA JÁ MONTADO:\n${brandDoc}\n\n${data}`,outputSchema:INTERVIEW_SCHEMA,...(page?.screenshot?{references:[page.screenshot]}:{})});
@@ -250,7 +251,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     const token={id,kind,cancelled:false};this.job=token;
     try{this.emit({type:'state',state:this.state()});this.emit({type:'activity',message:activity});await work(token);}
     catch(error){if(!token.cancelled)throw safeError(error);}
-    finally{if(this.job===token)this.job=null;this.emit({type:'activity',message:''});this.emit({type:'state',state:this.state()});}
+    finally{if(this.job===token)this.job=null;if(!this.job)this.emit({type:'activity',message:''});this.emit({type:'state',state:this.state()});}
     // Computed after the job is released so the reply never reports finished work as running.
     return this.state();
   }
@@ -317,7 +318,8 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       case 'resetInterview':if(this.job?.id==='onboarding')throw new Error('Aguarde a entrevista terminar.');await this.store.resetInterview(args.kind);return this.state();
       case 'cancelInterview':case 'cancelWork':{
         const job=this.job;if(!job)return this.state();
-        if(['onboarding','ideas','media'].includes(job.id)||['cta','stories'].includes(job.kind)){job.cancelled=true;await this.codex.cancel();return this.state();}
+        // Libera na hora: a leitura da página ou o Codex podem demorar a parar; o trabalho antigo confere token.cancelled antes de salvar.
+        if(['onboarding','ideas','media'].includes(job.id)||['cta','stories'].includes(job.kind)){job.cancelled=true;if(this.job===job)this.job=null;await this.codex.cancel();this.emit({type:'activity',message:''});return this.state();}
         await this.request('cancel',{id:job.id});return this.state();
       }
       case 'radar':return this.ideas('radar',{focus:args.focus?text(args.focus,1000).trim():''});
