@@ -8,7 +8,9 @@ export class ComposioError extends Error{constructor(message,{status=0,code=''}=
 // Mensagens do Composio e da Meta traduzidas para o que a pessoa consegue resolver.
 export function friendly(raw,status=0){
   const text=String(raw||'').toLowerCase();
-  if(status===401||status===403||/invalid api key|unauthorized|api key/.test(text)){
+  // Recusa que não é "chave inválida" (ex.: chave com escopo sem permissão de sessões): mostra o motivo real.
+  if((status===401||status===403)&&!/invalid api key/.test(text))return new ComposioError(`O Composio recusou o pedido (${status}): ${String(raw||'sem detalhes').slice(0,300)}. Se a sua chave do projeto foi criada com permissões limitadas (scoped), crie uma chave com acesso completo ao projeto em Project Settings › API Keys.`,{status,code:'forbidden'});
+  if(status===401||/invalid api key/.test(text)){
     // O Composio devolve a chave mascarada (ex.: ak_**3456): mostra para a pessoa conferir qual colou.
     const masked=/invalid api key:\s*(\S+)/i.exec(String(raw||''))?.[1]||'';
     return new ComposioError(`O Composio não aceitou a chave${masked?` (${masked})`:''}. Use a chave do PROJETO: em composio.dev, abra Settings › Project Settings › API Keys. A chave de "AI Clients" (a do MCP) e a chave de usuário (uak_) não servem aqui.`,{status,code:'key'});
@@ -45,7 +47,7 @@ export class Composio {
     try{response=await this.fetch(`${this.base}${path}`,{method,headers:{'x-api-key':this.apiKey,'content-type':'application/json',accept:'application/json'},...(body!==undefined?{body:JSON.stringify(body)}:{})});}
     catch(error){throw new ComposioError(`Sem conexão com o Composio: ${error.message}`,{code:'network'});}
     const raw=await response.text();let json=null;try{json=raw?JSON.parse(raw):null;}catch{}
-    if(!response.ok)throw friendly(json?.error?.message||json?.message||raw,response.status);
+    if(!response.ok)throw friendly(json?.error?.message?`${json.error.message}${json.error.suggested_fix?` (${json.error.suggested_fix})`:''}`:json?.message||raw,response.status);
     return json??{};
   }
   // Sessão só para criar o link de conexão (OAuth gerenciado). Cada conta nova ganha um usuário próprio,

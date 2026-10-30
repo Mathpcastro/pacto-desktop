@@ -109,6 +109,9 @@ test("Composio data comes in several shapes and errors become instructions", () 
   assert.equal(pickId('{"id":"18000000000000999"}'), "18000000000000999");
   assert.equal(pickId({ creation_id: "77" }, ["id", "creation_id"]), "77");
   assert.equal(friendly("Invalid API key", 401).code, "key");
+  const forbidden = friendly("API key lacks permission: session management", 403);
+  assert.equal(forbidden.code, "forbidden");
+  assert.match(forbidden.message, /recusou o pedido \(403\): API key lacks permission: session management\. Se a sua chave/);
   assert.equal(friendly("The user is not a Business or Creator account").code, "account");
   assert.equal(friendly("Error validating access token: Session has expired").code, "reconnect");
   assert.equal(friendly("Application request limit reached (content publishing)").code, "quota");
