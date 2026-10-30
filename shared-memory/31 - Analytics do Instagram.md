@@ -55,3 +55,17 @@ Durante a validação, iniciar o app como processo filho do executor não permit
 ## Limites e publicação
 
 Não houve publicação de release, push, postagem no Instagram, DM ou teste de geração real de variações. A importação foi validada com fixture isolada; o contrato do Replicador foi validado em testes. A leitura real dos analytics foi validada, mas postar/agendar de verdade continua sendo uma pendência anterior. Mac físico não foi testado. O histórico de seguidores começa na primeira coleta de hoje; dias anteriores não foram inventados.
+
+
+## Revalidação após o painel — 30/10/2026
+
+A pedido do usuário para conferir multiperfis, CLI e Instagram com Analytics:
+- `node --test --test-reporter=dot tests/*.test.mjs`: 105 testes, saída 0.
+- `node scripts/profiles-proof.mjs .cache/profiles-proof-analytics`: 6/6 na versão atual, em biblioteca isolada (criar, trocar, isolamento e excluir).
+- `node scripts/cli-proof.mjs .cache/cli-proof-analytics`: 5/5 na versão atual, em biblioteca isolada (CLI no app aberto, criar/aprovar/capas/exportar e trabalho em outro perfil sem misturar a janela).
+- A CLI empacotada com o app fechado possui prova anterior, não foi repetida nesta revalidação. Conexão/analytics reais foram conferidos na implementação acima. Publicar e agendar de verdade, múltiplas contas reais em perfis distintos e Mac físico seguem sem validação completa.
+
+
+## Publicação autorizada — 30/10/2026
+
+O usuário informou que publicou um carrossel real diretamente pelo app e que funcionou bem. Essa é uma validação relatada pelo usuário, além das leituras de analytics verificadas pelo agente. Autorizou publicar a versão para Windows e Mac sem artefatos temporários de Actions. Agendamento real e Mac físico permanecem sem prova. Pipeline existente publica diretamente na release; zero artefatos de Actions antes de iniciar.
