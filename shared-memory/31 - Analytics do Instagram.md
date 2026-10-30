@@ -69,3 +69,8 @@ A pedido do usuário para conferir multiperfis, CLI e Instagram com Analytics:
 ## Publicação autorizada — 30/10/2026
 
 O usuário informou que publicou um carrossel real diretamente pelo app e que funcionou bem. Essa é uma validação relatada pelo usuário, além das leituras de analytics verificadas pelo agente. Autorizou publicar a versão para Windows e Mac sem artefatos temporários de Actions. Agendamento real e Mac físico permanecem sem prova. Pipeline existente publica diretamente na release; zero artefatos de Actions antes de iniciar.
+
+
+## Release 0.6.0 publicada — 30/10/2026
+
+[[32 - Release Carrossell 0.6.0]]: Latest com Windows e os dois Macs, workflow aprovado, links HTTP 200, feed Windows 0.6.0 e zero artefatos de Actions. Usuário confirmou publicação real de carrossel pelo app. Agendamento real e Mac físico seguem sem confirmação.
