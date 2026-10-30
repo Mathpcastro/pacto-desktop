@@ -200,7 +200,18 @@
   .ig-pick button[aria-pressed="true"] { border-color: #d62976; background: color-mix(in srgb, #d62976 9%, var(--panel)); }
   .ig-title { display: inline-flex; align-items: center; gap: 6px; }
   .section-head h2 svg { vertical-align: -3px; }
-  .agent-example { margin: 0; padding: 12px 14px; background: var(--sunk); border-radius: var(--radius-sm); font: var(--t-sm) / 1.6 ui-monospace, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+  /* Agentes: card de uma linha no Início e modal com passo a passo e pedidos prontos */
+  .agent-card { display: flex; align-items: center; gap: 14px; margin-top: 14px; padding: 12px 14px 12px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(100deg, color-mix(in srgb, var(--accent) 7%, var(--panel)), var(--panel) 60%); }
+  .agent-card b { display: block; font: 600 var(--t-md) var(--ui); }
+  .agent-card small { color: var(--muted); font-size: var(--t-sm); }
+  .agent-icon { flex: none; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
+  .agent-code { padding: 6px 10px; background: var(--sunk); border-radius: 8px; overflow-wrap: anywhere; }
+  .agent-steps { grid-template-columns: 1fr; }
+  .agent-steps .n { background: var(--accent); }
+  .agent-prompts { display: grid; gap: 8px; }
+  .agent-prompt { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--sunk); border-radius: var(--radius-sm); }
+  .agent-prompt p { margin: 0; flex: 1; font-size: var(--t-sm); line-height: 1.5; }
+  @media (max-width: 760px) { .agent-card { flex-wrap: wrap; } }
   .popover {
     position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
     min-width: 230px; max-width: 340px;

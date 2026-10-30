@@ -10,6 +10,7 @@ import Studio from "./components/Studio.jsx";
 import CommandPalette from "./components/CommandPalette.jsx";
 import ProfileSwitcher from "./components/ProfileSwitcher.jsx";
 import { InstagramButton, InstagramModal } from "./components/Instagram.jsx";
+import { AgentModal } from "./components/AgentSetup.jsx";
 import { CourseContext, LessonPlayer, formatMoment } from "./course.jsx";
 import { rhythm } from "../core/rhythm.mjs";
 import { Spinner, usePopover } from "./ui.jsx";
@@ -50,6 +51,7 @@ export default function App() {
   const [video, setVideo] = useState(null);
   const [notice, setNotice] = useState("");
   const [igOpen, setIgOpen] = useState(false);
+  const [agentsOpen, setAgentsOpen] = useState(false);
   const composerRef = useRef(null);
   const menu = usePopover();
   const project = state.projects.find((p) => p.id === projectId);
@@ -125,6 +127,7 @@ export default function App() {
       { id: "scenes", label: "Sugerir cenas para fotos simples", hint: "Marca", disabled: !connected, run: () => (setView("brand"), request("suggestScenes").catch(() => {})) },
       { id: "theme", label: preferences.theme === "dark" ? "Usar tema claro" : "Usar tema escuro", run: () => set({ theme: preferences.theme === "dark" ? "light" : "dark" }) },
       { id: "instagram", label: "Conectar Instagram", hint: "Postar e agendar", run: () => setIgOpen(true) },
+      { id: "agents", label: "Usar o Carrossell com um agente", hint: "Codex, Claude Code", run: () => setAgentsOpen(true) },
       { id: "course", label: "Abrir as aulas do método", hint: "Opcional", run: () => setCourseOpen(true) },
       { id: "account", label: connected ? "Desconectar a conta ChatGPT" : "Conectar a conta ChatGPT", run: () => request(connected ? "disconnect" : "connect").catch(() => {}) },
       ...(state.profiles || []).filter((p) => p.id !== state.profileId).map((p) => ({ id: `profile-${p.id}`, label: `Trocar para o perfil ${p.name}`, hint: "Perfis", run: () => request("switchProfile", { id: p.id }).then(goHome).catch(() => {}) })),
@@ -177,6 +180,10 @@ export default function App() {
             ))}
           </div>
           <hr />
+          <button className="opt" onClick={() => (menu.setOpen(null), setAgentsOpen(true))}>
+            <b>Usar com agentes</b>
+            <small>Codex ou Claude Code usam o app por você</small>
+          </button>
           <button className="opt" disabled={!state.course.length} onClick={() => (menu.setOpen(null), setCourseOpen(true))}>
             <b>Aulas do método</b>
             <small>Opcional · {state.course.length} aulas</small>
@@ -255,9 +262,9 @@ export default function App() {
     body = (
       <main className="shell-main">
         {view === "brand" ? (
-          <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} />
+          <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} onAgents={() => setAgentsOpen(true)} />
         ) : (
-          <Home state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} composerRef={composerRef} connected={connected} />
+          <Home state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} composerRef={composerRef} connected={connected} onAgents={() => setAgentsOpen(true)} />
         )}
       </main>
     );
@@ -317,6 +324,7 @@ export default function App() {
           {body}
         </div>
         {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+        {agentsOpen && <AgentModal request={request} isPending={isPending} onNotice={setNotice} onClose={() => setAgentsOpen(false)} />}
         {igOpen && <InstagramModal state={state} request={request} isPending={isPending} onNotice={setNotice} onClose={() => setIgOpen(false)} />}
         {(error || notice) && (
           <div className="snack" role={error ? "alert" : "status"} style={error ? { background: "var(--danger)", color: "#fff" } : undefined}>

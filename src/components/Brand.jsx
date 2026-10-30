@@ -61,7 +61,7 @@ function DocSection({ title, value, onSave, hint, extra }) {
   );
 }
 
-export default function Brand({ state, request, isPending, onRedo, onManual, onNotice, onInstagram }) {
+export default function Brand({ state, request, isPending, onRedo, onManual, onNotice, onInstagram, onAgents }) {
   const profile = state.profile || {};
   const media = state.media || { faces: [], scenes: [], verified: true };
   const assets = media.assets || [];
@@ -409,7 +409,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
         </section>
       </div>
       <InstagramSummary state={state} request={request} onNotice={onNotice} onOpen={onInstagram} />
-      <AgentSetup request={request} isPending={isPending} onNotice={onNotice} />
+      <AgentSetup request={request} isPending={isPending} onNotice={onNotice} onOpen={onAgents} />
     </main>
   );
 }

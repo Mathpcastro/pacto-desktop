@@ -18,6 +18,7 @@ import {
 import { rhythm } from "../../core/rhythm.mjs";
 import Dialog from "./Dialog.jsx";
 import { FORMAT_LABEL, Grow, STYLE_LIST, Spinner, firstLine, statusLabels, usePopover } from "../ui.jsx";
+import { AgentCard } from "./AgentSetup.jsx";
 
 const FORMATS = [
   ["carrossel", "Carrossel", "Instagram · 4:5"],
@@ -99,7 +100,7 @@ function Measure({ project, request, onDone }) {
   );
 }
 
-export default function Home({ state, request, isPending, onOpen, onNotice, composerRef, connected }) {
+export default function Home({ state, request, isPending, onOpen, onNotice, composerRef, connected, onAgents }) {
   const pop = usePopover();
   const [text, setText] = useState("");
   const [format, setFormat] = useState("carrossel");
@@ -291,6 +292,7 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
           {!connected && <p className="hint">Conecte sua conta ChatGPT no menu do avatar para o Carrossell escrever e gerar as artes.</p>}
         </div>
       </section>
+      <AgentCard onOpen={onAgents} />
       <div className="home-grid">
         <section className="section" aria-label="Ideias">
           <div className="section-head">
