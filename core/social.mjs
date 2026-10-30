@@ -36,7 +36,8 @@ export class Social {
   }
   async saveKey(value){
     if(!this.secrets?.setKey)throw new Error('Disponível só no aplicativo.');
-    const key=text(String(value??''),300).trim();if(key.length<10||/\s/.test(key))throw new Error('Essa chave não parece uma chave de API do Composio. Copie de novo em Settings › API Keys no Composio.');
+    const key=text(String(value??''),300).trim();if(key.length<10||/\s/.test(key))throw new Error('Essa chave não parece uma chave de API do Composio. Copie de novo em Settings › Project Settings › API Keys no Composio.');
+    if(/^uak_/i.test(key))throw new Error('Essa é a sua chave de usuário (começa com uak_). O Carrossell precisa da chave do PROJETO: em composio.dev, abra Settings › Project Settings › API Keys.');
     // Testa a chave antes de guardar: listar as conexões não mexe em nenhuma conta.
     await this.make({apiKey:key,userId:`carrossell-${this.secrets.installId()}`}).accounts();
     await this.secrets.setKey(key);this.clients.clear();

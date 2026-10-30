@@ -8,7 +8,11 @@ export class ComposioError extends Error{constructor(message,{status=0,code=''}=
 // Mensagens do Composio e da Meta traduzidas para o que a pessoa consegue resolver.
 export function friendly(raw,status=0){
   const text=String(raw||'').toLowerCase();
-  if(status===401||status===403||/invalid api key|unauthorized|api key/.test(text))return new ComposioError('A chave do Composio não foi aceita. Confira a chave em Marca › Instagram.',{status,code:'key'});
+  if(status===401||status===403||/invalid api key|unauthorized|api key/.test(text)){
+    // O Composio devolve a chave mascarada (ex.: ak_**3456): mostra para a pessoa conferir qual colou.
+    const masked=/invalid api key:\s*(\S+)/i.exec(String(raw||''))?.[1]||'';
+    return new ComposioError(`O Composio não aceitou a chave${masked?` (${masked})`:''}. Use a chave do PROJETO: em composio.dev, abra Settings › Project Settings › API Keys. A chave de "AI Clients" (a do MCP) e a chave de usuário (uak_) não servem aqui.`,{status,code:'key'});
+  }
   if(status===429||/rate limit|too many/.test(text))return new ComposioError('O Composio pediu uma pausa (muitas chamadas). Tente de novo em alguns minutos.',{status,code:'rate'});
   if(/personal account|not a business|professional account|account type|business or creator/.test(text))return new ComposioError('O Instagram só permite postar por aplicativo em contas Profissionais (Empresa ou Criador de conteúdo). Mude o tipo de conta no Instagram e conecte de novo.',{status,code:'account'});
   if(/expired|invalid oauth|access token|session has been invalidated|reauth|not active|inactive|revoked/.test(text))return new ComposioError('A conexão com o Instagram expirou. Reconecte em Marca › Instagram.',{status,code:'reconnect'});

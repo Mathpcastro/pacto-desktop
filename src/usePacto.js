@@ -67,8 +67,9 @@ export function usePacto() {
         return result;
       } catch (err) {
         if (action === "bootstrap") setBootstrapFailed(true);
+        // O Electron prefixa "Error invoking remote method 'pacto:request': Error:"; a pessoa vê só a mensagem.
         setError(
-          err?.message ||
+          String(err?.message || "").replace(/^Error invoking remote method '[^']+': (?:\w*Error: )?/, "") ||
             "Não foi possível concluir esta ação. Tente novamente.",
         );
         throw err;

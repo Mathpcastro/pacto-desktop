@@ -50,7 +50,7 @@ export function InstagramButton({ composio, onOpen }) {
 const STEPS = [
   ["Conta Profissional", "No app do Instagram: Configurações › Tipo de conta e ferramentas › Mudar para conta profissional (Criador de conteúdo ou Empresa). Contas pessoais não podem postar por aplicativo."],
   ["Conta grátis no Composio", "O Composio é a ponte segura entre o Carrossell e o Instagram. Crie a sua conta em composio.dev."],
-  ["Copie a chave de API", "No Composio, abra Settings › API Keys, crie uma chave e cole aqui embaixo. Ela fica cifrada neste computador."],
+  ["Copie a chave do projeto", "No Composio, abra Settings › Project Settings › API Keys e copie a chave do projeto. A de \"AI Clients\" (a do MCP) não serve. Ela fica cifrada neste computador."],
   ["Escolha as contas", "As contas do Instagram que você já conectou no Composio aparecem na lista, sem reconectar. Para outra, use Conectar outra conta."],
 ];
 

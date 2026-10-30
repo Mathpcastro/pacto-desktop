@@ -30,10 +30,10 @@ function fakeFetch({ tools = {}, fail = {} } = {}) {
   const fetch = async (url, init = {}) => {
     const path = url.replace("https://backend.composio.dev/api/v3.1", "");
     const body = init.body && typeof init.body === "string" ? JSON.parse(init.body) : init.body;
-    calls.push({ method: init.method, path, body });
+    calls.push({ method: init.method, path, body, headers: init.headers });
     const json = (value, code = 200) => ({ ok: code < 400, status: code, text: async () => JSON.stringify(value) });
     if (url.startsWith("https://storage.composio.dev/")) return { ok: true, status: 200, text: async () => "" };
-    if (init.headers?.["x-api-key"] !== KEY) return json({ error: { message: "Invalid API key" } }, 401);
+    if (init.headers?.["x-api-key"] !== KEY) return json({ error: { message: `Invalid API key: ${init.headers["x-api-key"].slice(0, 3)}**${init.headers["x-api-key"].slice(-4)}` } }, 401);
     if (path === "/tool_router/session") return json({ session_id: "trs_1" });
     if (path.endsWith("/link")) {
       accounts.push({ ...NEW, user_id: "carrossell-novo", status: "ACTIVE" });
@@ -117,7 +117,9 @@ test("Composio data comes in several shapes and errors become instructions", () 
 test("saving the key brings every Instagram already connected in Composio, without reconnecting", async (t) => {
   const ctx = await setup(t);
   await assert.rejects(ctx.runtime.request("saveComposioKey", { key: "curta" }), /não parece uma chave/);
-  await assert.rejects(ctx.runtime.request("saveComposioKey", { key: "ak_errada_123456" }), /chave do Composio não foi aceita/);
+  await assert.rejects(ctx.runtime.request("saveComposioKey", { key: "ak_errada_123456" }), /não aceitou a chave \(ak_\*\*3456\)\. Use a chave do PROJETO: em composio\.dev, abra Settings › Project Settings › API Keys/);
+  await assert.rejects(ctx.runtime.request("saveComposioKey", { key: "uak_minha_chave_123456" }), /chave de usuário \(começa com uak_\)/);
+  assert.equal(ctx.api.calls.filter((c) => c.headers?.["x-api-key"]?.startsWith("uak_")).length, 0, "a chave de usuário nem é enviada");
   const status = await ctx.runtime.request("saveComposioKey", { key: KEY });
   assert.deepEqual(status.accounts.map((a) => [a.username, a.status]), [["ana.doces", "ACTIVE"], ["loja.oficial", "ACTIVE"], ["eu.pessoal", "personal"]], "contas expiradas ficam de fora; a pessoal aparece explicando");
   assert.match(status.accounts[2].error, /contas Profissionais/);
