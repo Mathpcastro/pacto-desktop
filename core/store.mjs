@@ -64,8 +64,11 @@ function cardCount(value){const n=Number(value||0);if(!CARD_COUNTS.includes(n))t
 const defaultSettings=()=>({weeklyGoal:5,driveFolder:'',firstCompletedAt:'',lastReminderAt:''});
 // Feedback da pessoa para a ferramenta: entra em todas as gerações seguintes da área marcada.
 export const FEEDBACK_AREAS=['texto','visual','geral'];
+// Conta do Instagram ligada a este perfil pelo Composio (a chave do Composio fica fora da biblioteca).
+const emptyInstagram=()=>({connectedAccountId:'',igUserId:'',username:'',connectedAt:'',pendingAccountId:'',followers:null});
+const INSTAGRAM_TEXT=['connectedAccountId','igUserId','username','connectedAt','pendingAccountId'];
 export class Store {
-  constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],media:emptyMedia(),feedback:[],settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
+  constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],media:emptyMedia(),feedback:[],instagram:emptyInstagram(),settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
   async init(){
     await mkdir(join(this.root,'images'),{recursive:true});
     try{this.data=JSON.parse(await readFile(join(this.root,'state.json'),'utf8'));if(!Array.isArray(this.data.projects))throw Error();}
@@ -75,6 +78,7 @@ export class Store {
     if(!Array.isArray(this.data.feedback))this.data.feedback=[];
     this.data.settings={...defaultSettings(),...this.data.settings};
     this.data.media={...emptyMedia(),...this.data.media};
+    this.data.instagram={...emptyInstagram(),...this.data.instagram};
     // Cada cena guarda uma série de fotos do mesmo ambiente; a primeira é a capa da série.
     for(const sc of this.data.media.scenes){if(!Array.isArray(sc.images))sc.images=sc.image?[sc.image]:[];}
     if(!Array.isArray(this.data.media.assets))this.data.media.assets=[];
@@ -183,6 +187,16 @@ export class Store {
       else throw new Error('Campo da marca não permitido.');
     }
     this.data.media=next;await this.persist();return this.media();
+  }
+  instagram(){return structuredClone(this.data.instagram);}
+  async saveInstagram(patch){
+    const next=patch===null?emptyInstagram():this.instagram();
+    for(const [key,value] of Object.entries(patch||{})){
+      if(INSTAGRAM_TEXT.includes(key))next[key]=text(String(value??''),200);
+      else if(key==='followers')next.followers=value===null?null:Number(value)||0;
+      else throw new Error('Campo do Instagram não permitido.');
+    }
+    this.data.instagram=next;await this.persist();return this.instagram();
   }
   feedback(){return structuredClone(this.data.feedback);}
   async addFeedback({text:value,area='geral',projectId=''}){

@@ -3,6 +3,7 @@ import { Check, ImagePlus, Plus, RefreshCw, Scissors, Sparkles, Square, Trash2, 
 import { palette, slideHtml } from "../../core/templates.mjs";
 import { Grow, Markdown, Spinner, TEMPLATE_FONTS, TemplateFrame } from "../ui.jsx";
 import AgentSetup from "./AgentSetup.jsx";
+import { InstagramSetup } from "./Instagram.jsx";
 
 function DocSection({ title, value, onSave, hint, extra }) {
   const [editing, setEditing] = useState(false);
@@ -407,6 +408,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           </div>
         </section>
       </div>
+      <InstagramSetup state={state} request={request} isPending={isPending} onNotice={onNotice} />
       <AgentSetup request={request} isPending={isPending} onNotice={onNotice} />
     </main>
   );

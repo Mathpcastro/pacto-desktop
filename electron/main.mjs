@@ -2,13 +2,19 @@ import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification, 
 import { reminder } from '../core/rhythm.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join, extname, resolve } from 'node:path';
-import { readFile, writeFile, stat } from 'node:fs/promises';
+import { readFile, writeFile, stat, mkdir, rm } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { homedir } from 'node:os';
 import { validateReference } from '../core/store.mjs';
 import { Profiles } from '../core/profiles.mjs';
 import { CodexClient, safeError } from '../core/codex.mjs';
 import { Runtime, ACTIONS } from '../core/runtime.mjs';
 import { loadKnowledge } from '../core/knowledge.mjs';
-import { normalizeExport, normalizeFiles } from '../core/export.mjs';
+import { normalizeExport, normalizeFiles, jpegCards } from '../core/export.mjs';
+import { OsScheduler, SCHEDULE_FLAG } from '../core/schedule.mjs';
+import { createSecrets } from './secrets.mjs';
+import { Composio, COMPOSIO_BASE } from '../core/composio.mjs';
 import { startUpdates } from './updater.mjs';
 import { configureIdentity } from './identity.mjs';
 import { createRenderer } from './render.mjs';
@@ -27,7 +33,7 @@ const headless=process.argv.includes(BACKGROUND);
 const primary=app.requestSingleInstanceLock();
 if(!primary)app.quit();
 const IDLE_MS=Number(process.env.PACTO_IDLE_MS)||10*60*1000;
-let window,runtime,codex,updates,control,showUI,awaitingLogin=false,lastActivity=Date.now();
+let window,runtime,codex,updates,control,showUI,publishDue,awaitingLogin=false,lastActivity=Date.now();
 function emit(event){lastActivity=Date.now();if(window&&!window.isDestroyed())window.webContents.send('pacto:event',event);control?.broadcast(event);}
 const windowOpen=()=>Boolean(window&&!window.isDestroyed());
 function authUrlAllowed(raw){try{const u=new URL(raw);return u.protocol==='https:'&&['auth.openai.com','auth0.openai.com','chatgpt.com','auth.chatgpt.com'].includes(u.hostname);}catch{return false;}}
@@ -73,7 +79,12 @@ function appMenu(){
   const mac=process.platform==='darwin'?[{label:'Carrossell',submenu:[{role:'about',label:'Sobre o Carrossell'},{type:'separator'},{role:'hide',label:'Ocultar'},{role:'quit',label:'Sair'}]}]:[];
   return Menu.buildFromTemplate([...mac,edit,view,{label:'Janela',submenu:[{label:'Minimizar',role:'minimize'},{label:'Fechar',role:'close'}]}]);
 }
-app.on('second-instance',(_event,argv)=>{if(!argv.includes(BACKGROUND))void showUI?.();});
+app.on('second-instance',(_event,argv)=>{if(argv.includes(SCHEDULE_FLAG))void publishDue?.();else if(!argv.includes(BACKGROUND))void showUI?.();});
+// Link de conexão do Instagram: só https do Composio, Instagram ou Facebook abre no navegador.
+// Só em desenvolvimento: PACTO_COMPOSIO_URL aponta para um Composio falso local (provas de interface) e o link não abre o navegador.
+const fakeComposio=!app.isPackaged&&/^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.PACTO_COMPOSIO_URL||'')?process.env.PACTO_COMPOSIO_URL:'';
+function openAuth(raw){if(fakeComposio)return console.log(`Link de conexão (teste): ${raw}`);const u=new URL(raw);if(u.protocol!=='https:'||!['composio.dev','instagram.com','facebook.com'].some(d=>u.hostname===d||u.hostname.endsWith(`.${d}`)))throw new Error('Link de conexão inválido.');return shell.openExternal(u.href);}
+const notify=(title,body)=>{if(Notification.isSupported())new Notification({title,icon:join(root,'resources','branding','icon-256.png'),body}).show();};
 app.whenReady().then(async()=>{
   if(!primary)return;
   if(headless)app.dock?.hide();
@@ -81,7 +92,9 @@ app.whenReady().then(async()=>{
   const profiles=await new Profiles(join(app.getPath('userData'),'library')).init();const store=await profiles.store();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
   codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
   const render=createRenderer({folder:join(app.getPath('userData'),'render'),fontsDir:join(root,'node_modules','@fontsource','archivo','files')});
-  runtime=new Runtime({store,profiles,codex,knowledge,emit,dialogs:{login,render,readPage,cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),
+  const run=promisify(execFile);
+  const scheduler=new OsScheduler({exe:process.execPath,args:app.isPackaged?[BACKGROUND]:[root,BACKGROUND],run:(cmd,args)=>run(cmd,args,{windowsHide:true}),writeFile:async(file,data)=>{await mkdir(dirname(file),{recursive:true});await writeFile(file,data);},rm:file=>rm(file,{force:true}),tempDir:app.getPath('temp'),agentsDir:join(homedir(),'Library','LaunchAgents'),uid:process.getuid?.()??0});
+  runtime=new Runtime({store,profiles,codex,knowledge,emit,instagram:{composio:options=>new Composio({...options,base:fakeComposio?`${fakeComposio}/api/v3.1`:COMPOSIO_BASE})},dialogs:{login,render,readPage,cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),secrets:createSecrets(app.getPath('userData')),scheduler,openAuth,toJpeg:pngs=>jpegCards(pngs,nativeImage),
     async savePdf(project,bytes){const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'documento';const result=await dialog.showSaveDialog(window,{title:'Salvar PDF',defaultPath:`${suggested}.pdf`,filters:[{name:'PDF',extensions:['pdf']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,bytes);return {path:result.filePath};},
     async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:'Exportar carrossel',defaultPath:`${suggested}.zip`,filters:[{name:'Carrossel ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
     async normalizeFiles(files){return normalizeFiles(files,nativeImage);},
@@ -98,6 +111,15 @@ app.whenReady().then(async()=>{
   });
   try{control=await startControl({userData:app.getPath('userData'),runtime,allowed:ACTIONS,version:app.getVersion(),headless,info:()=>({window:windowOpen()&&window.isVisible()}),onActivity:()=>{lastActivity=Date.now();}});}
   catch(error){console.error(`Controle local indisponível: ${safeError(error).message}`);}
+  // Posts agendados vencidos (tarefa do sistema ou computador que estava desligado) e métricas do Instagram.
+  publishDue=async()=>{
+    try{const r=await runtime.request('publishDue');if(r.published.length)notify('Carrossell · post publicado',r.published.length>1?`${r.published.length} carrosséis agendados foram publicados no Instagram.`:'O carrossel agendado foi publicado no Instagram.');for(const f of r.failed)notify('Carrossell · o post agendado não saiu',f.error);if(r.late.length)notify('Carrossell · post agendado atrasado','O computador estava desligado na hora marcada. Abra o Carrossell para postar agora ou cancelar.');}
+    catch(error){console.error(`Agendados: ${safeError(error).message}`);}
+    if(headless&&process.argv.includes(SCHEDULE_FLAG)&&!windowOpen()&&!control?.clients()&&!runtime.job)app.quit();
+  };
+  const metrics=async()=>{if(!runtime.dialogs.secrets.hasKey())return;for(const p of profiles.list())await runtime.request('refreshMetrics',{profileId:p.id}).catch(()=>{});};
+  void publishDue();
+  setTimeout(()=>void metrics(),60000).unref();setInterval(()=>void metrics(),30*60000).unref();
   // Sem janela, sem trabalho e sem CLI conectada por 10 minutos: fecha.
   setInterval(()=>{if(!windowOpen()&&!runtime.job&&!control?.clients()&&Date.now()-lastActivity>IDLE_MS)app.quit();},Math.min(30000,IDLE_MS)).unref();
   let started=false;

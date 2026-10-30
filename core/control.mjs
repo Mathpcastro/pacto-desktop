@@ -31,7 +31,7 @@ export function projectSummary(p){
   const last=[...(p.messages||[])].reverse().find(m=>m.role==='assistant');
   return {id:p.id,title:p.title,format:p.format,style:p.style,status:p.status,error:p.error||null,textApproved:Boolean(p.textApproved),brief:p.brief,caption:p.caption||'',cardCount:p.cardCount||0,
     slides:(p.slides||[]).map(s=>({id:s.id,index:s.index,role:s.role,title:s.title,body:s.body,emphasis:s.emphasis||'',layout:s.layout||'',state:s.state||'draft',image:Boolean(s.image)})),
-    coverOptions:(p.coverOptions||[]).map((o,i)=>({n:i+1,id:o.id})),lastReply:last?.text||'',publishedAt:p.publishedAt||null,results:p.results||null,createdAt:p.createdAt,updatedAt:p.updatedAt};
+    coverOptions:(p.coverOptions||[]).map((o,i)=>({n:i+1,id:o.id})),lastReply:last?.text||'',instagram:p.instagram?{mediaId:p.instagram.mediaId,permalink:p.instagram.permalink,publishedAt:p.instagram.publishedAt,username:p.instagram.username,metrics:p.instagram.metrics||null,metricsAt:p.instagram.metricsAt||null}:null,schedule:p.schedule||null,publishedAt:p.publishedAt||null,results:p.results||null,createdAt:p.createdAt,updatedAt:p.updatedAt};
 }
 function statusSummary(state,job){
   return {account:state.account,profileId:state.profileId,profiles:state.profiles,job:job?{projectId:job.id,kind:job.kind}:null,brand:Boolean(state.profile),brandName:state.profile?.brand||state.brandInfo?.name||'',

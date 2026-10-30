@@ -7,8 +7,9 @@ import { ShareServer } from './share.mjs';
 import { asUrl, setupPrompt, parseSetup, pageSummary } from './setup.mjs';
 import { findDriveFolders, writeCarouselFolder } from './drive.mjs';
 import { MAIN_PROFILE } from './profiles.mjs';
+import { Social } from './social.mjs';
 import { TEMPLATE_STYLES, FACE_STYLES, SIZES, LAYOUTS, palette, slideHtml, documentHtml, imagesPdfHtml } from './templates.mjs';
-export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli'];
+export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli','instagramStatus','saveComposioKey','removeComposioKey','connectInstagram','checkInstagram','disconnectInstagram','publishInstagram','schedulePost','cancelSchedule','publishDue','refreshMetrics','instagramPosts','openPermalink'];
 export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma oferta'];
 // Problemas da Correção Visual Rápida (Aula 05), oferecidos como botões no editor.
 export const VISUAL_FIXES=['Texto vertical ou empilhado','Título pequeno','Texto excessivo','Hierarquia ruim','Falta CTA','Erro de ortografia','Ilustração não combina','Fora da identidade visual'];
@@ -37,7 +38,7 @@ const INSTRUCTION_BODY=/^\s*(fun[cç][aã]o|objetivo|card\s*\d+|descri[cç][aã]
 function parse(result,message){try{return JSON.parse(String(result.text||'').replace(/^```(?:json)?\s*|\s*```$/g,''));}catch{throw new Error(message);}}
 function count(value,min,max){const n=Number(value);if(!Number.isInteger(n)||n<min||n>max)throw new Error('Número inválido.');return n;}
 export class Runtime {
-  constructor({store,profiles=null,codex,knowledge,emit=()=>{},dialogs={},share=()=>new ShareServer(),drive={find:findDriveFolders,write:writeCarouselFolder}}){this.scope=new AsyncLocalStorage();this.profiles=profiles;this.store=store;this.codex=codex;this.knowledge=knowledge;this.emit=event=>emit({...event,profileId:this.profileId()});this.dialogs=dialogs;this.shareFactory=share;this.drive=drive;this.job=null;this.sharing=null;}
+  constructor({store,profiles=null,instagram={},codex,knowledge,emit=()=>{},dialogs={},share=()=>new ShareServer(),drive={find:findDriveFolders,write:writeCarouselFolder}}){this.scope=new AsyncLocalStorage();this.profiles=profiles;this.social=new Social(this,instagram);this.store=store;this.codex=codex;this.knowledge=knowledge;this.emit=event=>emit({...event,profileId:this.profileId()});this.dialogs=dialogs;this.shareFactory=share;this.drive=drive;this.job=null;this.sharing=null;}
   // Cópias normalizadas (1080×1350) para celular e Drive; o ZIP usa a mesma lista.
   async exportedFiles(id){const files=this.store.exportFiles(id);return this.dialogs.normalizeFiles?await this.dialogs.normalizeFiles(files):files;}
   lessonStories(){const lesson=this.knowledge.lessons?.find(l=>l.id==='bvDw6TPoU8I')?.text||'';const at=lesson.toLowerCase().indexOf('stories');return at<0?'':lesson.slice(Math.max(0,at-300),at+1500);}
@@ -164,7 +165,7 @@ export class Runtime {
   profileList(){return this.profiles?this.profiles.list():[{id:MAIN_PROFILE,name:'Principal'}];}
   // A janela segue o perfil ativo mesmo quando a troca vem da CLI.
   announceProfile(){return this.scope.exit(()=>{const state=this.state();this.emit({type:'profile',state});return state;});}
-  state(){return {...this.store.state(),...this.codex.status,profileId:this.profileId(),profiles:this.profileList(),architectures:(this.knowledge.data?.architectures||[]).map(({id,name,useWhen,cards})=>({id,name,useWhen,cards:cards.map(c=>c.function)})),designPresets:DESIGN_PRESETS,goals:GOALS,visualFixes:VISUAL_FIXES,interviewing:this.job?.id==='onboarding'?this.job.kind:null,working:this.job&&['onboarding','ideas','media'].includes(this.job.id)?this.job.kind:null,brandInfo:this.brand(),course:this.knowledge.lessons.map(({id,title,url})=>({id,title,url})),courseMoments:this.knowledge.moments||[],knowledge:{lessons:this.knowledge.lessons.length,transcribed:this.knowledge.lessons.filter(l=>l.transcribed).length}};}
+  state(){return {...this.store.state(),...this.codex.status,profileId:this.profileId(),profiles:this.profileList(),composio:{hasKey:Boolean(this.dialogs.secrets?.hasKey?.())},architectures:(this.knowledge.data?.architectures||[]).map(({id,name,useWhen,cards})=>({id,name,useWhen,cards:cards.map(c=>c.function)})),designPresets:DESIGN_PRESETS,goals:GOALS,visualFixes:VISUAL_FIXES,interviewing:this.job?.id==='onboarding'?this.job.kind:null,working:this.job&&['onboarding','ideas','media'].includes(this.job.id)?this.job.kind:null,brandInfo:this.brand(),course:this.knowledge.lessons.map(({id,title,url})=>({id,title,url})),courseMoments:this.knowledge.moments||[],knowledge:{lessons:this.knowledge.lessons.length,transcribed:this.knowledge.lessons.filter(l=>l.transcribed).length}};}
   publish(project){this.emit({type:'project',project});return project;}
   async update(id,patch){return this.publish(await this.store.update(id,patch));}
   ensureIdle(id){if(this.job&&(!id||this.job.id===id))throw new Error('Aguarde ou cancele a operação em andamento.');}
@@ -330,6 +331,19 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
   async handle(action,args){
     switch(action){
       case 'bootstrap':return this.state();
+      case 'instagramStatus':return this.social.status();
+      case 'saveComposioKey':return this.social.saveKey(args.key);
+      case 'removeComposioKey':return this.social.removeKey();
+      case 'connectInstagram':return this.social.connect();
+      case 'checkInstagram':return this.social.check();
+      case 'disconnectInstagram':return this.social.disconnect();
+      case 'publishInstagram':return this.social.publish(args.id,{again:args.again===true});
+      case 'schedulePost':return this.social.schedule(args.id,args.at);
+      case 'cancelSchedule':return this.social.unschedule(args.id);
+      case 'publishDue':return this.social.publishDue({includeLate:args.includeLate===true});
+      case 'refreshMetrics':return this.social.refreshMetrics(args.id?{id:args.id}:{});
+      case 'instagramPosts':return this.social.posts(args.limit);
+      case 'openPermalink':{const u=new URL(text(String(args.url||''),500));if(u.protocol!=='https:'||!(u.hostname==='instagram.com'||u.hostname.endsWith('.instagram.com')))throw new Error('Link do Instagram inválido.');await this.dialogs.openAuth?.(u.href);return {ok:true};}
       case 'cliInfo':if(!this.dialogs.cliInfo)throw new Error('Disponível só no aplicativo.');return this.dialogs.cliInfo();
       case 'installCli':if(!this.dialogs.installCli)throw new Error('Disponível só no aplicativo.');return this.dialogs.installCli();
       case 'profiles':return {active:this.profiles?.active||MAIN_PROFILE,profiles:this.profileList()};

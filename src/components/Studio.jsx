@@ -23,6 +23,7 @@ import {
 import { CourseContext } from "../course.jsx";
 import { documentHtml, slideHtml, SIZES, TEMPLATE_STYLES, LAYOUTS } from "../../core/templates.mjs";
 import Dialog from "./Dialog.jsx";
+import { InstagramMetrics, InstagramPost } from "./Instagram.jsx";
 import { FORMAT_LABEL, Grow, STYLE_SHORT, Spinner, TEMPLATE_FONTS, TemplateFrame, copyText, usePopover } from "../ui.jsx";
 
 export function stageOf(p) {
@@ -807,6 +808,7 @@ export default function Studio({ project, state, request, pending, activity, onB
                     </div>
                     {tab === "enviar" && (
                       <>
+                        <InstagramPost project={project} state={state} request={request} isPending={(a) => pending.some((p) => p.action === a)} activity={activity} onNotice={onNotice} onBrand={onBrand} />
                         <div className="split">
                           <button className="btn primary" onClick={() => setSharing(true)}>
                             <Smartphone size={17} /> Enviar para o celular
@@ -930,7 +932,12 @@ export default function Studio({ project, state, request, pending, activity, onB
                         <p className="hint">A arte é opcional: gere só a dos stories que você quiser, para economizar o limite da conta.</p>
                       </>
                     )}
-                    {tab === "resultado" && <Result project={project} request={request} onNotice={onNotice} connected={connected} />}
+                    {tab === "resultado" && (
+                      <>
+                        <InstagramMetrics project={project} request={request} isPending={(a) => pending.some((p) => p.action === a)} onNotice={onNotice} />
+                        <Result key={project.results?.recordedAt || "manual"} project={project} request={request} onNotice={onNotice} connected={connected} />
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

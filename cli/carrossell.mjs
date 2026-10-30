@@ -39,6 +39,13 @@ Uso: carrossell <comando> [opções]   (saída em JSON)
   esperar <id> [--timeout <s>]   espera a geração terminar
   cancelar                       para o trabalho em andamento
   exportar <id> --pasta <dir>    grava 01.png, 02.png... e legenda.txt na pasta
+  instagram [conectar]           conta do Instagram deste perfil (conectar abre o navegador)
+  postar <id> --confirmar [--em "2026-11-02 18:00"]
+                                 publica agora no Instagram, ou agenda com --em
+  agendados                      posts agendados deste perfil
+  cancelar-agendamento <id>      cancela um post agendado
+  metricas [<id>]                números do Instagram (atualiza o carrossel indicado)
+  posts-instagram [--limite 25]  posts recentes da conta, para o Replicador
   chamar <ação> [--json '<args>'] qualquer ação do app (veja API.md)
   ajuda [--agente]               esta ajuda ou o guia para agentes
 
@@ -150,6 +157,29 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir()}={
       case 'esperar':out(await waitFor(client,profileId,needId(rest[0],'esperar'),timeout));break;
       case 'cancelar':await client.call('cancelWork',scoped());out(await client.call('status',scoped()));break;
       case 'exportar':{const id=needId(rest[0],'exportar');if(typeof flags.pasta!=='string')throw new Usage('Use: carrossell exportar <id> --pasta <caminho absoluto>');out(await client.call('exportTo',scoped({id,folder:resolve(flags.pasta)})));break;}
+      case 'instagram':{
+        if(rest[0]==='conectar'){
+          const s=await client.call('connectInstagram',scoped());say(`Autorize no navegador que abriu (ou abra: ${s.url}). Esperando até 10 minutos…`);
+          for(let i=0;i<200;i++){await sleep(3000);const c=await client.call('checkInstagram',scoped());if(c.account||!c.pending){out(c);return EXIT.ok;}}
+          const error=new Error('A conexão não foi concluída em 10 minutos. Rode "carrossell instagram conectar" de novo.');error.code=EXIT.timeout;throw error;
+        }
+        out(await client.call('instagramStatus',scoped()));break;
+      }
+      case 'postar':{
+        const id=needId(rest[0],'postar');
+        if(!flags.confirmar)throw new Usage('Postar publica no Instagram para todo mundo ver. Confira o carrossel (carrossell projeto <id>) e repita com --confirmar.');
+        if(typeof flags.em==='string'){out(await client.call('schedulePost',scoped({id,at:flags.em})));break;}
+        say('Postando no Instagram…');await client.subscribe(e=>e.type==='activity'&&e.message&&say(`… ${e.message}`));
+        await client.call('publishInstagram',scoped({id}));out(await client.call('project',scoped({id})));break;
+      }
+      case 'agendados':out((await client.call('instagramStatus',scoped())).scheduled);break;
+      case 'cancelar-agendamento':{const id=needId(rest[0],'cancelar-agendamento');await client.call('cancelSchedule',scoped({id}));out(await client.call('project',scoped({id})));break;}
+      case 'metricas':{
+        if(rest[0]){await client.call('refreshMetrics',scoped({id:rest[0]}));out((await client.call('project',scoped({id:rest[0]}))).instagram);break;}
+        const list=await client.call('projects',scoped());const all=[];for(const p of list){const d=await client.call('project',scoped({id:p.id}));if(d.instagram)all.push({id:d.id,title:d.title,...d.instagram});}
+        out(all);break;
+      }
+      case 'posts-instagram':out(await client.call('instagramPosts',scoped({limit:Number(flags.limite||25)})));break;
       case 'chamar':{const action=rest[0];if(!action)throw new Usage('Use: carrossell chamar <ação> [--json \'{...}\']');out(await client.call(action,scoped(typeof flags.json==='string'?json(flags.json,'--json'):{})));break;}
       default:throw new Usage(`Comando desconhecido: ${cmd}. Veja "carrossell ajuda".`);
     }

@@ -26,3 +26,8 @@ export function normalizeFiles(input,nativeImage){
   return output;
 }
 export function normalizeExport(zipBytes,nativeImage){return zipSync(normalizeFiles(unzipSync(zipBytes),nativeImage),{level:0});}
+// Instagram só aceita JPEG: os cards passam pela mesma normalização (4:5 → 1080×1350) e saem em JPEG.
+export function jpegCards(pngs,nativeImage,quality=92){
+  const named=Object.fromEntries(pngs.map((bytes,i)=>[`${String(i+1).padStart(2,'0')}.png`,bytes]));
+  return Object.values(normalizeFiles(named,nativeImage)).map(png=>nativeImage.createFromBuffer(png).toJPEG(quality));
+}
