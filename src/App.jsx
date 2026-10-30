@@ -8,6 +8,7 @@ import Home from "./components/Home.jsx";
 import Brand from "./components/Brand.jsx";
 import Studio from "./components/Studio.jsx";
 import CommandPalette from "./components/CommandPalette.jsx";
+import ProfileSwitcher from "./components/ProfileSwitcher.jsx";
 import { CourseContext, LessonPlayer, formatMoment } from "./course.jsx";
 import { rhythm } from "../core/rhythm.mjs";
 import { Spinner, usePopover } from "./ui.jsx";
@@ -123,9 +124,10 @@ export default function App() {
       { id: "theme", label: preferences.theme === "dark" ? "Usar tema claro" : "Usar tema escuro", run: () => set({ theme: preferences.theme === "dark" ? "light" : "dark" }) },
       { id: "course", label: "Abrir as aulas do método", hint: "Opcional", run: () => setCourseOpen(true) },
       { id: "account", label: connected ? "Desconectar a conta ChatGPT" : "Conectar a conta ChatGPT", run: () => request(connected ? "disconnect" : "connect").catch(() => {}) },
+      ...(state.profiles || []).filter((p) => p.id !== state.profileId).map((p) => ({ id: `profile-${p.id}`, label: `Trocar para o perfil ${p.name}`, hint: "Perfis", run: () => request("switchProfile", { id: p.id }).then(goHome).catch(() => {}) })),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [projectCommands, editing, connected, preferences.theme],
+    [projectCommands, editing, connected, preferences.theme, state.profiles, state.profileId],
   );
   const accountMenu = (
     <div className="pop-anchor">
@@ -265,6 +267,7 @@ export default function App() {
                 <img src={brandMark} alt="" />
                 carrossell
               </button>
+              {available && !loading && !bootstrapFailed && <ProfileSwitcher state={state} request={request} isPending={isPending} menu={menu} onSwitched={goHome} />}
               {hasProfile && available && !setup && (
                 <nav className="topnav" aria-label="Navegação principal">
                   <button aria-current={view !== "brand" ? "page" : undefined} onClick={goHome}>

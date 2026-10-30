@@ -1,4 +1,4 @@
-import { createContext, useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 
 export const RuntimeErrorContext = createContext("");
 
@@ -23,6 +23,9 @@ const initial = {
   courseMoments: [],
 };
 
+// Ações que valem para o app inteiro ou que escolhem o perfil; as demais levam o perfil que a janela mostra.
+const UNSCOPED = new Set(["bootstrap", "profiles", "createProfile", "renameProfile", "switchProfile", "deleteProfile", "installUpdate"]);
+
 export function usePacto() {
   const available = typeof window.pacto?.request === "function";
   const [state, setState] = useState(initial);
@@ -32,9 +35,14 @@ export function usePacto() {
   const [activity, setActivity] = useState("");
   const [update, setUpdate] = useState(null);
   const [pending, setPending] = useState([]);
+  // Perfil exibido: a CLI pode trabalhar em outro perfil ao mesmo tempo sem bagunçar esta janela.
+  const shown = useRef("");
   const accept = useCallback((result) => {
     if (!result || typeof result !== "object") return;
-    if (Array.isArray(result.projects)) setState({ ...initial, ...result });
+    if (Array.isArray(result.projects)) {
+      shown.current = result.profileId || "";
+      setState({ ...initial, ...result });
+    }
     else if (result.id && Array.isArray(result.slides))
       setState((prev) => ({
         ...prev,
@@ -52,8 +60,10 @@ export function usePacto() {
       setError("");
       if (action === "bootstrap") setBootstrapFailed(false);
       try {
-        const result = await window.pacto.request(action, args);
-        accept(result);
+        const scoped = !UNSCOPED.has(action) && shown.current ? { ...args, profileId: shown.current } : args;
+        const result = await window.pacto.request(action, scoped);
+        // Resposta que chega depois de trocar de perfil pertence ao perfil anterior: não entra na tela.
+        if (!scoped.profileId || scoped.profileId === shown.current) accept(result);
         return result;
       } catch (err) {
         if (action === "bootstrap") setBootstrapFailed(true);
@@ -73,6 +83,8 @@ export function usePacto() {
     let alive = true;
     const unsubscribe = window.pacto.onEvent?.((event) => {
       if (!alive) return;
+      if (event.type === "profile") return accept(event.state);
+      if (event.profileId && shown.current && event.profileId !== shown.current) return;
       if (event.type === "state") accept(event.state);
       if (event.type === "project") accept(event.project);
       if (event.type === "activity") setActivity(event.message || "");

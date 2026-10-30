@@ -3,7 +3,8 @@ import { reminder } from '../core/rhythm.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join, extname, resolve } from 'node:path';
 import { readFile, writeFile, stat } from 'node:fs/promises';
-import { Store, validateReference } from '../core/store.mjs';
+import { validateReference } from '../core/store.mjs';
+import { Profiles } from '../core/profiles.mjs';
 import { CodexClient, safeError } from '../core/codex.mjs';
 import { Runtime, ACTIONS } from '../core/runtime.mjs';
 import { loadKnowledge } from '../core/knowledge.mjs';
@@ -63,10 +64,10 @@ function appMenu(){
 }
 app.whenReady().then(async()=>{
   Menu.setApplicationMenu(appMenu());
-  const storage=join(app.getPath('userData'),'library');const store=await new Store(storage).init();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
+  const profiles=await new Profiles(join(app.getPath('userData'),'library')).init();const store=await profiles.store();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
   codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
   const render=createRenderer({folder:join(app.getPath('userData'),'render'),fontsDir:join(root,'node_modules','@fontsource','archivo','files')});
-  runtime=new Runtime({store,codex,knowledge,emit,dialogs:{login,render,readPage,
+  runtime=new Runtime({store,profiles,codex,knowledge,emit,dialogs:{login,render,readPage,
     async savePdf(project,bytes){const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'documento';const result=await dialog.showSaveDialog(window,{title:'Salvar PDF',defaultPath:`${suggested}.pdf`,filters:[{name:'PDF',extensions:['pdf']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,bytes);return {path:result.filePath};},
     async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:'Exportar carrossel',defaultPath:`${suggested}.zip`,filters:[{name:'Carrossel ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
     async normalizeFiles(files){return normalizeFiles(files,nativeImage);},
@@ -84,7 +85,8 @@ app.whenReady().then(async()=>{
   await createWindow();
   updates=startUpdates({app,emit,notify:(body,title='Carrossell · atualização pronta')=>{if(Notification.isSupported())new Notification({title,icon:join(root,'resources','branding','icon-256.png'),body}).show();},open:url=>{const u=new URL(url);if(u.protocol==='https:'&&u.hostname==='github.com'||u.protocol==='http:'&&u.hostname==='127.0.0.1')return shell.openExternal(u.href);}});
   // Lembrete diário de Volume → Sinal → Repetição, só com o app aberto e resultado pendente.
-  const remind=reminder(store.state().projects,store.state().settings);
-  if(remind&&Notification.isSupported()){const note=new Notification({title:'Carrossell · hora de medir',icon:join(root,'resources','branding','icon-256.png'),body:remind});note.on('click',()=>{window?.show();window?.focus();emit({type:'navigate',view:'rhythm'});});note.show();await store.saveSettings({lastReminderAt:new Date().toISOString()});}void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
+  // Lembrete diário em qualquer perfil com resultado pendente; o primeiro encontrado avisa.
+  let remind='',remindStore=store,remindProfile=profiles.active;for(const p of profiles.list()){const s=await profiles.store(p.id).catch(()=>null);const r=s&&reminder(s.state().projects,s.state().settings);if(r){remind=profiles.list().length>1?`${p.name}: ${r}`:r;remindStore=s;remindProfile=p.id;break;}}
+  if(remind&&Notification.isSupported()){const note=new Notification({title:'Carrossell · hora de medir',icon:join(root,'resources','branding','icon-256.png'),body:remind});note.on('click',async()=>{window?.show();window?.focus();if(remindProfile!==profiles.active)await runtime.request('switchProfile',{id:remindProfile}).then(state=>emit({type:'state',state})).catch(()=>{});emit({type:'navigate',view:'rhythm'});});note.show();await remindStore.saveSettings({lastReminderAt:new Date().toISOString()});}void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
 }).catch(error=>{dialog.showErrorBox('Não foi possível abrir o Carrossell',safeError(error).message);app.quit();});
 app.on('window-all-closed',()=>app.quit());app.on('before-quit',()=>{void runtime?.sharing?.stop();codex?.stop();});

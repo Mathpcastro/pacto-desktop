@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { text, validId, validateReference, INTERVIEWS } from './store.mjs';
 import { safeError } from './codex.mjs';
 import { DESIGN_PRESETS, promptText } from './knowledge.mjs';
 import { ShareServer } from './share.mjs';
 import { asUrl, setupPrompt, parseSetup, pageSummary } from './setup.mjs';
 import { findDriveFolders, writeCarouselFolder } from './drive.mjs';
+import { MAIN_PROFILE } from './profiles.mjs';
 import { TEMPLATE_STYLES, FACE_STYLES, SIZES, LAYOUTS, palette, slideHtml, documentHtml, imagesPdfHtml } from './templates.mjs';
-export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback'];
+export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile'];
 export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma oferta'];
 // Problemas da Correção Visual Rápida (Aula 05), oferecidos como botões no editor.
 export const VISUAL_FIXES=['Texto vertical ou empilhado','Título pequeno','Texto excessivo','Hierarquia ruim','Falta CTA','Erro de ortografia','Ilustração não combina','Fora da identidade visual'];
@@ -35,7 +37,7 @@ const INSTRUCTION_BODY=/^\s*(fun[cç][aã]o|objetivo|card\s*\d+|descri[cç][aã]
 function parse(result,message){try{return JSON.parse(String(result.text||'').replace(/^```(?:json)?\s*|\s*```$/g,''));}catch{throw new Error(message);}}
 function count(value,min,max){const n=Number(value);if(!Number.isInteger(n)||n<min||n>max)throw new Error('Número inválido.');return n;}
 export class Runtime {
-  constructor({store,codex,knowledge,emit=()=>{},dialogs={},share=()=>new ShareServer(),drive={find:findDriveFolders,write:writeCarouselFolder}}){this.store=store;this.codex=codex;this.knowledge=knowledge;this.emit=emit;this.dialogs=dialogs;this.shareFactory=share;this.drive=drive;this.job=null;this.sharing=null;}
+  constructor({store,profiles=null,codex,knowledge,emit=()=>{},dialogs={},share=()=>new ShareServer(),drive={find:findDriveFolders,write:writeCarouselFolder}}){this.scope=new AsyncLocalStorage();this.profiles=profiles;this.store=store;this.codex=codex;this.knowledge=knowledge;this.emit=event=>emit({...event,profileId:this.profileId()});this.dialogs=dialogs;this.shareFactory=share;this.drive=drive;this.job=null;this.sharing=null;}
   // Cópias normalizadas (1080×1350) para celular e Drive; o ZIP usa a mesma lista.
   async exportedFiles(id){const files=this.store.exportFiles(id);return this.dialogs.normalizeFiles?await this.dialogs.normalizeFiles(files):files;}
   lessonStories(){const lesson=this.knowledge.lessons?.find(l=>l.id==='bvDw6TPoU8I')?.text||'';const at=lesson.toLowerCase().indexOf('stories');return at<0?'':lesson.slice(Math.max(0,at-300),at+1500);}
@@ -155,7 +157,14 @@ export class Runtime {
       await this.store.saveMedia({faceOnColor:{id:face.id,color,dataUrl:`data:image/png;base64,${Buffer.from(result.images.at(-1)).toString('base64')}`}});
     });
   }
-  state(){return {...this.store.state(),...this.codex.status,architectures:(this.knowledge.data?.architectures||[]).map(({id,name,useWhen,cards})=>({id,name,useWhen,cards:cards.map(c=>c.function)})),designPresets:DESIGN_PRESETS,goals:GOALS,visualFixes:VISUAL_FIXES,interviewing:this.job?.id==='onboarding'?this.job.kind:null,working:this.job&&['onboarding','ideas','media'].includes(this.job.id)?this.job.kind:null,brandInfo:this.brand(),course:this.knowledge.lessons.map(({id,title,url})=>({id,title,url})),courseMoments:this.knowledge.moments||[],knowledge:{lessons:this.knowledge.lessons.length,transcribed:this.knowledge.lessons.filter(l=>l.transcribed).length}};}
+  // Perfil da requisição em andamento (a CLI pode trabalhar num perfil sem trocar o que a janela mostra); fora dela, o perfil ativo.
+  get store(){return this.scope.getStore()?.store||this.activeStore;}
+  set store(value){this.activeStore=value;}
+  profileId(){return this.scope.getStore()?.profileId||this.profiles?.active||MAIN_PROFILE;}
+  profileList(){return this.profiles?this.profiles.list():[{id:MAIN_PROFILE,name:'Principal'}];}
+  // A janela segue o perfil ativo mesmo quando a troca vem da CLI.
+  announceProfile(){return this.scope.exit(()=>{const state=this.state();this.emit({type:'profile',state});return state;});}
+  state(){return {...this.store.state(),...this.codex.status,profileId:this.profileId(),profiles:this.profileList(),architectures:(this.knowledge.data?.architectures||[]).map(({id,name,useWhen,cards})=>({id,name,useWhen,cards:cards.map(c=>c.function)})),designPresets:DESIGN_PRESETS,goals:GOALS,visualFixes:VISUAL_FIXES,interviewing:this.job?.id==='onboarding'?this.job.kind:null,working:this.job&&['onboarding','ideas','media'].includes(this.job.id)?this.job.kind:null,brandInfo:this.brand(),course:this.knowledge.lessons.map(({id,title,url})=>({id,title,url})),courseMoments:this.knowledge.moments||[],knowledge:{lessons:this.knowledge.lessons.length,transcribed:this.knowledge.lessons.filter(l=>l.transcribed).length}};}
   publish(project){this.emit({type:'project',project});return project;}
   async update(id,patch){return this.publish(await this.store.update(id,patch));}
   ensureIdle(id){if(this.job&&(!id||this.job.id===id))throw new Error('Aguarde ou cancele a operação em andamento.');}
@@ -304,11 +313,31 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       await this.update(id,{ctaKit:{keywords:(Array.isArray(k.keywords)?k.keywords:[]).slice(0,12).map(w=>text(String(w),80)),firstCardCta:text(String(k.firstCardCta||''),1000),lastCardCta:text(String(k.lastCardCta||''),2000),freebie:text(String(k.freebie||''),2000),dm1:text(String(k.dm1||''),4000),dm2:text(String(k.dm2||''),4000)}});
     });
   }
+  // profileId opcional em qualquer ação: roda naquele perfil, inclusive o trabalho em segundo plano que ela iniciar.
   async request(action,args={}){
     if(!ACTIONS.includes(action))throw new Error('Ação não permitida.');
     if(!args||typeof args!=='object'||Array.isArray(args)||JSON.stringify(args).length>260000000)throw new Error('Dados inválidos.');
+    const {profileId,...rest}=args;
+    if(profileId===undefined)return this.handle(action,rest);
+    if(!this.profiles)throw new Error('Perfis indisponíveis.');
+    const store=await this.profiles.store(validId(profileId));
+    return this.scope.run({store,profileId},()=>this.handle(action,rest));
+  }
+  async handle(action,args){
     switch(action){
       case 'bootstrap':return this.state();
+      case 'profiles':return {active:this.profiles?.active||MAIN_PROFILE,profiles:this.profileList()};
+      case 'createProfile':{if(!this.profiles)throw new Error('Perfis indisponíveis.');if(args.activate!==false)this.ensureIdle();const p=await this.profiles.create(args.name);if(args.activate===false)return {...this.announceProfile(),profile:p};return this.handle('switchProfile',{id:p.id});}
+      case 'renameProfile':if(!this.profiles)throw new Error('Perfis indisponíveis.');await this.profiles.rename(args.id,args.name);return this.announceProfile();
+      case 'switchProfile':{
+        if(!this.profiles)throw new Error('Perfis indisponíveis.');if(this.job)throw new Error('Aguarde ou cancele a operação em andamento antes de trocar de perfil.');
+        await this.profiles.setActive(args.id);this.store=await this.profiles.store(args.id);await this.sharing?.stop();this.sharing=null;
+        return this.announceProfile();
+      }
+      case 'deleteProfile':{
+        if(!this.profiles)throw new Error('Perfis indisponíveis.');if(this.job)throw new Error('Aguarde ou cancele a operação em andamento antes de excluir um perfil.');
+        await this.profiles.remove(args.id);this.store=await this.profiles.store();return this.announceProfile();
+      }
       case 'saveProfile':await this.store.saveProfile(args.profile);return this.state();
       case 'connect':await this.codex.connect(this.dialogs.login);return this.state();
       case 'disconnect':if(this.job)await this.request('cancelWork',{});await this.codex.disconnect();return this.state();
