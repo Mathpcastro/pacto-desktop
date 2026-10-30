@@ -9,7 +9,7 @@ Você controla o app Carrossell pelo comando \`carrossell\`. As artes são gerad
 3. \`carrossell criar --pauta "<tema e ângulo>" --cards 8\` → espera o texto. Leia \`lastReply\`: se o modelo fez perguntas, responda com \`carrossell mensagem <id> "..."\`.
 4. Revise os cards (\`carrossell projeto <id>\`). Ajuste com \`mensagem\` ou \`editar\`. Depois \`carrossell aprovar <id>\`.
 5. \`carrossell capas <id>\` → \`carrossell escolher-capa <id> <n>\` → \`carrossell gerar <id>\`.
-6. \`carrossell exportar <id> --pasta <caminho absoluto>\`, ou poste no Instagram: \`carrossell postar <id> --confirmar\` (agora) ou com \`--em "2026-11-02 18:00"\` (agendado; o computador precisa estar ligado na hora, o app pode estar fechado).
+6. \`carrossell exportar <id> --pasta <caminho absoluto>\`, ou poste no Instagram: \`carrossell instagram\` lista as contas e as padrão do perfil; \`carrossell postar <id> --confirmar --contas @conta1,@conta2\` publica agora (sem \`--contas\`, vai nas padrão) e com \`--em "2026-11-02 18:00"\` agenda (o computador precisa estar ligado na hora, o app pode estar fechado).
 7. Dias depois, \`carrossell metricas <id>\` traz curtidas, comentários, salvamentos e alcance. Use os melhores no Replicador: \`carrossell chamar replicate --json '{"id":"<id>"}'\`.
 
 ## Regras

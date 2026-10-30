@@ -211,7 +211,7 @@ function Share({ project, request }) {
   );
 }
 
-export default function Studio({ project, state, request, pending, activity, onBack, onOpen, onNotice, onCommands, onBrand }) {
+export default function Studio({ project, state, request, pending, activity, onBack, onOpen, onNotice, onCommands, onBrand, onInstagram }) {
   const course = useContext(CourseContext);
   const pop = usePopover();
   const format = project.format || "carrossel";
@@ -808,7 +808,7 @@ export default function Studio({ project, state, request, pending, activity, onB
                     </div>
                     {tab === "enviar" && (
                       <>
-                        <InstagramPost project={project} state={state} request={request} isPending={(a) => pending.some((p) => p.action === a)} activity={activity} onNotice={onNotice} onBrand={onBrand} />
+                        <InstagramPost project={project} state={state} request={request} isPending={(a) => pending.some((p) => p.action === a)} activity={activity} onNotice={onNotice} onConnect={onInstagram} />
                         <div className="split">
                           <button className="btn primary" onClick={() => setSharing(true)}>
                             <Smartphone size={17} /> Enviar para o celular

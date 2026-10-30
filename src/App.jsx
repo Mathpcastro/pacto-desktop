@@ -9,6 +9,7 @@ import Brand from "./components/Brand.jsx";
 import Studio from "./components/Studio.jsx";
 import CommandPalette from "./components/CommandPalette.jsx";
 import ProfileSwitcher from "./components/ProfileSwitcher.jsx";
+import { InstagramButton, InstagramModal } from "./components/Instagram.jsx";
 import { CourseContext, LessonPlayer, formatMoment } from "./course.jsx";
 import { rhythm } from "../core/rhythm.mjs";
 import { Spinner, usePopover } from "./ui.jsx";
@@ -48,6 +49,7 @@ export default function App() {
   const [courseOpen, setCourseOpen] = useState(false);
   const [video, setVideo] = useState(null);
   const [notice, setNotice] = useState("");
+  const [igOpen, setIgOpen] = useState(false);
   const composerRef = useRef(null);
   const menu = usePopover();
   const project = state.projects.find((p) => p.id === projectId);
@@ -122,6 +124,7 @@ export default function App() {
       { id: "radar", label: "Gerar 30 pautas com o Radar", hint: "Aula 02", disabled: !connected, run: () => (goHome(), request("radar", {}).catch(() => {})) },
       { id: "scenes", label: "Sugerir cenas para fotos simples", hint: "Marca", disabled: !connected, run: () => (setView("brand"), request("suggestScenes").catch(() => {})) },
       { id: "theme", label: preferences.theme === "dark" ? "Usar tema claro" : "Usar tema escuro", run: () => set({ theme: preferences.theme === "dark" ? "light" : "dark" }) },
+      { id: "instagram", label: "Conectar Instagram", hint: "Postar e agendar", run: () => setIgOpen(true) },
       { id: "course", label: "Abrir as aulas do método", hint: "Opcional", run: () => setCourseOpen(true) },
       { id: "account", label: connected ? "Desconectar a conta ChatGPT" : "Conectar a conta ChatGPT", run: () => request(connected ? "disconnect" : "connect").catch(() => {}) },
       ...(state.profiles || []).filter((p) => p.id !== state.profileId).map((p) => ({ id: `profile-${p.id}`, label: `Trocar para o perfil ${p.name}`, hint: "Perfis", run: () => request("switchProfile", { id: p.id }).then(goHome).catch(() => {}) })),
@@ -245,13 +248,14 @@ export default function App() {
         onNotice={setNotice}
         onCommands={setProjectCommands}
         onBrand={() => (setView("brand"), setProjectId(null))}
+        onInstagram={() => setIgOpen(true)}
       />
     );
   else
     body = (
       <main className="shell-main">
         {view === "brand" ? (
-          <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} />
+          <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} />
         ) : (
           <Home state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} composerRef={composerRef} connected={connected} />
         )}
@@ -280,6 +284,7 @@ export default function App() {
                 </nav>
               )}
               <span className="spacer" />
+              {hasProfile && available && <InstagramButton composio={state.composio} onOpen={() => setIgOpen(true)} />}
               {hasProfile && available && (
                 <button className="cmd-btn" aria-label="Abrir comandos" onClick={() => setPalette(true)}>
                   <Search size={15} />
@@ -312,6 +317,7 @@ export default function App() {
           {body}
         </div>
         {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+        {igOpen && <InstagramModal state={state} request={request} isPending={isPending} onNotice={setNotice} onClose={() => setIgOpen(false)} />}
         {(error || notice) && (
           <div className="snack" role={error ? "alert" : "status"} style={error ? { background: "var(--danger)", color: "#fff" } : undefined}>
             {error ? <AlertCircle size={17} /> : <Check size={17} />}

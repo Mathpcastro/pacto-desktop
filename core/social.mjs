@@ -3,94 +3,130 @@ import { accountInfo, fetchMetrics, nextMetricsAt, postable, publishCarousel, re
 import { duePosts, parseWhen } from './schedule.mjs';
 import { text } from './store.mjs';
 
-// Instagram pelo Composio, por perfil: a chave do Composio é do app (cifrada fora da biblioteca);
-// cada perfil liga a própria conta do Instagram e vira um "usuário" separado no Composio.
+// Instagram pelo Composio. A chave e a lista de contas são do app (fora da biblioteca): todas as contas
+// do Instagram ativas no projeto do Composio aparecem, sem reconectar. Cada perfil do Carrossell marca
+// as contas padrão, e cada post ou agendamento escolhe em quais contas sai.
 const CONNECT_TIMEOUT_MS=10*60*1000;
+const publicAccount=a=>({id:a.id,username:a.username,followers:a.followers??null,status:a.status,error:a.error||''});
 export class Social {
   constructor(runtime,{composio=options=>new Composio(options),now=()=>Date.now(),pollMs=3000}={}){
-    this.rt=runtime;this.make=composio;this.now=now;this.pollMs=pollMs;this.clients=new Map();this.posting=new Set();this.watching=new Set();
+    this.rt=runtime;this.make=composio;this.now=now;this.pollMs=pollMs;this.clients=new Map();this.posting=new Set();this.pending=null;
   }
   get secrets(){return this.rt.dialogs.secrets;}
+  // Avisa a janela (contas e padrões vivem no estado) e devolve o status.
+  changed(){this.rt.emit({type:'state',state:this.rt.state()});return this.status();}
   get store(){return this.rt.store;}
   emit(message){this.rt.emit({type:'activity',message});}
-  client(profileId=this.rt.profileId()){
-    const key=this.secrets?.getKey?.();if(!key)throw new Error('Cole a chave de API do Composio em Marca › Instagram.');
-    const userId=`carrossell-${this.secrets.installId()}-${profileId}`,cacheKey=`${key.slice(-8)}:${userId}`;
-    if(!this.clients.has(cacheKey))this.clients.set(cacheKey,this.make({apiKey:key,userId}));
-    return this.clients.get(cacheKey);
+  client(){
+    const key=this.secrets?.getKey?.();if(!key)throw new Error('Conecte o Instagram: cole a chave de API do Composio em Conectar Instagram.');
+    if(!this.clients.has(key))this.clients.set(key,this.make({apiKey:key,userId:`carrossell-${this.secrets.installId()}`}));
+    return this.clients.get(key);
   }
-  account(){const a=this.store.instagram();if(!a.connectedAccountId||!a.igUserId)throw new Error('Conecte o Instagram deste perfil em Marca › Instagram.');return a;}
+  registry(){return this.secrets?.accounts?.()||[];}
+  usable(){return this.registry().filter(a=>a.status==='ACTIVE'&&a.igUserId);}
+  find(id){const a=this.usable().find(a=>a.id===String(id));if(!a)throw new Error('Conta do Instagram não encontrada. Atualize a lista em Conectar Instagram.');return a;}
+  defaults(){const usable=this.usable();return this.store.instagram().defaults.filter(id=>usable.some(a=>a.id===id));}
+  // Contas escolhidas para um post; sem escolha, as padrão do perfil.
+  pick(ids){const list=ids===undefined||ids===null?this.defaults():ids;if(!Array.isArray(list)||!list.length)throw new Error('Escolha pelo menos uma conta do Instagram para postar.');return [...new Set(list.map(String))].map(id=>this.find(id));}
+  // Resumo que vai no estado da janela: nunca a chave, só se ela existe, as contas e as padrão deste perfil.
+  summary(){return {hasKey:Boolean(this.secrets?.hasKey?.()),accounts:this.registry().map(publicAccount),defaults:this.defaults(),pending:Boolean(this.pending)};}
   status(){
-    const a=this.store.instagram();
-    return {hasKey:Boolean(this.secrets?.hasKey?.()),account:a.connectedAccountId?{username:a.username,igUserId:a.igUserId,connectedAt:a.connectedAt,followers:a.followers}:null,pending:Boolean(a.pendingAccountId),
-      scheduled:this.store.state().projects.filter(p=>p.schedule&&['scheduled','late','failed'].includes(p.schedule.status)).map(p=>({id:p.id,title:p.title,...p.schedule}))};
+    return {hasKey:Boolean(this.secrets?.hasKey?.()),accounts:this.registry().map(publicAccount),defaults:this.defaults(),pending:Boolean(this.pending),
+      scheduled:this.store.state().projects.filter(p=>p.schedule&&['scheduled','late','failed','partial'].includes(p.schedule.status)).map(p=>({id:p.id,title:p.title,...p.schedule}))};
   }
   async saveKey(value){
     if(!this.secrets?.setKey)throw new Error('Disponível só no aplicativo.');
     const key=text(String(value??''),300).trim();if(key.length<10||/\s/.test(key))throw new Error('Essa chave não parece uma chave de API do Composio. Copie de novo em Settings › API Keys no Composio.');
-    // Testa a chave antes de guardar: abrir uma sessão não mexe em nenhuma conta.
-    await this.make({apiKey:key,userId:`carrossell-${this.secrets.installId()}-teste`}).session();
-    await this.secrets.setKey(key);this.clients.clear();return this.status();
+    // Testa a chave antes de guardar: listar as conexões não mexe em nenhuma conta.
+    await this.make({apiKey:key,userId:`carrossell-${this.secrets.installId()}`}).accounts();
+    await this.secrets.setKey(key);this.clients.clear();
+    await this.sync().catch(()=>{});
+    return this.changed();
   }
-  async removeKey(){await this.secrets?.clearKey?.();this.clients.clear();return this.status();}
+  async removeKey(){await this.secrets?.clearKey?.();this.clients.clear();this.pending=null;return this.changed();}
+  // Busca no Composio as contas do Instagram já conectadas e o @ de cada uma (só das novas).
+  async sync(){
+    const composio=this.client(),old=new Map(this.registry().map(a=>[a.id,a])),next=[];
+    for(const a of (await composio.accounts()).filter(a=>a.status==='ACTIVE')){
+      const prev=old.get(a.id);
+      if(prev?.status==='ACTIVE'&&prev.igUserId){next.push({...prev,userId:a.userId||prev.userId||''});continue;}
+      try{next.push({id:a.id,userId:a.userId,alias:a.alias,...await accountInfo(composio,{id:a.id,userId:a.userId}),status:'ACTIVE',error:'',updatedAt:new Date(this.now()).toISOString()});}
+      catch(error){if(error.code==='key')throw error;next.push({id:a.id,userId:a.userId,alias:a.alias,username:error.username||prev?.username||a.alias||'',igUserId:'',followers:null,status:error.code==='account'?'personal':'error',error:error.message,updatedAt:new Date(this.now()).toISOString()});}
+    }
+    await this.secrets.saveAccounts(next);
+    return this.changed();
+  }
   async connect(){
-    const composio=this.client(),{url,accountId}=await composio.link();
-    await this.store.saveInstagram({pendingAccountId:accountId||''});
+    const {url,accountId,userId}=await this.client().link();
+    this.pending={accountId,userId,startedAt:this.now()};
     await this.rt.dialogs.openAuth?.(url);
-    if(accountId)this.watch(accountId);
-    return {...this.status(),url};
+    this.watch();
+    return {...this.changed(),url};
   }
   // Acompanha o OAuth no navegador e grava a conta quando ela fica ativa (até 10 minutos).
-  watch(accountId){
-    if(this.watching.has(accountId))return;this.watching.add(accountId);
-    const deadline=this.now()+CONNECT_TIMEOUT_MS;
+  watch(){
     const tick=async()=>{
-      try{const done=await this.check();if(done.account||!done.pending||this.now()>deadline){if(!done.account&&this.now()>deadline)await this.store.saveInstagram({pendingAccountId:''});return this.watching.delete(accountId);}}
-      catch(error){this.watching.delete(accountId);this.emit(error.message);return;}
+      if(!this.pending)return;
+      try{const done=await this.check();if(!done.pending)return;}catch(error){this.emit(error.message);return;}
+      if(this.now()-this.pending.startedAt>CONNECT_TIMEOUT_MS){this.pending=null;return;}
       setTimeout(()=>void tick(),this.pollMs).unref?.();
     };
     setTimeout(()=>void tick(),this.pollMs).unref?.();
   }
   async check(){
-    const a=this.store.instagram();if(!a.pendingAccountId)return this.status();
-    const composio=this.client(),status=String((await composio.account(a.pendingAccountId)).status||'').toUpperCase();
-    if(['FAILED','EXPIRED','REVOKED'].includes(status)){await this.store.saveInstagram({pendingAccountId:''});throw new Error('A conexão com o Instagram não foi concluída. Tente conectar de novo.');}
+    const pending=this.pending;if(!pending)return this.status();
+    const composio=this.client(),status=String((await composio.account(pending.accountId)).status||'').toUpperCase();
+    if(['FAILED','EXPIRED','REVOKED'].includes(status)){this.pending=null;throw new Error('A conexão com o Instagram não foi concluída. Tente conectar de novo.');}
     if(status!=='ACTIVE')return this.status();
-    const info=await accountInfo(composio,a.pendingAccountId);
-    await this.store.saveInstagram({connectedAccountId:a.pendingAccountId,igUserId:info.igUserId,username:info.username,followers:info.followers,connectedAt:new Date(this.now()).toISOString(),pendingAccountId:''});
-    this.rt.emit({type:'state',state:this.rt.state()});
-    return this.status();
+    let info;try{info=await accountInfo(composio,{id:pending.accountId,userId:pending.userId});}catch(error){this.pending=null;throw error;}
+    const account={id:pending.accountId,userId:pending.userId,alias:'',...info,status:'ACTIVE',error:'',updatedAt:new Date(this.now()).toISOString()};
+    await this.secrets.saveAccounts([...this.registry().filter(a=>a.id!==account.id),account]);
+    if(!this.defaults().length)await this.store.saveInstagram({defaults:[account.id]});
+    this.pending=null;
+    return this.changed();
   }
-  async disconnect(){
-    const a=this.store.instagram();
-    if(a.connectedAccountId&&this.secrets?.hasKey?.())await this.client().disconnect(a.connectedAccountId);
-    for(const p of this.store.state().projects)if(p.schedule?.status==='scheduled')await this.unschedule(p.id);
-    await this.store.saveInstagram(null);return this.status();
+  async setDefaults(ids){if(!Array.isArray(ids))throw new Error('Contas do Instagram inválidas.');ids.forEach(id=>this.find(id));await this.store.saveInstagram({defaults:ids.map(String)});return this.changed();}
+  // Remove a conexão do Composio (deixa de funcionar para qualquer app que use a mesma chave).
+  async remove(id){
+    await this.client().disconnect(String(id));
+    await this.secrets.saveAccounts(this.registry().filter(a=>a.id!==String(id)));
+    await this.store.saveInstagram({defaults:this.store.instagram().defaults.filter(x=>x!==String(id))});
+    return this.changed();
   }
-  async publish(id,{again=false,fromSchedule=false}={}){
-    const p=this.store.get(id);postable(p);const account=this.account();
-    if(p.instagram?.mediaId&&!again)throw new Error('Este carrossel já foi postado no Instagram.');
+  async publish(id,{accounts,fromSchedule=false}={}){
+    const p=this.store.get(id);postable(p);const targets=this.pick(accounts);
+    const done=p.instagram?.posts||[],todo=targets.filter(a=>!done.some(x=>x.accountId===a.id));
+    if(!todo.length)throw new Error(targets.length>1?'Este carrossel já foi postado nessas contas.':`Este carrossel já foi postado em @${targets[0].username}.`);
     if(this.posting.has(id))throw new Error('Este carrossel já está sendo postado.');
     if(!this.rt.dialogs.toJpeg)throw new Error('Disponível só no aplicativo.');
-    this.posting.add(id);
+    this.posting.add(id);const posted=[],errors=[];
     try{
       this.emit('Preparando as imagens…');
       const jpegs=await this.rt.dialogs.toJpeg(p.slides.map(s=>Buffer.from(s.image.split(',')[1],'base64')));
-      const result=await publishCarousel({composio:this.client(),account,caption:p.caption||'',jpegs,onStep:m=>this.emit(m),now:this.now});
-      await this.rt.update(id,{instagram:{...result,metrics:null,nextMetricsAt:nextMetricsAt(result.publishedAt,this.now())},publishedAt:p.publishedAt||result.publishedAt,schedule:p.schedule?{...p.schedule,status:'published',error:''}:null,error:null});
-      if(p.schedule&&!fromSchedule)await this.rt.dialogs.scheduler?.remove(id).catch(()=>{});
-      return this.store.get(id);
-    }catch(error){
-      if(p.schedule)await this.rt.update(id,{schedule:{...p.schedule,status:'failed',error:error.message}});
-      throw error;
-    }finally{this.posting.delete(id);this.emit('');}
+      const composio=this.client();
+      for(const account of todo){
+        try{const r=await publishCarousel({composio,account,caption:p.caption||'',jpegs,onStep:m=>this.emit(m),now:this.now});posted.push({...r,metrics:null,nextMetricsAt:nextMetricsAt(r.publishedAt,this.now())});}
+        catch(error){if(error.code==='key')throw error;errors.push(`@${account.username}: ${error.message}`);}
+      }
+    }catch(error){errors.push(error.message);}
+    finally{
+      this.posting.delete(id);this.emit('');
+      const current=this.store.get(id),patch={};
+      if(posted.length){patch.instagram={posts:[...(current.instagram?.posts||[]),...posted]};patch.publishedAt=current.publishedAt||posted[0].publishedAt;}
+      if(current.schedule)patch.schedule={...current.schedule,status:errors.length?(posted.length?'partial':'failed'):'published',error:errors.join(' · ')};
+      if(Object.keys(patch).length)await this.rt.update(id,patch);
+      if(current.schedule&&!fromSchedule&&!errors.length)await this.rt.dialogs.scheduler?.remove(id).catch(()=>{});
+    }
+    if(errors.length)throw new Error(posted.length?`Postado em ${posted.map(r=>`@${r.username}`).join(', ')}. Não saiu em ${errors.join(' · ')}`:errors.join(' · '));
+    return this.store.get(id);
   }
-  async schedule(id,at){
-    const when=parseWhen(at,new Date(this.now())),p=this.store.get(id);postable(p);this.account();
-    if(p.instagram?.mediaId)throw new Error('Este carrossel já foi postado no Instagram.');
+  async schedule(id,at,accounts){
+    const when=parseWhen(at,new Date(this.now())),p=this.store.get(id);postable(p);
+    const done=p.instagram?.posts||[],targets=this.pick(accounts).filter(a=>!done.some(x=>x.accountId===a.id));
+    if(!targets.length)throw new Error('Este carrossel já foi postado nessas contas.');
     if(!this.rt.dialogs.scheduler)throw new Error('Disponível só no aplicativo.');
     await this.rt.dialogs.scheduler.add(id,when);
-    return this.rt.update(id,{schedule:{at:when.toISOString(),status:'scheduled',error:'',createdAt:new Date(this.now()).toISOString()}});
+    return this.rt.update(id,{schedule:{at:when.toISOString(),accounts:targets.map(a=>a.id),usernames:targets.map(a=>a.username),status:'scheduled',error:'',createdAt:new Date(this.now()).toISOString()}});
   }
   async unschedule(id){this.store.get(id);await this.rt.dialogs.scheduler?.remove(id).catch(()=>{});return this.rt.update(id,{schedule:null});}
   // Roda em todos os perfis: chamado pela tarefa do sistema e sempre que o app abre.
@@ -100,7 +136,7 @@ export class Social {
       for(const due of duePosts(this.store.state().projects,this.now())){
         const p=this.store.get(due.id);
         if(due.late&&!includeLate){await this.rt.update(due.id,{schedule:{...p.schedule,status:'late'}});summary.late.push(due.id);continue;}
-        try{await this.publish(due.id,{fromSchedule:true});summary.published.push(due.id);}
+        try{await this.publish(due.id,{accounts:p.schedule.accounts,fromSchedule:true});summary.published.push(due.id);}
         catch(error){summary.failed.push({id:due.id,error:error.message});}
         finally{await this.rt.dialogs.scheduler?.remove(due.id).catch(()=>{});}
       }
@@ -109,19 +145,27 @@ export class Social {
     else await each();
     return summary;
   }
-  // Atualiza um carrossel ou todos os que chegaram na data (1, 3 e 7 dias após postar).
+  // Atualiza os posts de um carrossel, ou todos os que chegaram na data (1, 3 e 7 dias após postar).
+  // Comentários e salvamentos somados de todas as contas viram o resultado usado pelo Ritmo e pelo Replicador.
   async refreshMetrics({id}={}){
-    const targets=id?[this.store.get(id)]:this.store.state().projects.filter(p=>p.instagram?.mediaId&&p.instagram.nextMetricsAt&&new Date(p.instagram.nextMetricsAt).getTime()<=this.now());
-    if(id&&!targets[0].instagram?.mediaId)throw new Error('Este carrossel ainda não foi postado pelo Carrossell.');
-    if(!targets.length)return [];
-    const composio=this.client(),account=this.account(),updated=[];
-    for(const p of targets){
-      const m=await fetchMetrics(composio,account,p.instagram.mediaId);
-      const results={comments:m.metrics.comments??p.results?.comments??0,saves:m.metrics.saves??p.results?.saves??0,sales:p.results?.sales||0,recordedAt:m.updatedAt,source:'instagram'};
-      await this.rt.update(p.id,{results,instagram:{...p.instagram,metrics:m.metrics,insights:m.insights,metricsAt:m.updatedAt,permalink:p.instagram.permalink||m.permalink,nextMetricsAt:nextMetricsAt(p.instagram.publishedAt,this.now())}});
-      updated.push({id:p.id,...m});
+    const projects=id?[this.store.get(id)]:this.store.state().projects;
+    if(id&&!projects[0].instagram?.posts?.length)throw new Error('Este carrossel ainda não foi postado pelo Carrossell.');
+    const due=post=>id||(post.nextMetricsAt&&new Date(post.nextMetricsAt).getTime()<=this.now());
+    const updated=[];
+    for(const p of projects){
+      const posts=p.instagram?.posts||[];if(!posts.some(due))continue;
+      const composio=this.client(),next=[];
+      for(const post of posts){
+        if(!due(post)){next.push(post);continue;}
+        const account=this.usable().find(a=>a.id===post.accountId);if(!account){next.push(post);continue;}
+        const m=await fetchMetrics(composio,account,post.mediaId);
+        next.push({...post,metrics:m.metrics,insights:m.insights,metricsAt:m.updatedAt,permalink:post.permalink||m.permalink,nextMetricsAt:nextMetricsAt(post.publishedAt,this.now())});
+        updated.push({id:p.id,accountId:post.accountId,username:post.username,...m});
+      }
+      const sum=key=>next.reduce((total,post)=>total+(post.metrics?.[key]??0),0),measured=next.some(post=>post.metrics);
+      await this.rt.update(p.id,{instagram:{...p.instagram,posts:next},...(measured?{results:{comments:sum('comments'),saves:sum('saves'),sales:p.results?.sales||0,recordedAt:new Date(this.now()).toISOString(),source:'instagram'}}:{})});
     }
     return updated;
   }
-  async posts(limit=25){return recentPosts(this.client(),this.account(),Math.min(Math.max(Number(limit)||25,1),100));}
+  async posts(limit=25,accountId){const account=accountId?this.find(accountId):this.pick()[0];return recentPosts(this.client(),account,Math.min(Math.max(Number(limit)||25,1),100));}
 }

@@ -64,9 +64,8 @@ function cardCount(value){const n=Number(value||0);if(!CARD_COUNTS.includes(n))t
 const defaultSettings=()=>({weeklyGoal:5,driveFolder:'',firstCompletedAt:'',lastReminderAt:''});
 // Feedback da pessoa para a ferramenta: entra em todas as gerações seguintes da área marcada.
 export const FEEDBACK_AREAS=['texto','visual','geral'];
-// Conta do Instagram ligada a este perfil pelo Composio (a chave do Composio fica fora da biblioteca).
-const emptyInstagram=()=>({connectedAccountId:'',igUserId:'',username:'',connectedAt:'',pendingAccountId:'',followers:null});
-const INSTAGRAM_TEXT=['connectedAccountId','igUserId','username','connectedAt','pendingAccountId'];
+// Contas do Instagram padrão deste perfil (a chave e a lista de contas do Composio ficam fora da biblioteca).
+const emptyInstagram=()=>({defaults:[]});
 export class Store {
   constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],media:emptyMedia(),feedback:[],instagram:emptyInstagram(),settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
   async init(){
@@ -78,7 +77,7 @@ export class Store {
     if(!Array.isArray(this.data.feedback))this.data.feedback=[];
     this.data.settings={...defaultSettings(),...this.data.settings};
     this.data.media={...emptyMedia(),...this.data.media};
-    this.data.instagram={...emptyInstagram(),...this.data.instagram};
+    this.data.instagram={defaults:Array.isArray(this.data.instagram?.defaults)?this.data.instagram.defaults:this.data.instagram?.connectedAccountId?[this.data.instagram.connectedAccountId]:[]};
     // Cada cena guarda uma série de fotos do mesmo ambiente; a primeira é a capa da série.
     for(const sc of this.data.media.scenes){if(!Array.isArray(sc.images))sc.images=sc.image?[sc.image]:[];}
     if(!Array.isArray(this.data.media.assets))this.data.media.assets=[];
@@ -189,14 +188,10 @@ export class Store {
     this.data.media=next;await this.persist();return this.media();
   }
   instagram(){return structuredClone(this.data.instagram);}
-  async saveInstagram(patch){
-    const next=patch===null?emptyInstagram():this.instagram();
-    for(const [key,value] of Object.entries(patch||{})){
-      if(INSTAGRAM_TEXT.includes(key))next[key]=text(String(value??''),200);
-      else if(key==='followers')next.followers=value===null?null:Number(value)||0;
-      else throw new Error('Campo do Instagram não permitido.');
-    }
-    this.data.instagram=next;await this.persist();return this.instagram();
+  // Contas do Instagram (ids de conexão do Composio) marcadas como padrão deste perfil ao postar.
+  async saveInstagram({defaults}){
+    if(!Array.isArray(defaults)||defaults.length>20)throw new Error('Contas do Instagram inválidas.');
+    this.data.instagram={defaults:[...new Set(defaults.map(id=>text(String(id),100)))]};await this.persist();return this.instagram();
   }
   feedback(){return structuredClone(this.data.feedback);}
   async addFeedback({text:value,area='geral',projectId=''}){

@@ -17,6 +17,9 @@ export function createSecrets(userData){
     hasKey:()=>Boolean(data.composio),
     getKey(){if(!data.composio)return '';try{return safeStorage.decryptString(Buffer.from(data.composio,'base64'));}catch{return '';}},
     async setKey(key){if(!safeStorage.isEncryptionAvailable())throw new Error('O sistema não ofereceu um cofre para guardar a chave com segurança.');data.composio=safeStorage.encryptString(key).toString('base64');await save();},
-    async clearKey(){delete data.composio;await save();},
+    async clearKey(){delete data.composio;delete data.accounts;await save();},
+    // Contas do Instagram vistas no Composio (@, id da conta): uma lista para o app, usada por todos os perfis.
+    accounts:()=>structuredClone(data.accounts||[]),
+    async saveAccounts(list){data.accounts=list;await save();},
   };
 }

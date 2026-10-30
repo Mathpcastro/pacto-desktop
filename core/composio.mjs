@@ -1,7 +1,7 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 // Composio (API REST v3.1) com a chave de API do próprio comprador: conecta o Instagram por OAuth
-// gerenciado e executa as ferramentas INSTAGRAM_* numa sessão presa à conta conectada de cada perfil.
+// gerenciado e executa as ferramentas INSTAGRAM_* direto pela conta conectada (qualquer conta do projeto).
 // As imagens sobem para o armazenamento do Composio (files/upload/request) e entram como child_image_files.
 export const COMPOSIO_BASE='https://backend.composio.dev/api/v3.1';
 export class ComposioError extends Error{constructor(message,{status=0,code=''}={}){super(message);this.status=status;this.code=code;}}
@@ -34,7 +34,7 @@ export function pickId(value,keys=['id']){
 export class Composio {
   constructor({apiKey,userId,fetch=globalThis.fetch,base=COMPOSIO_BASE}){
     if(!apiKey)throw new ComposioError('Cole a chave de API do Composio em Marca › Instagram.',{code:'key'});
-    this.apiKey=apiKey;this.userId=userId;this.fetch=fetch;this.base=base;this.sessions=new Map();
+    this.apiKey=apiKey;this.userId=userId;this.fetch=fetch;this.base=base;
   }
   async call(method,path,body){
     let response;
@@ -44,18 +44,34 @@ export class Composio {
     if(!response.ok)throw friendly(json?.error?.message||json?.message||raw,response.status);
     return json??{};
   }
-  // Uma sessão por conta conectada; reaproveitada enquanto o app estiver aberto.
-  async session(accountId=''){
-    if(this.sessions.has(accountId))return this.sessions.get(accountId);
-    const body={user_id:this.userId,toolkits:{enable:['instagram']},manage_connections:{enable:false},workbench:{enable:false},...(accountId?{connected_accounts:{instagram:[accountId]}}:{})};
+  // Sessão só para criar o link de conexão (OAuth gerenciado). Cada conta nova ganha um usuário próprio,
+  // para não esbarrar no limite de uma conta por usuário quando o multi-conta está desligado.
+  async session(userId){
+    const body={user_id:userId,toolkits:{enable:['instagram']},manage_connections:{enable:false},workbench:{enable:false}};
     const id=(await this.call('POST','/tool_router/session',body)).session_id;if(!id)throw new ComposioError('O Composio não abriu a sessão.');
-    this.sessions.set(accountId,id);return id;
+    return id;
   }
-  async link(){const r=await this.call('POST',`/tool_router/session/${await this.session()}/link`,{toolkit:'instagram'});if(!r.redirect_url)throw new ComposioError('O Composio não devolveu o link de conexão.');return {url:r.redirect_url,accountId:r.connected_account_id};}
+  async link(){
+    const userId=`${this.userId}-${randomUUID().slice(0,8)}`;
+    const r=await this.call('POST',`/tool_router/session/${await this.session(userId)}/link`,{toolkit:'instagram'});
+    if(!r.redirect_url)throw new ComposioError('O Composio não devolveu o link de conexão.');
+    return {url:r.redirect_url,accountId:r.connected_account_id,userId};
+  }
+  // Todas as contas do Instagram já conectadas no projeto do Composio, por qualquer app ou pelo painel.
+  async accounts(){
+    const out=[];let cursor='';
+    for(let page=0;page<5;page++){
+      const r=await this.call('GET',`/connected_accounts?toolkit_slugs=instagram&limit=100${cursor?`&cursor=${encodeURIComponent(cursor)}`:''}`);
+      for(const a of r.items||[])out.push({id:String(a.id),status:String(a.status||'').toUpperCase(),alias:a.alias||a.word_id||'',userId:a.user_id||'',createdAt:a.created_at||''});
+      cursor=r.next_cursor||'';if(!cursor)break;
+    }
+    return out;
+  }
   async account(accountId){return this.call('GET',`/connected_accounts/${encodeURIComponent(accountId)}`);}
-  async disconnect(accountId){await this.call('DELETE',`/connected_accounts/${encodeURIComponent(accountId)}`).catch(()=>{});this.sessions.delete(accountId);}
-  async execute(accountId,slug,args={}){
-    const r=await this.call('POST',`/tool_router/session/${await this.session(accountId)}/execute`,{tool_slug:slug,arguments:args});
+  async disconnect(accountId){await this.call('DELETE',`/connected_accounts/${encodeURIComponent(accountId)}`);}
+  // Execução direta pela conta conectada: vale para contas criadas por qualquer usuário do projeto.
+  async execute(accountId,slug,args={},{userId=''}={}){
+    const r=await this.call('POST',`/tools/execute/${encodeURIComponent(slug)}`,{connected_account_id:accountId,arguments:args,...(userId?{user_id:userId}:{})});
     if(r.result_type&&r.result_type!=='completed')throw friendly(r.error||r.message||r.result_type);
     if(r.successful===false||(r.error&&!r.data))throw friendly(r.error);
     const data=toolData(r.data);if(data&&typeof data==='object'&&data.error&&!data.id)throw friendly(typeof data.error==='string'?data.error:data.error.message||JSON.stringify(data.error));

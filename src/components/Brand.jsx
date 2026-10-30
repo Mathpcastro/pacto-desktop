@@ -3,7 +3,7 @@ import { Check, ImagePlus, Plus, RefreshCw, Scissors, Sparkles, Square, Trash2, 
 import { palette, slideHtml } from "../../core/templates.mjs";
 import { Grow, Markdown, Spinner, TEMPLATE_FONTS, TemplateFrame } from "../ui.jsx";
 import AgentSetup from "./AgentSetup.jsx";
-import { InstagramSetup } from "./Instagram.jsx";
+import { InstagramSummary } from "./Instagram.jsx";
 
 function DocSection({ title, value, onSave, hint, extra }) {
   const [editing, setEditing] = useState(false);
@@ -61,7 +61,7 @@ function DocSection({ title, value, onSave, hint, extra }) {
   );
 }
 
-export default function Brand({ state, request, isPending, onRedo, onManual, onNotice }) {
+export default function Brand({ state, request, isPending, onRedo, onManual, onNotice, onInstagram }) {
   const profile = state.profile || {};
   const media = state.media || { faces: [], scenes: [], verified: true };
   const assets = media.assets || [];
@@ -408,7 +408,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           </div>
         </section>
       </div>
-      <InstagramSetup state={state} request={request} isPending={isPending} onNotice={onNotice} />
+      <InstagramSummary state={state} request={request} onNotice={onNotice} onOpen={onInstagram} />
       <AgentSetup request={request} isPending={isPending} onNotice={onNotice} />
     </main>
   );

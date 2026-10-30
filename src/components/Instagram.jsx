@@ -1,64 +1,103 @@
-import { useEffect, useState } from "react";
-import { AtSign, CalendarClock, Check, ExternalLink, KeyRound, RefreshCw, Send, X } from "lucide-react";
+import { useEffect, useId, useState } from "react";
+import { CalendarClock, Check, ExternalLink, KeyRound, Plus, RefreshCw, Send, Trash2, X } from "lucide-react";
+import Dialog from "./Dialog.jsx";
 import { Spinner } from "../ui.jsx";
 
-// Instagram pelo Composio: configurar (Marca), postar e agendar (estúdio) e ver as métricas (Resultado).
+// Instagram pelo Composio: botão do topo e modal (contas), postar e agendar (estúdio) e métricas (Resultado).
 const when = (iso) => new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-const SCHEDULE_LABEL = { scheduled: "Agendado", late: "Atrasado", failed: "Não saiu", published: "Publicado" };
+const SCHEDULE_LABEL = { scheduled: "Agendado", late: "Atrasado", failed: "Não saiu", partial: "Saiu em parte", published: "Publicado" };
+const usable = (composio) => (composio?.accounts || []).filter((a) => a.status === "ACTIVE");
 // Valor inicial do campo de agendamento: amanhã às 18h, no horário local.
 function tomorrowAt18() {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  d.setHours(18, 0, 0, 0);
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T18:00`;
 }
 
-export function InstagramSetup({ state, request, isPending, onNotice }) {
-  const [status, setStatus] = useState(null);
+// Logo minimalista: o contorno do Instagram com o degradê da marca.
+export function InstagramLogo({ size = 18 }) {
+  const id = useId().replace(/:/g, "");
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id={`ig-${id}`} x1="3" y1="21" x2="21" y2="3" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#feda75" />
+          <stop offset="0.3" stopColor="#fa7e1e" />
+          <stop offset="0.6" stopColor="#d62976" />
+          <stop offset="1" stopColor="#4f5bd5" />
+        </linearGradient>
+      </defs>
+      <rect x="3" y="3" width="18" height="18" rx="5.5" stroke={`url(#ig-${id})`} strokeWidth="2" />
+      <circle cx="12" cy="12" r="4.2" stroke={`url(#ig-${id})`} strokeWidth="2" />
+      <circle cx="17.3" cy="6.7" r="1.25" fill={`url(#ig-${id})`} />
+    </svg>
+  );
+}
+
+// Botão de destaque na barra de cima.
+export function InstagramButton({ composio, onOpen }) {
+  const accounts = usable(composio);
+  return (
+    <button className="ig-btn" onClick={onOpen} aria-label={accounts.length ? `Instagram: ${accounts.length} contas conectadas` : "Conectar Instagram"}>
+      <InstagramLogo size={17} />
+      <span className="label">{accounts.length ? "Instagram" : "Conectar Instagram"}</span>
+      {accounts.length > 0 && <span className="count">{accounts.length}</span>}
+    </button>
+  );
+}
+
+const STEPS = [
+  ["Conta Profissional", "No app do Instagram: Configurações › Tipo de conta e ferramentas › Mudar para conta profissional (Criador de conteúdo ou Empresa). Contas pessoais não podem postar por aplicativo."],
+  ["Conta grátis no Composio", "O Composio é a ponte segura entre o Carrossell e o Instagram. Crie a sua conta em composio.dev."],
+  ["Copie a chave de API", "No Composio, abra Settings › API Keys, crie uma chave e cole aqui embaixo. Ela fica cifrada neste computador."],
+  ["Escolha as contas", "As contas do Instagram que você já conectou no Composio aparecem na lista, sem reconectar. Para outra, use Conectar outra conta."],
+];
+
+export function InstagramModal({ state, request, isPending, onNotice, onClose }) {
+  const composio = state.composio || {};
+  const profileName = (state.profiles || []).find((p) => p.id === state.profileId)?.name || "este perfil";
   const [key, setKey] = useState("");
   const [editingKey, setEditingKey] = useState(false);
-  const ig = state.instagram || {};
-  useEffect(() => {
-    request("instagramStatus").then(setStatus).catch(() => {});
-  }, [request, state.profileId, state.composio?.hasKey, ig.connectedAccountId, ig.pendingAccountId, state.projects]);
+  const [removing, setRemoving] = useState(null);
   const act = (action, args, notice) =>
     request(action, args)
-      .then((next) => {
-        if (next?.hasKey !== undefined) setStatus(next);
-        if (notice) onNotice(notice);
-        return next;
-      })
-      .catch(() => {});
-  const hasKey = status?.hasKey ?? state.composio?.hasKey;
+      .then((r) => (notice && onNotice(notice), r))
+      .catch(() => null);
+  const defaults = composio.defaults || [];
+  const toggle = (id) => act("setInstagramDefaults", { accounts: defaults.includes(id) ? defaults.filter((x) => x !== id) : [...defaults, id] });
+  const showKeyForm = !composio.hasKey || editingKey;
   return (
-    <section className="card-box" aria-label="Instagram">
-      <div className="section-head">
-        <h2>
-          <AtSign size={18} style={{ verticalAlign: "-3px" }} /> Instagram
-        </h2>
-        <span className="hint">Postar e agendar com um clique, pelo Composio</span>
-      </div>
-      {!hasKey || editingKey ? (
-        <>
-          <ol className="steps-list">
-            <li>Crie uma conta grátis em composio.dev.</li>
-            <li>Em Settings › API Keys, crie e copie a sua chave de API.</li>
-            <li>Cole aqui. Ela fica cifrada neste computador.</li>
-          </ol>
+    <Dialog title="Conectar Instagram" eyebrow="POSTAR E AGENDAR DIRETO DO CARROSSELL" onClose={onClose} wide>
+      <div className="dialog-fields ig-modal">
+        <ol className="ig-steps">
+          {STEPS.map(([title, text], i) => (
+            <li key={title} className={composio.hasKey && i < 3 ? "done" : ""}>
+              <span className="n">{composio.hasKey && i < 3 ? <Check size={13} /> : i + 1}</span>
+              <div>
+                <b>{title}</b>
+                <small>{text}</small>
+              </div>
+            </li>
+          ))}
+        </ol>
+        {showKeyForm ? (
           <form
             className="row"
             onSubmit={(e) => {
               e.preventDefault();
-              if (key.trim()) act("saveComposioKey", { key: key.trim() }, "Chave do Composio salva.").then((next) => next && (setKey(""), setEditingKey(false)));
+              if (key.trim()) act("saveComposioKey", { key: key.trim() }, "Chave salva. As suas contas do Composio já estão na lista.").then((r) => r && (setKey(""), setEditingKey(false)));
             }}
           >
             <label className="fld" style={{ flex: 1, minWidth: 240 }}>
               <span>Chave de API do Composio</span>
               <input type="password" autoComplete="off" value={key} placeholder="Cole a chave aqui" onChange={(e) => setKey(e.target.value)} />
             </label>
-            <button className="btn" style={{ alignSelf: "flex-end" }} disabled={!key.trim() || isPending("saveComposioKey")}>
+            <button className="btn primary" style={{ alignSelf: "flex-end" }} disabled={!key.trim() || isPending("saveComposioKey")}>
               <KeyRound size={15} /> {isPending("saveComposioKey") ? "Conferindo…" : "Salvar chave"}
+            </button>
+            <button type="button" className="ghost-btn" style={{ alignSelf: "flex-end" }} onClick={() => request("openComposio").catch(() => {})}>
+              <ExternalLink size={14} /> Abrir o Composio
             </button>
             {editingKey && (
               <button type="button" className="ghost-btn" style={{ alignSelf: "flex-end" }} onClick={() => setEditingKey(false)}>
@@ -66,113 +105,149 @@ export function InstagramSetup({ state, request, isPending, onNotice }) {
               </button>
             )}
           </form>
-        </>
-      ) : (
-        <>
-          <div className="row">
-            {status?.account ? (
-              <>
-                <span className="chip good">
-                  <Check size={13} /> @{status.account.username} conectado a este perfil
-                </span>
-                <button className="ghost-btn" disabled={isPending("disconnectInstagram")} onClick={() => act("disconnectInstagram", {}, "Instagram desconectado deste perfil.")}>
-                  Desconectar
-                </button>
-              </>
-            ) : status?.pending ? (
-              <>
-                <span className="chip accent">
-                  <Spinner /> Esperando você autorizar no navegador…
-                </span>
-                <button className="btn small" disabled={isPending("checkInstagram")} onClick={() => act("checkInstagram")}>
-                  Já autorizei
-                </button>
-                <button className="ghost-btn" onClick={() => act("connectInstagram")}>
-                  Abrir o link de novo
-                </button>
-              </>
-            ) : (
-              <button className="btn primary" disabled={isPending("connectInstagram")} onClick={() => act("connectInstagram", {}, "Autorize no navegador que abriu. O Carrossell confirma sozinho.")}>
-                <AtSign size={15} /> Conectar o Instagram deste perfil
+        ) : (
+          <div className="ig-accounts" aria-label="Contas do Instagram">
+            <div className="row">
+              <b style={{ flex: 1 }}>Contas do seu Composio</b>
+              <button className="ghost-btn" disabled={isPending("syncInstagram")} onClick={() => act("syncInstagram", {}, "Lista atualizada.")}>
+                <RefreshCw size={14} /> {isPending("syncInstagram") ? "Buscando…" : "Atualizar lista"}
               </button>
-            )}
-            <span className="spacer" />
-            <button className="ghost-btn" onClick={() => setEditingKey(true)}>
-              Trocar chave
-            </button>
-            <button className="ghost-btn" disabled={isPending("removeComposioKey")} onClick={() => act("removeComposioKey", {}, "Chave do Composio removida deste computador.")}>
-              Remover chave
-            </button>
-          </div>
-          <p className="hint" style={{ margin: 0 }}>
-            A conta precisa ser Profissional (Empresa ou Criador de conteúdo). Cada perfil do Carrossell liga a própria conta. Para postar, as imagens sobem para o armazenamento do Composio, na sua conta, e o Instagram busca de lá.
-          </p>
-          {status?.scheduled?.length > 0 && (
-            <div className="scheduled-list" aria-label="Posts agendados">
-              <b>Agendados</b>
-              {status.scheduled.map((s) => (
-                <div className="row" key={s.id}>
-                  <span className={`chip ${s.status === "scheduled" ? "" : "accent"}`}>{SCHEDULE_LABEL[s.status] || s.status}</span>
-                  <span style={{ flex: 1 }}>
-                    {when(s.at)} · {s.title}
-                    {s.error ? <small style={{ display: "block", color: "var(--danger)" }}>{s.error}</small> : null}
-                  </span>
-                  {s.status !== "scheduled" && (
-                    <button className="btn small" disabled={isPending("publishInstagram")} onClick={() => act("publishInstagram", { id: s.id }, "Publicado no Instagram.")}>
-                      Postar agora
-                    </button>
-                  )}
-                  <button className="ghost-btn" aria-label={`Cancelar o agendamento de ${s.title}`} onClick={() => act("cancelSchedule", { id: s.id }, "Agendamento cancelado.")}>
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
             </div>
-          )}
-        </>
+            {(composio.accounts || []).length === 0 && <p className="hint" style={{ margin: 0 }}>Nenhuma conta do Instagram no seu Composio ainda. Conecte a primeira abaixo.</p>}
+            {(composio.accounts || []).map((a) => (
+              <div className={`ig-account ${a.status === "ACTIVE" ? "" : "off"}`} key={a.id}>
+                <InstagramLogo size={20} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <b>@{a.username || "conta sem nome"}</b>
+                  <small>{a.status === "ACTIVE" ? (a.followers !== null ? `${a.followers.toLocaleString("pt-BR")} seguidores` : "Conta Profissional") : a.error}</small>
+                </div>
+                {a.status === "ACTIVE" && (
+                  <label className="toggle">
+                    <input type="checkbox" checked={defaults.includes(a.id)} disabled={isPending("setInstagramDefaults")} onChange={() => toggle(a.id)} />
+                    Padrão em {profileName}
+                  </label>
+                )}
+                {removing === a.id ? (
+                  <button className="btn small danger" onClick={() => act("disconnectInstagram", { id: a.id }, `@${a.username} removida do Composio.`).then(() => setRemoving(null))}>
+                    Remover do Composio
+                  </button>
+                ) : (
+                  <button className="icon-only" aria-label={`Remover @${a.username}`} title="Remover" onClick={() => setRemoving(a.id)}>
+                    <Trash2 size={15} />
+                  </button>
+                )}
+              </div>
+            ))}
+            {removing && <p className="hint" style={{ margin: 0, color: "var(--danger)" }}>Remover apaga a conexão no Composio: ela para de funcionar em qualquer app que use a mesma chave.</p>}
+            <div className="row">
+              {composio.pending ? (
+                <>
+                  <span className="chip accent">
+                    <Spinner /> Esperando você autorizar no navegador…
+                  </span>
+                  <button className="btn small" disabled={isPending("checkInstagram")} onClick={() => act("checkInstagram")}>
+                    Já autorizei
+                  </button>
+                </>
+              ) : (
+                <button className="btn" disabled={isPending("connectInstagram")} onClick={() => act("connectInstagram", {}, "Entre na conta do Instagram no navegador que abriu e autorize. O Carrossell confirma sozinho.")}>
+                  <Plus size={15} /> Conectar outra conta
+                </button>
+              )}
+              <span className="spacer" />
+              <button className="ghost-btn" onClick={() => setEditingKey(true)}>
+                Trocar chave
+              </button>
+              <button className="ghost-btn" disabled={isPending("removeComposioKey")} onClick={() => act("removeComposioKey", {}, "Chave do Composio removida deste computador.")}>
+                Remover chave
+              </button>
+            </div>
+            <p className="hint" style={{ margin: 0 }}>
+              Dica: ao conectar outra conta, o navegador usa o Instagram que estiver logado nele. Troque de conta antes, ou abra o link numa janela anônima. Para postar, as imagens sobem para o armazenamento do Composio e o Instagram busca de lá.
+            </p>
+          </div>
+        )}
+      </div>
+    </Dialog>
+  );
+}
+
+// Marca › Instagram: resumo das contas padrão e dos agendados deste perfil.
+export function InstagramSummary({ state, request, onNotice, onOpen }) {
+  const composio = state.composio || {};
+  const accounts = usable(composio);
+  const defaults = accounts.filter((a) => (composio.defaults || []).includes(a.id));
+  const scheduled = state.projects.filter((p) => p.schedule && ["scheduled", "late", "failed", "partial"].includes(p.schedule.status));
+  return (
+    <section className="card-box" aria-label="Instagram">
+      <div className="section-head">
+        <h2>
+          <InstagramLogo size={18} /> Instagram
+        </h2>
+        <span className="hint">Postar e agendar com um clique, pelo Composio</span>
+        <span className="spacer" />
+        <button className="btn small" onClick={onOpen}>
+          {accounts.length ? "Gerenciar contas" : "Conectar Instagram"}
+        </button>
+      </div>
+      <p style={{ margin: 0, color: "var(--muted)" }}>
+        {!composio.hasKey
+          ? "Conecte o Instagram para postar e agendar daqui, em uma ou várias contas."
+          : defaults.length
+            ? `Este perfil posta por padrão em ${defaults.map((a) => `@${a.username}`).join(", ")}. Na hora de postar, dá para escolher outras.`
+            : `${accounts.length} ${accounts.length === 1 ? "conta disponível" : "contas disponíveis"}. Marque as contas padrão deste perfil em Gerenciar contas.`}
+      </p>
+      {scheduled.length > 0 && (
+        <div className="scheduled-list" aria-label="Posts agendados">
+          <b>Agendados</b>
+          {scheduled.map((p) => (
+            <div className="row" key={p.id}>
+              <span className={`chip ${p.schedule.status === "scheduled" ? "" : "accent"}`}>{SCHEDULE_LABEL[p.schedule.status] || p.schedule.status}</span>
+              <span style={{ flex: 1 }}>
+                {when(p.schedule.at)} · {p.title} · {(p.schedule.usernames || []).map((u) => `@${u}`).join(", ")}
+                {p.schedule.error ? <small style={{ display: "block", color: "var(--danger)" }}>{p.schedule.error}</small> : null}
+              </span>
+              <button className="ghost-btn" aria-label={`Cancelar o agendamento de ${p.title}`} onClick={() => request("cancelSchedule", { id: p.id }).then(() => onNotice("Agendamento cancelado.")).catch(() => {})}>
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </section>
   );
 }
 
-export function InstagramPost({ project, state, request, isPending, activity, onNotice, onBrand }) {
-  const [confirming, setConfirming] = useState(false);
+export function InstagramPost({ project, state, request, isPending, activity, onNotice, onConnect }) {
+  const composio = state.composio || {};
+  const accounts = usable(composio);
+  const posts = project.instagram?.posts || [];
+  const open = accounts.filter((a) => !posts.some((p) => p.accountId === a.id));
+  const s = project.schedule;
+  const [chosen, setChosen] = useState(() => (s?.accounts?.length ? s.accounts : composio.defaults || []));
+  const [mode, setMode] = useState("");
   const [at, setAt] = useState(tomorrowAt18);
-  const [scheduling, setScheduling] = useState(false);
-  const ig = state.instagram || {};
-  const ready = state.composio?.hasKey && ig.connectedAccountId;
-  const posting = isPending("publishInstagram");
+  useEffect(() => {
+    setChosen((current) => current.filter((id) => open.some((a) => a.id === id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posts.length, accounts.length]);
+  const picked = open.filter((a) => chosen.includes(a.id));
+  const names = picked.map((a) => `@${a.username}`).join(", ");
   const run = (action, args, notice) =>
     request(action, { id: project.id, ...args })
-      .then(() => (setConfirming(false), setScheduling(false), notice && onNotice(notice)))
+      .then(() => (setMode(""), notice && onNotice(notice)))
       .catch(() => {});
-  const post = project.instagram;
-  const s = project.schedule;
   let body;
-  if (post?.mediaId)
+  if (!composio.hasKey || !accounts.length)
     body = (
       <div className="row">
-        <span className="chip good">
-          <Check size={13} /> Postado em {when(post.publishedAt)}
-          {post.username ? ` · @${post.username}` : ""}
-        </span>
-        {post.permalink && (
-          <button className="btn small" onClick={() => request("openPermalink", { url: post.permalink }).catch(() => {})}>
-            <ExternalLink size={14} /> Ver no Instagram
-          </button>
-        )}
-      </div>
-    );
-  else if (!ready)
-    body = (
-      <div className="row">
-        <span style={{ flex: 1, color: "var(--muted)" }}>Conecte o Instagram deste perfil para postar e agendar daqui.</span>
-        <button className="btn small" onClick={onBrand}>
-          Conectar em Marca
+        <span style={{ flex: 1, color: "var(--muted)" }}>Conecte o Instagram para postar e agendar daqui, em uma ou várias contas.</span>
+        <button className="ig-btn" onClick={onConnect}>
+          <InstagramLogo size={16} /> <span className="label">Conectar Instagram</span>
         </button>
       </div>
     );
-  else if (posting)
+  else if (isPending("publishInstagram"))
     body = (
       <div className="row">
         <Spinner /> <span>{activity || "Postando no Instagram…"}</span>
@@ -184,7 +259,7 @@ export function InstagramPost({ project, state, request, isPending, activity, on
         {s?.status === "scheduled" && (
           <div className="row">
             <span className="chip">
-              <CalendarClock size={13} /> Agendado para {when(s.at)} em @{ig.username}
+              <CalendarClock size={13} /> Agendado para {when(s.at)} em {(s.usernames || []).map((u) => `@${u}`).join(", ")}
             </span>
             <button className="ghost-btn" onClick={() => run("cancelSchedule", {}, "Agendamento cancelado.")}>
               Cancelar
@@ -192,59 +267,82 @@ export function InstagramPost({ project, state, request, isPending, activity, on
           </div>
         )}
         {s?.status === "late" && <p className="hint" style={{ margin: 0, color: "var(--danger)" }}>Estava agendado para {when(s.at)}, mas o computador estava desligado. Poste agora ou cancele.</p>}
-        {s?.status === "failed" && <p className="hint" style={{ margin: 0, color: "var(--danger)" }}>O post agendado não saiu: {s.error}</p>}
-        {confirming ? (
-          <div className="row">
-            <span style={{ flex: 1 }}>
-              Publicar agora em <b>@{ig.username}</b>, com {project.slides.length} cards e a legenda abaixo?
-            </span>
-            <button className="btn primary" onClick={() => run("publishInstagram", {}, "Publicado no Instagram.")}>
-              <Send size={15} /> Publicar
-            </button>
-            <button className="ghost-btn" onClick={() => setConfirming(false)}>
-              Voltar
-            </button>
-          </div>
-        ) : scheduling ? (
-          <form
-            className="row"
-            onSubmit={(e) => {
-              e.preventDefault();
-              run("schedulePost", { at }, `Agendado para ${when(at)}. O computador precisa estar ligado nesse horário (o app pode estar fechado).`);
-            }}
-          >
-            <label className="fld" style={{ flex: 1, minWidth: 200 }}>
-              <span>Data e hora</span>
-              <input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} />
-            </label>
-            <button className="btn primary" style={{ alignSelf: "flex-end" }} disabled={!at || isPending("schedulePost")}>
-              <CalendarClock size={15} /> Agendar
-            </button>
-            <button type="button" className="ghost-btn" style={{ alignSelf: "flex-end" }} onClick={() => setScheduling(false)}>
-              Voltar
-            </button>
-          </form>
-        ) : (
-          <div className="row">
-            <button className="btn primary" onClick={() => setConfirming(true)}>
-              <Send size={15} /> Postar agora em @{ig.username}
-            </button>
-            {s?.status !== "scheduled" && (
-              <button className="btn" onClick={() => setScheduling(true)}>
-                <CalendarClock size={15} /> Agendar
-              </button>
+        {["failed", "partial"].includes(s?.status) && <p className="hint" style={{ margin: 0, color: "var(--danger)" }}>O post agendado {s.status === "partial" ? "saiu só em parte" : "não saiu"}: {s.error}</p>}
+        {open.length > 0 && (
+          <>
+            <div className="ig-pick" role="group" aria-label="Contas para postar">
+              {open.map((a) => (
+                <button key={a.id} type="button" aria-pressed={chosen.includes(a.id)} onClick={() => setChosen((c) => (c.includes(a.id) ? c.filter((x) => x !== a.id) : [...c, a.id]))}>
+                  {chosen.includes(a.id) ? <Check size={13} /> : <InstagramLogo size={13} />} @{a.username}
+                </button>
+              ))}
+            </div>
+            {mode === "confirm" ? (
+              <div className="row">
+                <span style={{ flex: 1 }}>
+                  Publicar agora em <b>{names}</b>, com {project.slides.length} cards e a legenda abaixo?
+                </span>
+                <button className="btn primary" onClick={() => run("publishInstagram", { accounts: picked.map((a) => a.id) }, `Publicado em ${names}.`)}>
+                  <Send size={15} /> Publicar
+                </button>
+                <button className="ghost-btn" onClick={() => setMode("")}>
+                  Voltar
+                </button>
+              </div>
+            ) : mode === "schedule" ? (
+              <form
+                className="row"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  run("schedulePost", { at, accounts: picked.map((a) => a.id) }, `Agendado para ${when(at)} em ${names}. O computador precisa estar ligado nesse horário (o app pode estar fechado).`);
+                }}
+              >
+                <label className="fld" style={{ flex: 1, minWidth: 200 }}>
+                  <span>Data e hora</span>
+                  <input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} />
+                </label>
+                <button className="btn primary" style={{ alignSelf: "flex-end" }} disabled={!at || !picked.length || isPending("schedulePost")}>
+                  <CalendarClock size={15} /> Agendar
+                </button>
+                <button type="button" className="ghost-btn" style={{ alignSelf: "flex-end" }} onClick={() => setMode("")}>
+                  Voltar
+                </button>
+              </form>
+            ) : (
+              <div className="row">
+                <button className="btn primary" disabled={!picked.length} onClick={() => setMode("confirm")}>
+                  <Send size={15} /> {picked.length > 1 ? `Postar agora em ${picked.length} contas` : picked.length ? `Postar agora em @${picked[0].username}` : "Escolha as contas"}
+                </button>
+                {s?.status !== "scheduled" && (
+                  <button className="btn" disabled={!picked.length} onClick={() => setMode("schedule")}>
+                    <CalendarClock size={15} /> Agendar
+                  </button>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </>
     );
   return (
     <div className="box" aria-label="Postar no Instagram">
       <div className="box-head">
-        <b>
-          <AtSign size={15} style={{ verticalAlign: "-2px" }} /> Instagram
+        <b className="ig-title">
+          <InstagramLogo size={15} /> Instagram
         </b>
       </div>
+      {posts.map((p) => (
+        <div className="row" key={p.accountId}>
+          <span className="chip good">
+            <Check size={13} /> @{p.username} · postado em {when(p.publishedAt)}
+          </span>
+          {p.permalink && (
+            <button className="btn small" onClick={() => request("openPermalink", { url: p.permalink }).catch(() => {})}>
+              <ExternalLink size={14} /> Ver
+            </button>
+          )}
+        </div>
+      ))}
       {body}
     </div>
   );
@@ -259,9 +357,8 @@ const METRICS = [
   ["views", "Visualizações"],
 ];
 export function InstagramMetrics({ project, request, isPending, onNotice }) {
-  const post = project.instagram;
-  if (!post?.mediaId) return null;
-  const m = post.metrics;
+  const posts = project.instagram?.posts || [];
+  if (!posts.length) return null;
   return (
     <div className="box" aria-label="Métricas do Instagram">
       <div className="box-head">
@@ -270,23 +367,25 @@ export function InstagramMetrics({ project, request, isPending, onNotice }) {
           <RefreshCw size={14} /> {isPending("refreshMetrics") ? "Atualizando…" : "Atualizar"}
         </button>
       </div>
-      {m ? (
-        <>
-          <div className="ig-metrics">
-            {METRICS.filter(([k]) => m[k] !== null && m[k] !== undefined).map(([k, label]) => (
-              <div key={k}>
-                <b>{m[k].toLocaleString("pt-BR")}</b>
-                <small>{label}</small>
-              </div>
-            ))}
-          </div>
-          <p className="hint" style={{ margin: 0 }}>
-            Atualizado em {when(post.metricsAt)}. {post.insights === "unavailable" ? "Alcance e visualizações aparecem quando a conta tem 1.000 seguidores (regra do Instagram)." : ""} Comentários e salvamentos já entram no resultado abaixo.
-          </p>
-        </>
-      ) : (
-        <p className="hint" style={{ margin: 0 }}>Os números chegam sozinhos 1, 3 e 7 dias depois de postar, ou agora mesmo em Atualizar.</p>
-      )}
+      {posts.map((p) => (
+        <div key={p.accountId} style={{ display: "grid", gap: 8 }}>
+          {posts.length > 1 && <b className="ig-title">@{p.username}</b>}
+          {p.metrics ? (
+            <div className="ig-metrics">
+              {METRICS.filter(([k]) => p.metrics[k] !== null && p.metrics[k] !== undefined).map(([k, label]) => (
+                <div key={k}>
+                  <b>{p.metrics[k].toLocaleString("pt-BR")}</b>
+                  <small>{label}</small>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="hint" style={{ margin: 0 }}>Os números chegam sozinhos 1, 3 e 7 dias depois de postar, ou agora mesmo em Atualizar.</p>
+          )}
+          {p.insights === "unavailable" && <p className="hint" style={{ margin: 0 }}>Alcance e visualizações aparecem quando a conta tem 1.000 seguidores (regra do Instagram).</p>}
+        </div>
+      ))}
+      <p className="hint" style={{ margin: 0 }}>Comentários e salvamentos de todas as contas entram somados no resultado abaixo.</p>
     </div>
   );
 }

@@ -10,38 +10,49 @@ import { _electron } from "@playwright/test";
 import { createServer } from "vite";
 
 // Prova do Instagram no Electron real contra um Composio FALSO local (PACTO_COMPOSIO_URL, só em
-// desenvolvimento): configurar a chave, conectar, postar com confirmação, agendar (tarefa real do
-// Windows, cancelada em seguida) e ver as métricas. Nada é publicado de verdade.
+// desenvolvimento): botão do topo, modal, contas já conectadas sem reconectar, conta nova, postar em
+// duas contas, métricas e agendamento com tarefa real do Windows (cancelada). Nada é publicado.
 // Uso: node scripts/instagram-proof.mjs [pasta-de-saída]
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const out = resolve(process.argv[2] || join(root, ".cache", "instagram-proof"));
 await mkdir(out, { recursive: true });
 const KEY = "ak_prova_local_123456";
+const accounts = [
+  { id: "ca_ana", user_id: "default", info: { id: "1001", user_id: "1001", username: "ana.doces", account_type: "BUSINESS", followers_count: 2300 } },
+  { id: "ca_loja", user_id: "outro-app", info: { id: "1002", user_id: "1002", username: "loja.oficial", account_type: "MEDIA_CREATOR", followers_count: 640 } },
+];
 const received = { puts: [], tools: [] };
 const fake = createHttp(async (req, res) => {
   const chunks = [];
   for await (const c of req) chunks.push(c);
   const raw = Buffer.concat(chunks);
   const send = (value, code = 200) => (res.writeHead(code, { "content-type": "application/json" }), res.end(JSON.stringify(value)));
-  if (req.method === "PUT") return received.puts.push({ path: req.url, type: req.headers["content-type"], jpeg: raw[0] === 0xff && raw[1] === 0xd8, size: raw.length }), res.end();
+  if (req.method === "PUT") return received.puts.push({ type: req.headers["content-type"], jpeg: raw[0] === 0xff && raw[1] === 0xd8, size: raw.length }), res.end();
   if (req.headers["x-api-key"] !== KEY) return send({ error: { message: "Invalid API key" } }, 401);
   const body = raw.length ? JSON.parse(raw) : {};
   const path = req.url.replace("/api/v3.1", "");
   if (path === "/tool_router/session") return send({ session_id: "trs_1" });
-  if (path.endsWith("/link")) return send({ redirect_url: "https://connect.composio.dev/link/prova", connected_account_id: "ca_prova" });
+  if (path.endsWith("/link")) {
+    accounts.push({ id: "ca_nova", user_id: body.user_id, info: { id: "1003", user_id: "1003", username: "nova.conta", account_type: "BUSINESS", followers_count: 12 } });
+    return send({ redirect_url: "https://connect.composio.dev/link/prova", connected_account_id: "ca_nova" });
+  }
+  if (path.startsWith("/connected_accounts?")) return send({ items: accounts.map((a) => ({ id: a.id, user_id: a.user_id, status: "ACTIVE", toolkit: { slug: "instagram" } })), next_cursor: null });
   if (path.startsWith("/connected_accounts/")) return send({ status: "ACTIVE" });
   if (path === "/files/upload/request") return send({ key: `prova/${body.filename}`, new_presigned_url: `http://127.0.0.1:${fake.address().port}/storage/${body.filename}`, metadata: { storage_backend: "s3" } });
-  if (path.endsWith("/execute")) {
-    received.tools.push(body.tool_slug);
+  if (path.startsWith("/tools/execute/")) {
+    const slug = path.slice("/tools/execute/".length);
+    const account = accounts.find((a) => a.id === body.connected_account_id);
+    received.tools.push([slug, account.info.username]);
+    const media = `media-${account.info.id}`;
     const data = {
-      INSTAGRAM_GET_USER_INFO: { id: "17841400000000001", user_id: "17841400000000001", username: "ana.doces", account_type: "BUSINESS", followers_count: 2300 },
+      INSTAGRAM_GET_USER_INFO: account.info,
       INSTAGRAM_GET_IG_USER_CONTENT_PUBLISHING_LIMIT: { data: [{ quota_usage: 1, config: { quota_total: 100 } }] },
-      INSTAGRAM_CREATE_CAROUSEL_CONTAINER: { id: "18000000000000001" },
-      INSTAGRAM_POST_IG_USER_MEDIA_PUBLISH: { id: "18000000000000999" },
-      INSTAGRAM_GET_IG_MEDIA: { id: "18000000000000999", permalink: "https://www.instagram.com/p/PROVA/", like_count: 128, comments_count: 34, saved_count: 51, shares_count: 9, view_count: 2100 },
+      INSTAGRAM_CREATE_CAROUSEL_CONTAINER: { id: `container-${account.info.id}` },
+      INSTAGRAM_POST_IG_USER_MEDIA_PUBLISH: { id: media },
+      INSTAGRAM_GET_IG_MEDIA: { id: media, permalink: `https://www.instagram.com/p/${media}/`, like_count: account.info.id === "1001" ? 128 : 41, comments_count: 34, saved_count: 51, shares_count: 9, view_count: 2100 },
       INSTAGRAM_GET_IG_MEDIA_INSIGHTS: { data: [{ name: "reach", values: [{ value: 1700 }] }] },
-    }[body.tool_slug];
-    return send({ result_type: "completed", data: data || {}, error: null, log_id: "l" });
+    }[slug];
+    return send({ data: data || {}, error: null, successful: true });
   }
   send({ error: { message: `rota ${path}` } }, 404);
 });
@@ -72,35 +83,50 @@ try {
     return made;
   });
   await page.reload();
-  await page.getByRole("button", { name: /^Marca$/ }).click();
-  const section = page.getByRole("region", { name: "Instagram" });
-  await section.scrollIntoViewIfNeeded();
-  await section.screenshot({ path: join(out, "01-sem-chave.png") });
-  await section.getByLabel("Chave de API do Composio").fill(KEY);
-  await section.getByRole("button", { name: /Salvar chave/ }).click();
-  await section.getByRole("button", { name: /Conectar o Instagram deste perfil/ }).click();
-  await section.getByText("@ana.doces conectado a este perfil").waitFor({ timeout: 15000 });
-  await section.screenshot({ path: join(out, "02-conectado.png") });
-  step("chave salva e conta conectada a este perfil");
+  const topButton = page.getByRole("button", { name: "Conectar Instagram" }).first();
+  await topButton.waitFor();
+  await page.locator(".topbar").screenshot({ path: join(out, "01-topo.png") });
+  await topButton.click();
+  const modal = page.getByRole("dialog", { name: "Conectar Instagram" });
+  await modal.waitFor();
+  await page.screenshot({ path: join(out, "02-modal.png") });
+  step("botão Conectar Instagram no topo abre o modal com o passo a passo");
 
-  await page.getByRole("button", { name: /Início/ }).click();
+  await modal.getByLabel("Chave de API do Composio").fill(KEY);
+  await modal.getByRole("button", { name: /Salvar chave/ }).click();
+  await modal.getByText("@loja.oficial").waitFor({ timeout: 15000 });
+  assert.ok(!received.tools.length || received.tools.every(([slug]) => slug === "INSTAGRAM_GET_USER_INFO"));
+  await modal.getByRole("checkbox", { name: /Padrão em/ }).first().check();
+  await modal.getByRole("checkbox", { name: /Padrão em/ }).first().isChecked();
+  step("as contas que já estavam no Composio aparecem sem reconectar");
+  await modal.getByRole("button", { name: /Conectar outra conta/ }).click();
+  await modal.getByText("@nova.conta").waitFor({ timeout: 15000 });
+  await page.screenshot({ path: join(out, "03-contas.png") });
+  step("conectar outra conta adiciona à lista");
+  await modal.getByRole("button", { name: "Fechar janela" }).click();
+  await page.getByRole("button", { name: /Instagram: 3 contas conectadas/ }).waitFor();
+  await page.locator(".topbar").screenshot({ path: join(out, "04-topo-conectado.png") });
+
   await page.getByRole("button", { name: "Abrir Primeiro post" }).click();
   const box = page.getByLabel("Postar no Instagram");
-  await box.getByRole("button", { name: /Postar agora em @ana.doces/ }).click();
-  await box.screenshot({ path: join(out, "03-confirmar.png") });
+  await box.getByRole("button", { name: "@loja.oficial" }).click();
+  await box.screenshot({ path: join(out, "05-escolher-contas.png") });
+  await box.getByRole("button", { name: /Postar agora em 2 contas/ }).click();
+  await box.getByText(/@ana.doces, @loja.oficial/).waitFor();
   await box.getByRole("button", { name: "Publicar" }).click();
-  await box.getByText(/Postado em/).waitFor({ timeout: 20000 });
-  await box.screenshot({ path: join(out, "04-postado.png") });
-  assert.equal(received.puts.length, 2);
+  await box.getByText(/@loja.oficial · postado em/).waitFor({ timeout: 20000 });
+  await box.screenshot({ path: join(out, "06-postado.png") });
+  assert.equal(received.puts.length, 4, "2 cards × 2 contas");
   assert.ok(received.puts.every((p) => p.jpeg && p.type === "image/jpeg"), "as imagens enviadas são JPEG de verdade");
-  assert.deepEqual(received.tools.slice(-4), ["INSTAGRAM_GET_IG_USER_CONTENT_PUBLISHING_LIMIT", "INSTAGRAM_CREATE_CAROUSEL_CONTAINER", "INSTAGRAM_POST_IG_USER_MEDIA_PUBLISH", "INSTAGRAM_GET_IG_MEDIA"]);
-  step(`postar com confirmação: ${received.puts.length} JPEGs (${received.puts.map((p) => Math.round(p.size / 1024) + " KB").join(", ")}) e carrossel publicado`);
+  const published = received.tools.filter(([slug]) => slug === "INSTAGRAM_POST_IG_USER_MEDIA_PUBLISH").map(([, user]) => user);
+  assert.deepEqual(published, ["ana.doces", "loja.oficial"]);
+  step("postar em duas contas de uma vez, com confirmação listando os @");
 
   await page.getByRole("tab", { name: "Resultado" }).click();
   await page.getByRole("button", { name: /Atualizar/ }).click();
-  await page.getByText("Compartilhamentos").waitFor();
-  await page.getByLabel("Métricas do Instagram").screenshot({ path: join(out, "05-metricas.png") });
-  step("métricas do Instagram no Resultado");
+  await page.getByText("Compartilhamentos").first().waitFor();
+  await page.getByLabel("Métricas do Instagram").screenshot({ path: join(out, "07-metricas.png") });
+  step("métricas por conta no Resultado");
 
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("pacto:navigate", { detail: "home" })));
   await page.getByRole("button", { name: "Abrir Post agendado" }).click();
@@ -108,16 +134,13 @@ try {
   await box2.getByRole("button", { name: "Agendar" }).click();
   await box2.getByRole("button", { name: "Agendar" }).click();
   await box2.getByText(/Agendado para/).waitFor({ timeout: 15000 });
-  await box2.screenshot({ path: join(out, "06-agendado.png") });
+  await box2.screenshot({ path: join(out, "08-agendado.png") });
   const task = `Carrossell\\post-${ids[1]}`;
-  const xml = (await run("schtasks.exe", ["/Query", "/TN", task, "/XML"], { windowsHide: true })).stdout;
-  assert.match(xml, /--publicar-agendados/);
-  step("agendar criou a tarefa real no Agendador do Windows");
+  assert.match((await run("schtasks.exe", ["/Query", "/TN", task, "/XML"], { windowsHide: true })).stdout, /--publicar-agendados/);
   await box2.getByRole("button", { name: "Cancelar" }).click();
   await box2.getByRole("button", { name: /Postar agora/ }).waitFor();
-  const gone = await run("schtasks.exe", ["/Query", "/TN", task], { windowsHide: true }).then(() => false, () => true);
-  assert.ok(gone, "cancelar remove a tarefa do Windows");
-  step("cancelar o agendamento remove a tarefa");
+  assert.ok(await run("schtasks.exe", ["/Query", "/TN", task], { windowsHide: true }).then(() => false, () => true), "cancelar remove a tarefa do Windows");
+  step("agendar cria a tarefa real do Windows e cancelar remove");
 } finally {
   await app.close().catch(() => {});
   await server.close();
