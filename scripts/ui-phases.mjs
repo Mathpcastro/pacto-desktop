@@ -166,7 +166,8 @@ try {
   await page.getByRole("heading", { name: "O que vamos publicar hoje?" }).waitFor();
   await check("a barra única tem poucos controles", async () => {
     const a = await audit(page);
-    assert.ok(a.barControls <= 6, `controles na barra: ${a.barControls}`);
+    // A 0.6.0 já inclui o seletor de perfil e o Instagram; Analytics continua dentro de Marca.
+    assert.ok(a.barControls <= 7, `controles na barra: ${a.barControls}`);
   });
   await page.getByRole("button", { name: "Marca", exact: true }).click();
   await page.getByRole("heading", { name: "Agendei", level: 1 }).waitFor();
@@ -175,9 +176,11 @@ try {
     await expect(page.getByText("### Negócio")).toHaveCount(0);
   });
   await check("a paleta do Design Kit aparece com as cores certas", async () => {
+    await page.getByRole("navigation", { name: "Seções da marca" }).getByRole("button", { name: /^Design Kit/ }).click();
     await expect(page.getByText("#3cc8a0", { exact: true })).toBeVisible();
     await expect(page.getByText("#1e2328", { exact: true })).toBeVisible();
   });
+  await page.getByRole("navigation", { name: "Seções da marca" }).getByRole("button", { name: /^Fotos/ }).click();
   await page.getByLabel("Sugerir uma cena sua").fill("Xícara de café ao lado da agenda de papel");
   await page.getByRole("button", { name: "Adicionar", exact: true }).click();
   await page.getByRole("button", { name: "Aprovar", exact: true }).first().click();
@@ -185,6 +188,7 @@ try {
     await expect(page.getByText(/1 aprovadas/)).toBeVisible();
   });
   await check("selo de verificado vem ligado e aparece na prévia", async () => {
+    await page.getByRole("navigation", { name: "Seções da marca" }).getByRole("button", { name: /^Perfil/ }).click();
     await expect(page.getByLabel("Mostrar selo de verificado")).toBeChecked();
     const html = await page.locator(".tweet-preview iframe").getAttribute("srcdoc");
     assert.match(html, /aria-label="verificado"/);
@@ -465,6 +469,7 @@ try {
 
   phase = "9 · Otimizar e feedback";
   await page.getByRole("button", { name: "Marca", exact: true }).click();
+  await page.getByRole("navigation", { name: "Seções da marca" }).getByRole("button", { name: /^Otimizar/ }).click();
   const optimize = page.getByRole("region", { name: "Otimizar o Carrossell" });
   await optimize.getByLabel("Feedback para o Carrossell").fill("Nunca use emoji nos textos");
   await optimize.getByRole("button", { name: "Ensinar" }).click();
@@ -509,6 +514,7 @@ try {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [list[next++ % list.length]] });
   }, files);
   await page.getByRole("button", { name: "Marca", exact: true }).click();
+  await page.getByRole("navigation", { name: "Seções da marca" }).getByRole("button", { name: /^Imagens da marca/ }).click();
   await page.getByRole("button", { name: "Adicionar imagem" }).click();
   await page.getByRole("button", { name: "Adicionar imagem" }).click();
   await check("Marca: logo e produto entram como Imagens da marca, com o tipo certo", async () => {
@@ -520,7 +526,7 @@ try {
     const s = await page.evaluate(() => window.pacto.request("bootstrap"));
     assert.deepEqual(s.media.assets.map((a) => a.kind), ["logo", "produto"]);
   });
-  await page.getByText("Imagens da marca").scrollIntoViewIfNeeded();
+  await page.getByRole("heading", { name: "Imagens da marca", exact: true }).scrollIntoViewIfNeeded();
   await shot(page, "18-imagens-da-marca");
   await page.getByRole("button", { name: "Início", exact: true }).click();
   await page.getByRole("button", { name: "Anexar foto de referência ou o que você quer que vá no carrossel" }).click();

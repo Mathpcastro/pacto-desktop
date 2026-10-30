@@ -135,6 +135,7 @@ export default function App() {
       { id: "scenes", label: "Sugerir cenas para fotos simples", hint: "Marca", disabled: !connected, run: () => (setView("brand"), request("suggestScenes").catch(() => {})) },
       { id: "theme", label: preferences.theme === "dark" ? "Usar tema claro" : "Usar tema escuro", run: () => set({ theme: preferences.theme === "dark" ? "light" : "dark" }) },
       { id: "instagram", label: "Conectar Instagram", hint: "Postar e agendar", run: () => setIgOpen(true) },
+      { id: "analytics", label: "Marca: Analytics do Instagram", hint: "Desempenho e Replicador", run: () => openBrand("analytics") },
       { id: "agents", label: "Usar o Carrossell com um agente", hint: "Codex, Claude Code", run: () => setAgentsOpen(true) },
       { id: "course", label: "Abrir as aulas do método", hint: "Opcional", run: () => setCourseOpen(true) },
       { id: "account", label: connected ? "Desconectar a conta ChatGPT" : "Conectar a conta ChatGPT", run: () => request(connected ? "disconnect" : "connect").catch(() => {}) },

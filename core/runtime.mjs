@@ -9,7 +9,7 @@ import { findDriveFolders, writeCarouselFolder } from './drive.mjs';
 import { MAIN_PROFILE } from './profiles.mjs';
 import { Social } from './social.mjs';
 import { TEMPLATE_STYLES, FACE_STYLES, SIZES, LAYOUTS, palette, slideHtml, documentHtml, imagesPdfHtml } from './templates.mjs';
-export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli','instagramStatus','saveComposioKey','removeComposioKey','syncInstagram','connectInstagram','checkInstagram','setInstagramDefaults','disconnectInstagram','publishInstagram','schedulePost','cancelSchedule','publishDue','refreshMetrics','instagramPosts','openPermalink','openComposio'];
+export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli','instagramStatus','saveComposioKey','removeComposioKey','syncInstagram','connectInstagram','checkInstagram','setInstagramDefaults','disconnectInstagram','publishInstagram','schedulePost','cancelSchedule','publishDue','refreshMetrics','instagramPosts','instagramAnalytics','importInstagramPost','replicateInstagram','openPermalink','openComposio'];
 export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma oferta'];
 // Problemas da Correção Visual Rápida (Aula 05), oferecidos como botões no editor.
 export const VISUAL_FIXES=['Texto vertical ou empilhado','Título pequeno','Texto excessivo','Hierarquia ruim','Falta CTA','Erro de ortografia','Ilustração não combina','Fora da identidade visual'];
@@ -345,6 +345,14 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       case 'publishDue':return this.social.publishDue({includeLate:args.includeLate===true});
       case 'refreshMetrics':return this.social.refreshMetrics(args.id?{id:args.id}:{});
       case 'instagramPosts':return this.social.posts(args.limit,args.account);
+      case 'instagramAnalytics':return this.social.analytics(args);
+      case 'importInstagramPost':return this.social.importPost(args);
+      case 'replicateInstagram':{
+        this.ensureIdle();
+        const {source,projectId}=await this.social.importPost(args);
+        const project=projectId?this.store.get(projectId):{title:source.caption.slice(0,80),caption:source.caption,slides:[],architecture:'Estrutura dos cards não disponível. Analise somente a legenda; não infira as artes ou o texto dos cards.'};
+        return this.ideas('replicador',{project,metrics:{comments:source.comments,saves:source.saves,sales:null}});
+      }
       case 'openComposio':await this.dialogs.openAuth?.('https://dashboard.composio.dev/~/project/settings/api-keys');return {ok:true};
       case 'openPermalink':{const u=new URL(text(String(args.url||''),500));if(u.protocol!=='https:'||!(u.hostname==='instagram.com'||u.hostname.endsWith('.instagram.com')))throw new Error('Link do Instagram inválido.');await this.dialogs.openAuth?.(u.href);return {ok:true};}
       case 'cliInfo':if(!this.dialogs.cliInfo)throw new Error('Disponível só no aplicativo.');return this.dialogs.cliInfo();

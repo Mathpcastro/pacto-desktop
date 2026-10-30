@@ -4,6 +4,8 @@ import { palette, slideHtml } from "../../core/templates.mjs";
 import { Grow, Markdown, Spinner, TEMPLATE_FONTS, TemplateFrame } from "../ui.jsx";
 import AgentSetup from "./AgentSetup.jsx";
 import { InstagramLogo, InstagramSummary } from "./Instagram.jsx";
+import { BarChart3 } from "lucide-react";
+import Analytics from "./Analytics.jsx";
 
 // Marca em seções, como nas configurações dos bons apps: barra lateral à esquerda e uma seção por vez.
 const BRAND_TABS = {
@@ -14,6 +16,7 @@ const BRAND_TABS = {
   imagens: { group: "Aparência", label: "Imagens da marca", icon: ImageIcon, title: "Imagens da marca", hint: "Logo, produtos e o que pode aparecer nos cards" },
   otimizar: { group: "Ensinar", label: "Otimizar", icon: GraduationCap },
   instagram: { group: "Conexões", label: "Instagram", icon: null },
+  analytics: { group: "Conexões", label: "Analytics", icon: BarChart3 },
   agentes: { group: "Conexões", label: "Agentes", icon: Bot },
 };
 const TAB_KEY = "carrossell-brand-tab";
@@ -487,6 +490,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
         </section>
         )}
       {tab === "instagram" && <InstagramSummary state={state} request={request} onNotice={onNotice} onOpen={onInstagram} />}
+      {tab === "analytics" && <Analytics key={state.profileId} state={state} request={request} onNotice={onNotice} onInstagram={onInstagram} />}
       {tab === "agentes" && <AgentSetup request={request} isPending={isPending} onNotice={onNotice} onOpen={onAgents} />}
         </div>
       </div>

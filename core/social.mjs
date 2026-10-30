@@ -2,6 +2,7 @@ import { Composio } from './composio.mjs';
 import { accountInfo, fetchMetrics, nextMetricsAt, postable, publishCarousel, recentPosts } from './instagram.mjs';
 import { duePosts, parseWhen } from './schedule.mjs';
 import { text } from './store.mjs';
+import { ANALYTICS_TTL, analyticsRange, fetchAnalytics, followerHistory } from './analytics.mjs';
 
 // Instagram pelo Composio. A chave e a lista de contas são do app (fora da biblioteca): todas as contas
 // do Instagram ativas no projeto do Composio aparecem, sem reconectar. Cada perfil do Carrossell marca
@@ -170,4 +171,26 @@ export class Social {
     return updated;
   }
   async posts(limit=25,accountId){const account=accountId?this.find(accountId):this.pick()[0];return recentPosts(this.client(),account,Math.min(Math.max(Number(limit)||25,1),100));}
+  async analytics({account:accountId,days=7,refresh=false}={}){
+    const account=this.find(accountId),store=this.store,range=analyticsRange(days,this.now());
+    const saved=store.analytics().reports[`${account.id}:${range.days}`];
+    let report=saved;
+    if(refresh||!saved||this.now()-Date.parse(saved.updatedAt)>=ANALYTICS_TTL||saved.updatedAt.slice(0,10)!==new Date(this.now()).toISOString().slice(0,10)){
+      report=await fetchAnalytics(this.client(),account,{days:range.days,now:this.now()});
+      await store.saveAnalytics(report);
+    }
+    return {...report,history:followerHistory(store.analytics().snapshots[account.id],range.days,this.now())};
+  }
+  async importPost({account:accountId,mediaId,days=7}={}){
+    const account=this.find(accountId),store=this.store;
+    analyticsRange(days,this.now());
+    const report=store.analytics().reports[`${account.id}:${Number(days)}`];
+    const post=report?.posts.find(p=>p.id===String(mediaId));
+    if(!post)throw new Error('Atualize o Analytics antes de usar este post no Replicador.');
+    if(!post.caption.trim())throw new Error('Este post não tem legenda disponível. Use o Modelador com um print ou texto do post.');
+    const project=store.state().projects.find(p=>p.instagram?.posts?.some(x=>x.accountId===account.id&&x.mediaId===post.id));
+    const source=await store.saveInstagramSource({...post,accountId:account.id,username:account.username,importedAt:new Date(this.now()).toISOString()});
+    this.changed();
+    return {source,projectId:project?.id||''};
+  }
 }

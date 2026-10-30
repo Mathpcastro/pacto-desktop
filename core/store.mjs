@@ -76,6 +76,7 @@ export class Store {
     if(!Array.isArray(this.data.ideas))this.data.ideas=[];
     if(!Array.isArray(this.data.feedback))this.data.feedback=[];
     this.data.settings={...defaultSettings(),...this.data.settings};
+    this.data.analytics={reports:{},snapshots:{},sources:[],...this.data.analytics};
     this.data.media={...emptyMedia(),...this.data.media};
     this.data.instagram={defaults:Array.isArray(this.data.instagram?.defaults)?this.data.instagram.defaults:this.data.instagram?.connectedAccountId?[this.data.instagram.connectedAccountId]:[]};
     // Cada cena guarda uma série de fotos do mesmo ambiente; a primeira é a capa da série.
@@ -87,6 +88,22 @@ export class Store {
     await this.persist();return this;
   }
   state(){return structuredClone(this.data);}
+  analytics(){return structuredClone(this.data.analytics||{reports:{},snapshots:{},sources:[]});}
+  async saveAnalytics(report){
+    const data=this.analytics(),key=`${report.accountId}:${report.days}`;
+    data.reports[key]=structuredClone(report);
+    const date=report.updatedAt.slice(0,10),cutoff=Date.parse(report.updatedAt)-90*86400000;
+    const history=(data.snapshots[report.accountId]||[]).filter(p=>(report.followers===null||p.date!==date)&&Date.parse(p.date)>=cutoff);
+    if(report.followers!==null)history.push({date,followers:report.followers});
+    data.snapshots[report.accountId]=history.sort((a,b)=>a.date.localeCompare(b.date));
+    this.data.analytics=data;await this.persist();return this.analytics();
+  }
+  async saveInstagramSource(source){
+    const data=this.analytics(),existing=data.sources.find(s=>s.accountId===source.accountId&&s.id===source.id);
+    if(existing)Object.assign(existing,structuredClone(source));else data.sources.unshift(structuredClone(source));
+    data.sources=data.sources.slice(0,100);
+    this.data.analytics=data;await this.persist();return structuredClone(existing||source);
+  }
   get(id){validId(id);const p=this.data.projects.find(p=>p.id===id);if(!p)throw new Error('Projeto não encontrado.');return structuredClone(p);}
   persist(){
     const body=JSON.stringify(this.data,null,2);
