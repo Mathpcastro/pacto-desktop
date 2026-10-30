@@ -1,0 +1,166 @@
+#!/usr/bin/env node
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { dirname, resolve, basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { connectControl, userDataDir } from '../core/control.mjs';
+import { AGENT_GUIDE } from '../core/agent-guide.mjs';
+
+// CLI do Carrossell para agentes (Codex, Claude Code) e para quem gosta de terminal.
+// Fala com o app aberto; se ele estiver fechado, abre o Carrossell sem janela e fala com ele.
+// Saída: JSON em stdout; progresso em stderr. Códigos: 0 ok, 1 erro, 2 uso incorreto, 3 app indisponível, 4 tempo esgotado.
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const EXIT={ok:0,error:1,usage:2,unavailable:3,timeout:4};
+class Usage extends Error{}
+const HELP=`Carrossell CLI — controle o app pelo terminal ou por um agente.
+
+Uso: carrossell <comando> [opções]   (saída em JSON)
+
+  status                         conta ChatGPT, perfil ativo e trabalho em andamento
+  perfis                         lista os perfis
+  perfil usar <id|nome>          troca o perfil ativo
+  perfil criar <nome> [--usar]   cria um perfil
+  marca                          Contexto da Marca, Design Kit, cores e rascunhos
+  marca configurar --link <url> | --descricao "<texto>"
+                                 monta Contexto e Design Kit (1 a 3 min) como rascunho
+  marca aprovar [--nome <marca>] aprova os rascunhos como a marca do perfil
+  pautas [--foco "<tema>"]       gera 30 pautas com o Radar (ou lista as já geradas com --listar)
+  projetos                       lista os carrosséis
+  projeto <id>                   textos, status e capas de um carrossel
+  criar --pauta "<texto>" [--titulo] [--estilo ia|tweet|texto|textopreto|fototexto|fundo|recorte]
+        [--cards 4|6|8|10] [--formato carrossel|material|apresentacao] [--objetivo] [--sem-esperar]
+                                 cria o carrossel e escreve o texto
+  mensagem <id> "<pedido>"       pede um ajuste no texto, como no chat do estúdio
+  editar <id> --json '<campos>'  grava campos do projeto (slides, caption, title...)
+  aprovar <id>                   aprova o texto
+  capas <id> [--quantas 1-3]     gera as opções de capa
+  escolher-capa <id> <n>         escolhe a capa n (1, 2 ou 3)
+  gerar <id> [--card <n>]        gera as artes que faltam (ou refaz o card n)
+  esperar <id> [--timeout <s>]   espera a geração terminar
+  cancelar                       para o trabalho em andamento
+  exportar <id> --pasta <dir>    grava 01.png, 02.png... e legenda.txt na pasta
+  chamar <ação> [--json '<args>'] qualquer ação do app (veja API.md)
+  ajuda [--agente]               esta ajuda ou o guia para agentes
+
+Opções em qualquer comando: --perfil <id|nome>, --timeout <segundos> (padrão 900).`;
+
+function parse(argv){
+  const positional=[],flags={};
+  for(let i=0;i<argv.length;i++){
+    const a=argv[i];
+    if(a.startsWith('--')){const [k,v]=a.slice(2).split(/=(.*)/s);const next=argv[i+1];if(v!==undefined)flags[k]=v;else if(next!==undefined&&!next.startsWith('--'))flags[k]=(i++,next);else flags[k]=true;}
+    else positional.push(a);
+  }
+  return {positional,flags};
+}
+const out=value=>process.stdout.write(`${JSON.stringify(value,null,2)}\n`);
+const say=text=>process.stderr.write(`${text}\n`);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+// Abre o app sem janela: empacotado, o próprio executável; em desenvolvimento, o Electron do projeto.
+function launchHeadless(){
+  const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
+  const packaged=basename(root).toLowerCase()==='app.asar';
+  const [command,args]=packaged?[process.execPath,['--segundo-plano']]:[createRequire(import.meta.url)('electron'),[root,'--segundo-plano']];
+  spawn(command,args,{detached:true,stdio:'ignore',windowsHide:true,env}).unref();
+}
+async function connect(userData,{start=true}={}){
+  try{return await connectControl(userData);}catch(error){if(!start)throw error;}
+  say('Abrindo o Carrossell em segundo plano…');launchHeadless();
+  for(let i=0;i<60;i++){await sleep(1000);try{return await connectControl(userData);}catch{}}
+  const error=new Error('O Carrossell não abriu. Abra o app uma vez e tente de novo.');error.code=EXIT.unavailable;throw error;
+}
+async function resolveProfile(client,value){
+  if(value===undefined||value===true)return undefined;
+  const {profiles}=await client.call('profiles');const v=String(value).trim().toLowerCase();
+  // id, nome exato, começo do nome ou parte do nome — nesta ordem; parte ambígua pede o nome inteiro.
+  const name=p=>p.name.toLowerCase();
+  const exact=profiles.find(p=>p.id===value)||profiles.find(p=>name(p)===v);if(exact)return exact.id;
+  for(const match of [p=>name(p).startsWith(v),p=>name(p).includes(v)]){const found=profiles.filter(match);if(found.length===1)return found[0].id;if(found.length>1)throw new Usage(`Mais de um perfil combina com "${value}": ${found.map(p=>p.name).join(', ')}`);}
+  throw new Usage(`Perfil não encontrado: ${value}. Perfis: ${profiles.map(p=>p.name).join(', ')}`);
+}
+// Espera o projeto sair de planning/generating, mostrando o progresso do app em stderr.
+async function waitFor(client,profileId,id,seconds){
+  const deadline=Date.now()+seconds*1000;let last='';
+  await client.subscribe(e=>{if(e.type==='activity'&&e.message&&e.message!==last)say(`… ${last=e.message}`);});
+  for(;;){
+    const p=await client.call('project',{profileId,id});
+    const status=await client.call('status',{profileId});
+    if(!['planning','generating'].includes(p.status)&&status.job?.projectId!==id)return p;
+    if(Date.now()>deadline){const error=new Error(`Tempo esgotado esperando o projeto ${id} (status ${p.status}). Use "carrossell esperar ${id}".`);error.code=EXIT.timeout;throw error;}
+    await sleep(2000);
+  }
+}
+const needId=(id,cmd)=>{if(!id)throw new Usage(`Informe o id do projeto: carrossell ${cmd} <id>`);return id;};
+const json=(value,what)=>{try{return JSON.parse(value);}catch{throw new Usage(`${what} precisa ser JSON válido.`);}};
+
+export async function main(argv=process.argv.slice(2),{userData=userDataDir()}={}){
+  const {positional:[cmd,...rest],flags}=parse(argv);
+  if(!cmd||cmd==='ajuda'||cmd==='help'||flags.help){process.stdout.write(`${flags.agente?AGENT_GUIDE:HELP}\n`);return EXIT.ok;}
+  const client=await connect(userData);
+  try{
+    const profileId=await resolveProfile(client,flags.perfil);
+    const scoped=(args={})=>profileId?{...args,profileId}:args;
+    const timeout=Number(flags.timeout||900);
+    const after=async(id,started)=>flags['sem-esperar']?started:waitFor(client,profileId,id,timeout);
+    switch(cmd){
+      case 'status':out(await client.call('status',scoped()));break;
+      case 'perfis':out(await client.call('profiles'));break;
+      case 'perfil':{
+        const [sub,...name]=rest;
+        if(sub==='usar'){const id=await resolveProfile(client,name.join(' '));const s=await client.call('switchProfile',{id});out({active:s.profileId,profiles:s.profiles});}
+        else if(sub==='criar'){if(!name.length)throw new Usage('Informe o nome: carrossell perfil criar <nome>');const s=await client.call('createProfile',{name:name.join(' '),activate:Boolean(flags.usar)});out({created:s.createdProfile||s.profiles.at(-1),active:s.profileId});}
+        else throw new Usage('Use: carrossell perfil usar <id|nome> | carrossell perfil criar <nome>');
+        break;
+      }
+      case 'marca':{
+        const [sub]=rest;
+        if(!sub)out(await client.call('brand',scoped()));
+        else if(sub==='configurar'){const input=flags.link||flags.descricao;if(!input||input===true)throw new Usage('Use --link <url> ou --descricao "<o que você vende>"');say('Montando Contexto da Marca e Design Kit (1 a 3 minutos)…');await client.subscribe(e=>e.type==='activity'&&e.message&&say(`… ${e.message}`));await client.call('quickSetup',scoped({input:String(input)}));out((await client.call('brand',scoped())).drafts);}
+        else if(sub==='aprovar')out(await client.call('approveBrand',scoped({name:typeof flags.nome==='string'?flags.nome:''})));
+        else throw new Usage('Use: carrossell marca [configurar|aprovar]');
+        break;
+      }
+      case 'pautas':{
+        if(!flags.listar){say('Gerando pautas com o Radar…');await client.call('radar',scoped(typeof flags.foco==='string'?{focus:flags.foco}:{}));}
+        out((await client.call('ideas',scoped())).slice(0,flags.listar?40:1));break;
+      }
+      case 'projetos':out(await client.call('projects',scoped()));break;
+      case 'projeto':out(await client.call('project',scoped({id:needId(rest[0],'projeto')})));break;
+      case 'criar':{
+        const brief=flags.pauta;if(!brief||brief===true)throw new Usage('Use: carrossell criar --pauta "<tema>"');
+        const args={title:typeof flags.titulo==='string'?flags.titulo:String(brief).slice(0,80),brief:String(brief)};
+        if(flags.estilo)args.style=String(flags.estilo);if(flags.cards)args.cardCount=Number(flags.cards);if(flags.formato)args.format=String(flags.formato);if(typeof flags.objetivo==='string')args.goal=flags.objetivo;
+        const p=await client.call('createProject',scoped(args));say(`Projeto ${p.id} criado. Escrevendo o texto…`);
+        await client.call('generatePlan',scoped({id:p.id}));out(await after(p.id,await client.call('project',scoped({id:p.id}))));break;
+      }
+      case 'mensagem':{const id=needId(rest[0],'mensagem');const text=rest.slice(1).join(' ');if(!text)throw new Usage('Use: carrossell mensagem <id> "<pedido>"');await client.call('sendMessage',scoped({id,text}));out(await after(id,await client.call('project',scoped({id}))));break;}
+      case 'editar':{const id=needId(rest[0],'editar');if(typeof flags.json!=='string')throw new Usage("Use: carrossell editar <id> --json '{\"caption\":\"...\"}'");await client.call('saveProject',scoped({...json(flags.json,'--json'),id}));out(await client.call('project',scoped({id})));break;}
+      case 'aprovar':{const id=needId(rest[0],'aprovar');await client.call('approveText',scoped({id}));out(await client.call('project',scoped({id})));break;}
+      case 'capas':{const id=needId(rest[0],'capas');await client.call('generateCovers',scoped({id,...(flags.quantas?{count:Number(flags.quantas)}:{})}));out(await after(id,await client.call('project',scoped({id}))));break;}
+      case 'escolher-capa':{
+        const id=needId(rest[0],'escolher-capa'),n=Number(rest[1]);const p=await client.call('project',scoped({id}));const option=p.coverOptions.find(o=>o.n===n);
+        if(!option)throw new Usage(`Escolha uma capa entre ${p.coverOptions.map(o=>o.n).join(', ')||'(gere as capas antes)'}`);
+        await client.call('chooseCover',scoped({id,optionId:option.id}));out(await after(id,await client.call('project',scoped({id}))));break;
+      }
+      case 'gerar':{
+        const id=needId(rest[0],'gerar');const args={id};
+        if(flags.card){const p=await client.call('project',scoped({id}));const s=p.slides.find(s=>s.index===Number(flags.card));if(!s)throw new Usage(`Card ${flags.card} não existe.`);args.slideId=s.id;}
+        await client.call('generateSlides',scoped(args));out(await after(id,await client.call('project',scoped({id}))));break;
+      }
+      case 'esperar':out(await waitFor(client,profileId,needId(rest[0],'esperar'),timeout));break;
+      case 'cancelar':await client.call('cancelWork',scoped());out(await client.call('status',scoped()));break;
+      case 'exportar':{const id=needId(rest[0],'exportar');if(typeof flags.pasta!=='string')throw new Usage('Use: carrossell exportar <id> --pasta <caminho absoluto>');out(await client.call('exportTo',scoped({id,folder:resolve(flags.pasta)})));break;}
+      case 'chamar':{const action=rest[0];if(!action)throw new Usage('Use: carrossell chamar <ação> [--json \'{...}\']');out(await client.call(action,scoped(typeof flags.json==='string'?json(flags.json,'--json'):{})));break;}
+      default:throw new Usage(`Comando desconhecido: ${cmd}. Veja "carrossell ajuda".`);
+    }
+    return EXIT.ok;
+  }finally{client.close();}
+}
+
+if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+  main().then(code=>{process.exitCode=code;},error=>{
+    process.stderr.write(`${JSON.stringify({erro:error.message})}\n`);
+    if(error instanceof Usage)process.stderr.write('Veja "carrossell ajuda".\n');
+    process.exitCode=error instanceof Usage?EXIT.usage:error.code===EXIT.timeout||error.code===EXIT.unavailable?error.code:EXIT.error;
+  });
+}

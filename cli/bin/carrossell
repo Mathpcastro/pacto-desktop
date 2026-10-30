@@ -1,0 +1,4 @@
+#!/bin/sh
+# Carrossell CLI: roda cli/carrossell.mjs com o executável do app em modo Node.
+DIR="$(cd "$(dirname "$0")" && pwd)"
+ELECTRON_RUN_AS_NODE=1 exec "$DIR/../../MacOS/Carrossell" "$DIR/../app.asar/cli/carrossell.mjs" "$@"

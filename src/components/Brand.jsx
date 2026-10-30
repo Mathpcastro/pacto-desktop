@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, ImagePlus, Plus, RefreshCw, Scissors, Sparkles, Square, Trash2, X } from "lucide-react";
 import { palette, slideHtml } from "../../core/templates.mjs";
 import { Grow, Markdown, Spinner, TEMPLATE_FONTS, TemplateFrame } from "../ui.jsx";
+import AgentSetup from "./AgentSetup.jsx";
 
 function DocSection({ title, value, onSave, hint, extra }) {
   const [editing, setEditing] = useState(false);
@@ -406,6 +407,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           </div>
         </section>
       </div>
+      <AgentSetup request={request} isPending={isPending} onNotice={onNotice} />
     </main>
   );
 }

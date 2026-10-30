@@ -1,0 +1,3 @@
+# Atalhos da CLI: o do Mac precisa de LF; o do Windows, de CRLF.
+cli/bin/carrossell text eol=lf
+*.cmd text eol=crlf

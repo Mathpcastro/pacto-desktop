@@ -8,7 +8,7 @@ import { asUrl, setupPrompt, parseSetup, pageSummary } from './setup.mjs';
 import { findDriveFolders, writeCarouselFolder } from './drive.mjs';
 import { MAIN_PROFILE } from './profiles.mjs';
 import { TEMPLATE_STYLES, FACE_STYLES, SIZES, LAYOUTS, palette, slideHtml, documentHtml, imagesPdfHtml } from './templates.mjs';
-export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile'];
+export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli'];
 export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma oferta'];
 // Problemas da Correção Visual Rápida (Aula 05), oferecidos como botões no editor.
 export const VISUAL_FIXES=['Texto vertical ou empilhado','Título pequeno','Texto excessivo','Hierarquia ruim','Falta CTA','Erro de ortografia','Ilustração não combina','Fora da identidade visual'];
@@ -318,16 +318,22 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     if(!ACTIONS.includes(action))throw new Error('Ação não permitida.');
     if(!args||typeof args!=='object'||Array.isArray(args)||JSON.stringify(args).length>260000000)throw new Error('Dados inválidos.');
     const {profileId,...rest}=args;
-    if(profileId===undefined)return this.handle(action,rest);
+    return this.inProfile(profileId,()=>this.handle(action,rest));
+  }
+  // Roda fn no perfil indicado (ou no da requisição em andamento, se não houver).
+  async inProfile(profileId,fn){
+    if(profileId===undefined||profileId===null)return fn();
     if(!this.profiles)throw new Error('Perfis indisponíveis.');
     const store=await this.profiles.store(validId(profileId));
-    return this.scope.run({store,profileId},()=>this.handle(action,rest));
+    return this.scope.run({store,profileId},fn);
   }
   async handle(action,args){
     switch(action){
       case 'bootstrap':return this.state();
+      case 'cliInfo':if(!this.dialogs.cliInfo)throw new Error('Disponível só no aplicativo.');return this.dialogs.cliInfo();
+      case 'installCli':if(!this.dialogs.installCli)throw new Error('Disponível só no aplicativo.');return this.dialogs.installCli();
       case 'profiles':return {active:this.profiles?.active||MAIN_PROFILE,profiles:this.profileList()};
-      case 'createProfile':{if(!this.profiles)throw new Error('Perfis indisponíveis.');if(args.activate!==false)this.ensureIdle();const p=await this.profiles.create(args.name);if(args.activate===false)return {...this.announceProfile(),profile:p};return this.handle('switchProfile',{id:p.id});}
+      case 'createProfile':{if(!this.profiles)throw new Error('Perfis indisponíveis.');if(args.activate!==false)this.ensureIdle();const p=await this.profiles.create(args.name);if(args.activate===false)return {...this.announceProfile(),createdProfile:p};return this.handle('switchProfile',{id:p.id});}
       case 'renameProfile':if(!this.profiles)throw new Error('Perfis indisponíveis.');await this.profiles.rename(args.id,args.name);return this.announceProfile();
       case 'switchProfile':{
         if(!this.profiles)throw new Error('Perfis indisponíveis.');if(this.job)throw new Error('Aguarde ou cancele a operação em andamento antes de trocar de perfil.');

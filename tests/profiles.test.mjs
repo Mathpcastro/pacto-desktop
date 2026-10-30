@@ -40,7 +40,7 @@ test("the library from before profiles becomes the main profile without moving f
 test("profiles are isolated and a request can target another profile without switching the window", async (t) => {
   const { runtime, events } = await setup(t);
   const created = await runtime.request("createProfile", { name: "Cliente Ana", activate: false });
-  const ana = created.profile.id;
+  const ana = created.createdProfile.id;
   assert.equal(created.profileId, MAIN_PROFILE);
   assert.deepEqual(created.profiles.map((p) => p.name), ["Principal", "Cliente Ana"]);
   const project = await runtime.request("createProject", { profileId: ana, title: "Da Ana", brief: "B" });
@@ -57,7 +57,7 @@ test("profiles are isolated and a request can target another profile without swi
 test("work started in a profile keeps saving there after the request returns", async (t) => {
   const replies = [{ reply: "", complete: true, brandName: "Ana Doces", document: brandDoc }, { reply: "", complete: true, brandName: "", document: designDoc }];
   const { runtime } = await setup(t, { status: { account: { connected: true } }, run: async () => { await new Promise((r) => setTimeout(r, 5)); return { text: JSON.stringify(replies.shift()) }; } });
-  const { profile } = await runtime.request("createProfile", { name: "Ana", activate: false });
+  const { createdProfile: profile } = await runtime.request("createProfile", { name: "Ana", activate: false });
   await runtime.request("quickSetup", { profileId: profile.id, input: "doces por encomenda" });
   assert.equal((await runtime.request("bootstrap", { profileId: profile.id })).onboarding.brand.brandName, "Ana Doces");
   assert.equal(runtime.state().onboarding.brand.document, "", "o Principal não recebe a marca da Ana");
@@ -95,7 +95,7 @@ test("deleting removes the profile folder; the main profile cannot be deleted", 
 
 test("renaming keeps the id and survives a restart", async (t) => {
   const { runtime, root } = await setup(t);
-  const { profile } = await runtime.request("createProfile", { name: "Ana", activate: false });
+  const { createdProfile: profile } = await runtime.request("createProfile", { name: "Ana", activate: false });
   await runtime.request("renameProfile", { id: profile.id, name: "Ana Clínica" });
   const reopened = await new Profiles(root).init();
   assert.equal(reopened.find(profile.id).name, "Ana Clínica");
