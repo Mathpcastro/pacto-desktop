@@ -646,7 +646,7 @@ export default function Studio({ project, state, request, pending, activity, onB
                 {!doc && project.style === "fototexto" && !sceneInUse ? (
                   <div className="notice-strip info" style={{ borderRadius: 12, border: 0 }}>
                     <span>Sem fotos de cena ainda: os cards mostram um espaço reservado. Aprove cenas e gere as fotos na Marca.</span>
-                    <button className="btn small" onClick={onBrand}>Abrir Marca</button>
+                    <button className="btn small" onClick={() => onBrand("fotos")}>Abrir Marca</button>
                   </div>
                 ) : !doc && project.style === "fototexto" && sceneInUse.images.length < slides.length ? (
                   <div className="notice-strip info" style={{ borderRadius: 12, border: 0 }}>
@@ -1027,7 +1027,7 @@ export default function Studio({ project, state, request, pending, activity, onB
                           </button>
                         </div>
                         {!allAssets.length && (
-                          <button className="link-btn" onClick={onBrand}>
+                          <button className="link-btn" onClick={() => onBrand("imagens")}>
                             Cadastrar logo e produtos na Marca
                           </button>
                         )}
@@ -1060,7 +1060,7 @@ export default function Studio({ project, state, request, pending, activity, onB
                             </div>
                           );
                         })()}
-                        <button className="link-btn" onClick={onBrand}>
+                        <button className="link-btn" onClick={() => onBrand("fotos")}>
                           Aprovar mais cenas na Marca
                         </button>
                       </div>
@@ -1077,7 +1077,7 @@ export default function Studio({ project, state, request, pending, activity, onB
                             </button>
                           ))}
                         </div>
-                        <button className="link-btn" onClick={onBrand}>
+                        <button className="link-btn" onClick={() => onBrand("fotos")}>
                           Enviar fotos na Marca
                         </button>
                       </div>

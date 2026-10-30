@@ -28,6 +28,7 @@ try {
   await page.evaluate(() => window.pacto.request("saveProfile", { profile: { brand: "Agendei", brandContext: "# CONTEXTO\n\n" + "público. ".repeat(30), designKit: "# DESIGN KIT\n\n" + "regra. ".repeat(30) } }));
   await page.reload();
   await page.getByRole("button", { name: /^Marca$/ }).click();
+  await page.getByRole("navigation", { name: "Seções da marca" }).getByRole("button", { name: /^Agentes/ }).click();
   const section = page.getByRole("region", { name: "Usar com agentes" });
   await section.scrollIntoViewIfNeeded();
   await section.getByText("node ").waitFor();

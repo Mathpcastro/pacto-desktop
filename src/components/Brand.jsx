@@ -1,9 +1,43 @@
 import { useEffect, useState } from "react";
-import { Check, ImagePlus, Plus, RefreshCw, Scissors, Sparkles, Square, Trash2, X } from "lucide-react";
+import { Bot, Camera, Check, FileText, GraduationCap, Image as ImageIcon, ImagePlus, Palette as PaletteIcon, Plus, RefreshCw, Scissors, Sparkles, Square, Trash2, UserRound, X } from "lucide-react";
 import { palette, slideHtml } from "../../core/templates.mjs";
 import { Grow, Markdown, Spinner, TEMPLATE_FONTS, TemplateFrame } from "../ui.jsx";
 import AgentSetup from "./AgentSetup.jsx";
-import { InstagramSummary } from "./Instagram.jsx";
+import { InstagramLogo, InstagramSummary } from "./Instagram.jsx";
+
+// Marca em seções, como nas configurações dos bons apps: barra lateral à esquerda e uma seção por vez.
+const BRAND_TABS = {
+  contexto: { group: "Marca", label: "Contexto da marca", icon: FileText },
+  design: { group: "Marca", label: "Design Kit", icon: PaletteIcon },
+  perfil: { group: "Aparência", label: "Perfil", icon: UserRound, title: "Perfil", hint: "Nome, @ e foto que aparecem nos estilos prontos" },
+  fotos: { group: "Aparência", label: "Fotos", icon: Camera, title: "Fotos", hint: "Seu rosto e cenas para as fotos simples" },
+  imagens: { group: "Aparência", label: "Imagens da marca", icon: ImageIcon, title: "Imagens da marca", hint: "Logo, produtos e o que pode aparecer nos cards" },
+  otimizar: { group: "Ensinar", label: "Otimizar", icon: GraduationCap },
+  instagram: { group: "Conexões", label: "Instagram", icon: null },
+  agentes: { group: "Conexões", label: "Agentes", icon: Bot },
+};
+const TAB_KEY = "carrossell-brand-tab";
+function BrandNav({ tab, onTab, meta }) {
+  let group = "";
+  return (
+    <nav className="brand-nav" aria-label="Seções da marca">
+      {Object.entries(BRAND_TABS).map(([id, t]) => {
+        const head = t.group !== group ? (group = t.group) : null;
+        const Icon = t.icon;
+        return (
+          <div key={id} style={{ display: "contents" }}>
+            {head && <span className="brand-nav-group">{head}</span>}
+            <button aria-current={tab === id ? "page" : undefined} onClick={() => onTab(id)}>
+              {Icon ? <Icon size={16} /> : <InstagramLogo size={16} />}
+              <span className="label">{t.label}</span>
+              {meta[id] ? <small>{meta[id]}</small> : null}
+            </button>
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
 
 function DocSection({ title, value, onSave, hint, extra }) {
   const [editing, setEditing] = useState(false);
@@ -61,7 +95,7 @@ function DocSection({ title, value, onSave, hint, extra }) {
   );
 }
 
-export default function Brand({ state, request, isPending, onRedo, onManual, onNotice, onInstagram, onAgents }) {
+export default function Brand({ state, request, isPending, onRedo, onManual, onNotice, onInstagram, onAgents, target }) {
   const profile = state.profile || {};
   const media = state.media || { faces: [], scenes: [], verified: true };
   const assets = media.assets || [];
@@ -99,8 +133,36 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
     fonts: TEMPLATE_FONTS,
   });
   const busyMedia = ["scenes", "scene", "cutout"].includes(working);
+  const [tab, setTabState] = useState(() => {
+    try {
+      const saved = localStorage.getItem(TAB_KEY);
+      return BRAND_TABS[saved] ? saved : "contexto";
+    } catch {
+      return "contexto";
+    }
+  });
+  const setTab = (id) => {
+    setTabState(id);
+    try {
+      localStorage.setItem(TAB_KEY, id);
+    } catch {}
+  };
+  useEffect(() => {
+    if (target?.tab && BRAND_TABS[target.tab]) setTab(target.tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target?.n]);
+  const igAccounts = (state.composio?.accounts || []).filter((a) => a.status === "ACTIVE");
+  const meta = {
+    contexto: profile.brandContext?.trim() ? "" : "vazio",
+    design: profile.designKit?.trim() ? "" : "vazio",
+    perfil: media.handle ? `@${media.handle}` : "",
+    fotos: media.faces.length || approved ? String(media.faces.length + approved) : "",
+    imagens: assets.length ? String(assets.length) : "",
+    otimizar: feedback.length ? String(feedback.length) : "",
+    instagram: igAccounts.length ? String(igAccounts.length) : "",
+  };
   return (
-    <main className="page">
+    <main className="page brand-page">
       <div className="section-head" style={{ alignItems: "flex-end" }}>
         <div style={{ display: "grid", gap: 6 }}>
           <h1 className="page-title">{brand.name || "Sua marca"}</h1>
@@ -114,6 +176,10 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           <RefreshCw size={15} /> Refazer pelo link ou entrevista
         </button>
       </div>
+      <div className="brand-layout">
+        <BrandNav tab={tab} onTab={setTab} meta={meta} />
+        <div className="brand-pane">
+      {tab === "otimizar" && (
       <section className="card-box optimize" aria-label="Otimizar o Carrossell">
         <div className="section-head">
           <h2>Otimizar o Carrossell</h2>
@@ -166,7 +232,8 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           </button>
         </div>
       </section>
-      {busyMedia && (
+      )}
+      {busyMedia && (tab === "fotos" || tab === "perfil") && (
         <div className="work-strip" role="status">
           <Spinner />
           <span>{working === "scenes" ? "Sugerindo cenas para as suas fotos…" : working === "cutout" ? "Recortando a sua foto…" : "Gerando a foto da cena…"}</span>
@@ -175,8 +242,8 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           </button>
         </div>
       )}
-      <div className="brand-grid">
-        <DocSection title="Contexto da marca" value={profile.brandContext} hint="Aula 02" onSave={saveDoc("brandContext")} />
+        {tab === "contexto" && <DocSection title="Contexto da marca" value={profile.brandContext} hint="Aula 02" onSave={saveDoc("brandContext")} />}
+        {tab === "design" && (
         <DocSection
           title="Design Kit"
           value={profile.designKit}
@@ -199,10 +266,14 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
             </div>
           }
         />
-        <section className="card-box full" aria-label="Perfil e fotos">
+        )}
+        {["perfil", "fotos", "imagens"].includes(tab) && (
+        <section className="card-box full" aria-label={BRAND_TABS[tab].title}>
           <div className="section-head">
-            <h2>Perfil e fotos</h2>
+            <h2>{BRAND_TABS[tab].title}</h2>
+            <span className="hint">{BRAND_TABS[tab].hint}</span>
           </div>
+          {tab === "perfil" && (
           <div className="sub">
             <div className="sub-head">
               <b>Foto de perfil</b>
@@ -247,6 +318,8 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
               </div>
             </div>
           </div>
+          )}
+          {tab === "fotos" && (
           <div className="sub">
             <div className="sub-head">
               <b>Fotos com o seu rosto</b>
@@ -290,6 +363,8 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
             </div>
             <p className="hint">Envie fotos suas: de frente, trabalhando, sorrindo, em pé. Fotos de outras pessoas só com autorização delas. O Carrossell não gera rostos de pessoas reais nem famosas.</p>
           </div>
+          )}
+          {tab === "imagens" && (
           <div className="sub">
             <div className="sub-head">
               <b>Imagens da marca</b>
@@ -327,6 +402,8 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
             </div>
             <p className="hint">O logo vira referência em toda arte com IA. Produtos e outras imagens aparecem no card que você escolher, ou o Carrossell escolhe ao escrever o texto. Nos estilos prontos, a imagem entra no próprio card.</p>
           </div>
+          )}
+          {tab === "fotos" && (
           <div className="sub">
             <div className="sub-head">
               <b>Cenas para fotos simples</b>
@@ -406,10 +483,13 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
               </button>
             </form>
           </div>
+          )}
         </section>
+        )}
+      {tab === "instagram" && <InstagramSummary state={state} request={request} onNotice={onNotice} onOpen={onInstagram} />}
+      {tab === "agentes" && <AgentSetup request={request} isPending={isPending} onNotice={onNotice} onOpen={onAgents} />}
+        </div>
       </div>
-      <InstagramSummary state={state} request={request} onNotice={onNotice} onOpen={onInstagram} />
-      <AgentSetup request={request} isPending={isPending} onNotice={onNotice} onOpen={onAgents} />
     </main>
   );
 }

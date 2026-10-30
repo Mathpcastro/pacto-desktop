@@ -52,6 +52,13 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [igOpen, setIgOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
+  // Abrir a Marca já numa seção (links do estúdio e Ctrl K).
+  const [brandTarget, setBrandTarget] = useState({ tab: null, n: 0 });
+  const openBrand = (tab) => {
+    if (typeof tab === "string") setBrandTarget((t) => ({ tab, n: t.n + 1 }));
+    setView("brand");
+    setProjectId(null);
+  };
   const composerRef = useRef(null);
   const menu = usePopover();
   const project = state.projects.find((p) => p.id === projectId);
@@ -122,7 +129,8 @@ export default function App() {
       ...projectCommands.map((c) => (editing ? c : { ...c, hidden: true })),
       { id: "new", label: "Novo carrossel", hint: "Ctrl + N", run: () => (goHome(), setTimeout(() => composerRef.current?.focus(), 50)) },
       { id: "home", label: "Ir para o Início", run: goHome },
-      { id: "brand", label: "Abrir Marca", hint: "Contexto, Design Kit e fotos", run: () => (setView("brand"), setProjectId(null)) },
+      { id: "brand", label: "Abrir Marca", hint: "Contexto, Design Kit e fotos", run: () => openBrand() },
+      ...[["contexto", "Contexto da marca"], ["design", "Design Kit"], ["perfil", "Perfil (nome, @ e foto)"], ["fotos", "Fotos e cenas"], ["imagens", "Imagens da marca (logo e produtos)"], ["otimizar", "Otimizar o Carrossell"]].map(([tab, label]) => ({ id: `brand-${tab}`, label: `Marca: ${label}`, hint: "Marca", run: () => openBrand(tab) })),
       { id: "radar", label: "Gerar 30 pautas com o Radar", hint: "Aula 02", disabled: !connected, run: () => (goHome(), request("radar", {}).catch(() => {})) },
       { id: "scenes", label: "Sugerir cenas para fotos simples", hint: "Marca", disabled: !connected, run: () => (setView("brand"), request("suggestScenes").catch(() => {})) },
       { id: "theme", label: preferences.theme === "dark" ? "Usar tema claro" : "Usar tema escuro", run: () => set({ theme: preferences.theme === "dark" ? "light" : "dark" }) },
@@ -254,7 +262,7 @@ export default function App() {
         onOpen={openProject}
         onNotice={setNotice}
         onCommands={setProjectCommands}
-        onBrand={() => (setView("brand"), setProjectId(null))}
+        onBrand={openBrand}
         onInstagram={() => setIgOpen(true)}
       />
     );
@@ -262,7 +270,7 @@ export default function App() {
     body = (
       <main className="shell-main">
         {view === "brand" ? (
-          <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} onAgents={() => setAgentsOpen(true)} />
+          <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} onAgents={() => setAgentsOpen(true)} target={brandTarget} />
         ) : (
           <Home state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} composerRef={composerRef} connected={connected} onAgents={() => setAgentsOpen(true)} />
         )}
