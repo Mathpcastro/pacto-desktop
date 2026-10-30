@@ -119,7 +119,8 @@ test("saving the key brings every Instagram already connected in Composio, witho
   await assert.rejects(ctx.runtime.request("saveComposioKey", { key: "curta" }), /não parece uma chave/);
   await assert.rejects(ctx.runtime.request("saveComposioKey", { key: "ak_errada_123456" }), /não aceitou a chave \(ak_\*\*3456\)\. Use a chave do PROJETO: em composio\.dev, abra Settings › Project Settings › API Keys/);
   await assert.rejects(ctx.runtime.request("saveComposioKey", { key: "uak_minha_chave_123456" }), /chave de usuário \(começa com uak_\)/);
-  assert.equal(ctx.api.calls.filter((c) => c.headers?.["x-api-key"]?.startsWith("uak_")).length, 0, "a chave de usuário nem é enviada");
+  await assert.rejects(ctx.runtime.request("saveComposioKey", { key: "ck_minha_chave_do_mcp" }), /chave do Composio Connect \(a do MCP, começa com ck_\)/);
+  assert.equal(ctx.api.calls.filter((c) => /^(uak|ck)_/.test(c.headers?.["x-api-key"] || "")).length, 0, "chaves de usuário e do MCP nem são enviadas");
   const status = await ctx.runtime.request("saveComposioKey", { key: KEY });
   assert.deepEqual(status.accounts.map((a) => [a.username, a.status]), [["ana.doces", "ACTIVE"], ["loja.oficial", "ACTIVE"], ["eu.pessoal", "personal"]], "contas expiradas ficam de fora; a pessoal aparece explicando");
   assert.match(status.accounts[2].error, /contas Profissionais/);

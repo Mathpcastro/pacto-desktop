@@ -345,7 +345,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       case 'publishDue':return this.social.publishDue({includeLate:args.includeLate===true});
       case 'refreshMetrics':return this.social.refreshMetrics(args.id?{id:args.id}:{});
       case 'instagramPosts':return this.social.posts(args.limit,args.account);
-      case 'openComposio':await this.dialogs.openAuth?.('https://platform.composio.dev');return {ok:true};
+      case 'openComposio':await this.dialogs.openAuth?.('https://dashboard.composio.dev/~/project/settings/api-keys');return {ok:true};
       case 'openPermalink':{const u=new URL(text(String(args.url||''),500));if(u.protocol!=='https:'||!(u.hostname==='instagram.com'||u.hostname.endsWith('.instagram.com')))throw new Error('Link do Instagram inválido.');await this.dialogs.openAuth?.(u.href);return {ok:true};}
       case 'cliInfo':if(!this.dialogs.cliInfo)throw new Error('Disponível só no aplicativo.');return this.dialogs.cliInfo();
       case 'installCli':if(!this.dialogs.installCli)throw new Error('Disponível só no aplicativo.');return this.dialogs.installCli();
