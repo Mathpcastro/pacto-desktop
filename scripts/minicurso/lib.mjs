@@ -137,7 +137,7 @@ export class Recorder {
     if (!lesson) return; // gravações fora do minicurso (ex.: vídeo da hero) não têm cartelas
     const n = String(lesson.number).padStart(2, "0");
     const letter = lesson.letter === "PACTO" ? "" : lesson.letter === "AC" ? "A·C" : lesson.letter;
-    await this.card("abertura", cardHtml({ eyebrow: `PACTO EM 19 MINUTOS · AULA ${n}`, title: lesson.title.replace(/ · /, " · <em>").replace(/$/, lesson.title.includes(" · ") ? "</em>" : ""), subtitle: `Base no curso: ${lesson.sources.join(", ")}`, letter }));
+    await this.card("abertura", cardHtml({ eyebrow: `PACTO EM 19 MINUTOS · AULA ${n}`, title: lesson.title.replace(/ · /, " · <em>").replace(/$/, lesson.title.includes(" · ") ? "</em>" : ""), subtitle: lesson.subtitle || `Base no curso: ${lesson.sources.join(", ")}`, letter }));
     await this.card("fim", cardHtml({ eyebrow: next ? `PRÓXIMA · AULA ${String(next.number).padStart(2, "0")}` : "FIM DO MINICURSO", title: next ? next.title : "Agora é com você. <em>Publique hoje.</em>", letter }));
     for (const fast of [false, true]) await this.card(fast ? "moldura-acelerado" : "moldura", frameHtml({ label: `Aula ${n} · ${lesson.title}`, letter, fast }));
   }

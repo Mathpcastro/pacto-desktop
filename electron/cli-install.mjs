@@ -11,12 +11,14 @@ const run=promisify(execFile);
 const powershell=(command,env={})=>run('powershell.exe',['-NoProfile','-NonInteractive','-Command',command],{windowsHide:true,env:{...process.env,...env}});
 const macLink=()=>join(homedir(),'.local','bin','carrossell');
 function paths(root){
+  // PACTO_CLI_PREVIEW=instalado (só em desenvolvimento): as gravações mostram o que o comprador vê no app instalado.
+  if(!app.isPackaged&&process.env.PACTO_CLI_PREVIEW==='instalado')return {packaged:true,binDir:'',command:'carrossell',preview:true};
   if(!app.isPackaged)return {packaged:false,binDir:'',command:`node "${join(root,'cli','carrossell.mjs')}"`};
   return {packaged:true,binDir:join(process.resourcesPath,'bin'),command:'carrossell'};
 }
 async function userPath(){return (await powershell("[Environment]::GetEnvironmentVariable('Path','User')")).stdout.trim();}
 export async function cliInfo(root){
-  const p=paths(root);if(!p.packaged)return {...p,installed:false};
+  const p=paths(root);if(!p.packaged||p.preview)return {...p,installed:false};
   if(process.platform==='win32')return {...p,installed:(await userPath()).toLowerCase().split(';').includes(p.binDir.toLowerCase())};
   return {...p,installed:await access(macLink()).then(()=>true,()=>false)};
 }

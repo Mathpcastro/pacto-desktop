@@ -551,6 +551,65 @@
           "narration": "Escolha um estilo que combine com você, aprove duas ou três cenas e transforme o material do seu próximo carrossel em PDF."
         }
       ]
+    },
+    {
+      "id": "aula-10",
+      "number": 10,
+      "title": "Postar e agendar no Instagram",
+      "letter": "O",
+      "niche": "Agendei",
+      "sources": [
+        "Carrossell 0.6"
+      ],
+      "subtitle": "Novo no Carrossell 0.6",
+      "targetSeconds": 150,
+      "beats": [
+        {
+          "id": "abertura",
+          "screen": "Cartela: Postar e agendar no Instagram.",
+          "narration": "Agora o Carrossell posta direto no seu Instagram. Você aprova o carrossel e ele vai para o ar sem você sair do app."
+        },
+        {
+          "id": "conectar",
+          "screen": "Botão Conectar Instagram, modal com os quatro passos e as contas.",
+          "narration": "Clique em Conectar Instagram, no topo. A conta precisa ser Profissional. Você cria uma conta grátis no Composio, que é a ponte segura com o Instagram, e cola a chave do projeto. As contas aparecem aqui. Marque quais são as padrão deste perfil."
+        },
+        {
+          "id": "postar",
+          "screen": "Publicar: escolher as contas, Postar agora, confirmar.",
+          "narration": "Com o carrossel pronto, vá em Publicar. Escolha em quais contas ele vai sair, uma ou várias. Clique em Postar agora, confira os arrobas e pronto: ele vai direto para o Instagram, sem baixar nenhuma imagem."
+        },
+        {
+          "id": "agendar",
+          "screen": "Agendar com data e hora.",
+          "narration": "Prefere deixar para depois? Clique em Agendar e escolha o dia e a hora. O post sai sozinho, mesmo com o app fechado. Só deixe o computador ligado."
+        },
+        {
+          "id": "metricas",
+          "screen": "Resultado com os números do Instagram.",
+          "narration": "Um, três e sete dias depois, os números voltam para o app: curtidas, comentários, salvamentos e alcance de cada conta."
+        },
+        {
+          "id": "analytics",
+          "screen": "Marca › Analytics da conta.",
+          "narration": "Em Marca, Analytics, você vê a conta inteira: alcance, seguidores e os posts que mais funcionaram. Use os melhores no Replicador para criar variações do que já deu certo."
+        },
+        {
+          "id": "perfis",
+          "screen": "Troca de perfil entre Agendei e Doce Ofício.",
+          "narration": "Cuida de mais de uma marca? Crie um perfil para cada uma. Cada perfil tem o seu contexto, o seu Design Kit, os seus carrosséis e as suas contas do Instagram."
+        },
+        {
+          "id": "agentes",
+          "screen": "Card do agente e o modal Usar com agentes.",
+          "narration": "E se você usa um agente de IA, como o Codex ou o Claude Code, ele pode criar, postar e agendar por você. Em Usar com agentes, instale o comando e cole o guia no seu agente."
+        },
+        {
+          "id": "acao",
+          "screen": "Início com o botão Conectar Instagram em destaque.",
+          "narration": "Conecte o seu Instagram e publique o primeiro carrossel hoje."
+        }
+      ]
     }
   ]
 }
