@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, ArrowLeft, Check, Home as HomeIcon, Laptop, LogOut, Palette, RefreshCw, Search, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, Home as HomeIcon, Laptop, LayoutTemplate, LogOut, Palette, RefreshCw, Search, X } from "lucide-react";
 import { RuntimeErrorContext, usePacto } from "./usePacto.js";
 import Dialog from "./components/Dialog.jsx";
 import Profile from "./components/Profile.jsx";
@@ -273,7 +273,7 @@ export default function App() {
         {view === "brand" ? (
           <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} onAgents={() => setAgentsOpen(true)} target={brandTarget} />
         ) : (
-          <Home state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} composerRef={composerRef} connected={connected} onAgents={() => setAgentsOpen(true)} />
+          <Home view={view} state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} onShowHome={goHome} composerRef={composerRef} connected={connected} onAgents={() => setAgentsOpen(true)} />
         )}
       </main>
     );
@@ -290,9 +290,12 @@ export default function App() {
               {available && !loading && !bootstrapFailed && <ProfileSwitcher state={state} request={request} isPending={isPending} menu={menu} onSwitched={goHome} />}
               {hasProfile && available && !setup && (
                 <nav className="topnav" aria-label="Navegação principal">
-                  <button aria-current={view !== "brand" ? "page" : undefined} onClick={goHome}>
+                  <button aria-current={view === "home" ? "page" : undefined} onClick={goHome}>
                     <HomeIcon size={16} /> Início
                     {pendingResults > 0 && <span className="count-badge" aria-label={`${pendingResults} resultados para registrar`}>{pendingResults}</span>}
+                  </button>
+                  <button aria-current={view === "references" ? "page" : undefined} onClick={() => { setView("references"); setProjectId(null); }}>
+                    <LayoutTemplate size={16} /> Referências
                   </button>
                   <button aria-current={view === "brand" ? "page" : undefined} onClick={() => setView("brand")}>
                     <Palette size={16} /> Marca
