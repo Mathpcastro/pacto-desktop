@@ -59,8 +59,8 @@ function assetKind(value){const v=String(value||'outro');if(!ASSET_KINDS.include
 export function validateAttachments(list){if(!Array.isArray(list)||list.length>6)throw new Error('Anexe até seis imagens.');return list.map(a=>({id:a.id?validId(a.id):randomUUID(),...validateReference(a)}));}
 const SCENE_STATUS=['pending','approved','rejected'];
 function imageUrl(value){if(!value)return '';return validateReference({name:'imagem',dataUrl:value}).dataUrl;}
-export const CARD_COUNTS=[0,4,6,8,10];
-function cardCount(value){const n=Number(value||0);if(!CARD_COUNTS.includes(n))throw new Error('Quantidade de cards inválida.');return n;}
+export const CARD_COUNTS=Array.from({length:11},(_,index)=>index);
+function cardCount(value){const n=Number(value||0);if(!Number.isInteger(n)||!CARD_COUNTS.includes(n))throw new Error('Quantidade de cards inválida.');return n;}
 const defaultSettings=()=>({weeklyGoal:5,driveFolder:'',firstCompletedAt:'',lastReminderAt:''});
 // Feedback da pessoa para a ferramenta: entra em todas as gerações seguintes da área marcada.
 export const FEEDBACK_AREAS=['texto','visual','geral'];

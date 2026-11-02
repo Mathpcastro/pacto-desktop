@@ -24,14 +24,23 @@ const slides = [
   { id: "two", role: "CTA", title: "C", body: "D" },
 ];
 
-test("card count is validated, persisted and sent to the copy prompt", async (t) => {
+test("every card count from automatic through 10 is validated and persisted", async (t) => {
   const store = await fixture(t);
-  await assert.rejects(
-    store.createProject({ title: "A", brief: "B", cardCount: 5 }),
-    /cards inválida/,
-  );
+  for (let cardCount = 0; cardCount <= 10; cardCount += 1) {
+    const p = await store.createProject({ title: `Projeto ${cardCount}`, brief: "B", cardCount });
+    assert.equal(p.cardCount, cardCount);
+  }
+  for (const invalid of [-1, 1.5, 11, "abc"]) {
+    await assert.rejects(
+      store.createProject({ title: "Inválido", brief: "B", cardCount: invalid }),
+      /cards inválida/,
+    );
+  }
+});
+
+test("card count is sent to the copy prompt", async (t) => {
+  const store = await fixture(t);
   const p = await store.createProject({ title: "A", brief: "B", cardCount: 4 });
-  assert.equal(p.cardCount, 4);
   const prompts = [];
   const plan = {
     title: "T",

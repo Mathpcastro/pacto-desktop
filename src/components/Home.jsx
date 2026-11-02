@@ -32,10 +32,10 @@ const FORMATS = [
 ];
 const SIZES = [
   [0, "Automático", "O Carrossell decide"],
-  [4, "4", "Gasta menos do limite da conta"],
-  [6, "6", ""],
-  [8, "8", ""],
-  [10, "10", ""],
+  ...Array.from({ length: 10 }, (_, index) => {
+    const value = index + 1;
+    return [value, String(value), value === 4 ? "Gasta menos do limite da conta" : ""];
+  }),
 ];
 const PLACEHOLDER = {
   carrossel: "Escreva o tema, cole uma ideia ou descreva uma referência…",
@@ -47,7 +47,7 @@ const SOURCES = [
   ["modelador", "Referências"],
   ["replicador", "Vencedores"],
 ];
-const unit = (format, n) => `${n} ${format === "carrossel" ? "cards" : format === "material" ? "páginas" : "slides"}`;
+const unit = (format, n) => `${n} ${format === "carrossel" ? `card${n === 1 ? "" : "s"}` : format === "material" ? `página${n === 1 ? "" : "s"}` : `slide${n === 1 ? "" : "s"}`}`;
 
 function Ring({ value, goal }) {
   const c = 2 * Math.PI * 26;
@@ -266,7 +266,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
           {menu("format", "Formato", FORMAT_LABEL[format], FORMATS, setFormat)}
           {format === "carrossel" && menu("style", "Estilo", STYLE_LIST.find((s) => s[0] === style)[1], STYLE_LIST, setStyle)}
           {format === "carrossel" && goals.length > 0 && menu("goal", "Objetivo", goal || "Livre", [["", "Livre", "Sem objetivo específico"], ...goals.map((g) => [g, g, ""])], setGoal)}
-          {menu("size", "Tamanho", size ? unit(format, size) : "Automático", SIZES.map(([v, l, d]) => [v, v ? unit(format, v) : l, d]), setSize)}
+          {menu("size", "Tamanho", size ? unit(format, size) : "Automático", SIZES.filter(([v]) => format === "carrossel" || v !== 1).map(([v, l, d]) => [v, v ? unit(format, v) : l, d]), setSize)}
           {format === "carrossel" && architectures.length > 0 &&
             menu("arch", "Tipo", archName, [["", "Automático", "O Carrossell escolhe a arquitetura"], ...architectures.map((a) => [a.id, a.name, a.useWhen])], setArchitectureId)}
           {format === "carrossel" && (
