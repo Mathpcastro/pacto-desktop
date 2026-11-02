@@ -204,6 +204,37 @@ try {
     }, project.id);
     assert.equal(resized, 3);
   });
+  await check("Tamanho fecha ao clicar em outro controle da barra", async () => {
+    const size = page.getByRole("button", { name: /Tamanho/ });
+    await size.click();
+    await expect(page.getByRole("menu")).toBeVisible();
+    await page.getByLabel("Nome do projeto").click();
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    await expect(size).toHaveAttribute("aria-expanded", "false");
+  });
+  await page.keyboard.press("Escape");
+  await check("Tamanho navega por teclado e Escape devolve o foco ao botão", async () => {
+    const size = page.getByRole("button", { name: /Tamanho/ });
+    const option = (name) => page.getByRole("menuitemradio", { name: new RegExp(`^${name}`) });
+    await size.click();
+    await expect(option("3 cards")).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect(option("4 cards")).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    await expect(option("3 cards")).toBeFocused();
+    await page.keyboard.press("End");
+    await expect(option("10 cards")).toBeFocused();
+    await page.keyboard.press("Home");
+    await expect(option("1 card")).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    await expect(option("10 cards")).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect(option("1 card")).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    await expect(size).toBeFocused();
+  });
+  await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Voltar ao início", exact: true }).click();
   for (let index = 1; index <= 6; index += 1) {

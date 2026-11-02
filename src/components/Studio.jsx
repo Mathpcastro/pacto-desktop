@@ -214,6 +214,8 @@ function Share({ project, request }) {
 export default function Studio({ project, state, request, pending, activity, onBack, onOpen, onNotice, onCommands, onBrand, onInstagram }) {
   const course = useContext(CourseContext);
   const pop = usePopover();
+  const sizeRoot = useRef(null);
+  const sizeButton = useRef(null);
   const format = project.format || "carrossel";
   const doc = format !== "carrossel";
   const template = doc || TEMPLATE_STYLES.includes(project.style);
@@ -254,6 +256,37 @@ export default function Studio({ project, state, request, pending, activity, onB
   useEffect(() => {
     reviewed.set(project.id, checks);
   }, [checks, project.id]);
+  useEffect(() => {
+    if (pop.open !== "size") return undefined;
+    const root = sizeRoot.current;
+    const current = root?.querySelector('[role="menuitemradio"][aria-checked="true"]') || root?.querySelector('[role="menuitemradio"]');
+    current?.focus();
+    const close = (event) => {
+      if (!sizeRoot.current?.contains(event.target)) pop.setOpen(null);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [pop.open, pop.setOpen]);
+  const sizeKeys = (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      pop.setOpen(null);
+      sizeButton.current?.focus();
+      return;
+    }
+    const items = [...event.currentTarget.querySelectorAll('[role="menuitemradio"]')];
+    const current = items.indexOf(document.activeElement);
+    let next;
+    if (event.key === "ArrowDown") next = current < 0 || current === items.length - 1 ? 0 : current + 1;
+    else if (event.key === "ArrowUp") next = current <= 0 ? items.length - 1 : current - 1;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = items.length - 1;
+    else return;
+    event.preventDefault();
+    event.stopPropagation();
+    items[next]?.focus();
+  };
   const slides = project.slides || [];
   const drafts = draft.slides;
   const brand = state.brandInfo || {};
@@ -478,12 +511,12 @@ export default function Studio({ project, state, request, pending, activity, onB
           ))}
         </nav>
         {!doc && (
-          <div className="pop-anchor">
-            <button type="button" className="pill" aria-haspopup="true" aria-expanded={pop.open === "size"} onClick={() => pop.toggle("size")}>
+          <div className="pop-anchor" ref={sizeRoot}>
+            <button ref={sizeButton} type="button" className="pill" aria-haspopup="true" aria-expanded={pop.open === "size"} onClick={() => pop.toggle("size")}>
               <i>Tamanho</i> {project.cardCount ? `${project.cardCount} ${project.cardCount === 1 ? "card" : "cards"}` : "Automático"} <ChevronDown size={14} />
             </button>
             {pop.open === "size" && (
-              <div className="popover" role="menu">
+              <div className="popover" role="menu" onKeyDown={sizeKeys}>
                 {Array.from({ length: 10 }, (_, index) => index + 1).map((next) => (
                   <button
                     key={next}
