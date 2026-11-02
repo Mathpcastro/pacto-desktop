@@ -139,8 +139,8 @@ export class Store {
     }
     this.data.settings=next;await this.persist();return this.state();
   }
-  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId='',attachments=[]}){
-    const now=new Date().toISOString();const f=format(kind);const p={id:randomUUID(),format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
+  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId='',attachments=[],madeBy=''}){
+    const now=new Date().toISOString();const f=format(kind);const p={id:randomUUID(),format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',madeBy:text(String(madeBy||''),40),stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
     this.data.projects.unshift(p);await this.persist();return this.get(p.id);
   }
   async saveProject(args){
@@ -242,13 +242,22 @@ export class Store {
   async exportZip(id){return zipSync(this.exportFiles(id),{level:0});}
   async saveStories(id,stories){
     if(!Array.isArray(stories)||!stories.length||stories.length>10)throw new Error('Sequência de stories inválida.');
-    const clean=stories.map(s=>({id:validId(s.id||randomUUID()),type:text(String(s.type||'Story'),60),text:text(String(s.text||''),2000),sticker:text(String(s.sticker||''),500),cta:text(String(s.cta||''),500),visual:text(String(s.visual||''),2000)}));
+    const clean=stories.map(s=>({id:validId(s.id||randomUUID()),type:text(String(s.type||'Story'),60),text:text(String(s.text||'').split('\n').map(l=>l.trim()).join('\n').trim(),2000),sticker:text(String(s.sticker||''),500),cta:text(String(s.cta||''),500),visual:text(String(s.visual||''),2000)}));
     return this.update(id,{stories:clean});
   }
-  async addStoryImage(id,storyId,input){
+  // art: "simples" (texto em fundo liso, montado pelo app) ou "ia" (arte gerada com o Design Kit).
+  async addStoryImage(id,storyId,input,{art='ia'}={}){
     const bytes=pngBytes(input),p=this.get(id),story=(p.stories||[]).find(s=>s.id===validId(storyId));if(!story)throw new Error('Story não encontrado.');
     const file=`${randomUUID()}.png`;await writeFile(join(this.root,'images',file),bytes);
-    story.image=`data:image/png;base64,${bytes.toString('base64')}`;story.file=file;
+    story.image=`data:image/png;base64,${bytes.toString('base64')}`;story.file=file;story.art=art==='simples'?'simples':'ia';
+    return this.update(id,{stories:p.stories});
+  }
+  // Edição do texto de um story pela pessoa; a arte simples é refeita em seguida pelo runtime.
+  async saveStory(id,storyId,{text:value,sticker,cta}={}){
+    const p=this.get(id),story=(p.stories||[]).find(s=>s.id===validId(storyId));if(!story)throw new Error('Story não encontrado.');
+    if(value!==undefined)story.text=text(String(value),2000);
+    if(sticker!==undefined)story.sticker=text(String(sticker),500);
+    if(cta!==undefined)story.cta=text(String(cta),500);
     return this.update(id,{stories:p.stories});
   }
 }

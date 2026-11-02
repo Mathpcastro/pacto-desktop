@@ -20,6 +20,8 @@ import Dialog from "./Dialog.jsx";
 import { FORMAT_LABEL, Grow, STYLE_LIST, Spinner, firstLine, statusLabels, usePopover } from "../ui.jsx";
 import { AgentCard } from "./AgentSetup.jsx";
 
+// Carrosséis criados por um agente pela CLI ("carrossell criar --agente claude").
+const AGENT_NAMES = { claude: "Claude", gemini: "Gemini", codex: "Codex" };
 const FORMATS = [
   ["carrossel", "Carrossel", "Instagram · 4:5"],
   ["material", "Material gratuito", "PDF A4 para entregar na DM"],
@@ -289,7 +291,15 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
             {creating ? <Spinner /> : <Sparkles size={16} />}
             {creating ? "Criando…" : format === "carrossel" ? "Criar carrossel" : format === "material" ? "Criar material" : "Criar apresentação"}
           </button>
-          {!connected && <p className="hint">Conecte sua conta ChatGPT no menu do avatar para o Carrossell escrever e gerar as artes.</p>}
+          {!connected && (
+            <p className="hint">
+              Conecte sua conta ChatGPT no menu do avatar para o Carrossell escrever e gerar as artes, ou{" "}
+              <button type="button" className="link-btn" style={{ font: "inherit", fontWeight: 600, display: "inline" }} onClick={onAgents}>
+                gere pelo Claude ou pelo Gemini
+              </button>
+              .
+            </p>
+          )}
         </div>
       </section>
       <AgentCard onOpen={onAgents} />
@@ -552,6 +562,7 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
                     <b>{p.title}</b>
                     <small>
                       {p.format !== "carrossel" && <span className="chip">{FORMAT_LABEL[p.format]}</span>}
+                      {p.madeBy && <span className="chip" title="Criado por um agente pela CLI">{AGENT_NAMES[p.madeBy.toLowerCase()] || "Agente"}</span>}
                       {["planning", "generating"].includes(p.status) && <Spinner />}
                       {p.publishedAt ? "Publicado" : statusLabels[p.status] || "Rascunho"} · {unit(p.format || "carrossel", p.slides?.length || 0)}
                     </small>

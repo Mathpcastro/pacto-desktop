@@ -153,3 +153,18 @@ Limites: trechos do app acelerados (avisado na cartela final); o vídeo não foi
 - Telegram: dez mensagens somente Chat Geral (tópico 1), texto/preço/link/horário/grupo conferidos; persistência confirmada após recarregar no Web A.
 - Evidências em `Evidencias/operacao-2026-10-24/`. Agendar não equivale a confirmar a entrega; publicação das aulas de mentoria e instalação em Mac físico não foram comprovadas.
 - A renomeação preservou todos os arquivos existentes; caminhos de sincronização e referências foram ajustados. Ver [[20 - Entregas e operacao 2026-10-24]].
+
+
+## 30/10/2026 — Analytics com conta real
+
+105/105 testes, 46/46 fases, 8/8 regressões, build, prova específica Electron e smoke Windows empacotado passaram. Leitura real de 7 dias: alcance 193.503, visitas 1.281, contas engajadas 15.271, 22 posts; 30 dias: alcance 1.003.448, visitas 6.121, contas engajadas 93.482, 50 posts (limite explícito). 18.068 seguidores na coleta. Sem testes de postagem/agendamento real ou Mac físico. Ver [[31 - Analytics do Instagram]].
+
+
+## Release 0.6.0 publicada — 30/10/2026
+
+[[32 - Release Carrossell 0.6.0]]: Latest com Windows e os dois Macs, workflow aprovado, links HTTP 200, feed Windows 0.6.0 e zero artefatos de Actions. Usuário confirmou publicação real de carrossel pelo app. Agendamento real e Mac físico seguem sem confirmação.
+
+
+## 02/11/2026 — Stories e copy anti-IA
+
+109/109 testes (4 novos: sinais de IA, template de story, stories preto/branco com edição e arte IA preservada, correção de voz no texto). `npm run build` ok. Prova real Electron com a conta ChatGPT: 5 cards no estilo Texto, kit de CTA, 6 stories gerados e renderizados em 1080×1920 nos dois fundos, telas Enviar e Stories capturadas em `.cache/stories-proof/`. Sem empacotado, sem postagem. Ver [[33 - Roteiro comentarios stories anuncios e provedores]].

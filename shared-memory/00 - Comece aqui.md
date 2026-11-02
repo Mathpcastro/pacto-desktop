@@ -58,3 +58,27 @@ Criar um aplicativo Electron para Windows, vendido por R$47, que gera e gerencia
 Antes de editar, ler estado e decisões. Ao terminar uma etapa, atualizar notas com arquivos alterados, validações realmente executadas e pendências. Não substituir trabalho de outro agente sem ler o estado atual. Não registrar tokens, senhas, chaves ou respostas brutas de autenticação.
 
 As notas são arquivos Markdown compartilhados, não sincronização automática de histórico de chat. O MCP já foi configurado tanto no Codex quanto no Claude Code; uma consulta do Claude confirmou `Connected`. O MCP configurado aponta ao vault pai `Obsidian Vault`; os caminhos destas notas começam por `Projetos/Funil CQV/`. Este diretório também foi registrado no Obsidian como vault próprio, com configuração `.obsidian` separada. A conexão HTTP continua sendo a do vault pai, que deve permanecer acessível para usar o mesmo endpoint.
+
+
+## Marca do aplicativo — decisão mais recente
+
+Nome do app: **Carrossell**, direção visual 02. O método continua P.A.C.T.O. A versão 0.2.2 está publicada para Windows, Mac Apple Silicon e Mac Intel. Release e limitações em `docs/branding/validation.md` e no vault `Projetos/Carrosseis Que Vendem/branding/06 - Validacao da implementacao`.
+
+## Preferências da interface
+
+- [[25 - Preferências da interface]] — paletas, fontes e escala de leitura do Carrossell.
+
+
+## Analytics — 30/10/2026
+
+- [[31 - Analytics do Instagram]] — painel em Marca › Conexões, consultas reais de 7/30 dias, ranking e referências para o Replicador, build de teste atualizado e provas.
+
+
+## Release 0.6.0 publicada — 30/10/2026
+
+[[32 - Release Carrossell 0.6.0]]: Latest com Windows e os dois Macs, workflow aprovado, links HTTP 200, feed Windows 0.6.0 e zero artefatos de Actions. Usuário confirmou publicação real de carrossel pelo app. Agendamento real e Mac físico seguem sem confirmação.
+
+
+## Roteiro — 02/11/2026
+
+- [[33 - Roteiro comentarios stories anuncios e provedores]] — stories preto/branco e copy anti-IA implementados localmente; pesquisa de comentários (Composio/ManyChat), login Claude/Gemini e plano de anúncios.

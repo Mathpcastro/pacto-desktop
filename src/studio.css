@@ -661,7 +661,8 @@
   .qr ol { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: var(--t-sm); }
   .kw { display: flex; flex-wrap: wrap; gap: 6px; }
   .kw span { border: 1px solid var(--line); border-radius: 8px; padding: 3px 10px; font: 13px var(--ui-mono); }
-  .story { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: start; }
+  .story { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; align-items: start; }
+  .story-edit { width: 100%; resize: vertical; font: var(--t-md)/1.45 var(--ui); color: var(--ink); background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
   .story-pic { aspect-ratio: 9 / 16; border-radius: 8px; overflow: hidden; background: var(--sunk); display: grid; place-items: center; font-size: 13px; color: var(--muted); text-align: center; padding: 4px; }
   .story-pic img { width: 100%; height: 100%; object-fit: cover; }
 

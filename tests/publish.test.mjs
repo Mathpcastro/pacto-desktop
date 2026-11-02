@@ -97,11 +97,37 @@ test('runtime shares, saves to Drive (asking for a folder when none is found) an
   const saved = await runtime.request('saveToDrive',{id:p.id});
   assert.equal(saved.folder,join(root,'drive','PACTO','Meu carrosselteste'));
   assert.match(await readFile(join(saved.folder,'cta-e-dm.txt'),'utf8'),/GUIA/);
-  await runtime.request('stories',{id:p.id});
-  assert.match(prompts[0].prompt,/Caixa de perguntas" e "Oferta"/); assert.match(prompts[0].prompt,/use stories only to make offers/);
-  const stories = store.get(p.id).stories; assert.equal(stories.length,2);
+  await runtime.request('stories',{id:p.id}); await settle(runtime);
+  assert.match(prompts[0].prompt,/SÓ DE TEXTO/); assert.match(prompts[0].prompt,/use stories only to make offers/);
+  assert.match(prompts[0].prompt,/comentar a palavra-chave GUIA/); assert.match(prompts[0].prompt,/VOZ HUMANA/);
+  const stories = store.get(p.id).stories; assert.equal(stories.length,2); assert.equal(stories[0].image,undefined);
   await runtime.request('generateStoryArt',{id:p.id,storyId:stories[0].id}); await settle(runtime);
   assert.match(prompts[1].prompt,/9:16/); assert.match(prompts[1].prompt,/NÃO desenhe o sticker/);
   assert.ok(store.get(p.id).stories[0].image); assert.equal(store.get(p.id).status,'complete');
   await assert.rejects(runtime.request('generateStoryArt',{id:p.id,storyId:'nope'}),/não encontrado/);
+});
+
+test('text-only stories render in black or white, re-render on edit and keep AI art', async t => {
+  const {store} = await fixture(t); const p = await ready(store);
+  const rendered = [];
+  const reply = {stories:[{type:'Gancho',text:'Errei isso por 2 anos',sticker:'',cta:'',visual:''},{type:'Enquete',text:'E você?',sticker:'Já errou? | Sim | Não',cta:'Votar',visual:''}]};
+  const runtime = new Runtime({store,knowledge:{method:'M',lessons:[],pages:[]},
+    codex:{status:{account:{connected:true}},cancel:async()=>{},run:async o=>o.outputSchema?{text:JSON.stringify(reply)}:{images:[png]}},
+    dialogs:{render:{fonts:{},png:async (html,size)=>{rendered.push({html,size});return png;}}}});
+  await runtime.request('stories',{id:p.id}); await settle(runtime);
+  let saved = store.get(p.id).stories;
+  assert.equal(rendered.length,2); assert.deepEqual(rendered[0].size,{width:1080,height:1920});
+  assert.match(rendered[0].html,/background:#000000/); assert.ok(saved.every(s=>s.image&&s.art==='simples'));
+  assert.match(rendered[1].html,/flex-start/); // com sticker, o texto sobe
+  await runtime.request('storyTheme',{id:p.id,theme:'branco'});
+  assert.equal(store.get(p.id).storyTheme,'branco'); assert.equal(rendered.length,4); assert.match(rendered[3].html,/background:#ffffff/);
+  await assert.rejects(runtime.request('storyTheme',{id:p.id,theme:'azul'}),/preto ou branco/);
+  await runtime.request('saveStory',{id:p.id,storyId:saved[0].id,text:'Errei isso por 3 anos'});
+  assert.equal(rendered.length,5); assert.match(rendered[4].html,/3 anos/); assert.equal(store.get(p.id).stories[0].text,'Errei isso por 3 anos');
+  await runtime.request('generateStoryArt',{id:p.id,storyId:saved[1].id}); await settle(runtime);
+  assert.equal(store.get(p.id).stories[1].art,'ia');
+  await runtime.request('storyTheme',{id:p.id,theme:'preto'});
+  assert.equal(rendered.length,6); // só o story simples é refeito; a arte com IA fica
+  const zip = unzipSync(await store.exportZip(p.id));
+  assert.ok(zip['stories/01.png']&&zip['stories/02.png']); assert.match(strFromU8(zip['stories.txt']),/Sticker: Já errou\? \| Sim \| Não/);
 });

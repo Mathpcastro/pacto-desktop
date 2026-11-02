@@ -846,6 +846,21 @@ export default function Studio({ project, state, request, pending, activity, onB
                           </div>
                           <p>{project.caption || "Sem legenda. Escreva na etapa Texto."}</p>
                         </div>
+                        <div className="box">
+                          <div className="box-head">
+                            <b>Stories para divulgar</b>
+                            {project.stories?.length ? (
+                              <button className="btn small" onClick={() => setTab("stories")}>
+                                Ver {project.stories.length} stories
+                              </button>
+                            ) : (
+                              <button className="btn small primary" disabled={busy || !connected} onClick={() => (setTab("stories"), infer("stories"))}>
+                                <Sparkles size={14} /> Gerar stories
+                              </button>
+                            )}
+                          </div>
+                          <p>Uma sequência só de texto, em fundo preto ou branco, feita a partir deste carrossel, para levar quem vê os stories até o post.</p>
+                        </div>
                         <p className="hint">Depois de postar no Instagram, toque em “Marquei como publicado” no topo.</p>
                       </>
                     )}
@@ -902,36 +917,7 @@ export default function Studio({ project, state, request, pending, activity, onB
                         </button>
                       </>
                     )}
-                    {tab === "stories" && (
-                      <>
-                        {(project.stories || []).map((s, i) => (
-                          <div className="box" key={s.id}>
-                            <div className="story">
-                              <div className="story-pic">{s.image ? <img src={s.image} alt={`Story ${i + 1}`} /> : "9:16"}</div>
-                              <div style={{ display: "grid", gap: 6 }}>
-                                <b>
-                                  {i + 1}. {s.type}
-                                </b>
-                                <p>{s.text}</p>
-                                {s.sticker && <span className="hint">Sticker: {s.sticker}</span>}
-                                <div className="row">
-                                  <button className="btn small" onClick={() => (copyText([s.text, s.sticker, s.cta].filter(Boolean).join("\n")), onNotice("Story copiado."))}>
-                                    <Copy size={14} /> Copiar
-                                  </button>
-                                  <button className="btn small" disabled={busy || !connected} onClick={() => infer("generateStoryArt", { storyId: s.id })}>
-                                    <ImagePlus size={14} /> {s.image ? "Gerar arte de novo" : "Gerar arte 9:16"}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        <button className="btn" disabled={busy || !connected} onClick={() => infer("stories")}>
-                          <Sparkles size={15} /> {project.stories?.length ? "Criar outra sequência" : "Criar stories de perguntas e oferta"}
-                        </button>
-                        <p className="hint">A arte é opcional: gere só a dos stories que você quiser, para economizar o limite da conta.</p>
-                      </>
-                    )}
+                    {tab === "stories" && <StoriesPanel project={project} busy={busy} connected={connected} infer={infer} onNotice={onNotice} />}
                     {tab === "resultado" && (
                       <>
                         <InstagramMetrics project={project} request={request} isPending={(a) => pending.some((p) => p.action === a)} onNotice={onNotice} />
@@ -1247,6 +1233,68 @@ export default function Studio({ project, state, request, pending, activity, onB
   );
 }
 
+const STICKER_LABEL = { Enquete: "enquete", "Caixa de perguntas": "caixa de perguntas" };
+// Stories só de texto feitos a partir do carrossel. O app monta os PNGs 1080×1920; a arte com IA é opcional.
+function StoriesPanel({ project, busy, connected, infer, onNotice }) {
+  const stories = project.stories || [];
+  const theme = project.storyTheme || "preto";
+  return (
+    <>
+      <div className="box">
+        <div className="box-head">
+          <b>Stories deste carrossel</b>
+          <div className="seg" role="group" aria-label="Fundo dos stories" style={{ margin: 0 }}>
+            {[["preto", "Fundo preto"], ["branco", "Fundo branco"]].map(([k, l]) => (
+              <button key={k} aria-pressed={theme === k} disabled={busy} onClick={() => theme !== k && infer("storyTheme", { theme: k })}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p>Texto simples, como quem digita no Instagram. A sequência puxa o assunto do carrossel e leva as pessoas até o post.</p>
+      </div>
+      {stories.map((s, i) => (
+        <StoryItem key={s.id} story={s} index={i} busy={busy} connected={connected} infer={infer} onNotice={onNotice} />
+      ))}
+      <button className={stories.length ? "btn" : "btn primary"} disabled={busy || !connected} onClick={() => infer("stories")}>
+        <Sparkles size={15} /> {stories.length ? "Escrever outra sequência" : "Gerar stories do carrossel"}
+      </button>
+      {stories.length > 0 && <p className="hint">Os stories vão no ZIP (pasta stories), no Google Drive e no celular. Enquete e caixa de perguntas você cola no Instagram, no espaço livre de baixo.</p>}
+    </>
+  );
+}
+function StoryItem({ story: s, index, busy, connected, infer, onNotice }) {
+  const [draft, setDraft] = useState(s.text);
+  useEffect(() => setDraft(s.text), [s.text]);
+  const save = () => draft.trim() && draft !== s.text && infer("saveStory", { storyId: s.id, text: draft });
+  return (
+    <div className="box">
+      <div className="story">
+        <div className="story-pic">{s.image ? <img src={s.image} alt={`Story ${index + 1}`} /> : "9:16"}</div>
+        <div style={{ display: "grid", gap: 6 }}>
+          <b>
+            {index + 1}. {s.type}
+          </b>
+          <textarea className="story-edit" aria-label={`Texto do story ${index + 1}`} value={draft} rows={Math.min(6, Math.max(2, draft.split("\n").length))} disabled={busy} onChange={(e) => setDraft(e.target.value)} onBlur={save} />
+          {s.sticker && (
+            <span className="hint">
+              Cole no Instagram o sticker de {STICKER_LABEL[s.type] || "interação"}: {s.sticker}
+            </span>
+          )}
+          {s.cta && <span className="hint">Ação: {s.cta}</span>}
+          <div className="row">
+            <button className="btn small" onClick={() => (copyText([draft, s.sticker, s.cta].filter(Boolean).join("\n")), onNotice("Story copiado."))}>
+              <Copy size={14} /> Copiar
+            </button>
+            <button className="btn small" disabled={busy || !connected} onClick={() => infer("generateStoryArt", { storyId: s.id })} title="Usa o Design Kit e o limite da sua conta">
+              <ImagePlus size={14} /> {s.art === "ia" ? "Refazer arte com IA" : "Arte com IA"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 function DriveBox({ drive, request, retry }) {
   return (
     <div className="box">

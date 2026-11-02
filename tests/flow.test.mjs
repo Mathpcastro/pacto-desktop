@@ -99,3 +99,16 @@ test('legacy projects with art count as approved text after upgrade', async t =>
   const again = await new Store(store.root).init();
   assert.equal(again.get(p.id).textApproved,true); assert.deepEqual(again.get(p.id).coverOptions,[]);
 });
+
+test('AI tells left after the editor pass get one targeted voice correction', async t => {
+  const store = await fixture(t); const p = await store.createProject({title:'A',brief:'B'});
+  const card = (id,title,body) => ({id,role:id,title,body,emphasis:'',visual:'v',prompt:''});
+  const first = {title:'T',architecture:'Lista Útil',editorialLine:'',visualConcept:'',coverHooks:[],caption:'Comente X',reply:'R',regenerateSlideIds:[],slides:[card('a','Capa','Isso não é sorte, é método.'),card('b','Fim','Comente GUIA — eu te mando')]};
+  const clean = {...first,slides:[card('a','Capa','Quem acerta repete o mesmo método.'),card('b','Fim','Comente GUIA e eu te mando')]};
+  const prompts = []; const replies = [first,first,clean];
+  const runtime = new Runtime({store,knowledge:loadKnowledge(),codex:{status:{account:{connected:true}},run:async o=>{prompts.push(o.prompt);return {text:JSON.stringify(replies.shift())};}}});
+  await runtime.request('generatePlan',{id:p.id}); await settle(runtime);
+  assert.equal(prompts.length,3); assert.match(prompts[0],/VOZ HUMANA/);
+  assert.match(prompts[2],/CORREÇÃO DE VOZ/); assert.match(prompts[2],/card 1 \(texto\): contraste/); assert.match(prompts[2],/card 2 \(texto\): travessão/);
+  assert.equal(store.get(p.id).slides[1].body,'Comente GUIA e eu te mando');
+});

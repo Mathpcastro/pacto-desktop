@@ -8,8 +8,9 @@ import { asUrl, setupPrompt, parseSetup, pageSummary } from './setup.mjs';
 import { findDriveFolders, writeCarouselFolder } from './drive.mjs';
 import { MAIN_PROFILE } from './profiles.mjs';
 import { Social } from './social.mjs';
-import { TEMPLATE_STYLES, FACE_STYLES, SIZES, LAYOUTS, palette, slideHtml, documentHtml, imagesPdfHtml } from './templates.mjs';
-export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli','instagramStatus','saveComposioKey','removeComposioKey','syncInstagram','connectInstagram','checkInstagram','setInstagramDefaults','disconnectInstagram','publishInstagram','schedulePost','cancelSchedule','publishDue','refreshMetrics','instagramPosts','instagramAnalytics','importInstagramPost','replicateInstagram','openPermalink','openComposio'];
+import { TEMPLATE_STYLES, FACE_STYLES, SIZES, LAYOUTS, STORY_THEMES, palette, slideHtml, documentHtml, imagesPdfHtml, storyHtml } from './templates.mjs';
+import { VOICE_RULES, tellsIn } from './copy.mjs';
+export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','storyTheme','saveStory','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli','instagramStatus','saveComposioKey','removeComposioKey','syncInstagram','connectInstagram','checkInstagram','setInstagramDefaults','disconnectInstagram','publishInstagram','schedulePost','cancelSchedule','publishDue','refreshMetrics','instagramPosts','instagramAnalytics','importInstagramPost','replicateInstagram','openPermalink','openComposio'];
 export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma oferta'];
 // Problemas da Correção Visual Rápida (Aula 05), oferecidos como botões no editor.
 export const VISUAL_FIXES=['Texto vertical ou empilhado','Título pequeno','Texto excessivo','Hierarquia ruim','Falta CTA','Erro de ortografia','Ilustração não combina','Fora da identidade visual'];
@@ -42,15 +43,83 @@ export class Runtime {
   // Cópias normalizadas (1080×1350) para celular e Drive; o ZIP usa a mesma lista.
   async exportedFiles(id){const files=this.store.exportFiles(id);return this.dialogs.normalizeFiles?await this.dialogs.normalizeFiles(files):files;}
   lessonStories(){const lesson=this.knowledge.lessons?.find(l=>l.id==='bvDw6TPoU8I')?.text||'';const at=lesson.toLowerCase().indexOf('stories');return at<0?'':lesson.slice(Math.max(0,at-300),at+1500);}
+  // Pedido dos stories: o mesmo para a conta ChatGPT e para agentes pela CLI.
+  storiesPrompt(p){
+    return `${this.brandContext()}\nAULA 08 (trecho em inglês da transcrição; stories servem para caixa de perguntas e oferta; não postar coisas aleatórias):\n${this.lessonStories()}\nAULA 07 — COMENTÁRIO → DM → OFERTA:\n${this.page('offer')}\nCARROSSEL:\n${JSON.stringify({title:p.title,slides:p.slides.map(({role,title,body})=>({role,title,body})),caption:p.caption,cta:p.ctaKit})}\nTAREFA: transforme este carrossel numa sequência de 5 a 7 stories SÓ DE TEXTO (fundo liso, letra simples, como alguém digitando no Instagram), para quem vê os stories ir até o post, comentar ou salvar, e puxar conversa.\nSequência:\n1. "Gancho": puxa o assunto com uma situação real do público, algo pessoal da marca ou a tensão da capa. Nunca "saiu post novo" ou "corre lá".\n2. De 2 a 4 stories "Conteúdo": um ponto do carrossel por story, reescrito como fala (não copie o card), com um detalhe concreto.\n3. Um story de interação: "Enquete" (sticker no formato "Pergunta | Opção A | Opção B", opções de até 4 palavras) ou "Caixa de perguntas" (sticker com a pergunta da caixa), ligado ao tema.\n4. Último, "CTA": manda para o post${p.ctaKit?.keywords?.length?` e pede para comentar a palavra-chave ${p.ctaKit.keywords[0]} lá`:''}. Oferta só se existir no Contexto Oficial da Marca.\nCampos: type (Gancho, Conteúdo, Enquete, Caixa de perguntas ou CTA); text (o que aparece na tela: de 1 a 4 linhas curtas, até 30 palavras, com \\n onde a pessoa respiraria; escrito para ser lido em 3 segundos); sticker (só em Enquete e Caixa de perguntas, senão ""); cta (o que a pessoa faz neste story, em poucas palavras, ou ""); visual: "".\n${VOICE_RULES}\nStories pedem ainda mais naturalidade que o carrossel: primeira pessoa, frases de conversa, nada de tom de anúncio. Não invente provas ou números. Português do Brasil. JSON conforme o esquema.`;
+  }
   async stories(id){
     const p=this.store.get(id);if(!p.slides.length)throw new Error('Crie o texto do carrossel antes dos stories.');
     this.ensureIdle(id);
-    return this.exclusive(id,'stories','Montando a sequência de stories…',async token=>{
-      const result=await this.codex.run({prompt:`${this.brandContext()}\nAULA 08 (trecho em inglês da transcrição; stories servem para caixa de perguntas e oferta, alternando pergunta → oferta → pergunta → oferta; não postar coisas aleatórias):\n${this.lessonStories()}\nAULA 07 — COMENTÁRIO → DM → OFERTA:\n${this.page('offer')}\nCARROSSEL PUBLICADO:\n${JSON.stringify({title:p.title,slides:p.slides.map(({role,title,body})=>({role,title,body})),caption:p.caption,cta:p.ctaKit})}\nTAREFA: crie de 4 a 6 stories para os dias depois deste carrossel, alternando "Caixa de perguntas" e "Oferta" (pode abrir com um story "Bastidor" que puxa o carrossel). Para cada story: type, text (texto curto que aparece na tela), sticker (texto do sticker de caixa de perguntas ou enquete; vazio na oferta), cta (ação: responder, comentar a palavra-chave, link), visual (cena 9:16 coerente com o Design Kit). Ofertas só do que existe no Contexto Oficial da Marca. Não invente provas ou números. Português do Brasil, linguagem natural. JSON conforme o esquema.`,outputSchema:STORIES_SCHEMA});
+    return this.exclusive(id,'stories','Escrevendo os stories a partir do carrossel…',async token=>{
+      const result=await this.codex.run({prompt:this.storiesPrompt(p),outputSchema:STORIES_SCHEMA});
       if(token.cancelled)return;
       const answer=parse(result,'Os stories não vieram no formato esperado. Tente novamente.');
-      await this.publish(await this.store.saveStories(id,(answer.stories||[]).map(s=>({...s,id:randomUUID()}))));
+      await this.store.saveStories(id,(answer.stories||[]).map(s=>({...s,id:randomUUID()})));
+      await this.renderStories(id);
     });
+  }
+  // Modo agente: Claude, Gemini ou outro agente escreve pela CLI com a estrutura do app (método, fontes do curso,
+  // Contexto da Marca, voz humana), sem a conta ChatGPT. A tarefa é o mesmo pedido e o mesmo esquema JSON
+  // que o app manda para a conta ChatGPT; a resposta passa pelas mesmas validações ao ser gravada.
+  agentTask(id,kind){
+    const p=this.store.get(id),next=what=>`carrossell ${what} ${id} --arquivo <resposta.json>`;
+    if(p.format!=='carrossel')throw new Error('O modo agente escreve carrosséis. Material e apresentação usam a conta ChatGPT.');
+    if(kind==='texto')return {kind,prompt:this.planPrompt(id),schema:PLAN_SCHEMA,next:next('texto')};
+    if(!p.slides.length)throw new Error(`Grave o texto antes: carrossell tarefa ${id} texto.`);
+    if(kind==='cta')return {kind,prompt:this.ctaPrompt(p),schema:CTA_SCHEMA,next:next('cta')};
+    if(kind==='stories')return {kind,prompt:this.storiesPrompt(p),schema:STORIES_SCHEMA,next:next('stories')};
+    if(kind==='arte'){
+      if(!p.textApproved)throw new Error(`Aprove o texto antes da arte: carrossell aprovar ${id}.`);
+      const cards=p.slides.map((s,i)=>`CARD ${i+1} de ${p.slides.length} (${s.role||'card'}) — envie com: carrossell card ${id} ${i+1} --html <arquivo.html>\n${this.typography(s)}\nCena e ilustração: ${s.visual||'(livre, coerente com o Design Kit)'}`).join('\n\n');
+      return {kind,prompt:`${this.imageContext(id)}\nTAREFA: desenhe cada card do carrossel aprovado como uma página HTML completa de 1080×1350 px (proporção 4:5 do Instagram), com CSS dentro do próprio arquivo, sem JavaScript. Use as cores, a tipografia e o estilo do Design Kit. A capa é a mais forte visualmente e define o estilo dos demais cards. Os títulos ficam em linhas horizontais, grandes e legíveis no celular. Na arte entra só o texto aprovado abaixo, sem trocar palavras. Fontes do Google Fonts e imagens por URL https funcionam. Se a sua ferramenta gera imagens, pode mandar um PNG de 1080×1350 no lugar do HTML com --imagem <arquivo.png>.\n\n${cards}`,next:`carrossell card ${id} <n> --html <arquivo.html> (ou --imagem <arquivo.png>)`};
+    }
+    throw new Error('Tarefas do modo agente: texto, cta, stories ou arte.');
+  }
+  async agentSave(id,kind,data){
+    this.ensureIdle(id);const p=this.store.get(id);
+    if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('A resposta precisa ser um objeto JSON no formato da tarefa.');
+    if(kind==='texto'){
+      if(p.format!=='carrossel')throw new Error('O modo agente escreve carrosséis.');
+      const bad=(Array.isArray(data.slides)?data.slides:[]).map((s,i)=>INSTRUCTION_BODY.test(String(s?.body||''))?i+1:0).filter(Boolean);
+      if(bad.length)throw new Error(`Os cards ${bad.join(', ')} trazem instrução em body ("Função:", "Objetivo:"…). Escreva o texto final que o leitor vai ler.`);
+      if(!(await this.savePlan(id,data,{fresh:true})))return {project:this.store.get(id),tells:[]};
+      return {project:this.store.get(id),tells:this.planTells(data)};
+    }
+    if(!p.slides.length)throw new Error('Grave o texto do carrossel antes.');
+    if(kind==='cta'){await this.update(id,{ctaKit:this.ctaFrom(data)});return {project:this.store.get(id),tells:tellsIn([['DM 1',data.dm1],['DM 2',data.dm2],['CTA do último card',data.lastCardCta]])};}
+    if(kind==='stories'){
+      await this.store.saveStories(id,(Array.isArray(data.stories)?data.stories:[]).map(s=>({...s,id:randomUUID()})));
+      await this.renderStories(id);
+      const saved=this.store.get(id);return {project:saved,tells:tellsIn(saved.stories.map((s,i)=>[`story ${i+1}`,s.text]))};
+    }
+    throw new Error('Respostas do modo agente: texto, cta ou stories.');
+  }
+  // Arte de um card feita pelo agente: HTML 1080×1350 (renderizado pelo app, sem scripts) ou um PNG pronto.
+  async agentArt(id,slideId,{html,png}={}){
+    this.ensureIdle(id);const p=this.store.get(id);
+    if(!p.textApproved)throw new Error('Aprove o texto antes da arte.');
+    if(!p.slides.some(s=>s.id===slideId))throw new Error('Card não encontrado.');
+    let bytes;
+    if(typeof html==='string'&&html.trim()){
+      const csp='<meta http-equiv="Content-Security-Policy" content="script-src \'none\'; object-src \'none\'">';
+      const page=/<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>`${m}${csp}`):`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">${csp}<style>html,body{margin:0;width:1080px;height:1350px;overflow:hidden}</style></head><body>${html}</body></html>`;
+      bytes=await this.renderer().png(page,SIZES.carrossel);
+    }else if(png)bytes=png;
+    else throw new Error('Envie o card em HTML (--html) ou PNG (--imagem).');
+    await this.store.addImage(id,slideId,bytes);
+    const current=this.store.get(id);
+    return this.update(id,{status:current.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});
+  }
+  // Monta os stories simples (texto em fundo preto ou branco) sem IA; a arte com IA, se houver, fica.
+  async renderStories(id,only=null){
+    if(!this.dialogs.render)return this.publish(this.store.get(id));
+    const p=this.store.get(id),theme=STORY_THEMES[p.storyTheme]?p.storyTheme:'preto';
+    for(const s of p.stories||[]){
+      if(only&&s.id!==only)continue;
+      if(s.image&&s.art!=='simples')continue;
+      await this.store.addStoryImage(id,s.id,await this.renderer().png(storyHtml({story:s,theme,fonts:this.renderer().fonts}),SIZES.story),{art:'simples'});
+    }
+    return this.publish(this.store.get(id));
   }
   async storyArt(token,storyId){
     const p=this.store.get(token.id),story=p.stories.find(s=>s.id===storyId),profile=this.store.state().profile;
@@ -200,7 +269,8 @@ export class Runtime {
 - emphasis: copie os trechos exatamente como aparecem no title/body, palavras inteiras, separados por ponto e vírgula.
 - CTA: se o Contexto Oficial da Marca lista ativos gratuitos, o último card pode usar um deles com palavra-chave de comentário (Aula 07), e reply avisa que o material precisa estar pronto. Com objetivo Salvamentos, priorize o motivo para salvar.
 - caption: legenda curta com o CTA na PRIMEIRA linha, complementando os cards sem repeti-los.
-- reply: a REVISÃO FINAL do Copy Engine (promessa preservada, fatos não inventados, linguagem humana, excesso de texto, CTA claro) em poucas linhas e o que o usuário deve conferir antes de aprovar.`;}
+- reply: a REVISÃO FINAL do Copy Engine (promessa preservada, fatos não inventados, linguagem humana, excesso de texto, CTA claro) em poucas linhas e o que o usuário deve conferir antes de aprovar.
+${VOICE_RULES}`;}
   // Segunda passada do texto: o padrão "putz, ficou bom" sem inventar fatos.
   editorPass(){return `EDITOR-CHEFE DE COPY: revise o texto abaixo para que quem vende pense "ficou bom, eu postaria isso". Aplique de novo o Copy Engine, a Anatomia e o Swipe File, agora com olhar de editor exigente:
 1. Capa: promessa específica, tensão, contraste ou curiosidade que pare o scroll; nada genérico ou burocrático. Use uma fórmula da Anatomia.
@@ -208,10 +278,11 @@ export class Runtime {
 3. Cada card: uma micro-recompensa concreta (exemplo, passo, comparação, frase que a pessoa salvaria) e motivo para avançar.
 4. Corte cautela que só enfraquece ("vale", "pode", "talvez", "confira", "procure") quando não protege um fato. Mantenha avisos realmente necessários em forma curta e natural.
 5. Voz da marca do Contexto Oficial: o ritmo, o humor e a intensidade dela. Agressividade útil quando a pauta permitir.
-6. Remova padrões de texto de IA (itens A a O do Copy Engine) e frases que ninguém falaria.
+6. Remova padrões de texto de IA (itens A a O do Copy Engine e a lista da VOZ HUMANA) e frases que ninguém falaria. Leia cada card em voz alta: se soa como palestra, anúncio ou robô, reescreva como a pessoa da marca diria.
 7. Último card como mini landing page: desejo → entregável concreto → uma ação.
 8. Não invente fatos, números, provas ou materiais. Preserve ids, role, quantidade de cards e arquitetura; atualize emphasis, coverHooks e caption conforme o novo texto.
 Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
+  planTells(plan){return tellsIn([...(plan.slides||[]).flatMap((s,i)=>[[`card ${i+1} (título)`,s?.title],[`card ${i+1} (texto)`,s?.body]]),['legenda',plan.caption]]);}
   imageContext(id){const p=this.store.get(id),{profile,legacy}=this.profileContext();const rules=(this.knowledge.data?.rules||[]).filter(r=>['no-invention','one-idea','cover','second-hook','identity','image-format','targeted-correction','final-card','cta-conditional'].includes(r.id)).map(r=>r.text);return `DESIGN KIT OFICIAL:\n${profile?.designKit||'(não gerado pela entrevista)'}\nPERFIL: ${JSON.stringify(legacy)}\nBRIEFING: ${p.brief}\nARQUITETURA APROVADA: ${p.architecture}\n${p.editorialLine?`LINHA EDITORIAL: ${p.editorialLine}\n`:''}${p.visualConcept?`CONCEITO VISUAL RECORRENTE (mascote, desenho ou efeito presente em todos os cards): ${p.visualConcept}\n`:''}REGRAS VISUAIS DO MÉTODO: ${rules.join(' ')}\nQualidade: arte final bonita e bem acabada, com ilustração, desenho, foto ou personagem conforme o Design Kit, que acrescente ideia ao card em vez de apenas decorar. Use o prompt-base visual do Design Kit quando existir. Não copie a marca do professor. Preserve o conteúdo aprovado e a identidade própria do usuário.${this.preferences(['visual','geral'])}`;}
   typography(slide){return `TEXTO NA ARTE — escreva SOMENTE estes textos, exatamente como estão, revisando letra por letra a ortografia e os acentos em português:\nTítulo: ${slide.title}\n${slide.body?`Texto: ${slide.body}\n`:''}${slide.emphasis?`Destaque com a cor de acento do Design Kit: ${slide.emphasis}\n`:''}Não escreva a função do card${slide.role?` ("${slide.role}")`:''}, rótulos, numeração extra, instruções ou qualquer outro texto.\nTIPOGRAFIA: título grande em linhas horizontais largas, ocupando a largura útil do card, no máximo 3 linhas, com letras de proporção normal (não condensadas). Nunca empilhe uma palavra por linha, nunca escreva na vertical nem gire o texto. Texto de apoio menor, em até 4 linhas horizontais. Alto contraste com o fundo, margem segura de cerca de 7% em todos os lados, hierarquia clara entre título e apoio. Use a tipografia ou sensação tipográfica do Design Kit de forma consistente em todos os cards.`;}
   interviewPrompt(kind,interview){
@@ -304,14 +375,19 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     const results={comments:count(args.comments??0,0,10000000),saves:count(args.saves??0,0,10000000),sales:count(args.sales??0,0,10000000),recordedAt:new Date().toISOString()};
     return this.update(id,{results,publishedAt:p.publishedAt||results.recordedAt});
   }
+  // Pedido do kit de CTA e DM (Aula 07): o mesmo para a conta ChatGPT e para agentes pela CLI.
+  ctaPrompt(p){
+    return `${this.brandContext()}\nPROMPT OFICIAL DO CURSO (Aula 07):\n${promptText(this.knowledge,'N07-prompt-02')}\nPRODUTO: use o Contexto Oficial da Marca.\nCARROSSEL:\n${JSON.stringify(p.slides.map(({role,title,body})=>({role,title,body})))}\nRetorne JSON: keywords (10 palavras-chave), firstCardCta, lastCardCta, freebie (só um material que exista ou que o usuário possa preparar; diga claramente se precisa ser criado), dm1 e dm2. As DMs soam como mensagem de uma pessoa, não de robô de atendimento. Português do Brasil, linguagem curta e natural.\n${VOICE_RULES}`;
+  }
+  ctaFrom(k){return {keywords:(Array.isArray(k.keywords)?k.keywords:[]).slice(0,12).map(w=>text(String(w),80)),firstCardCta:text(String(k.firstCardCta||''),1000),lastCardCta:text(String(k.lastCardCta||''),2000),freebie:text(String(k.freebie||''),2000),dm1:text(String(k.dm1||''),4000),dm2:text(String(k.dm2||''),4000)};}
   async ctaKit(id){
     const p=this.store.get(id);if(!p.slides.length)throw new Error('Crie o texto do carrossel antes da estratégia de CTA.');
     this.ensureIdle(id);
     return this.exclusive(id,'cta','Montando CTA, DM e oferta…',async token=>{
-      const result=await this.codex.run({prompt:`${this.brandContext()}\nPROMPT OFICIAL DO CURSO (Aula 07):\n${promptText(this.knowledge,'N07-prompt-02')}\nPRODUTO: use o Contexto Oficial da Marca.\nCARROSSEL:\n${JSON.stringify(p.slides.map(({role,title,body})=>({role,title,body})))}\nRetorne JSON: keywords (10 palavras-chave), firstCardCta, lastCardCta, freebie (só um material que exista ou que o usuário possa preparar; diga claramente se precisa ser criado), dm1 e dm2. Português do Brasil, linguagem curta e natural.`,outputSchema:CTA_SCHEMA});
+      const result=await this.codex.run({prompt:this.ctaPrompt(p),outputSchema:CTA_SCHEMA});
       if(token.cancelled)return;
       const k=parse(result,'A estratégia de CTA não veio no formato esperado. Tente novamente.');
-      await this.update(id,{ctaKit:{keywords:(Array.isArray(k.keywords)?k.keywords:[]).slice(0,12).map(w=>text(String(w),80)),firstCardCta:text(String(k.firstCardCta||''),1000),lastCardCta:text(String(k.lastCardCta||''),2000),freebie:text(String(k.freebie||''),2000),dm1:text(String(k.dm1||''),4000),dm2:text(String(k.dm2||''),4000)}});
+      await this.update(id,{ctaKit:this.ctaFrom(k)});
     });
   }
   // profileId opcional em qualquer ação: roda naquele perfil, inclusive o trabalho em segundo plano que ela iniciar.
@@ -414,6 +490,17 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
         return {folder,base,count:p.slides.length};
       }
       case 'stories':return this.stories(args.id);
+      case 'storyTheme':{
+        this.ensureIdle(args.id);if(!STORY_THEMES[args.theme])throw new Error('Escolha fundo preto ou branco.');
+        await this.store.update(args.id,{storyTheme:args.theme});return this.renderStories(args.id);
+      }
+      case 'saveStory':{
+        this.ensureIdle(args.id);const storyId=validId(args.storyId);
+        const before=(this.store.get(args.id).stories||[]).find(s=>s.id===storyId);
+        await this.store.saveStory(args.id,storyId,{text:args.text,sticker:args.sticker,cta:args.cta});
+        // Texto editado vira arte simples de novo; a arte com IA só é refeita se a pessoa pedir.
+        return before?.image&&before.art!=='simples'?this.publish(this.store.get(args.id)):this.renderStories(args.id,storyId);
+      }
       case 'saveMedia':{if(this.job?.id==='media')throw new Error('Aguarde a foto terminar.');await this.store.saveMedia(args);return this.state();}
       case 'suggestScenes':return this.suggestScenes();
       case 'sceneImage':return this.sceneImage(args.id,count(args.count??1,1,8));
@@ -505,8 +592,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       else if(this.store.get(token.id).format!=='carrossel')await this.docPlan(token,options);
       else{
         this.emit({type:'activity',message:token.kind==='plan'?'Escrevendo o texto do carrossel com o Copy Engine…':'Revisando seu carrossel…'});
-        const size=this.store.get(token.id).cardCount;const task=token.kind==='plan'?`Crie o TEXTO completo do carrossel (${size?`exatamente ${size} cards`:'de 6 a 10 cards'}) seguindo pauta → arquitetura → Copy Engine. Nesta etapa não há imagens: o usuário vai revisar, editar e aprovar o texto antes de qualquer arte.`:`MENSAGEM DO USUÁRIO: ${options.message}`;
-        const prompt=`${this.context(token.id)}\nTAREFA: ${task}\n${this.copyRules()}\nRetorne JSON conforme esquema. Se faltarem informações essenciais sobre produto, público, problema ou oferta no perfil, briefing e conversa, faça apenas as 1 a 3 perguntas mais importantes em reply, sem inventar respostas; slides deve ser [], assim como regenerateSlideIds. Se o usuário está conversando, pedindo pautas, perguntando sobre marca ou explorando ideias sem pedir texto novo ou revisão, responda em reply e retorne slides:[]; os demais campos podem ser strings vazias e o texto existente será preservado. Em uma revisão preserve IDs e conteúdo não afetado, inclusive a legenda aprovada quando não houver pedido de alterá-la. Use regenerateSlideIds apenas se o usuário pediu para gerar ou revisar imagens de cards que já têm arte; caso contrário []. Nesta etapa não invoque geração de imagem.`;
+        const prompt=this.planPrompt(token.id,token.kind==='plan'?'':options.message);
         const seen=(this.store.get(token.id).attachments||[]).map(a=>a.dataUrl).slice(0,4);
         let result=await this.codex.run({prompt,outputSchema:PLAN_SCHEMA,...(seen.length?{references:seen}:{})});
         if(token.cancelled)return;
@@ -523,20 +609,37 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
           const edited=await this.codex.run({...(seen.length?{references:seen}:{}),prompt:`${prompt}\n\n${this.editorPass()}\nTEXTO A REVISAR:\n${JSON.stringify(plan)}`,outputSchema:PLAN_SCHEMA});
           if(token.cancelled)return;
           try{const next=JSON.parse(String(edited.text||'').replace(/^```(?:json)?\s*|\s*```$/g,''));if(Array.isArray(next.slides)&&next.slides.length>=2&&!next.slides.some(s=>INSTRUCTION_BODY.test(String(s?.body||''))))plan=next;}catch{}
+          // Sinais de IA que sobraram (travessão, "não é X, é Y"…): uma correção só desses trechos.
+          const tells=this.planTells(plan);
+          if(tells.length){
+            this.emit({type:'activity',message:'Tirando a cara de texto de IA…'});
+            const fixed=await this.codex.run({...(seen.length?{references:seen}:{}),prompt:`${prompt}\n\nCORREÇÃO DE VOZ: reescreva SÓ as frases com estes sinais de texto de IA, mantendo o sentido, os ids, role e todo o resto igual. Sem travessão em nenhum lugar.\n${tells.map(t=>`- ${t.where}: ${t.label} em "${t.match}"`).join('\n')}\n${VOICE_RULES}\nTEXTO:\n${JSON.stringify(plan)}`,outputSchema:PLAN_SCHEMA});
+            if(token.cancelled)return;
+            try{const next=JSON.parse(String(fixed.text||'').replace(/^```(?:json)?\s*|\s*```$/g,''));if(Array.isArray(next.slides)&&next.slides.length===plan.slides.length&&this.planTells(next).length<tells.length)plan=next;}catch{}
+          }
         }
-        const p=this.store.get(token.id),known=new Set(this.assets(p).map(a=>a.id));
-        // Só vale a imagem que existe; o modelo não inventa ids.
-        const slides=this.store.validateSlides(Array.isArray(plan.slides)?plan.slides.map(s=>({...s,asset:known.has(String(s?.asset||''))?s.asset:''})):plan.slides,p.slides);
-        if(!slides.length){const reply=text(plan.reply,20000);if(!reply.trim())throw new Error('O assistente não retornou uma resposta. Tente reformular sua mensagem.');await this.update(token.id,{status:p.slides.length&&p.slides.every(s=>s.image&&s.state==='complete')?'complete':p.slides.length?'ready':'draft',error:null,messages:[...p.messages,{id:randomUUID(),role:'assistant',text:reply}]});return;}
-        if(slides.length<2)throw new Error('O texto precisa conter pelo menos dois cards.');
-        const caption=text(plan.caption);
-        const fresh=token.kind==='plan';
-        await this.update(token.id,{title:text(plan.title,200)||p.title,architecture:text(plan.architecture),editorialLine:p.editorialLine||text(String(plan.editorialLine||''),2000),visualConcept:p.visualConcept||text(String(plan.visualConcept||''),4000),coverHooks:(Array.isArray(plan.coverHooks)?plan.coverHooks:[]).slice(0,4).map(h=>text(String(h),300)).filter(h=>h.trim()),caption:caption.trim()?caption:p.caption,slides,...(fresh?{textApproved:false,coverOptions:[]}:{}),status:'ready',messages:[...p.messages,{id:randomUUID(),role:'assistant',text:text(plan.reply||'Texto pronto. Revise e edite os cards antes de aprovar.',10000)}]});
+        const slides=await this.savePlan(token.id,plan,{fresh:token.kind==='plan'});if(!slides)return;
         const ids=Array.isArray(plan.regenerateSlideIds)?[...new Set(plan.regenerateSlideIds)].filter(id=>slides.some(s=>s.id===id&&s.image)):[];
         if(ids.length&&this.store.get(token.id).textApproved)for(const id of ids){if(token.cancelled)break;await this.images(token,id);}
       }
     }catch(error){if(!token.cancelled){const p=this.store.get(token.id);await this.update(token.id,{slides:p.slides.map(s=>s.state==='generating'?{...s,state:s.previousState||(s.image?'complete':'draft')}:s),status:'error',error:safeError(error).message}).catch(()=>{});}}
     finally{if(this.job===token)this.job=null;this.emit({type:'activity',message:''});}
+  }
+  // Pedido de texto do carrossel: o mesmo para a conta ChatGPT e para agentes (Claude, Gemini) pela CLI.
+  planPrompt(id,message=''){
+    const size=this.store.get(id).cardCount;const task=!message?`Crie o TEXTO completo do carrossel (${size?`exatamente ${size} cards`:'de 6 a 10 cards'}) seguindo pauta → arquitetura → Copy Engine. Nesta etapa não há imagens: o usuário vai revisar, editar e aprovar o texto antes de qualquer arte.`:`MENSAGEM DO USUÁRIO: ${message}`;
+    return `${this.context(id)}\nTAREFA: ${task}\n${this.copyRules()}\nRetorne JSON conforme esquema. Se faltarem informações essenciais sobre produto, público, problema ou oferta no perfil, briefing e conversa, faça apenas as 1 a 3 perguntas mais importantes em reply, sem inventar respostas; slides deve ser [], assim como regenerateSlideIds. Se o usuário está conversando, pedindo pautas, perguntando sobre marca ou explorando ideias sem pedir texto novo ou revisão, responda em reply e retorne slides:[]; os demais campos podem ser strings vazias e o texto existente será preservado. Em uma revisão preserve IDs e conteúdo não afetado, inclusive a legenda aprovada quando não houver pedido de alterá-la. Use regenerateSlideIds apenas se o usuário pediu para gerar ou revisar imagens de cards que já têm arte; caso contrário []. Nesta etapa não invoque geração de imagem.`;
+  }
+  // Grava o texto no projeto (cards, legenda, linha editorial); devolve os cards ou null quando só houve resposta.
+  async savePlan(id,plan,{fresh=false}={}){
+    const p=this.store.get(id),known=new Set(this.assets(p).map(a=>a.id));
+    // Só vale a imagem que existe; o modelo não inventa ids.
+    const slides=this.store.validateSlides(Array.isArray(plan.slides)?plan.slides.map(s=>({...s,asset:known.has(String(s?.asset||''))?s.asset:''})):plan.slides,p.slides);
+    if(!slides.length){const reply=text(plan.reply,20000);if(!reply.trim())throw new Error('O assistente não retornou uma resposta. Tente reformular sua mensagem.');await this.update(id,{status:p.slides.length&&p.slides.every(s=>s.image&&s.state==='complete')?'complete':p.slides.length?'ready':'draft',error:null,messages:[...p.messages,{id:randomUUID(),role:'assistant',text:reply}]});return null;}
+    if(slides.length<2)throw new Error('O texto precisa conter pelo menos dois cards.');
+    const caption=text(plan.caption);
+    await this.update(id,{title:text(plan.title,200)||p.title,architecture:text(plan.architecture),editorialLine:p.editorialLine||text(String(plan.editorialLine||''),2000),visualConcept:p.visualConcept||text(String(plan.visualConcept||''),4000),coverHooks:(Array.isArray(plan.coverHooks)?plan.coverHooks:[]).slice(0,4).map(h=>text(String(h),300)).filter(h=>h.trim()),caption:caption.trim()?caption:p.caption,slides,...(fresh?{textApproved:false,coverOptions:[]}:{}),status:'ready',messages:[...p.messages,{id:randomUUID(),role:'assistant',text:text(plan.reply||'Texto pronto. Revise e edite os cards antes de aprovar.',10000)}]});
+    return slides;
   }
   // Material gratuito (A4) e apresentação (16:9): roteiro de páginas com o Contexto da Marca.
   async docPlan(token,options){

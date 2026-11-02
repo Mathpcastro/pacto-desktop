@@ -136,7 +136,7 @@ export default function App() {
       { id: "theme", label: preferences.theme === "dark" ? "Usar tema claro" : "Usar tema escuro", run: () => set({ theme: preferences.theme === "dark" ? "light" : "dark" }) },
       { id: "instagram", label: "Conectar Instagram", hint: "Postar e agendar", run: () => setIgOpen(true) },
       { id: "analytics", label: "Marca: Analytics do Instagram", hint: "Desempenho e Replicador", run: () => openBrand("analytics") },
-      { id: "agents", label: "Usar o Carrossell com um agente", hint: "Codex, Claude Code", run: () => setAgentsOpen(true) },
+      { id: "agents", label: "Usar o Carrossell com um agente", hint: "Claude, Gemini, Codex", run: () => setAgentsOpen(true) },
       { id: "course", label: "Abrir as aulas do método", hint: "Opcional", run: () => setCourseOpen(true) },
       { id: "account", label: connected ? "Desconectar a conta ChatGPT" : "Conectar a conta ChatGPT", run: () => request(connected ? "disconnect" : "connect").catch(() => {}) },
       ...(state.profiles || []).filter((p) => p.id !== state.profileId).map((p) => ({ id: `profile-${p.id}`, label: `Trocar para o perfil ${p.name}`, hint: "Perfis", run: () => request("switchProfile", { id: p.id }).then(goHome).catch(() => {}) })),
@@ -191,7 +191,7 @@ export default function App() {
           <hr />
           <button className="opt" onClick={() => (menu.setOpen(null), setAgentsOpen(true))}>
             <b>Usar com agentes</b>
-            <small>Codex ou Claude Code usam o app por você</small>
+            <small>Claude, Gemini ou Codex criam carrosséis por você</small>
           </button>
           <button className="opt" disabled={!state.course.length} onClick={() => (menu.setOpen(null), setCourseOpen(true))}>
             <b>Aulas do método</b>
@@ -245,7 +245,7 @@ export default function App() {
           {setup === "manual" ? (
             <Profile profile={state.profile} account={state.account} request={request} busy={isPending("connect")} onDone={() => (setSetup(null), setView(hasProfile ? "brand" : "home"), hasProfile && setNotice("Sua marca foi atualizada."))} onCancel={() => setSetup(hasProfile ? null : "interview")} />
           ) : (
-            <Onboarding state={state} request={request} isPending={isPending} onManual={() => setSetup("manual")} onDone={() => (setSetup(null), setView("home"), hasProfile && setNotice("Sua marca foi atualizada."))} onCancel={hasProfile ? () => setSetup(null) : undefined} />
+            <Onboarding state={state} request={request} isPending={isPending} onAgents={() => setAgentsOpen(true)} onManual={() => setSetup("manual")} onDone={() => (setSetup(null), setView("home"), hasProfile && setNotice("Sua marca foi atualizada."))} onCancel={hasProfile ? () => setSetup(null) : undefined} />
           )}
         </div>
       </main>

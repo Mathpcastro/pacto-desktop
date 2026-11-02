@@ -72,3 +72,8 @@ Nesta conversa foram organizadas as oito aulas do app na Cakto e acrescentada a 
 Depois, criadas duas aulas textuais de mentoria: uma ao final do módulo do app e outra ao final do método normal. Copy explica o trabalho direto de Matheus no funil personalizado e os possíveis ajustes de aquisição/conversão no SaaS, com CTA para aplicação. Ambas foram salvas como rascunho.
 
 O usuário pediu registrar tudo no Obsidian e renomear o projeto para **Funil CQV**. Pasta, índice, estado, referências e script de sincronização ajustados; adicionadas notas 20/21/22 e provas locais selecionadas, sem credenciais. Os históricos do aplicativo, materiais, minicurso e reels foram preservados.
+
+
+## 30/10/2026 — Analytics (Codex)
+
+Lidas as mudanças atuais do Obsidian e o texto anexado; painel integrado à Marca preservando o design. Usuário confirmou Instagram conectado e indicou a cópia `release/teste`. Após conferir o contexto de abertura pelo Explorer, as leituras reais de 7/30 dias funcionaram; painel aplicado e aberto nessa cópia. Provas e limitações em [[31 - Analytics do Instagram]].

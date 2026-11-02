@@ -2,7 +2,7 @@
 
 ## Estado atual consolidado — 24/10/2026
 
-Este checkpoint prevalece sobre as descrições históricas abaixo. Projeto agora chamado **Funil CQV**; aplicativo continua PACTO.
+Este checkpoint prevalece sobre as descrições históricas abaixo. Projeto documental: **Carrosseis Que Vendem**. Nome comercial do app: **Carrossell**; método: **P.A.C.T.O.** Os registros de site e curso abaixo refletem a verificação de 24/10.
 
 - Landing do app em https://carrosseisquevendem.com.br/app/; a home `/` é outra página. `/app/` e `/mentoria/` responderam HTTP 200 na conferência desta consolidação.
 - Instaladores da versão 0.2.0 no GitHub público `Mathpcastro/pacto-releases`; código privado. Windows com atualização automática; Mac sem assinatura Apple e atualização manual.
@@ -198,3 +198,47 @@ Três variações em 1080×1920 (mesmo corpo, ganchos diferentes), em `Evidencia
 Fontes: `pacto-app/docs/reels/roteiro.json` (roteiro e variações), `pacto-app/scripts/reels-tts.mjs` (narração com tempos), composição `PactoReels-A/B/C` em `Remotion/src/pactoreels/ReelsAd.tsx`. Render: `npx remotion render PactoReels-A out/x.mp4 --bundle-cache=false`, depois `loudnorm`.
 
 - [ ] Usuário escolher o gancho (ou testar os três) e subir no gerenciador com o botão "Saiba mais" apontando para a página /app/.
+
+## Atualização — Carrossell, 24/10/2026
+
+Nome comercial **Carrossell** aprovado pelo usuário, prevalecendo sobre o nome PACTO citado no histórico. Código atual verificado em `Documents\pacto-app`: versão 0.2.1, ainda identificado como PACTO. Foram criados três conceitos de marca, ainda sem escolha visual ou aplicação no app. Consulte [[23 - Carrossell branding]].
+## Carrossell — branding aplicado, 24/10/2026
+
+Direção 02 em produção: SVG/PNG/ICO/ICNS, avatares 1080×1080, bio e kit ZIP. App renomeado comercialmente; cores e tema escuro refinados. **Fontes, layout, navegação e botão de tema preservados**, para manter o tutorial gravado válido. 45 testes, 7 regressões, comparação visual e smoke empacotado aprovados; revisão visual PASS. Biblioteca e home Codex históricos preservados em pacto-desktop; appId, package name, IPC, feed e aliases mantidos.
+
+Instalador local: release/Carrossell-Setup-0.2.1.exe (sem publicação). Não houve alteração de Instagram/site. Assets: resources/branding/; guia e validação: docs/branding/. Fonte de verdade no Obsidian: Projetos/Carrosseis Que Vendem/branding/. Código na branch codex/carrossell-branding.
+
+## Release pública Carrossell 0.2.2 — 24/10/2026
+
+- Código enviado à `main` privada `Mathpcastro/pacto-desktop`, commit `d46a9ac`; tag fonte `v0.2.2`.
+- Release pública: https://github.com/Mathpcastro/pacto-releases/releases/tag/v0.2.2. Aliases de download Carrossell e links legados PACTO responderam HTTP 200.
+- Windows: `Carrossell-Setup-0.2.2.exe`, SHA-256 `167BCD1E10CFE5706A6F15992BC42AE5C812372A8B1E996C07FA8073860DC0F4`. Testes 45/45, renderer 7/7, packaged smoke e brand proof aprovados.
+- Mac: DMGs Apple Silicon e Intel construídos e aprovados no workflow [40148827680](https://github.com/Mathpcastro/pacto-desktop/actions/runs/40148827680), incluindo smoke no app empacotado.
+- Instaladores sem assinatura de código. Mac sem notarização Apple e com atualização manual; instalação em Mac físico ainda pendente. Windows pode exibir aviso SmartScreen.
+
+## 26/10/2026 — Preferências da interface (implementação local)
+
+No checkout `C:\Users\Admin2\Documents\pacto-app`, branch `codex/carrossell-branding`, foi criado `src/components/PreferencesDialog.jsx` e atualizado `src/App.jsx`/`src/styles.css`. Opções: claro/escuro, paletas Carrossell/Oceano/Floresta/Ametista, fonte original/Arial/Verdana/Georgia e escala de interface 100%–125% em passos de 5%. As escolhas persistem em `carrossell-preferences`, mantendo a chave histórica `pacto-theme`; os PNGs exportados não mudam. O padrão do tutorial permanece.
+
+Build/testes não executados nesta etapa; sem commit, push ou release. Antes de publicar: verificar as paletas em ambos os modos, escala em janela pequena, persistência após reinício e exportação inalterada.
+
+
+## Checkpoint — 30/10/2026, Analytics
+
+Painel implementado e aplicado na cópia indicada pelo usuário `pacto-app/release/teste/win-unpacked/Carrossell.exe`, deixada aberta em Marca › Conexões › Analytics. Conta @omatheusdaia conectada, leituras reais de 7/30 dias e insights dos posts conferidos. 105 testes, 46 verificações de fases, 8 regressões, prova específica, build e smoke empacotado passaram. Sem release pública ou postagem. Histórico de seguidores começa na primeira coleta. Detalhes, limites e contexto do cofre em [[31 - Analytics do Instagram]].
+
+
+## Release 0.6.0 publicada — 30/10/2026
+
+[[32 - Release Carrossell 0.6.0]]: Latest com Windows e os dois Macs, workflow aprovado, links HTTP 200, feed Windows 0.6.0 e zero artefatos de Actions. Usuário confirmou publicação real de carrossel pelo app. Agendamento real e Mac físico seguem sem confirmação.
+
+
+## 02/11/2026 — Stories só de texto, copy anti-IA e roteiro (Claude)
+
+Stories preto/branco no fim do fluxo e voz anti-IA na copy implementados localmente, sem commit. 109/109 testes, build e prova real no Electron (`scripts/stories-proof.mjs`). Automação de comentários, anúncios e login com Claude/Gemini ficaram em pesquisa e plano. Ver [[33 - Roteiro comentarios stories anuncios e provedores]].
+
+- [ ] Usuário avaliar os stories e a copy nova com a própria marca.
+- [ ] Testar uma conta ManyChat real antes de integrar a automação de comentários.
+- [ ] Decidir formatos e escopo da primeira versão de anúncios.
+
+- [ ] Modo agente (Claude/Gemini pela CLI, sem ChatGPT) implementado localmente: testar com o Gemini CLI instalado e lançar numa versão. Ver [[33 - Roteiro comentarios stories anuncios e provedores]].

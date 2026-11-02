@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { dirname, resolve, basename } from 'node:path';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { connectControl, userDataDir } from '../core/control.mjs';
 import { AGENT_GUIDE } from '../core/agent-guide.mjs';
@@ -30,7 +32,26 @@ Uso: carrossell <comando> [opções]   (saída em JSON)
   criar --pauta "<texto>" [--titulo] [--estilo ia|tweet|texto|textopreto|fototexto|fundo|recorte]
         [--cards 4|6|8|10] [--formato carrossel|material|apresentacao] [--objetivo] [--sem-esperar]
                                  cria o carrossel e escreve o texto
+        [--agente claude|gemini] só cria: o texto é escrito pelo seu agente (sem ChatGPT)
   mensagem <id> "<pedido>"       pede um ajuste no texto, como no chat do estúdio
+
+  Modo agente (Claude, Gemini ou outro agente escreve; o app guarda, monta, exporta e posta):
+  marca salvar --contexto <arquivo.md> --design <arquivo.md> [--nome <marca>]
+  tarefa <id> texto|cta|stories|arte [--pasta <dir>]
+                                 grava o pedido e o esquema JSON que o seu agente deve seguir
+  texto <id> --arquivo <json>    grava o texto escrito pelo agente (e aponta sinais de texto de IA)
+  cta <id> --arquivo <json>      grava palavras-chave, CTAs e DMs
+  stories <id> --arquivo <json>  grava os stories e monta os PNGs em preto ou branco
+  card <id> <n> --html <arquivo> | --imagem <arquivo.png>
+                                 arte do card n feita pelo agente (HTML 1080×1350 ou PNG)
+
+  Stories, CTA e revisão (qualquer modo):
+  stories <id> [--fundo preto|branco]  sem --arquivo, a conta ChatGPT do app escreve os stories
+  cta <id>                       sem --arquivo, a conta ChatGPT do app monta palavras-chave, CTAs e DMs
+  fundo-stories <id> preto|branco      troca o fundo e refaz os PNGs dos stories
+  revisar <id> | --arquivo <texto ou json>
+                                 aponta sinais de texto de IA e alertas do método na copy
+
   editar <id> --json '<campos>'  grava campos do projeto (slides, caption, title...)
   aprovar <id>                   aprova o texto
   capas <id> [--quantas 1-3]     gera as opções de capa
@@ -38,7 +59,8 @@ Uso: carrossell <comando> [opções]   (saída em JSON)
   gerar <id> [--card <n>]        gera as artes que faltam (ou refaz o card n)
   esperar <id> [--timeout <s>]   espera a geração terminar
   cancelar                       para o trabalho em andamento
-  exportar <id> --pasta <dir>    grava 01.png, 02.png... e legenda.txt na pasta
+  exportar <id> --pasta <dir> [--so-stories]
+                                 grava 01.png, 02.png..., legenda e stories (ou só os stories)
   instagram                      contas do Instagram e as padrão deste perfil
   instagram contas               busca no Composio as contas já conectadas (sem reconectar)
   instagram conectar             conecta outra conta (abre o navegador)
@@ -107,7 +129,8 @@ async function resolveAccounts(client,profileId,value){
   return String(value).split(',').map(v=>v.trim().replace(/^@/,'').toLowerCase()).filter(Boolean).map(v=>{const a=accounts.find(a=>a.status==='ACTIVE'&&(a.id===v||a.username.toLowerCase()===v));if(!a)throw new Usage(`Conta do Instagram não encontrada: @${v}. Contas: ${accounts.filter(a=>a.status==='ACTIVE').map(a=>'@'+a.username).join(', ')||'nenhuma (carrossell instagram contas)'}`);return a.id;});
 }
 const needId=(id,cmd)=>{if(!id)throw new Usage(`Informe o id do projeto: carrossell ${cmd} <id>`);return id;};
-const json=(value,what)=>{try{return JSON.parse(value);}catch{throw new Usage(`${what} precisa ser JSON válido.`);}};
+const json=(value,what)=>{try{return JSON.parse(String(value).replace(/^﻿/,'').replace(/^```(?:json)?\s*|\s*```\s*$/g,''));}catch{throw new Usage(`${what} precisa ser JSON válido.`);}};
+const readText=async file=>{try{return await readFile(resolve(String(file)),'utf8');}catch{throw new Usage(`Não consegui ler o arquivo ${file}.`);}};
 
 export async function main(argv=process.argv.slice(2),{userData=userDataDir()}={}){
   const {positional:[cmd,...rest],flags}=parse(argv);
@@ -133,7 +156,11 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir()}={
         if(!sub)out(await client.call('brand',scoped()));
         else if(sub==='configurar'){const input=flags.link||flags.descricao;if(!input||input===true)throw new Usage('Use --link <url> ou --descricao "<o que você vende>"');say('Montando Contexto da Marca e Design Kit (1 a 3 minutos)…');await client.subscribe(e=>e.type==='activity'&&e.message&&say(`… ${e.message}`));await client.call('quickSetup',scoped({input:String(input)}));out((await client.call('brand',scoped())).drafts);}
         else if(sub==='aprovar')out(await client.call('approveBrand',scoped({name:typeof flags.nome==='string'?flags.nome:''})));
-        else throw new Usage('Use: carrossell marca [configurar|aprovar]');
+        else if(sub==='salvar'){
+          if(typeof flags.contexto!=='string'||typeof flags.design!=='string')throw new Usage('Use: carrossell marca salvar --contexto <arquivo.md> --design <arquivo.md> [--nome <marca>]');
+          out(await client.call('saveBrand',scoped({name:typeof flags.nome==='string'?flags.nome:'',context:await readText(flags.contexto),design:await readText(flags.design)})));
+        }
+        else throw new Usage('Use: carrossell marca [configurar|aprovar|salvar]');
         break;
       }
       case 'pautas':{
@@ -146,7 +173,10 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir()}={
         const brief=flags.pauta;if(!brief||brief===true)throw new Usage('Use: carrossell criar --pauta "<tema>"');
         const args={title:typeof flags.titulo==='string'?flags.titulo:String(brief).slice(0,80),brief:String(brief)};
         if(flags.estilo)args.style=String(flags.estilo);if(flags.cards)args.cardCount=Number(flags.cards);if(flags.formato)args.format=String(flags.formato);if(typeof flags.objetivo==='string')args.goal=flags.objetivo;
-        const p=await client.call('createProject',scoped(args));say(`Projeto ${p.id} criado. Escrevendo o texto…`);
+        if(flags.agente)args.madeBy=typeof flags.agente==='string'?flags.agente:'agente';
+        const p=await client.call('createProject',scoped(args));
+        if(flags.agente){say(`Projeto ${p.id} criado. Próximo passo: carrossell tarefa ${p.id} texto`);out(await client.call('project',scoped({id:p.id})));break;}
+        say(`Projeto ${p.id} criado. Escrevendo o texto…`);
         await client.call('generatePlan',scoped({id:p.id}));out(await after(p.id,await client.call('project',scoped({id:p.id}))));break;
       }
       case 'mensagem':{const id=needId(rest[0],'mensagem');const text=rest.slice(1).join(' ');if(!text)throw new Usage('Use: carrossell mensagem <id> "<pedido>"');await client.call('sendMessage',scoped({id,text}));out(await after(id,await client.call('project',scoped({id}))));break;}
@@ -163,9 +193,51 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir()}={
         if(flags.card){const p=await client.call('project',scoped({id}));const s=p.slides.find(s=>s.index===Number(flags.card));if(!s)throw new Usage(`Card ${flags.card} não existe.`);args.slideId=s.id;}
         await client.call('generateSlides',scoped(args));out(await after(id,await client.call('project',scoped({id}))));break;
       }
+      case 'tarefa':{
+        const id=needId(rest[0],'tarefa'),kind=rest[1];if(!['texto','cta','stories','arte'].includes(kind))throw new Usage('Use: carrossell tarefa <id> texto|cta|stories|arte');
+        const task=await client.call('agentTask',scoped({id,kind}));
+        // O pedido é longo (método e fontes do curso): vai para arquivos que o agente lê, não para a tela.
+        const folder=typeof flags.pasta==='string'?resolve(flags.pasta):join(tmpdir(),'carrossell-tarefas',id);await mkdir(folder,{recursive:true});
+        const promptFile=join(folder,`tarefa-${kind}.md`);await writeFile(promptFile,task.prompt,'utf8');
+        const schemaFile=task.schema?join(folder,`esquema-${kind}.json`):null;if(schemaFile)await writeFile(schemaFile,JSON.stringify(task.schema,null,2),'utf8');
+        out({tarefa:kind,pedido:promptFile,esquema:schemaFile,depois:task.next,dica:kind==='arte'?'Leia o pedido e faça um arquivo por card.':'Leia o pedido, escreva a resposta em JSON exatamente no esquema e grave com o comando de "depois".'});break;
+      }
+      case 'texto':case 'cta':case 'stories':{
+        const id=needId(rest[0],cmd);
+        if(flags.fundo!==undefined&&!['preto','branco'].includes(flags.fundo))throw new Usage('Use --fundo preto ou --fundo branco.');
+        let r;
+        if(typeof flags.arquivo==='string')r=await client.call('agentSave',scoped({id,kind:cmd,data:json(await readText(flags.arquivo),'O arquivo')}));
+        else if(cmd==='texto')throw new Usage('Use: carrossell texto <id> --arquivo <resposta.json> (com a conta ChatGPT, o texto sai em "carrossell criar")');
+        else{
+          // Sem arquivo: a conta ChatGPT conectada no app escreve (stories ou kit de CTA e DM), com a mesma voz humana.
+          say(cmd==='stories'?'Escrevendo os stories a partir do carrossel…':'Montando palavras-chave, CTAs e DMs…');
+          await client.subscribe(e=>e.type==='activity'&&e.message&&say(`… ${e.message}`));
+          await client.call(cmd==='stories'?'stories':'ctaKit',scoped({id}));
+          r=await client.call('agentResult',scoped({id,kind:cmd}));
+        }
+        if(cmd==='stories'&&flags.fundo){await client.call('storyTheme',scoped({id,theme:flags.fundo}));r={...r,...await client.call('agentResult',scoped({id,kind:cmd})),tells:r.tells};}
+        if(r.tells?.length)say(`Sinais de texto de IA para corrigir: ${r.tells.map(t=>`${t.where}: ${t.label} ("${t.match}")`).join(' · ')}`);
+        out(r);break;
+      }
+      case 'fundo-stories':{
+        const id=needId(rest[0],'fundo-stories'),theme=rest[1];if(!['preto','branco'].includes(theme))throw new Usage('Use: carrossell fundo-stories <id> preto|branco');
+        await client.call('storyTheme',scoped({id,theme}));out(await client.call('agentResult',scoped({id,kind:'stories'})));break;
+      }
+      case 'revisar':{
+        // Revisão da copy (voz humana e regras do método) de um carrossel do app ou de um arquivo de texto/JSON.
+        const args=typeof flags.arquivo==='string'?{text:await readText(flags.arquivo)}:{id:needId(rest[0],'revisar')};
+        out(await client.call('reviewCopy',scoped(args)));break;
+      }
+      case 'card':{
+        const id=needId(rest[0],'card'),n=Number(rest[1]);if(!Number.isInteger(n)||n<1)throw new Usage('Use: carrossell card <id> <n> --html <arquivo> | --imagem <arquivo.png>');
+        if(typeof flags.html==='string')out(await client.call('agentArt',scoped({id,card:n,html:await readText(flags.html)})));
+        else if(typeof flags.imagem==='string')out(await client.call('agentArt',scoped({id,card:n,png:(await readFile(resolve(flags.imagem))).toString('base64')})));
+        else throw new Usage('Use: carrossell card <id> <n> --html <arquivo> | --imagem <arquivo.png>');
+        break;
+      }
       case 'esperar':out(await waitFor(client,profileId,needId(rest[0],'esperar'),timeout));break;
       case 'cancelar':await client.call('cancelWork',scoped());out(await client.call('status',scoped()));break;
-      case 'exportar':{const id=needId(rest[0],'exportar');if(typeof flags.pasta!=='string')throw new Usage('Use: carrossell exportar <id> --pasta <caminho absoluto>');out(await client.call('exportTo',scoped({id,folder:resolve(flags.pasta)})));break;}
+      case 'exportar':{const id=needId(rest[0],'exportar');if(typeof flags.pasta!=='string')throw new Usage('Use: carrossell exportar <id> --pasta <caminho absoluto>');out(await client.call('exportTo',scoped({id,folder:resolve(flags.pasta),onlyStories:Boolean(flags['so-stories'])})));break;}
       case 'instagram':{
         if(rest[0]==='conectar'){
           const s=await client.call('connectInstagram',scoped());say(`Autorize no navegador que abriu (ou abra: ${s.url}). Esperando até 10 minutos…`);

@@ -3,6 +3,8 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import { dirname, join, resolve, normalize, isAbsolute } from 'node:path';
+import { tellsIn } from './copy.mjs';
+import { reviewCarousel } from './knowledge.mjs';
 
 // Controle local para agentes (CLI): o app — com ou sem janela — é o único dono da biblioteca,
 // e a CLI conversa com ele por um named pipe (Windows) ou socket Unix (Mac), com um token que só
@@ -31,7 +33,23 @@ export function projectSummary(p){
   const last=[...(p.messages||[])].reverse().find(m=>m.role==='assistant');
   return {id:p.id,title:p.title,format:p.format,style:p.style,status:p.status,error:p.error||null,textApproved:Boolean(p.textApproved),brief:p.brief,caption:p.caption||'',cardCount:p.cardCount||0,
     slides:(p.slides||[]).map(s=>({id:s.id,index:s.index,role:s.role,title:s.title,body:s.body,emphasis:s.emphasis||'',layout:s.layout||'',state:s.state||'draft',image:Boolean(s.image)})),
-    coverOptions:(p.coverOptions||[]).map((o,i)=>({n:i+1,id:o.id})),lastReply:last?.text||'',instagram:(p.instagram?.posts||[]).map(x=>({username:x.username,accountId:x.accountId,mediaId:x.mediaId,permalink:x.permalink,publishedAt:x.publishedAt,metrics:x.metrics||null,metricsAt:x.metricsAt||null})),schedule:p.schedule||null,publishedAt:p.publishedAt||null,results:p.results||null,createdAt:p.createdAt,updatedAt:p.updatedAt};
+    coverOptions:(p.coverOptions||[]).map((o,i)=>({n:i+1,id:o.id})),lastReply:last?.text||'',instagram:(p.instagram?.posts||[]).map(x=>({username:x.username,accountId:x.accountId,mediaId:x.mediaId,permalink:x.permalink,publishedAt:x.publishedAt,metrics:x.metrics||null,metricsAt:x.metricsAt||null})),schedule:p.schedule||null,publishedAt:p.publishedAt||null,results:p.results||null,madeBy:p.madeBy||'',ctaKit:p.ctaKit||null,storyTheme:p.storyTheme||'preto',stories:(p.stories||[]).map(s=>({type:s.type,text:s.text,sticker:s.sticker,cta:s.cta,art:s.art||'',image:Boolean(s.image)})),createdAt:p.createdAt,updatedAt:p.updatedAt};
+}
+// Onde a copy aparece: cards, legenda, kit de CTA e DM e stories.
+function copyEntries(p){
+  const k=p.ctaKit||{};
+  return [...(p.slides||[]).flatMap((s,i)=>[[`card ${i+1} (título)`,s?.title],[`card ${i+1} (texto)`,s?.body]]),['legenda',p.caption],
+    ['CTA do primeiro card',k.firstCardCta],['CTA do último card',k.lastCardCta],['DM 1',k.dm1],['DM 2',k.dm2],...(p.stories||[]).map((s,i)=>[`story ${i+1}`,s?.text])];
+}
+function reviewOf(p){
+  const tells=tellsIn(copyEntries(p)),issues=(p.slides||[]).length?reviewCarousel({slides:p.slides,caption:p.caption}).issues||[]:[];
+  return {ok:!tells.length&&!issues.length,tells,issues};
+}
+function agentResult(p,kind){
+  const summary=projectSummary(p);
+  if(kind==='stories')return {project:summary,stories:summary.stories,storyTheme:summary.storyTheme,tells:tellsIn(summary.stories.map((s,i)=>[`story ${i+1}`,s.text]))};
+  if(kind==='cta')return {project:summary,ctaKit:summary.ctaKit,tells:tellsIn(copyEntries({ctaKit:p.ctaKit}))};
+  return {project:summary,tells:[]};
 }
 function statusSummary(state,job){
   return {account:state.account,profileId:state.profileId,profiles:state.profiles,job:job?{projectId:job.id,kind:job.kind}:null,brand:Boolean(state.profile),brandName:state.profile?.brand||state.brandInfo?.name||'',
@@ -65,9 +83,47 @@ export function agentActions(runtime,{version='',headless=false,info=()=>({})}={
       await runtime.request('saveProfile',{profileId:s.profileId,profile});return (await agentActions(runtime).brand({profileId:s.profileId}));
     },
     ideas:async({profileId})=>(await state(profileId)).ideas,
-    exportTo:async({profileId,id,folder})=>{
+    exportTo:async({profileId,id,folder,onlyStories=false})=>{
+      if(onlyStories){
+        // Só os stories (PNGs e textos), mesmo antes das artes dos cards.
+        const p=await project(profileId,id);if(!p.stories?.length)throw new Error(`Este carrossel ainda não tem stories: carrossell stories ${id}.`);
+        const files={'stories.txt':Buffer.from(p.stories.map((s,i)=>[`STORY ${i+1} — ${s.type}`,s.text,s.sticker?`Sticker: ${s.sticker}`:'',s.cta?`CTA: ${s.cta}`:''].filter(Boolean).join('\n')).join('\n\n'))};
+        p.stories.forEach((s,i)=>{if(s.image)files[`stories/${String(i+1).padStart(2,'0')}.png`]=Buffer.from(s.image.split(',')[1],'base64');});
+        return {folder:resolve(folder||''),files:await writeFiles(folder,files)};
+      }
       const files=await runtime.inProfile(profileId,()=>runtime.exportedFiles(id));
       return {folder:resolve(folder||''),files:await writeFiles(folder,files)};
+    },
+    // Modo agente (Claude, Gemini…): o agente escreve e desenha; o app guarda, valida, monta, exporta e posta.
+    saveBrand:async({profileId,name,context,design})=>{
+      if(!String(context||'').trim()||!String(design||'').trim())throw new Error('Envie o Contexto da Marca e o Design Kit.');
+      const s=await state(profileId);
+      const profile={...(s.profile||{}),brand:String(name||s.profile?.brand||''),brandContext:String(context),designKit:String(design)};
+      await runtime.request('saveProfile',{...(profileId?{profileId}:{}),profile});
+      // A janela aberta sai do onboarding na hora, sem reiniciar o app.
+      await runtime.inProfile(profileId,()=>runtime.emit({type:'state',state:runtime.state()}));
+      return (await agentActions(runtime).brand({profileId}));
+    },
+    agentTask:async({profileId,id,kind})=>runtime.inProfile(profileId,()=>runtime.agentTask(id,kind)),
+    agentSave:async({profileId,id,kind,data})=>{
+      const r=await runtime.inProfile(profileId,()=>runtime.agentSave(id,kind,data));
+      return {...agentResult(r.project,kind),tells:r.tells};
+    },
+    // Resultado depois de gerar stories ou o kit de CTA pela conta ChatGPT (ou de trocar o fundo dos stories).
+    agentResult:async({profileId,id,kind})=>agentResult(await project(profileId,id),kind),
+    // Revisão da copy: sinais de texto de IA (voz humana) e os alertas do método, de um carrossel do app ou de um texto.
+    reviewCopy:async({profileId,id,text})=>{
+      if(id)return reviewOf(await project(profileId,id));
+      let data=null;try{data=JSON.parse(String(text||''));}catch{}
+      if(data&&Array.isArray(data.slides))return reviewOf(data);
+      if(data&&Array.isArray(data.stories))return {tells:tellsIn(data.stories.map((s,i)=>[`story ${i+1}`,s?.text])),issues:[]};
+      return {tells:tellsIn([['texto',text]]),issues:[]};
+    },
+    agentArt:async({profileId,id,card,html,png})=>{
+      const p=await project(profileId,id),slide=p.slides[Number(card)-1];
+      if(!slide)throw new Error(`Card ${card} não existe. Este carrossel tem ${p.slides.length} cards.`);
+      await runtime.inProfile(profileId,()=>runtime.agentArt(id,slide.id,{html,png:png?Buffer.from(String(png),'base64'):null}));
+      return projectSummary(await project(profileId,id));
     },
   };
 }

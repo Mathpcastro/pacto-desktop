@@ -61,7 +61,7 @@ export function AgentCard({ onOpen }) {
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <b>Seu agente pode usar o Carrossell por você</b>
-        <small>O Codex ou o Claude Code criam, geram as artes com a sua conta, exportam e postam, até com o app fechado.</small>
+        <small>Codex, Claude Code ou Gemini CLI criam, exportam e postam, até com o app fechado. Sem a conta ChatGPT, o próprio agente escreve e desenha os cards.</small>
       </div>
       <button className="btn small primary" onClick={onOpen}>
         Configurar em 1 minuto
@@ -73,47 +73,99 @@ export function AgentCard({ onOpen }) {
   );
 }
 
-export function AgentModal({ request, isPending, onNotice, onClose }) {
+// Claude e Gemini escrevem e desenham com a estrutura do app (modo agente), sem a conta ChatGPT;
+// o Codex pode usar a conta ChatGPT conectada no app. O que eles criam fica na biblioteca do app.
+const AGENTS = {
+  claude: {
+    label: "Claude",
+    install: "irm https://claude.ai/install.ps1 | iex",
+    installHint: "Cole no PowerShell. Precisa de uma assinatura do Claude (Pro ou Max). Também funciona na aba Code do app Claude para computador.",
+    open: "claude",
+    file: "CLAUDE.md",
+  },
+  gemini: {
+    label: "Gemini",
+    install: "npm install -g @google/gemini-cli",
+    installHint: "Cole no PowerShell. Precisa do Node.js 20 ou mais novo (nodejs.org). Na primeira vez, escolha \"Sign in with Google\".",
+    open: "gemini",
+    file: "GEMINI.md",
+  },
+  codex: {
+    label: "Codex",
+    install: "npm install -g @openai/codex",
+    installHint: "Cole no PowerShell. Precisa do Node.js. Entre com a mesma conta ChatGPT.",
+    open: "codex",
+    file: "AGENTS.md",
+  },
+};
+const AGENT_PROMPTS = [
+  "Use o comando carrossell no modo agente (rode \"carrossell ajuda --agente\" primeiro). Se a minha marca ainda não estiver no Carrossell, me entreviste e salve o Contexto e o Design Kit. Depois crie um carrossel de 8 cards sobre [seu tema], me mostre o texto para eu aprovar e desenhe os cards em HTML no estilo do Design Kit.",
+  "Com o carrossell no modo agente, faça os stories e o kit de CTA e DM do carrossel mais recente.",
+  "Com o carrossell no modo agente, crie 3 carrosséis de 6 cards no estilo texto (modelo do app) sobre as dúvidas mais comuns dos meus clientes. Não poste: só deixe prontos no app.",
+];
+
+export function AgentModal({ request, isPending, onNotice, onClose, initialAgent = "claude" }) {
   const { info, install, copy } = useCli(request, onNotice);
+  const [agent, setAgent] = useState(initialAgent);
+  const a = AGENTS[agent];
+  const prompts = agent === "codex" ? PROMPTS : AGENT_PROMPTS;
   return (
-    <Dialog title="Use o Carrossell pelo seu agente" eyebrow="CODEX · CLAUDE CODE · TERMINAL" onClose={onClose} wide>
+    <Dialog title="Gere carrosséis pelo Claude, Gemini ou Codex" eyebrow="USAR COM AGENTES" onClose={onClose} wide>
       <div className="dialog-fields agent-modal">
+        <div className="seg" role="group" aria-label="Qual agente você usa" style={{ margin: 0 }}>
+          {Object.entries(AGENTS).map(([k, v]) => (
+            <button key={k} aria-pressed={agent === k} onClick={() => setAgent(k)}>
+              {v.label}
+            </button>
+          ))}
+        </div>
         <p style={{ margin: 0, color: "var(--muted)" }}>
-          Peça em palavras ao seu agente e ele usa o Carrossell por você: lê a sua marca, escreve, gera as artes com a sua conta ChatGPT, exporta, posta e agenda no Instagram. O app nem precisa estar aberto. Você continua podendo fazer tudo à mão aqui.
+          {agent === "codex"
+            ? "O Codex usa o Carrossell por você: lê a sua marca, escreve, gera as artes com a conta ChatGPT conectada aqui, exporta, posta e agenda no Instagram."
+            : `O ${a.label} usa o Carrossell com a sua própria conta dele, sem a conta ChatGPT: escreve o texto e desenha os cards seguindo o método e a sua marca, e o Carrossell guarda, monta, exporta e posta.`}{" "}
+          Tudo o que ele criar aparece aqui no Início, como os outros carrosséis, e você pode abrir, revisar e baixar normalmente.
         </p>
         <ol className="ig-steps agent-steps">
-          <li className={info?.installed ? "done" : ""}>
-            <span className="n">{info?.installed ? <Check size={13} /> : 1}</span>
+          <li>
+            <span className="n">1</span>
             <div>
-              <b>Instale o comando</b>
-              <small>Coloca o comando carrossell no seu computador, para o agente encontrar.</small>
+              <b>Instale o {a.label}</b>
+              <small>{a.installHint}</small>
+              <div className="row" style={{ marginTop: 8 }}>
+                <code className="agent-code">{a.install}</code>
+                <button className="icon-only" aria-label="Copiar comando" title="Copiar" onClick={() => copy(a.install, "Comando copiado. Cole no PowerShell.")}>
+                  <Copy size={15} />
+                </button>
+              </div>
+            </div>
+          </li>
+          <li className={info?.installed ? "done" : ""}>
+            <span className="n">{info?.installed ? <Check size={13} /> : 2}</span>
+            <div>
+              <b>Instale o comando carrossell</b>
+              <small>É por ele que o {a.label} conversa com o Carrossell.</small>
               <div className="row" style={{ marginTop: 8 }}>
                 <InstallButton info={info} install={install} busy={isPending("installCli")} />
               </div>
             </div>
           </li>
           <li>
-            <span className="n">2</span>
+            <span className="n">3</span>
             <div>
-              <b>Ensine o agente</b>
-              <small>Copie o guia e cole nas instruções do agente: AGENTS.md no Codex, CLAUDE.md no Claude Code.</small>
+              <b>Abra o {a.label} e peça em palavras</b>
+              <small>
+                Abra um terminal novo, digite <code>{a.open}</code> e cole um dos pedidos abaixo. Ele lê o guia sozinho com <code>carrossell ajuda --agente</code>; se preferir, cole o guia no {a.file} da pasta.
+              </small>
               <div className="row" style={{ marginTop: 8 }}>
-                <button className="btn" onClick={() => copy(AGENT_GUIDE, "Guia copiado. Cole nas instruções do seu agente.")}>
-                  <ClipboardCopy size={15} /> Copiar guia para o agente
+                <button className="btn" onClick={() => copy(AGENT_GUIDE, `Guia copiado. Cole no ${a.file}.`)}>
+                  <ClipboardCopy size={15} /> Copiar guia para o {a.file}
                 </button>
               </div>
             </div>
           </li>
-          <li>
-            <span className="n">3</span>
-            <div>
-              <b>Peça em palavras</b>
-              <small>Alguns pedidos prontos para colar no agente:</small>
-            </div>
-          </li>
         </ol>
         <div className="agent-prompts">
-          {PROMPTS.map((p) => (
+          {prompts.map((p) => (
             <div key={p} className="agent-prompt">
               <p>{p}</p>
               <button className="icon-only" aria-label="Copiar pedido" title="Copiar" onClick={() => copy(p, "Pedido copiado. Cole no seu agente.")}>
@@ -123,7 +175,7 @@ export function AgentModal({ request, isPending, onNotice, onClose }) {
           ))}
         </div>
         <p className="hint" style={{ margin: 0 }}>
-          Postar no Instagram só acontece quando você pede: o agente precisa confirmar com --confirmar. Com vários perfis, ele escolhe a marca certa com --perfil, sem trocar o que você vê aqui.
+          Postar no Instagram só acontece quando você pede: o agente precisa confirmar com --confirmar. Com vários perfis, ele escolhe a marca certa com --perfil, sem trocar o que você vê aqui. O Carrossell abre sozinho em segundo plano quando o agente precisa dele.
         </p>
       </div>
     </Dialog>
@@ -139,7 +191,7 @@ export default function AgentSetup({ request, isPending, onNotice, onOpen }) {
         <h2>
           <Bot size={18} style={{ verticalAlign: "-3px" }} /> Usar com agentes
         </h2>
-        <span className="hint">Codex, Claude Code ou o terminal</span>
+        <span className="hint">Codex, Claude Code, Gemini CLI ou o terminal</span>
         <span className="spacer" />
         <button className="btn small" onClick={onOpen}>
           Como funciona

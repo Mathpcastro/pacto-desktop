@@ -148,7 +148,7 @@ function DocumentReview({ kind, value, onChange, onRedo, busy }) {
   );
 }
 
-export default function Onboarding({ state, request, isPending, onDone, onCancel, onManual }) {
+export default function Onboarding({ state, request, isPending, onDone, onCancel, onManual, onAgents }) {
   const { profile, account, onboarding = {}, architectures = [] } = state;
   const presets = state.designPresets || [];
   const connected = Boolean(account?.connected);
@@ -315,6 +315,17 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
               <small>Opcional e mais detalhada. Também dá para fazer depois, para melhorar a copy.</small>
             </button>
           </div>
+          {!connected && onAgents && (
+            <div className="card-box account-card">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <b>Usa o Claude ou o Gemini em vez do ChatGPT?</b>
+                <p className="hint">O agente monta a sua marca, escreve e desenha os cards seguindo o método, com a conta dele. Os carrosséis aparecem aqui no app.</p>
+              </div>
+              <button className="btn" type="button" onClick={onAgents}>
+                Gerar com Claude ou Gemini <ArrowRight size={15} />
+              </button>
+            </div>
+          )}
           {quickBusy && (
             <div className="work-strip" role="status" style={{ borderRadius: 12 }}>
               <Spinner />
@@ -367,6 +378,17 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
               {isPending("connect") ? "Conectando…" : "Conectar conta"}
             </button>
           )}
+        </div>
+      )}
+      {current === "account" && !connected && onAgents && (
+        <div className="card-box account-card">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <b>Não usa o ChatGPT?</b>
+            <p className="hint">Gere pelo Claude ou pelo Gemini, com a sua conta deles. O agente monta a sua marca, escreve e desenha os cards seguindo o método, e os carrosséis aparecem aqui no app.</p>
+          </div>
+          <button className="btn" type="button" onClick={onAgents}>
+            Usar Claude ou Gemini <ArrowRight size={15} />
+          </button>
         </div>
       )}
       {(current === "brand" || current === "design") &&

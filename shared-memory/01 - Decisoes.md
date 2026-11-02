@@ -38,3 +38,25 @@
 - Mensagens curtas às 10h/20h, benefícios reais, case do Setup identificado como case, oferta R$97 → R$47 e link `/app/`. Foram agendadas dez por canal, em sequência finita.
 - Mentoria: aplicação personalizada do funil com Matheus e possíveis ajustes no SaaS conforme diagnóstico/escopo; contratação à parte. Uma aula textual em cada módulo principal; ambas rascunho.
 - Detalhes em [[20 - Entregas e operacao 2026-10-24]], [[21 - Campanha WhatsApp e Telegram]] e [[22 - Mentoria e aulas na Cakto]].
+
+## 24/10/2026 — Carrossell: nome comercial aprovado
+
+O usuário aprovou **Carrossell** como nome do aplicativo. P.A.C.T.O. permanece como método. O nome substitui a decisão histórica de preservar PACTO como marca do app. Símbolo, paleta, tipografia e assinatura ainda são propostas; três conceitos estão em [[23 - Carrossell branding]]. A versão 0.2.1 ainda usa PACTO no código e nos instaladores; nenhuma migração técnica foi realizada nesta etapa.
+## Carrossell — branding aplicado, 24/10/2026
+
+Direção 02 em produção: SVG/PNG/ICO/ICNS, avatares 1080×1080, bio e kit ZIP. App renomeado comercialmente; cores e tema escuro refinados. **Fontes, layout, navegação e botão de tema preservados**, para manter o tutorial gravado válido. 45 testes, 7 regressões, comparação visual e smoke empacotado aprovados; revisão visual PASS. Biblioteca e home Codex históricos preservados em pacto-desktop; appId, package name, IPC, feed e aliases mantidos.
+
+Instalador local: release/Carrossell-Setup-0.2.1.exe (sem publicação). Não houve alteração de Instagram/site. Assets: resources/branding/; guia e validação: docs/branding/. Fonte de verdade no Obsidian: Projetos/Carrosseis Que Vendem/branding/. Código na branch codex/carrossell-branding.
+
+## Carrossell 0.2.2 publicado — 24/10/2026
+
+Código em `Mathpcastro/pacto-desktop` foi enviado à `main`, commit `d46a9ac`; tag `v0.2.2`. Release pública latest: https://github.com/Mathpcastro/pacto-releases/releases/tag/v0.2.2. Windows, Mac Apple Silicon e Mac Intel publicados e verificados; aliases Carrossell novos e aliases PACTO legados preservados. Instaladores sem assinatura de código; Mac sem notarização e com atualizações manuais. Ver [[Projetos/Carrosseis Que Vendem/branding/06 - Validacao da implementacao]].
+
+## 26/10/2026 — Preferências da interface
+
+O padrão atual deve permanecer igual ao tutorial; o usuário pediu personalizações opcionais de aparência e leitura depois de uma reclamação de texto pequeno. Preferências locais do comprador não mudam as imagens exportadas.
+
+
+## 30/10/2026 — Painel de Analytics
+
+Pedido do usuário: implementar o painel do anexo mantendo a estrutura visual atual. Analytics foi integrado a Marca › Conexões, com filtro por conta e 7/30 dias, ranking e referências para o Replicador. Ausência de métricas não vira zero, alcance é total único do período, e o histórico de seguidores usa somente coletas reais. Ver [[31 - Analytics do Instagram]].

@@ -24,3 +24,8 @@ Pauta retornou inglês, sem timestamps. Notion original em português é fonte d
 ## Conta e memória
 
 R$47 é o preço do aplicativo, não cota de IA ilimitada. Os limites/recursos são os da conta conectada. Vault não sincroniza histórico de chat automaticamente; agentes leem e atualizam notas. A conexão Obsidian depende do vault pai e da variável local no processo cliente. O script de sincronização recusa sobrescrever nota mais nova que o snapshot local sem reconciliação.
+
+
+## Atualização — 30/10/2026, Analytics
+
+Conexão do usuário e leitura real de insights de conta/posts foram verificadas no app. A pendência histórica de leitura de métricas está resolvida para essa conta. Permanecem postagem/agendamento reais, Mac físico, publicação da release e limite de chamadas do Composio. Ranking limitado aos 50 posts mais recentes do período; histórico de seguidores começa nas coletas do app. Contexto de abertura pelo Explorer e demais detalhes em [[31 - Analytics do Instagram]].

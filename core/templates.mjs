@@ -12,6 +12,12 @@ export const SIZES = {
   carrossel: { width: 1080, height: 1350 },
   material: { width: 794, height: 1123 },
   apresentacao: { width: 1280, height: 720 },
+  story: { width: 1080, height: 1920 },
+};
+// Stories só de texto, como quem digita no Instagram: fundo liso preto ou branco.
+export const STORY_THEMES = {
+  preto: { bg: "#000000", fg: "#ffffff" },
+  branco: { bg: "#ffffff", fg: "#111111" },
 };
 
 const FALLBACK = { accent: "#ff5a36", ink: "#191919", paper: "#ffffff", soft: "#f4f1ec" };
@@ -255,6 +261,17 @@ export function documentHtml({ format, pages, brand = {}, coverVariant = 0, font
   const list = only === null ? pages : [pages[only]];
   const body = list.map((page) => pageBody(page, pages.indexOf(page), pages.length, wide, brand, coverVariant)).join("");
   return documentShell({ ...SIZES[format], fonts, css: PAGE_CSS(p, wide), body, page: only === null, title: pages[0]?.title });
+}
+// Story 1080×1920 só de texto. O texto fica fora das faixas que o Instagram cobre (topo e rodapé);
+// com sticker (enquete ou caixa de perguntas), sobe e deixa a metade de baixo livre para colar o sticker.
+export function storyHtml({ story, theme = "preto", fonts }) {
+  const t = STORY_THEMES[theme] || STORY_THEMES.preto;
+  const text = String(story?.text || "").trim();
+  const sticker = Boolean(String(story?.sticker || "").trim());
+  const css = `body{font-family:${SYSTEM};overflow:hidden}
+.story{width:1080px;height:1920px;background:${t.bg};color:${t.fg};display:flex;flex-direction:column;justify-content:${sticker ? "flex-start" : "center"};padding:${sticker ? 360 : 300}px 112px ${sticker ? 960 : 420}px}
+p{font-size:${fit(text, 84, 54, 40, 220)}px;line-height:1.24;font-weight:700;letter-spacing:-0.01em;white-space:pre-line;text-wrap:pretty}`;
+  return documentShell({ ...SIZES.story, fonts, css, body: `<div class="story"><p>${esc(text)}</p></div>`, title: "Story" });
 }
 // O carrossel pronto como PDF de várias páginas (LinkedIn aceita PDF como carrossel).
 export function imagesPdfHtml(images, title = "Carrossel") {
