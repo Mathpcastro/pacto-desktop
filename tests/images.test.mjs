@@ -27,6 +27,146 @@ async function fixture(t) {
 const settle = async (runtime) => { for (let i = 0; i < 200 && runtime.job; i++) await new Promise((r) => setTimeout(r, 5)); };
 const knowledge = { method: "Método", lessons: [] };
 const fakeRender = () => ({ calls: [], fonts: {}, async png(html) { this.calls.push(html); return png; }, async pdf() { return Buffer.from("%PDF"); } });
+const deferred = () => {
+  let resolve;
+  let reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+const waitFor = async (condition) => {
+  for (let i = 0; i < 200 && !condition(); i += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  assert.ok(condition());
+};
+const planFor = (cards) => ({
+  title: "T",
+  architecture: "Lista Útil",
+  editorialLine: "",
+  visualConcept: "",
+  coverHooks: [],
+  caption: "",
+  reply: "ok",
+  regenerateSlideIds: [],
+  slides: cards,
+});
+const card = (id, title) => ({ id, role: id === "one" ? "Capa" : "Conteúdo", title, body: `Texto ${id}`, emphasis: "", visual: "v", prompt: "", asset: "" });
+
+test("resize during art waits for cancellation, adapts ids and generates only pending cards", async (t) => {
+  const store = await fixture(t);
+  const p = await store.createProject({ title: "A", brief: "B", cardCount: 2 });
+  const initial = [card("one", "Capa"), card("two", "Dois")];
+  await store.saveProject({ id: p.id, slides: initial });
+  await store.addImage(p.id, "one", png);
+  await store.update(p.id, { textApproved: true });
+  const oldArt = deferred();
+  const prompts = [];
+  let runs = 0;
+  let cancels = 0;
+  const runtime = new Runtime({
+    store,
+    knowledge,
+    codex: {
+      status: { account: { connected: true } },
+      cancel: () => {
+        cancels += 1;
+        oldArt.resolve({ images: [pixel(220)] });
+      },
+      run: async (options) => {
+        prompts.push(options.prompt);
+        runs += 1;
+        if (runs === 1) return oldArt.promise;
+        if (runs === 2) return { text: JSON.stringify(planFor([...initial, card("three", "Três")])) };
+        return { images: [png] };
+      },
+    },
+  });
+  await runtime.request("generateSlides", { id: p.id });
+  await waitFor(() => runs === 1);
+  await runtime.request("resizeCarousel", { id: p.id, cardCount: 3 });
+  await settle(runtime);
+  const current = store.get(p.id);
+  assert.equal(cancels, 1);
+  assert.equal(runs, 4);
+  assert.match(prompts[1], /preserve IDs e conteúdo não afetado/);
+  assert.deepEqual(current.slides.map((slide) => slide.id), ["one", "two", "three"]);
+  assert.ok(current.slides.every((slide) => slide.image && slide.state === "complete"));
+  assert.deepEqual(current.slides.map((slide) => slide.versions.length), [1, 1, 1]);
+  const versions = current.slides.map((slide) => slide.versions.map((version) => version.file));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(store.get(p.id).slides.map((slide) => slide.versions.map((version) => version.file)), versions, "cancelled art must not write late");
+});
+
+test("reducing four cards to two preserves art without redrawing kept cards", async (t) => {
+  const store = await fixture(t);
+  const p = await store.createProject({ title: "A", brief: "B", cardCount: 4 });
+  const initial = [card("one", "Capa"), card("two", "Dois"), card("three", "Três"), card("four", "Quatro")];
+  await store.saveProject({ id: p.id, slides: initial });
+  await store.addImage(p.id, "one", png);
+  await store.addImage(p.id, "two", png);
+  await store.update(p.id, { textApproved: true });
+  const keptImages = store.get(p.id).slides.slice(0, 2).map((slide) => slide.image);
+  const oldArt = deferred();
+  let runs = 0;
+  const runtime = new Runtime({
+    store,
+    knowledge,
+    codex: {
+      status: { account: { connected: true } },
+      cancel: () => oldArt.resolve({ images: [pixel(220)] }),
+      run: async () => {
+        runs += 1;
+        if (runs === 1) return oldArt.promise;
+        if (runs === 2) return { text: JSON.stringify(planFor(initial.slice(0, 2))) };
+        return { images: [png] };
+      },
+    },
+  });
+  await runtime.request("generateSlides", { id: p.id });
+  await waitFor(() => runs === 1);
+  await runtime.request("resizeCarousel", { id: p.id, cardCount: 2 });
+  await settle(runtime);
+  const current = store.get(p.id);
+  assert.equal(runs, 2, "only cancelled art and text adaptation should call Codex");
+  assert.deepEqual(current.slides.map((slide) => slide.id), ["one", "two"]);
+  assert.deepEqual(current.slides.map((slide) => slide.image), keptImages);
+  assert.deepEqual(current.slides.map((slide) => slide.versions.length), [1, 1]);
+  assert.ok(current.slides.every((slide) => slide.state === "complete"));
+});
+
+test("a one-card carousel goes through approval, cover art and export", async (t) => {
+  const store = await fixture(t);
+  const p = await store.createProject({ title: "A", brief: "B", cardCount: 4 });
+  let exported;
+  const runtime = new Runtime({
+    store,
+    knowledge,
+    codex: {
+      status: { account: { connected: true } },
+      run: async (options) => options.outputSchema === PLAN_SCHEMA
+        ? { text: JSON.stringify(planFor([card("only", "Um card")])) }
+        : { images: [png] },
+    },
+    dialogs: { export: async (_project, bytes) => { exported = bytes; return { ok: true }; } },
+  });
+  await runtime.request("resizeCarousel", { id: p.id, cardCount: 1 });
+  await runtime.request("generatePlan", { id: p.id });
+  await settle(runtime);
+  assert.equal(store.get(p.id).slides.length, 1);
+  await runtime.request("approveText", { id: p.id });
+  assert.equal(store.get(p.id).textApproved, true);
+  await runtime.request("generateCovers", { id: p.id, count: 1 });
+  await settle(runtime);
+  const optionId = store.get(p.id).coverOptions[0].id;
+  await runtime.request("chooseCover", { id: p.id, optionId });
+  assert.equal(store.get(p.id).slides[0].state, "complete");
+  await runtime.request("export", { id: p.id });
+  const { unzipSync } = await import("fflate");
+  assert.deepEqual(Object.keys(unzipSync(exported)).sort(), ["01.png", "legenda.txt"]);
+});
 
 test("brand images are validated, typed, renamed and removed; old libraries gain an empty list", async (t) => {
   const store = await fixture(t);

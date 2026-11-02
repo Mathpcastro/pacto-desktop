@@ -23,6 +23,67 @@ const slides = [
   { id: "one", role: "Capa", title: "A", body: "B" },
   { id: "two", role: "CTA", title: "C", body: "D" },
 ];
+const deferred = () => {
+  let resolve;
+  let reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+const waitFor = async (condition) => {
+  for (let i = 0; i < 200 && !condition(); i += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  assert.ok(condition());
+};
+const planFor = (cards) => ({
+  title: "T",
+  architecture: "Tutorial",
+  editorialLine: "",
+  visualConcept: "",
+  coverHooks: [],
+  caption: "",
+  reply: "ok",
+  regenerateSlideIds: [],
+  slides: cards,
+});
+
+test("resize during plan waits for the cancelled turn and restarts with one card", async (t) => {
+  const store = await fixture(t);
+  const p = await store.createProject({ title: "A", brief: "B", cardCount: 4 });
+  const oldTurn = deferred();
+  const prompts = [];
+  let runs = 0;
+  let cancels = 0;
+  const runtime = new Runtime({
+    store,
+    knowledge: { method: "M", lessons: [] },
+    codex: {
+      status: { account: { connected: true } },
+      cancel: () => {
+        cancels += 1;
+        oldTurn.resolve({ text: JSON.stringify(planFor(slides)) });
+      },
+      run: async (options) => {
+        prompts.push(options.prompt);
+        runs += 1;
+        if (runs === 1) return oldTurn.promise;
+        return { text: JSON.stringify(planFor([{ id: "only", role: "Capa", title: "Um card", body: "Completo" }])) };
+      },
+    },
+  });
+  await runtime.request("generatePlan", { id: p.id });
+  await waitFor(() => prompts.length === 1);
+  await runtime.request("resizeCarousel", { id: p.id, cardCount: 1 });
+  await settle(runtime);
+  assert.equal(cancels, 1);
+  assert.equal(prompts.length, 2);
+  assert.match(prompts.at(-1), /exatamente 1 cards/);
+  assert.equal(store.get(p.id).cardCount, 1);
+  assert.deepEqual(store.get(p.id).slides.map((slide) => slide.id), ["only"]);
+});
 
 test("every card count from automatic through 10 is validated and persisted", async (t) => {
   const store = await fixture(t);

@@ -10,7 +10,7 @@ import { MAIN_PROFILE } from './profiles.mjs';
 import { Social } from './social.mjs';
 import { TEMPLATE_STYLES, FACE_STYLES, SIZES, LAYOUTS, STORY_THEMES, palette, slideHtml, documentHtml, imagesPdfHtml, storyHtml } from './templates.mjs';
 import { VOICE_RULES, tellsIn } from './copy.mjs';
-export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','storyTheme','saveStory','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli','instagramStatus','saveComposioKey','removeComposioKey','syncInstagram','connectInstagram','checkInstagram','setInstagramDefaults','disconnectInstagram','publishInstagram','schedulePost','cancelSchedule','publishDue','refreshMetrics','instagramPosts','instagramAnalytics','importInstagramPost','replicateInstagram','openPermalink','openComposio'];
+export const ACTIONS=['bootstrap','saveProfile','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','resizeCarousel','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','storyTheme','saveStory','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','setupPrompt','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli','instagramStatus','saveComposioKey','removeComposioKey','syncInstagram','connectInstagram','checkInstagram','setInstagramDefaults','disconnectInstagram','publishInstagram','schedulePost','cancelSchedule','publishDue','refreshMetrics','instagramPosts','instagramAnalytics','importInstagramPost','replicateInstagram','openPermalink','openComposio'];
 export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma oferta'];
 // Problemas da Correção Visual Rápida (Aula 05), oferecidos como botões no editor.
 export const VISUAL_FIXES=['Texto vertical ou empilhado','Título pequeno','Texto excessivo','Hierarquia ruim','Falta CTA','Erro de ortografia','Ilustração não combina','Fora da identidade visual'];
@@ -164,16 +164,21 @@ export class Runtime {
     return this.update(id,{status:current.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});
   }
   // Cards dos estilos de modelo: montados na hora, sem gastar o limite da conta.
-  async renderSlides(id,slideId=null,all=false){
-    this.ensureIdle(id);let p=this.store.get(id);this.checkFaces(p);
+  async renderSlides(id,slideId=null,all=false,token=null){
+    if(this.job!==token)this.ensureIdle(id);let p=this.store.get(id);this.checkFaces(p);
     const todo=p.slides.filter(s=>slideId?s.id===slideId:all||!s.image||s.state!=='complete');
+    if(token?.cancelled)return p;
     if(todo.length>1)p=await this.update(id,{status:'generating'});
     try{
       for(const slide of todo){
+        if(token?.cancelled)return p;
         p=this.store.get(id);const index=p.slides.findIndex(s=>s.id===slide.id);
-        p=await this.store.addImage(id,slide.id,await this.renderer().png(this.slideMarkup(p,p.slides[index],index,p.styleVariant||0),SIZES.carrossel));
+        const bytes=await this.renderer().png(this.slideMarkup(p,p.slides[index],index,p.styleVariant||0),SIZES.carrossel);
+        if(token?.cancelled)return this.store.get(id);
+        p=await this.store.addImage(id,slide.id,bytes);
       }
-    }catch(error){await this.update(id,{status:'ready',error:safeError(error).message});throw error;}
+    }catch(error){if(token?.cancelled)return this.store.get(id);await this.update(id,{status:'ready',error:safeError(error).message});throw error;}
+    if(token?.cancelled)return p;
     return this.update(id,{status:p.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});
   }
   async pdf(p){
@@ -525,9 +530,11 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       case 'duplicate':return this.publish(await this.store.duplicate(args.id));
       case 'delete':this.ensureIdle(args.id);await this.store.delete(args.id);return this.state();
       case 'generatePlan':return this.begin(args.id,'plan');
+      case 'resizeCarousel':return this.resizeCarousel(args.id,args.cardCount);
       case 'approveText':{
         this.ensureIdle(args.id);const p=this.store.get(args.id);const approved=args.approved!==false;
-        if(approved&&p.slides.length<2)throw new Error('Crie o texto do carrossel antes de aprovar.');
+        const minimum=p.format==='carrossel'?1:2;
+        if(approved&&p.slides.length<minimum)throw new Error('Crie o texto do carrossel antes de aprovar.');
         if(approved&&p.slides.some(s=>!s.title.trim()))throw new Error('Todos os cards precisam de título antes da aprovação.');
         return this.update(p.id,{textApproved:approved});
       }
@@ -574,14 +581,14 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     this.ensureConnected();
     if(kind==='images'&&!p.slides.length)throw new Error('Crie o plano antes de gerar imagens.');
     if(options.slideId&&!p.slides.some(s=>s.id===options.slideId))throw new Error('Slide não encontrado.');
-    const token={id,kind,cancelled:false};this.job=token;
+    const token={id,kind,cancelled:false};token.done=new Promise(resolve=>{token.finish=resolve;});this.job=token;
     try{
       const patch={status:['images','covers','story'].includes(kind)?'generating':'planning',error:null};
       if(options.message)patch.messages=[...p.messages,{id:randomUUID(),role:'user',text:options.message}];
       const started=await this.update(id,patch);
       // Resolve the UI request before running inference. Events carry durable progress.
       setImmediate(()=>void this.execute(token,options));return started;
-    }catch(error){this.job=null;throw error;}
+    }catch(error){if(this.job===token)this.job=null;token.finish();throw error;}
   }
   async execute(token,options){
     try{
@@ -619,11 +626,35 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
           }
         }
         const slides=await this.savePlan(token.id,plan,{fresh:token.kind==='plan'});if(!slides)return;
+        if(options.resumeImages&&!token.cancelled){
+          const current=this.store.get(token.id);
+          if(current.slides[0]?.image){
+            if(this.isTemplate(current))await this.renderSlides(token.id,null,false,token);
+            else await this.images(token);
+          }
+        }
         const ids=Array.isArray(plan.regenerateSlideIds)?[...new Set(plan.regenerateSlideIds)].filter(id=>slides.some(s=>s.id===id&&s.image)):[];
         if(ids.length&&this.store.get(token.id).textApproved)for(const id of ids){if(token.cancelled)break;await this.images(token,id);}
       }
     }catch(error){if(!token.cancelled){const p=this.store.get(token.id);await this.update(token.id,{slides:p.slides.map(s=>s.state==='generating'?{...s,state:s.previousState||(s.image?'complete':'draft')}:s),status:'error',error:safeError(error).message}).catch(()=>{});}}
-    finally{if(this.job===token)this.job=null;this.emit({type:'activity',message:''});}
+    finally{if(this.job===token)this.job=null;token.finish();this.emit({type:'activity',message:''});}
+  }
+  async resizeCarousel(id,value){
+    const next=count(value,1,10),initial=this.store.get(id);
+    if(initial.format!=='carrossel')throw new Error('O tamanho dinâmico vale para carrosséis.');
+    if(this.job&&this.job.id!==id)throw new Error('Aguarde ou cancele a operação em andamento.');
+    const previous=this.job;
+    if(previous&&!['plan','message','images','covers'].includes(previous.kind))throw new Error('Aguarde ou cancele a operação em andamento.');
+    if(previous){previous.cancelled=true;await this.codex.cancel();await previous.done;}
+    const p=this.store.get(id),sameSlideCount=p.slides.length===next;
+    const current=this.publish(await this.store.saveProject({id,cardCount:next}));
+    if(!p.slides.length)return previous&&['plan','message'].includes(previous.kind)?this.begin(id,'plan'):current;
+    if(sameSlideCount)return previous?.kind==='images'&&p.textApproved&&p.slides[0]?.image?this.handle('generateSlides',{id}):current;
+    this.ensureConnected();
+    return this.begin(id,'message',{
+      message:`A pessoa mudou o tamanho para exatamente ${next} cards. Adapte a sequência, preserve IDs e conteúdo não afetado e mantenha capa e CTA final.`,
+      resumeImages:p.textApproved&&Boolean(p.slides[0]?.image),
+    });
   }
   // Pedido de texto do carrossel: o mesmo para a conta ChatGPT e para agentes (Claude, Gemini) pela CLI.
   planPrompt(id,message=''){
@@ -636,7 +667,6 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     // Só vale a imagem que existe; o modelo não inventa ids.
     const slides=this.store.validateSlides(Array.isArray(plan.slides)?plan.slides.map(s=>({...s,asset:known.has(String(s?.asset||''))?s.asset:''})):plan.slides,p.slides);
     if(!slides.length){const reply=text(plan.reply,20000);if(!reply.trim())throw new Error('O assistente não retornou uma resposta. Tente reformular sua mensagem.');await this.update(id,{status:p.slides.length&&p.slides.every(s=>s.image&&s.state==='complete')?'complete':p.slides.length?'ready':'draft',error:null,messages:[...p.messages,{id:randomUUID(),role:'assistant',text:reply}]});return null;}
-    if(slides.length<2)throw new Error('O texto precisa conter pelo menos dois cards.');
     const caption=text(plan.caption);
     await this.update(id,{title:text(plan.title,200)||p.title,architecture:text(plan.architecture),editorialLine:p.editorialLine||text(String(plan.editorialLine||''),2000),visualConcept:p.visualConcept||text(String(plan.visualConcept||''),4000),coverHooks:(Array.isArray(plan.coverHooks)?plan.coverHooks:[]).slice(0,4).map(h=>text(String(h),300)).filter(h=>h.trim()),caption:caption.trim()?caption:p.caption,slides,...(fresh?{textApproved:false,coverOptions:[]}:{}),status:'ready',messages:[...p.messages,{id:randomUUID(),role:'assistant',text:text(plan.reply||'Texto pronto. Revise e edite os cards antes de aprovar.',10000)}]});
     return slides;
