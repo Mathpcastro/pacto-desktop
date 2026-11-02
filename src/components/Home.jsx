@@ -229,6 +229,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
   const useReference = (item, dataUrl) => {
     const result = replaceReferenceAttachment(attachments, item, dataUrl);
     if (!result.added) {
+      setFormat("carrossel");
       onShowHome();
       onNotice("Você já tem 6 anexos manuais. Remova um para trocar a referência.");
       return;
@@ -242,7 +243,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
   };
   if (view === "references") {
     return (
-      <Suspense fallback={<main className="page"><p className="page-sub" role="status">Abrindo referências…</p></main>}>
+      <Suspense fallback={<div className="page"><p className="page-sub" role="status">Abrindo referências…</p></div>}>
         <References onUse={useReference} />
       </Suspense>
     );

@@ -61,7 +61,7 @@ function ReferenceCard({ item, onUse }) {
           <b>Por que funcionou</b>
           <p>{item.reason}</p>
         </div>
-        <button type="button" className="btn primary reference-use" onClick={() => onUse(item, REFERENCE_IMAGES[item.sourceId])}>
+        <button type="button" className="btn primary reference-use" aria-label={`Usar referência ${item.sourceId}: ${item.hook}`} onClick={() => onUse(item, REFERENCE_IMAGES[item.sourceId])}>
           Usar referência
         </button>
       </div>
@@ -81,7 +81,7 @@ export default function References({ onUse }) {
   };
 
   return (
-    <main className="page reference-page">
+    <div className="page reference-page">
       <header className="reference-intro">
         <h1 className="page-title">Referências que valem estudar</h1>
         <p className="page-sub">Use a estrutura como ponto de partida: a copy e a arte são adaptadas à sua marca, sem copiar o autor.</p>
@@ -127,6 +127,6 @@ export default function References({ onUse }) {
           <button type="button" className="btn" onClick={clearFilters}>Limpar filtros</button>
         </div>
       )}
-    </main>
+    </div>
   );
 }
