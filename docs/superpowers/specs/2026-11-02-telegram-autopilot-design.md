@@ -117,3 +117,13 @@ Em 02/11/2026, na worktree isolada baseada em 0.7.1:
 - `npm run build`: concluído, Vite gerou o bundle de produção.
 - `git fetch origin`: concluído. `origin/main` em `6a61ce8`; correção de logotipo presente; HEAD observado da biblioteca ainda não é ancestral de origin/main.
 - Não executadas provas de UI do piloto, integração Telegram ou publicação: o recurso ainda aguarda suas dependências e não foi implementado.
+
+## Revisão obrigatória das versões 0.7.2 e 0.7.3 — instrução do usuário
+
+Em 02/11/2026, o usuário acrescentou: quando os trabalhos em andamento terminarem, analisar o que mudou na 0.7.2 e na 0.7.3 e avaliar a release antes de avançar com a publicação do piloto.
+
+- Identificar tags e commits efetivos de cada versão e comparar `v0.7.1..v0.7.2` e `v0.7.2..v0.7.3`; não presumir o conteúdo ou a existência de uma versão pelo número citado.
+- Conferir especialmente a correção do anexo de logotipo, biblioteca de referências, seletor de cards, mudanças no contrato Runtime/renderer, persistência e publicação/agendamento.
+- Revisar o código e executar as regressões pertinentes na base consolidada, registrando resultados reais e bloqueios por gravidade antes de integrar o piloto.
+- Conferir, quando disponíveis, o estado dos workflows, artefatos, versão interna, feed de atualização e notas de release. Distinguir código pronto, pacote construído, release publicada e testes físicos efetivamente realizados.
+- Apresentar uma avaliação objetiva de prontidão e corrigir os problemas pertinentes antes de preparar a release do piloto. Esta instrução autoriza a análise; não autoriza push, merge ou publicação.

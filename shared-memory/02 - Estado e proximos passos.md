@@ -255,3 +255,5 @@ Usuário autorizou o fluxo de criação e aprovação via Telegram e pediu workt
 Especificação: `docs/superpowers/specs/2026-11-02-telegram-autopilot-design.md`. Preparação validada: instalação limpa de dependências, 113/113 testes e build aprovados. Após fetch, `origin/main` contém `6a61ce8` (logo), mas ainda não contém a branch `feat/carrossell-reference-templates`, HEAD observado `24c84d0`. Confirmar novamente ao retomar.
 
 Nenhuma funcionalidade Telegram implementada, token cadastrado, conta alterada, mensagem enviada, geração real ou publicação feita. Nenhum push/merge/release desta frente. O piloto exige manutenção do processo em segundo plano, pairing privado e decisões persistidas para evitar cliques repetidos e publicação duplicada; esses pontos estão detalhados na especificação.
+
+Usuário acrescentou a revisão obrigatória das versões 0.7.2 e 0.7.3 após o término das frentes paralelas: conferir diffs, integração, regressões e prontidão da release antes de avançar. Checklist detalhado na especificação do piloto Telegram. Sem autorização adicional de publicação.
