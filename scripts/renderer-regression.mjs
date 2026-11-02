@@ -81,6 +81,24 @@ try {
     await page.getByRole("heading", { name: "O que vamos publicar hoje?" }).waitFor();
     await expect.poll(async () => (await saved()).body, { timeout: 5000 }).toBe("Rascunho salvo ao voltar");
   });
+  await check("single card count resets for documents and valid sizes are preserved", async () => {
+    const format = page.getByRole("button", { name: /Formato/ });
+    const size = page.getByRole("button", { name: /Tamanho/ });
+    const choose = async (button, name) => {
+      await button.click();
+      await page.getByRole("menuitemradio", { name, exact: true }).click();
+    };
+    for (const [documentFormat, singular] of [[/Material gratuito/, "1 página"], [/Apresentação/, "1 slide"]]) {
+      await choose(size, "1 card");
+      await choose(format, documentFormat);
+      await expect(size).toContainText("Automático");
+      await expect(size).not.toContainText(singular);
+      await choose(format, /^Carrossel/);
+    }
+    await choose(size, "6 cards");
+    await choose(format, /Material gratuito/);
+    await expect(size).toContainText("6 páginas");
+  });
   console.log(JSON.stringify({ userData, checks }, null, 2));
   assert.equal(checks.filter((item) => !item.passed).length, 0, "Renderer regression checks failed");
 } finally {

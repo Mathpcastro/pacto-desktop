@@ -263,7 +263,10 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
           }}
         />
         <div className="row">
-          {menu("format", "Formato", FORMAT_LABEL[format], FORMATS, setFormat)}
+          {menu("format", "Formato", FORMAT_LABEL[format], FORMATS, (next) => {
+            setFormat(next);
+            if (next !== "carrossel" && size === 1) setSize(0);
+          })}
           {format === "carrossel" && menu("style", "Estilo", STYLE_LIST.find((s) => s[0] === style)[1], STYLE_LIST, setStyle)}
           {format === "carrossel" && goals.length > 0 && menu("goal", "Objetivo", goal || "Livre", [["", "Livre", "Sem objetivo específico"], ...goals.map((g) => [g, g, ""])], setGoal)}
           {menu("size", "Tamanho", size ? unit(format, size) : "Automático", SIZES.filter(([v]) => format === "carrossel" || v !== 1).map(([v, l, d]) => [v, v ? unit(format, v) : l, d]), setSize)}
