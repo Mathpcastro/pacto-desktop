@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import {
   ChevronDown,
   Copy,
@@ -19,6 +19,9 @@ import { rhythm } from "../../core/rhythm.mjs";
 import Dialog from "./Dialog.jsx";
 import { FORMAT_LABEL, Grow, STYLE_LIST, Spinner, firstLine, statusLabels, usePopover } from "../ui.jsx";
 import { AgentCard } from "./AgentSetup.jsx";
+import { replaceReferenceAttachment } from "../referenceLibrary.js";
+
+const References = lazy(() => import("./References.jsx"));
 
 // Carrosséis criados por um agente pela CLI ("carrossell criar --agente claude").
 const AGENT_NAMES = { claude: "Claude", gemini: "Gemini", codex: "Codex" };
@@ -102,7 +105,7 @@ function Measure({ project, request, onDone }) {
   );
 }
 
-export default function Home({ state, request, isPending, onOpen, onNotice, composerRef, connected, onAgents }) {
+export default function Home({ view, state, request, isPending, onOpen, onNotice, onShowHome, composerRef, connected, onAgents }) {
   const pop = usePopover();
   const [text, setText] = useState("");
   const [format, setFormat] = useState("carrossel");
@@ -223,6 +226,28 @@ export default function Home({ state, request, isPending, onOpen, onNotice, comp
       if (ref?.dataUrl) setImages((list) => [...list, { name: ref.name, dataUrl: ref.dataUrl }].slice(0, 4));
     } catch {}
   };
+  const useReference = (item, dataUrl) => {
+    const result = replaceReferenceAttachment(attachments, item, dataUrl);
+    if (!result.added) {
+      setFormat("carrossel");
+      onShowHome();
+      onNotice("Você já tem 6 anexos manuais. Remova um para trocar a referência.");
+      return;
+    }
+    setAttachments(result.attachments);
+    setFormat("carrossel");
+    setStyle("ia");
+    onShowHome();
+    onNotice(`Referência ${item.sourceId} anexada. Seu tema foi preservado.`);
+    setTimeout(() => composerRef.current?.focus(), 50);
+  };
+  if (view === "references") {
+    return (
+      <Suspense fallback={<div className="page"><p className="page-sub" role="status">Abrindo referências…</p></div>}>
+        <References onUse={useReference} />
+      </Suspense>
+    );
+  }
   return (
     <main className="page" ref={pop.ref}>
       <h1 className="page-title">O que vamos publicar hoje?</h1>

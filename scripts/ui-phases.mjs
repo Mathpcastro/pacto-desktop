@@ -166,8 +166,8 @@ try {
   await page.getByRole("heading", { name: "O que vamos publicar hoje?" }).waitFor();
   await check("a barra única tem poucos controles", async () => {
     const a = await audit(page);
-    // A 0.6.0 já inclui o seletor de perfil e o Instagram; Analytics continua dentro de Marca.
-    assert.ok(a.barControls <= 7, `controles na barra: ${a.barControls}`);
+    // A biblioteca de Referências adiciona um controle explícito à barra da 0.7.0.
+    assert.ok(a.barControls <= 8, `controles na barra: ${a.barControls}`);
   });
   await page.getByRole("button", { name: "Marca", exact: true }).click();
   await page.getByRole("heading", { name: "Agendei", level: 1 }).waitFor();
