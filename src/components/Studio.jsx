@@ -220,7 +220,7 @@ export default function Studio({ project, state, request, pending, activity, onB
   const connected = Boolean(state.account?.connected);
   const busy =
     ["planning", "generating"].includes(project.status) ||
-    pending.some((p) => ["generatePlan", "generateSlides", "generateCovers", "chooseCover", "sendMessage", "cancel", "ctaKit", "stories", "approveText"].includes(p.action));
+    pending.some((p) => ["generatePlan", "generateSlides", "generateCovers", "chooseCover", "sendMessage", "cancel", "ctaKit", "stories", "approveText", "resizeCarousel"].includes(p.action));
   const exporting = pending.some((p) => ["exportPdf", "export", "saveToDrive"].includes(p.action));
   const { draft, edit, set, save, dirty, saving } = useDraft(project, request, busy);
   const stage = stageOf(project);
@@ -477,6 +477,32 @@ export default function Studio({ project, state, request, pending, activity, onB
             </button>
           ))}
         </nav>
+        {!doc && (
+          <div className="pop-anchor">
+            <button type="button" className="pill" aria-haspopup="true" aria-expanded={pop.open === "size"} onClick={() => pop.toggle("size")}>
+              <i>Tamanho</i> {project.cardCount ? `${project.cardCount} ${project.cardCount === 1 ? "card" : "cards"}` : "Automático"} <ChevronDown size={14} />
+            </button>
+            {pop.open === "size" && (
+              <div className="popover" role="menu">
+                {Array.from({ length: 10 }, (_, index) => index + 1).map((next) => (
+                  <button
+                    key={next}
+                    type="button"
+                    role="menuitemradio"
+                    className="opt"
+                    aria-checked={project.cardCount === next}
+                    onClick={async () => {
+                      pop.setOpen(null);
+                      await infer("resizeCarousel", { cardCount: next });
+                    }}
+                  >
+                    <b>{next} {next === 1 ? "card" : "cards"}</b>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {moment && course.play && (
           <button className="icon-only" aria-label={`Ver esta etapa na aula (~${Math.floor(moment.seconds / 60)}:${String(moment.seconds % 60).padStart(2, "0")})`} title="Ver esta etapa na aula" onClick={() => course.play({ lessonId: moment.lessonId, seconds: moment.seconds, step: moment.step })}>
             <PlayCircle size={18} />

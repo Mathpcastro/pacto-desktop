@@ -119,6 +119,11 @@ try {
   await page.getByRole("button", { name: /Tipo/ }).click();
   await page.getByRole("menuitemradio", { name: /^Tutorial/ }).click();
   await page.getByRole("button", { name: /Tamanho/ }).click();
+  await check("composer Tamanho oferece Automático e 1–10, com singular em 1 card", async () => {
+    const options = page.getByRole("menuitemradio");
+    await expect(options).toHaveCount(11);
+    await expect(options.locator("b")).toHaveText(["Automático", "1 card", ...Array.from({ length: 9 }, (_, index) => `${index + 2} cards`)]);
+  });
   await page.getByRole("menuitemradio", { name: "6 cards", exact: true }).click();
 
   const manualPng = await page.evaluate(() => {
@@ -178,6 +183,26 @@ try {
     assert.ok(project.attachments.some((item) => item.name === "manual.png"));
     assert.ok(project.attachments.some((item) => item.name.startsWith("Referência CAR-0007")));
     assert.ok(project.attachments.every((item) => !Object.hasOwn(item, "referenceId")));
+  });
+  await check("Estúdio escolhe 3 cards, fecha o popover e persiste o tamanho", async () => {
+    const project = await page.evaluate(async (brief) => {
+      const state = await window.pacto.request("bootstrap");
+      return state.projects.find((item) => item.brief === brief);
+    }, draft);
+    assert.ok(project, "projeto não persistido");
+    const size = page.getByRole("button", { name: /Tamanho/ });
+    await size.click();
+    await expect(size).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByRole("menuitemradio")).toHaveCount(10);
+    await page.getByRole("menuitemradio", { name: "3 cards", exact: true }).click();
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    await expect(size).toHaveAttribute("aria-expanded", "false");
+    await expect(size).toContainText("3 cards");
+    const resized = await page.evaluate(async (id) => {
+      const state = await window.pacto.request("bootstrap");
+      return state.projects.find((item) => item.id === id).cardCount;
+    }, project.id);
+    assert.equal(resized, 3);
   });
 
   await page.getByRole("button", { name: "Voltar ao início", exact: true }).click();
