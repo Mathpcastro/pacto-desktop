@@ -247,3 +247,11 @@ Stories preto/branco no fim do fluxo e voz anti-IA na copy implementados localme
 ## Release 0.7.0 publicada — 02/11/2026
 
 [[34 - Release Carrossell 0.7.0]]: Latest com Windows e os dois Macs, zero artefatos de Actions, links HTTP 200 e feed Windows 0.7.0. Stories de texto, copy anti-IA e modo agente (Claude/Gemini pela CLI) incluídos.
+
+## 02/11/2026 — Piloto automático Telegram: preparação isolada
+
+Usuário autorizou o fluxo de criação e aprovação via Telegram e pediu worktree separada, aguardando biblioteca/seletor (Kimi) e correção do anexo de logotipo (Claude). Worktree criada em `C:\Users\Admin2\Documents\pacto-app-telegram`, branch `codex/telegram-autopilot`, base estável `v0.7.1` / `2987ba7`. Não iniciar a implementação até concluir e consolidar ambas as frentes; não alterar as worktrees dos agentes.
+
+Especificação: `docs/superpowers/specs/2026-11-02-telegram-autopilot-design.md`. Preparação validada: instalação limpa de dependências, 113/113 testes e build aprovados. Após fetch, `origin/main` contém `6a61ce8` (logo), mas ainda não contém a branch `feat/carrossell-reference-templates`, HEAD observado `24c84d0`. Confirmar novamente ao retomar.
+
+Nenhuma funcionalidade Telegram implementada, token cadastrado, conta alterada, mensagem enviada, geração real ou publicação feita. Nenhum push/merge/release desta frente. O piloto exige manutenção do processo em segundo plano, pairing privado e decisões persistidas para evitar cliques repetidos e publicação duplicada; esses pontos estão detalhados na especificação.
