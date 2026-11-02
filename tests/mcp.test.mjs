@@ -5,7 +5,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 test('real stdio MCP exposes official resources, tools and exact source retrieval', async () => {
-  const transport = new StdioClientTransport({command:process.execPath,args:[fileURLToPath(new URL('../mcp/server.mjs',import.meta.url))],stderr:'pipe'});
+  const transport = new StdioClientTransport({command:process.execPath,args:[fileURLToPath(new URL('../mcp/server.mjs',import.meta.url))],stderr:'pipe',env:process.env.ELECTRON_RUN_AS_NODE?{ELECTRON_RUN_AS_NODE:process.env.ELECTRON_RUN_AS_NODE}:{}});
   const client = new Client({name:'pacto-verification',version:'0.1.0'});
   try {
     await client.connect(transport);
