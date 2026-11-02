@@ -182,3 +182,14 @@ test('interview reply reports the interview as finished',async t=>{
   const runtime=new Runtime({store,knowledge:{method:'M',lessons:[]},codex:{status:{account:{connected:true}},run:async()=>({text:JSON.stringify({reply:'1. Pergunta',complete:false,brandName:'',document:''})})}});
   const state=await runtime.request('interview',{kind:'brand'});assert.equal(state.interviewing,null);assert.equal(runtime.job,null);
 });
+test('brand interview accepts an attached logo, sends it to the model and tells the model where to attach',async t=>{
+  const {Runtime}=await import('../core/runtime.mjs');const {loadKnowledge}=await import('../core/knowledge.mjs');const {store}=await fixture(t);
+  const calls=[];const logo={name:'logo.png',dataUrl:`data:image/png;base64,${png.toString('base64')}`};
+  const runtime=new Runtime({store,knowledge:loadKnowledge(),codex:{status:{account:{connected:true}},run:async o=>{calls.push(o);return {text:JSON.stringify({reply:'Ok',complete:false,brandName:'',document:''})};}}});
+  await runtime.request('interview',{kind:'brand'});
+  assert.equal(calls[0].references.length,0);assert.match(calls[0].prompt,/botão de anexar imagem/);
+  await runtime.request('interview',{kind:'brand',text:'Segue o logo\n\n(Anexei 1 imagem: o meu logotipo.)',references:[logo]});
+  assert.equal(calls[1].references.length,1);assert.match(calls[1].prompt,/trouxe 1 imagem/);
+  await runtime.request('saveMedia',{addAssets:[{name:'logo',dataUrl:logo.dataUrl,kind:'logo'}]});
+  assert.equal(store.media().assets.find(a=>a.kind==='logo').name,'logo');
+});
