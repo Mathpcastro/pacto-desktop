@@ -39,7 +39,7 @@ const INSTRUCTION_BODY=/^\s*(fun[cç][aã]o|objetivo|card\s*\d+|descri[cç][aã]
 function parse(result,message){try{return JSON.parse(String(result.text||'').replace(/^```(?:json)?\s*|\s*```$/g,''));}catch{throw new Error(message);}}
 function count(value,min,max){const n=Number(value);if(!Number.isInteger(n)||n<min||n>max)throw new Error('Número inválido.');return n;}
 export class Runtime {
-  constructor({store,profiles=null,instagram={},codex,knowledge,emit=()=>{},dialogs={},share=()=>new ShareServer(),drive={find:findDriveFolders,write:writeCarouselFolder}}){this.scope=new AsyncLocalStorage();this.profiles=profiles;this.social=new Social(this,instagram);this.store=store;this.codex=codex;this.knowledge=knowledge;this.emit=event=>emit({...event,profileId:this.profileId()});this.dialogs=dialogs;this.shareFactory=share;this.drive=drive;this.job=null;this.sharing=null;}
+  constructor({store,profiles=null,instagram={},codex,knowledge,emit=()=>{},dialogs={},share=()=>new ShareServer(),drive={find:findDriveFolders,write:writeCarouselFolder}}){this.scope=new AsyncLocalStorage();this.profiles=profiles;this.social=new Social(this,instagram);this.store=store;this.codex=codex;this.knowledge=knowledge;this.emit=event=>emit({...event,profileId:this.profileId()});this.dialogs=dialogs;this.shareFactory=share;this.drive=drive;this.job=null;this.resizing=null;this.sharing=null;}
   // Cópias normalizadas (1080×1350) para celular e Drive; o ZIP usa a mesma lista.
   async exportedFiles(id){const files=this.store.exportFiles(id);return this.dialogs.normalizeFiles?await this.dialogs.normalizeFiles(files):files;}
   lessonStories(){const lesson=this.knowledge.lessons?.find(l=>l.id==='bvDw6TPoU8I')?.text||'';const at=lesson.toLowerCase().indexOf('stories');return at<0?'':lesson.slice(Math.max(0,at-300),at+1500);}
@@ -154,13 +154,18 @@ export class Runtime {
   pageMarkup(p,{only=null,variant=p.styleVariant||0}={}){return documentHtml({format:p.format,pages:p.slides,brand:this.brand(),coverVariant:variant,fonts:this.renderer().fonts,only});}
   checkFaces(p){if(FACE_STYLES.includes(p.style)&&!this.store.media().faces.length)throw new Error('Envie ao menos uma foto com o seu rosto em Marca › Perfil e fotos para usar este estilo.');}
   // Opções de capa sem IA: o mesmo texto em três esquemas do modelo escolhido.
-  async renderCovers(id){
-    this.ensureIdle(id);const p=this.store.get(id);if(!p.textApproved)throw new Error('Aprove o texto antes de gerar a capa.');this.checkFaces(p);
+  async renderCovers(id,token=null){
+    if(this.job!==token)this.ensureIdle(id);const p=this.store.get(id);if(!p.textApproved)throw new Error('Aprove o texto antes de gerar a capa.');this.checkFaces(p);
     const size=SIZES[p.format];let current=p;
     for(let variant=0;variant<3;variant++){
+      if(token?.cancelled)return current;
       const html=p.format==='carrossel'?this.slideMarkup(p,p.slides[0],0,variant):this.pageMarkup(p,{only:0,variant});
-      current=await this.store.addCoverOption(id,await this.renderer().png(html,size),{variant,replace:variant===0});
+      const bytes=await this.renderer().png(html,size);
+      if(token?.cancelled)return this.store.get(id);
+      current=await this.store.addCoverOption(id,bytes,{variant,replace:variant===0});
+      if(token?.cancelled)return this.store.get(id);
     }
+    if(token?.cancelled)return current;
     return this.update(id,{status:current.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});
   }
   // Cards dos estilos de modelo: montados na hora, sem gastar o limite da conta.
@@ -169,6 +174,7 @@ export class Runtime {
     const todo=p.slides.filter(s=>slideId?s.id===slideId:all||!s.image||s.state!=='complete');
     if(token?.cancelled)return p;
     if(todo.length>1)p=await this.update(id,{status:'generating'});
+    if(token?.cancelled)return this.store.get(id);
     try{
       for(const slide of todo){
         if(token?.cancelled)return p;
@@ -176,6 +182,7 @@ export class Runtime {
         const bytes=await this.renderer().png(this.slideMarkup(p,p.slides[index],index,p.styleVariant||0),SIZES.carrossel);
         if(token?.cancelled)return this.store.get(id);
         p=await this.store.addImage(id,slide.id,bytes);
+        if(token?.cancelled)return this.store.get(id);
       }
     }catch(error){if(token?.cancelled)return this.store.get(id);await this.update(id,{status:'ready',error:safeError(error).message});throw error;}
     if(token?.cancelled)return p;
@@ -540,16 +547,16 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       }
       case 'generateCovers':{
         const p=this.store.get(args.id);if(!p.textApproved)throw new Error('Aprove o texto antes de gerar a capa.');
-        if(this.isTemplate(p))return this.renderCovers(p.id);
+        if(this.isTemplate(p))return this.begin(args.id,'covers',{template:true,wait:true});
         return this.begin(args.id,'covers',{count:count(args.count??3,1,3)});
       }
-      case 'chooseCover':this.ensureIdle(args.id);{const p=await this.store.chooseCover(args.id,args.optionId);if(p.format==='carrossel'&&TEMPLATE_STYLES.includes(p.style))return this.renderSlides(p.id);return this.update(p.id,{status:p.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});}
+      case 'chooseCover':this.ensureIdle(args.id);{const p=await this.store.chooseCover(args.id,args.optionId);if(p.format==='carrossel'&&TEMPLATE_STYLES.includes(p.style))return this.begin(p.id,'images',{template:true,wait:true});return this.update(p.id,{status:p.slides.every(s=>s.image&&s.state!=='outdated')?'complete':'ready',error:null});}
       case 'generateSlides':{
         const p=this.store.get(args.id);if(!p.textApproved)throw new Error('Aprove o texto antes de gerar as imagens.');
         const slideId=args.slideId?validId(args.slideId):null;
         if(!slideId&&!p.slides[0]?.image)throw new Error('Escolha a capa antes de gerar o restante do carrossel.');
         if(p.format!=='carrossel')throw new Error('Documentos não têm imagens por página.');
-        if(TEMPLATE_STYLES.includes(p.style))return this.renderSlides(p.id,slideId,Boolean(args.all));
+        if(TEMPLATE_STYLES.includes(p.style))return this.begin(p.id,'images',{template:true,wait:true,slideId,all:Boolean(args.all)});
         let fix=null;
         if(args.fix!==undefined){
           if(!slideId)throw new Error('A correção visual é feita em um card por vez.');
@@ -578,7 +585,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
   }
   async begin(id,kind,options={}){
     this.ensureIdle();const p=this.store.get(id);
-    this.ensureConnected();
+    if(!options.template)this.ensureConnected();
     if(kind==='images'&&!p.slides.length)throw new Error('Crie o plano antes de gerar imagens.');
     if(options.slideId&&!p.slides.some(s=>s.id===options.slideId))throw new Error('Slide não encontrado.');
     const token={id,kind,cancelled:false};token.done=new Promise(resolve=>{token.finish=resolve;});this.job=token;
@@ -586,6 +593,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       const patch={status:['images','covers','story'].includes(kind)?'generating':'planning',error:null};
       if(options.message)patch.messages=[...p.messages,{id:randomUUID(),role:'user',text:options.message}];
       const started=await this.update(id,patch);
+      if(options.wait){await this.execute(token,options);return this.store.get(id);}
       // Resolve the UI request before running inference. Events carry durable progress.
       setImmediate(()=>void this.execute(token,options));return started;
     }catch(error){if(this.job===token)this.job=null;token.finish();throw error;}
@@ -593,8 +601,8 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
   async execute(token,options){
     try{
       if(token.cancelled)return;
-      if(token.kind==='images')await this.images(token,options.slideId,options.fix);
-      else if(token.kind==='covers')await this.covers(token,options.count);
+      if(token.kind==='images')await (options.template?this.renderSlides(token.id,options.slideId,options.all,token):this.images(token,options.slideId,options.fix));
+      else if(token.kind==='covers')await (options.template?this.renderCovers(token.id,token):this.covers(token,options.count));
       else if(token.kind==='story')await this.storyArt(token,options.storyId);
       else if(this.store.get(token.id).format!=='carrossel')await this.docPlan(token,options);
       else{
@@ -625,6 +633,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
             try{const next=JSON.parse(String(fixed.text||'').replace(/^```(?:json)?\s*|\s*```$/g,''));if(Array.isArray(next.slides)&&next.slides.length===plan.slides.length&&this.planTells(next).length<tells.length)plan=next;}catch{}
           }
         }
+        if(options.expectedCardCount!==undefined&&(!Array.isArray(plan.slides)||plan.slides.length!==options.expectedCardCount))throw new Error(`A adaptação precisa retornar exatamente ${options.expectedCardCount} cards. Tente novamente.`);
         const slides=await this.savePlan(token.id,plan,{fresh:token.kind==='plan'});if(!slides)return;
         if(options.resumeImages&&!token.cancelled){
           const current=this.store.get(token.id);
@@ -636,25 +645,35 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
         const ids=Array.isArray(plan.regenerateSlideIds)?[...new Set(plan.regenerateSlideIds)].filter(id=>slides.some(s=>s.id===id&&s.image)):[];
         if(ids.length&&this.store.get(token.id).textApproved)for(const id of ids){if(token.cancelled)break;await this.images(token,id);}
       }
-    }catch(error){if(!token.cancelled){const p=this.store.get(token.id);await this.update(token.id,{slides:p.slides.map(s=>s.state==='generating'?{...s,state:s.previousState||(s.image?'complete':'draft')}:s),status:'error',error:safeError(error).message}).catch(()=>{});}}
+    }catch(error){if(!token.cancelled){const p=this.store.get(token.id);await this.update(token.id,{slides:p.slides.map(s=>s.state==='generating'?{...s,state:s.previousState||(s.image?'complete':'draft')}:s),status:'error',error:safeError(error).message}).catch(()=>{});if(options.wait)throw safeError(error);}}
     finally{if(this.job===token)this.job=null;token.finish();this.emit({type:'activity',message:''});}
   }
   async resizeCarousel(id,value){
     const next=count(value,1,10),initial=this.store.get(id);
     if(initial.format!=='carrossel')throw new Error('O tamanho dinâmico vale para carrosséis.');
-    if(this.job&&this.job.id!==id)throw new Error('Aguarde ou cancele a operação em andamento.');
+    if(this.resizing||this.job&&this.job.id!==id)throw new Error('Aguarde ou cancele a operação em andamento.');
     const previous=this.job;
     if(previous&&!['plan','message','images','covers'].includes(previous.kind))throw new Error('Aguarde ou cancele a operação em andamento.');
-    if(previous){previous.cancelled=true;await this.codex.cancel();await previous.done;}
-    const p=this.store.get(id),sameSlideCount=p.slides.length===next;
-    const current=this.publish(await this.store.saveProject({id,cardCount:next}));
-    if(!p.slides.length)return previous&&['plan','message'].includes(previous.kind)?this.begin(id,'plan'):current;
-    if(sameSlideCount)return previous?.kind==='images'&&p.textApproved&&p.slides[0]?.image?this.handle('generateSlides',{id}):current;
-    this.ensureConnected();
-    return this.begin(id,'message',{
-      message:`A pessoa mudou o tamanho para exatamente ${next} cards. Adapte a sequência, preserve IDs e conteúdo não afetado e mantenha capa e CTA final.`,
-      resumeImages:p.textApproved&&Boolean(p.slides[0]?.image),
-    });
+    if(initial.cardCount===next&&(previous||!initial.slides.length||initial.slides.length===next))return initial;
+    this.resizing=id;
+    try{
+      if(previous){previous.cancelled=true;await this.codex.cancel();await previous.done;}
+      const p=this.store.get(id),sameSlideCount=p.slides.length===next;
+      const current=this.publish(await this.store.saveProject({id,cardCount:next}));
+      if(!p.slides.length)return previous&&['plan','message'].includes(previous.kind)?await this.begin(id,'plan'):current;
+      if(sameSlideCount){
+        if(previous?.kind==='images'&&p.textApproved&&p.slides[0]?.image)return await this.handle('generateSlides',{id});
+        if(previous?.kind==='covers'&&p.textApproved)return await this.handle('generateCovers',{id});
+        if(previous)return this.update(id,{status:current.slides.every(s=>s.image&&s.state==='complete')?'complete':'ready',error:null});
+        return current;
+      }
+      this.ensureConnected();
+      return await this.begin(id,'message',{
+        message:`A pessoa mudou o tamanho para exatamente ${next} cards. Adapte a sequência, preserve IDs e conteúdo não afetado e mantenha capa e CTA final.`,
+        expectedCardCount:next,
+        resumeImages:p.textApproved&&Boolean(p.slides[0]?.image),
+      });
+    }finally{if(this.resizing===id)this.resizing=null;}
   }
   // Pedido de texto do carrossel: o mesmo para a conta ChatGPT e para agentes (Claude, Gemini) pela CLI.
   planPrompt(id,message=''){

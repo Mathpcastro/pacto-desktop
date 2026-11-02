@@ -168,6 +168,194 @@ test("a one-card carousel goes through approval, cover art and export", async (t
   assert.deepEqual(Object.keys(unzipSync(exported)).sort(), ["01.png", "legenda.txt"]);
 });
 
+test("same configured count does not cancel images, covers or a card correction", async (t) => {
+  for (const kind of ["images", "covers", "correction"]) {
+    const store = await fixture(t);
+    const p = await store.createProject({ title: "A", brief: "B", cardCount: 2 });
+    await store.saveProject({ id: p.id, slides: [card("one", "Capa"), card("two", "Dois")] });
+    await store.addImage(p.id, "one", png);
+    if (kind === "correction") await store.addImage(p.id, "two", png);
+    await store.update(p.id, { textApproved: true });
+    const turn = deferred();
+    let runs = 0;
+    let cancels = 0;
+    const runtime = new Runtime({
+      store,
+      knowledge,
+      codex: {
+        status: { account: { connected: true } },
+        cancel: () => {
+          cancels += 1;
+          turn.resolve({ images: [png] });
+        },
+        run: async () => {
+          runs += 1;
+          return turn.promise;
+        },
+      },
+    });
+    const action = kind === "covers" ? "generateCovers" : "generateSlides";
+    const args = kind === "covers" ? { id: p.id, count: 1 } : kind === "correction"
+      ? { id: p.id, slideId: "two", fix: { problems: ["Título pequeno"], note: "" } }
+      : { id: p.id };
+    await runtime.request(action, args);
+    await waitFor(() => runs === 1);
+    const job = runtime.job;
+    const status = store.get(p.id).status;
+    try {
+      await runtime.request("resizeCarousel", { id: p.id, cardCount: 2 });
+      assert.equal(cancels, 0, kind);
+      assert.strictEqual(runtime.job, job, kind);
+      assert.equal(store.get(p.id).status, status, kind);
+    } finally {
+      turn.resolve({ images: [png] });
+      if (runtime.job) await runtime.request("cancel", { id: p.id });
+      await settle(runtime);
+    }
+  }
+});
+
+test("template slide rendering is tracked and cannot write after resize", async (t) => {
+  const store = await fixture(t);
+  const p = await store.createProject({ title: "A", brief: "B", cardCount: 2, style: "tweet" });
+  const initial = [card("one", "Capa"), card("two", "Dois")];
+  await store.saveProject({ id: p.id, slides: initial });
+  await store.addImage(p.id, "one", png);
+  await store.update(p.id, { textApproved: true });
+  const oldRender = deferred();
+  const prompts = [];
+  const render = {
+    calls: [], fonts: {},
+    async png(html) {
+      this.calls.push(html);
+      return this.calls.length === 1 ? oldRender.promise : png;
+    },
+  };
+  const runtime = new Runtime({
+    store, knowledge,
+    codex: {
+      status: { account: { connected: true } },
+      cancel: () => {},
+      run: async (options) => {
+        prompts.push(options.prompt);
+        return { text: JSON.stringify(planFor([...initial, card("three", "Três")])) };
+      },
+    },
+    dialogs: { render },
+  });
+  const generating = runtime.request("generateSlides", { id: p.id });
+  await waitFor(() => render.calls.length === 1);
+  let resizing;
+  try {
+    resizing = runtime.request("resizeCarousel", { id: p.id, cardCount: 3 });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(prompts.length, 0, "adaptation must wait for the old renderer");
+    oldRender.resolve(pixel(220));
+    await Promise.all([generating, resizing]);
+    await settle(runtime);
+    const current = store.get(p.id);
+    assert.deepEqual(current.slides.map((slide) => slide.id), ["one", "two", "three"]);
+    assert.deepEqual(current.slides.map((slide) => slide.versions.length), [1, 1, 1]);
+    assert.notEqual(current.slides[1].image, `data:image/png;base64,${pixel(220).toString("base64")}`);
+    assert.ok(current.slides.every((slide) => slide.state === "complete"));
+  } finally {
+    oldRender.resolve(pixel(220));
+    await Promise.allSettled([generating, ...(resizing ? [resizing] : [])]);
+    await settle(runtime);
+  }
+});
+
+test("template cover rendering is tracked and cannot add a late option", async (t) => {
+  const store = await fixture(t);
+  const p = await store.createProject({ title: "A", brief: "B", cardCount: 2, style: "tweet" });
+  const initial = [card("one", "Capa"), card("two", "Dois")];
+  await store.saveProject({ id: p.id, slides: initial });
+  await store.addImage(p.id, "one", png);
+  await store.addImage(p.id, "two", png);
+  await store.update(p.id, { textApproved: true });
+  const oldRender = deferred();
+  const prompts = [];
+  const render = {
+    calls: [], fonts: {},
+    async png(html) {
+      this.calls.push(html);
+      return this.calls.length === 1 ? oldRender.promise : png;
+    },
+  };
+  const runtime = new Runtime({
+    store, knowledge,
+    codex: {
+      status: { account: { connected: true } },
+      cancel: () => {},
+      run: async (options) => {
+        prompts.push(options.prompt);
+        return { text: JSON.stringify(planFor([...initial, card("three", "Três")])) };
+      },
+    },
+    dialogs: { render },
+  });
+  const generating = runtime.request("generateCovers", { id: p.id });
+  await waitFor(() => render.calls.length === 1);
+  let resizing;
+  try {
+    resizing = runtime.request("resizeCarousel", { id: p.id, cardCount: 3 });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(prompts.length, 0, "adaptation must wait for the old cover renderer");
+    oldRender.resolve(pixel(220));
+    await Promise.all([generating, resizing]);
+    await settle(runtime);
+    const current = store.get(p.id);
+    assert.deepEqual(current.slides.map((slide) => slide.id), ["one", "two", "three"]);
+    assert.deepEqual(current.slides.map((slide) => slide.versions.length), [1, 1, 1]);
+    assert.equal(current.coverOptions.length, 0, "cancelled cover must not be appended late");
+  } finally {
+    oldRender.resolve(pixel(220));
+    await Promise.allSettled([generating, ...(resizing ? [resizing] : [])]);
+    await settle(runtime);
+  }
+});
+
+test("resize adaptation rejects empty and divergent card counts without replacing prior cards", async (t) => {
+  const initial = [card("one", "Capa"), card("two", "Dois")];
+  const responses = [
+    ["empty", []],
+    ["too few", initial.slice(0, 1)],
+    ["too many", [...initial, card("three", "Três"), card("four", "Quatro")]],
+  ];
+  for (const textApproved of [false, true]) {
+    for (const [label, responseSlides] of responses) {
+      const store = await fixture(t);
+      const p = await store.createProject({ title: "A", brief: "B", cardCount: 2 });
+      await store.saveProject({ id: p.id, slides: initial });
+      if (textApproved) await store.addImage(p.id, "one", png);
+      await store.update(p.id, { textApproved });
+      const before = store.get(p.id).slides;
+      let runs = 0;
+      const runtime = new Runtime({
+        store, knowledge,
+        codex: {
+          status: { account: { connected: true } },
+          cancel: () => {},
+          run: async () => {
+            runs += 1;
+            return { text: JSON.stringify(planFor(responseSlides)) };
+          },
+        },
+      });
+      await runtime.request("resizeCarousel", { id: p.id, cardCount: 3 });
+      await settle(runtime);
+      const current = store.get(p.id);
+      assert.equal(current.status, "error", `${label}, approved=${textApproved}`);
+      assert.match(current.error, /exatamente 3 cards/, `${label}, approved=${textApproved}`);
+      assert.deepEqual(current.slides.map((slide) => slide.id), before.map((slide) => slide.id), `${label}, approved=${textApproved}`);
+      assert.deepEqual(current.slides.map((slide) => slide.image), before.map((slide) => slide.image), `${label}, approved=${textApproved}`);
+      assert.deepEqual(current.slides.map((slide) => slide.versions?.length || 0), before.map((slide) => slide.versions?.length || 0), `${label}, approved=${textApproved}`);
+      assert.equal(current.textApproved, textApproved, `${label}, approved=${textApproved}`);
+      assert.equal(runs, 1, `${label}, approved=${textApproved}: no art may resume`);
+    }
+  }
+});
+
 test("brand images are validated, typed, renamed and removed; old libraries gain an empty list", async (t) => {
   const store = await fixture(t);
   assert.deepEqual(store.media().assets, []);

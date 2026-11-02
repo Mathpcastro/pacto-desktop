@@ -85,6 +85,82 @@ test("resize during plan waits for the cancelled turn and restarts with one card
   assert.deepEqual(store.get(p.id).slides.map((slide) => slide.id), ["only"]);
 });
 
+test("concurrent resize requests reject the second before mixing count, prompt and slides", async (t) => {
+  const store = await fixture(t);
+  const p = await store.createProject({ title: "A", brief: "B", cardCount: 2 });
+  const oldTurn = deferred();
+  const prompts = [];
+  let runs = 0;
+  const runtime = new Runtime({
+    store,
+    knowledge: { method: "M", lessons: [] },
+    codex: {
+      status: { account: { connected: true } },
+      cancel: () => oldTurn.resolve({ text: JSON.stringify(planFor(slides)) }),
+      run: async (options) => {
+        prompts.push(options.prompt);
+        runs += 1;
+        if (runs === 1) return oldTurn.promise;
+        const next = Number(options.prompt.match(/A pessoa mudou o tamanho para exatamente (\d+) cards/)?.[1] || 3);
+        const cards = Array.from({ length: next }, (_, index) => slides[index] || { id: ["three", "four"][index - 2], role: "Conteúdo", title: `Card ${index + 1}`, body: "Texto" });
+        return { text: JSON.stringify(planFor(cards)) };
+      },
+    },
+  });
+  await runtime.request("generatePlan", { id: p.id });
+  await waitFor(() => runs === 1);
+  const results = await Promise.allSettled([
+    runtime.request("resizeCarousel", { id: p.id, cardCount: 3 }),
+    runtime.request("resizeCarousel", { id: p.id, cardCount: 4 }),
+  ]);
+  await settle(runtime);
+  assert.deepEqual(results.map((result) => result.status), ["fulfilled", "rejected"]);
+  assert.match(results[1].reason.message, /Aguarde ou cancele/);
+  assert.equal(store.get(p.id).cardCount, 3);
+  assert.equal(store.get(p.id).slides.length, 3);
+  assert.match(prompts.at(-1), /QUANTIDADE DE CARDS: exatamente 3 cards/);
+});
+
+test("same configured count does not cancel plan or message work", async (t) => {
+  for (const kind of ["plan", "message"]) {
+    const store = await fixture(t);
+    const p = await store.createProject({ title: "A", brief: "B", cardCount: 2 });
+    if (kind === "message") await store.saveProject({ id: p.id, slides });
+    const turn = deferred();
+    let runs = 0;
+    let cancels = 0;
+    const runtime = new Runtime({
+      store,
+      knowledge: { method: "M", lessons: [] },
+      codex: {
+        status: { account: { connected: true } },
+        cancel: () => {
+          cancels += 1;
+          turn.resolve({ text: JSON.stringify(planFor(slides)) });
+        },
+        run: async () => {
+          runs += 1;
+          return turn.promise;
+        },
+      },
+    });
+    await runtime.request(kind === "plan" ? "generatePlan" : "sendMessage", kind === "plan" ? { id: p.id } : { id: p.id, text: "Revise" });
+    await waitFor(() => runs === 1);
+    const job = runtime.job;
+    const status = store.get(p.id).status;
+    try {
+      await runtime.request("resizeCarousel", { id: p.id, cardCount: 2 });
+      assert.equal(cancels, 0, kind);
+      assert.strictEqual(runtime.job, job, kind);
+      assert.equal(store.get(p.id).status, status, kind);
+    } finally {
+      turn.resolve({ text: JSON.stringify(planFor(slides)) });
+      if (runtime.job) await runtime.request("cancel", { id: p.id });
+      await settle(runtime);
+    }
+  }
+});
+
 test("every card count from automatic through 10 is validated and persisted", async (t) => {
   const store = await fixture(t);
   for (let cardCount = 0; cardCount <= 10; cardCount += 1) {
