@@ -242,3 +242,8 @@ Stories preto/branco no fim do fluxo e voz anti-IA na copy implementados localme
 - [ ] Decidir formatos e escopo da primeira versão de anúncios.
 
 - [ ] Modo agente (Claude/Gemini pela CLI, sem ChatGPT) implementado localmente: testar com o Gemini CLI instalado e lançar numa versão. Ver [[33 - Roteiro comentarios stories anuncios e provedores]].
+
+
+## Release 0.7.0 publicada — 02/11/2026
+
+[[34 - Release Carrossell 0.7.0]]: Latest com Windows e os dois Macs, zero artefatos de Actions, links HTTP 200 e feed Windows 0.7.0. Stories de texto, copy anti-IA e modo agente (Claude/Gemini pela CLI) incluídos.
