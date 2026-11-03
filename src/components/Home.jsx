@@ -34,7 +34,7 @@ const SIZES = [
   [0, "Automático", "O Carrossell decide"],
   ...Array.from({ length: 10 }, (_, index) => {
     const value = index + 1;
-    return [value, String(value), value === 4 ? "Gasta menos do limite da conta" : ""];
+    return [value, String(value), ""];
   }),
 ];
 const PLACEHOLDER = {
