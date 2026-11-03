@@ -47,4 +47,4 @@ Files: new `core/telegram-conversation.mjs`, `core/autopilot.mjs`, `core/autopil
 - [x] Run `npm test`, `npm run build`, `node scripts/renderer-regression.mjs`, `node scripts/ui-phases.mjs`, discovery proof, references and autopilot UI proofs as appropriate. Tests use temp profiles and simulated transport; real generation/posting is not part of those claims.
 - [x] Capture real Electron screenshots of home, discovery, agents and pilot into user workspace outputs, clearly distinguish from previous HTML mockups.
 - [x] Update project shared notes with current state, limitations and evidence; only selectively stage intended files and create local commit after checks. No global memory edits, credentials or production external actions.
-- [ ] Deliver concise outcome, real screenshots, validation and remaining integration limits, without claiming release/publication.
+- [x] Deliver concise outcome, real screenshots, validation and remaining integration limits, without claiming release/publication.

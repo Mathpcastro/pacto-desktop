@@ -272,3 +272,8 @@ Sem push, merge, instalador novo ou release do piloto. Permanece nesta worktree.
 ## 03/11/2026 — Conversa Telegram e descoberta no app
 
 Implementação local sobre 0.7.3, branch codex/telegram-autopilot. Ver [[36 - Conversa Telegram e descoberta]] para interface aprovada, ações do bot, limites e validações: 206 testes, build, fases46, renderer9, referências16, descoberta15 e pilotoUI14. Sem push, merge, versão nova ou release. Novo fluxo de conversa validado com fixtures; validação externa de ChatGPT/Telegram/Instagram real e Mac físico permanece pendente.
+
+
+## 03/11/2026 — Release 0.7.4 publicada
+
+Ver [[37 - Release Carrossell 0.7.4]]. Latest com Windows e dois Macs, workflow 41677450506 aprovado, zero artefatos de Actions, feed 0.7.4 e checksum do instalador publico conferidos. Inclui piloto/conversa Telegram, descoberta de recursos e home simplificada. A autorizacao de publicacao foi recebida nesta etapa.
