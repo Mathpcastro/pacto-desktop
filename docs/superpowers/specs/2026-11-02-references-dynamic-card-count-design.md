@@ -1,4 +1,4 @@
-# Referências e quantidade dinâmica de cards — 0.7.2
+# Referências e quantidade dinâmica de cards — 0.7.3
 
 ## Objetivo
 
@@ -47,4 +47,4 @@ Publicar a biblioteca com 36 referências já implementada em `feat/carrossell-r
 - Teste de carrossel de um card do texto à exportação.
 - Suíte completa, build, regressões do renderer, fases da UI e provas das Referências.
 - Prova real da interface para o seletor e as opções 1–10, sem simular geração nativa de imagens.
-- Publicar `0.7.2`, acompanhar Windows/macOS e validar release, downloads, `latest.yml` e zero artefatos do Actions.
+- Publicar `0.7.3`, acompanhar Windows/macOS e validar release, downloads, `latest.yml` e zero artefatos do Actions.

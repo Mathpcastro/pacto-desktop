@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Entregar a versão 0.7.2 com 36 referências e seleção de 1 a 10 cards, inclusive durante escrita e geração de arte.
+**Goal:** Entregar a versão 0.7.3 com 36 referências e seleção de 1 a 10 cards, inclusive durante escrita e geração de arte.
 
 **Architecture:** Integrar a branch de Referências sobre `main` e acrescentar uma ação `resizeCarousel` no Runtime. Essa ação cancela e aguarda tokens antigos, adapta a copy quando o número de slides muda e retoma apenas artes pendentes; renderer e Store continuam seguindo os contratos atuais.
 
@@ -13,7 +13,7 @@
 ### Task 1: Integrar a biblioteca de Referências
 
 **Files:**
-- Merge: `feat/carrossell-reference-templates` em `release/0.7.2-references-card-count`
+- Merge: `feat/carrossell-reference-templates` em `release/0.7.3-references-card-count`
 - Test: `tests/references.test.mjs`
 - UI: `scripts/references-proof.mjs`
 
@@ -206,12 +206,12 @@ git add src/components/Studio.jsx scripts/references-proof.mjs
 git commit -m "feat: add studio card count selector"
 ```
 
-### Task 5: Validar e publicar 0.7.2
+### Task 5: Validar e publicar 0.7.3
 
 **Files:**
 - Modify: `package.json`
 - Modify: `package-lock.json`
-- Create: `shared-memory/35 - Release Carrossell 0.7.2.md`
+- Create: `shared-memory/35 - Release Carrossell 0.7.3.md`
 
 - [ ] **Step 1: Executar toda a validação local**
 
@@ -230,7 +230,7 @@ Expected: suíte completa sem falhas, build concluído, regressões e provas de 
 
 - [ ] **Step 2: Atualizar a versão e repetir os testes afetados**
 
-Run: `npm version 0.7.2 --no-git-tag-version && node --test tests/value.test.mjs tests/images.test.mjs tests/references.test.mjs && npm run build`
+Run: `npm version 0.7.3 --no-git-tag-version && node --test tests/value.test.mjs tests/images.test.mjs tests/references.test.mjs && npm run build`
 Expected: somente os campos de versão mudam; todos os comandos PASS.
 
 - [ ] **Step 3: Registrar limites e evidências reais**
@@ -241,13 +241,13 @@ Criar a nota de release com os testes observados, 36 referências, quantidade di
 
 ```bash
 git push origin HEAD:main
-git tag -a v0.7.2 -m "Carrossell 0.7.2"
-git push origin v0.7.2
-gh run list --repo Mathpcastro/pacto-desktop --workflow build-mac.yml --branch v0.7.2 --limit 1
+git tag -a v0.7.3 -m "Carrossell 0.7.3"
+git push origin v0.7.3
+gh run list --repo Mathpcastro/pacto-desktop --workflow build-mac.yml --branch v0.7.3 --limit 1
 ```
 
 Expected: preparação, Windows, macOS ARM64, macOS x64 e publish concluídos com sucesso.
 
 - [ ] **Step 5: Verificar o contrato de atualização**
 
-Confirmar release `v0.7.2` Latest em `pacto-releases`, 11 assets, `latest.yml` com `version: 0.7.1` substituído por `0.7.2`, downloads HTTP 200 e `total_count: 0` nos artefatos do Actions. Criar também a release de referência no repo do app com links para os instaladores.
+Confirmar release `v0.7.3` Latest em `pacto-releases`, 11 assets, `latest.yml` com `version: 0.7.1` substituído por `0.7.3`, downloads HTTP 200 e `total_count: 0` nos artefatos do Actions. Criar também a release de referência no repo do app com links para os instaladores.
