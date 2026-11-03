@@ -1,0 +1,268 @@
+import { randomBytes, randomUUID } from 'node:crypto';
+import { approvalFingerprint as fingerprint } from './approval.mjs';
+import { TelegramClient } from './telegram.mjs';
+import { DEFAULT_CONFIG, nextRun, validateConfig } from './autopilot-schedule.mjs';
+import { parseWhen } from './schedule.mjs';
+import { postable } from './instagram.mjs';
+import { validId } from './store.mjs';
+
+const TERMINAL=new Set(['published','scheduled','discarded','error','uncertain']);
+const decisionStates=new Set(['ready','scheduleDate','scheduleConfirm']);
+const messageError=error=>String(error?.message||'Não foi possível concluir a operação.').replace(/https?:\/\/\S+/g,'[endereço omitido]').replace(/\b\d{5,}:[A-Za-z0-9_-]+/g,'[token omitido]').slice(0,600);
+const sleep=(ms,signal)=>new Promise(resolve=>{if(signal?.aborted)return resolve();const done=()=>{clearTimeout(timer);signal?.removeEventListener('abort',done);resolve();};const timer=setTimeout(done,ms);timer.unref?.();signal?.addEventListener('abort',done,{once:true});});
+
+// Coordena somente efeitos explicitamente habilitados no app. Uma decisão durável
+// sempre precede publicar; uma resposta incerta nunca vira tentativa automática.
+export class Autopilot {
+  constructor({runtime,state,secrets,scheduler=null,clientFactory=token=>new TelegramClient({token}),now=()=>Date.now()}){
+    Object.assign(this,{rt:runtime,state,secrets,scheduler,clientFactory,now});this.client=null;this.processing=null;this.controller=null;this.connectionError='';
+  }
+  clientForToken(){const token=this.secrets.getTelegramToken?.();if(!token)throw new Error('Conecte o bot do Telegram.');return this.client??=this.clientFactory(token);}
+  status(profileId){
+    const data=this.state.snapshot();return {hasToken:Boolean(this.secrets.getTelegramToken?.()),bot:data.bot,paired:Boolean(data.binding),pairing:data.pairing&&new Date(data.pairing.expiresAt)>this.now()?{...data.pairing,url:`https://t.me/${data.bot.username}?start=${data.pairing.code}`}:null,connectionError:data.configs[profileId]?.scheduleError||data.configs[profileId]?.runError||this.connectionError,
+      config:{...DEFAULT_CONFIG,...data.configs[profileId]},jobs:data.jobs.filter(j=>j.profileId===profileId).slice(-12).reverse().map(({id,projectId,status,title,error,createdAt})=>({id,projectId,status,title,error,createdAt}))};
+  }
+  keepAlive(){const data=this.state.snapshot();return Boolean(this.secrets.getTelegramToken?.()&&(data.pairing&&new Date(data.pairing.expiresAt)>this.now()||data.binding&&(Object.values(data.configs).some(c=>c.enabled)||data.jobs.some(j=>!TERMINAL.has(j.status)))));}
+  async changed(profileId){
+    if(profileId&&!this.rt.profileList().some(p=>p.id===profileId))profileId=undefined;
+    await this.rt.inProfile(profileId,()=>this.rt.emit({type:'state',state:this.rt.state()}));
+  }
+  async patch(id,patch){await this.state.change(data=>{const job=data.jobs.find(j=>j.id===id);if(!job)throw new Error('Trabalho do piloto não encontrado.');Object.assign(job,patch);});const job=this.state.snapshot().jobs.find(j=>j.id===id);await this.changed(job.profileId);return job;}
+  async connect(token){
+    if(this.processing)throw new Error('Aguarde o trabalho do piloto terminar.');
+    if(typeof token!=='string'||!/^\d{5,}:[A-Za-z0-9_-]{20,}$/.test(token.trim())||token.length>300)throw new Error('Copie o token completo do BotFather.');
+    const client=this.clientFactory(token.trim()),bot=await client.getMe(),webhook=await client.getWebhookInfo();
+    if(webhook?.url)throw new Error('Este bot já usa um webhook em outro serviço. Use um bot exclusivo para o Carrossell.');
+    if(!/^[a-zA-Z0-9_]{5,64}$/.test(bot.username||''))throw new Error('O Telegram não devolveu o nome do bot.');
+    this.controller?.abort();this.controller=null;
+    await this.secrets.setTelegramToken(token.trim());this.client=client;this.connectionError='';
+    await this.state.change(data=>{data.bot={username:bot.username};data.binding=null;data.pairing=null;data.offset=0;for(const config of Object.values(data.configs))config.enabled=false;for(const job of data.jobs)if(!TERMINAL.has(job.status))job.status='discarded';});
+    await this.rearm();await this.changed();if(this.started)this.start();return this.status(this.rt.profileId());
+  }
+  async disconnect(){
+    if(this.processing)throw new Error('Aguarde o trabalho do piloto terminar.');
+    this.controller?.abort();this.controller=null;await this.secrets.clearTelegramToken();this.client=null;
+    await this.state.change(data=>{data.bot=null;data.binding=null;data.pairing=null;data.offset=0;for(const config of Object.values(data.configs))config.enabled=false;for(const job of data.jobs)if(!TERMINAL.has(job.status))job.status='discarded';});
+    this.connectionError='';await this.rearm();await this.changed();if(this.started)this.start();
+  }
+  async pair(){
+    this.clientForToken();if(this.state.snapshot().binding)throw new Error('Este bot já está vinculado. Desconecte antes de trocar a conversa.');
+    const pairing={code:randomBytes(16).toString('hex'),expiresAt:new Date(this.now()+10*60000).toISOString()};
+    await this.state.change(data=>{data.pairing=pairing;});await this.changed();return {...pairing,url:`https://t.me/${this.state.snapshot().bot.username}?start=${pairing.code}`};
+  }
+  async saveConfig(profileId,input){
+    validId(profileId);this.rt.profiles?.find(profileId);const config=validateConfig(input);
+    if(config.enabled){if(!this.state.snapshot().binding)throw new Error('Vincule sua conversa do Telegram primeiro.');this.clientForToken();await this.rt.inProfile(profileId,()=>this.rt.social.pick(config.accounts));}
+    const next={...config,nextAt:config.enabled?nextRun(config,new Date(this.now())):null};
+    // Configuração persistida antes do registro no SO; uma tarefa órfã não gera se disabled.
+    await this.state.change(data=>{data.configs[profileId]=next;});
+    try{if(this.scheduler){if(config.enabled)await this.scheduler.add(profileId,new Date(next.nextAt));else await this.scheduler.remove(profileId).catch(()=>{});}}
+    catch(error){await this.state.change(data=>{data.configs[profileId].enabled=false;data.configs[profileId].nextAt=null;});await this.changed(profileId);throw new Error(`Não foi possível ativar a rotina no sistema: ${messageError(error)}`);}
+    await this.changed(profileId);return next;
+  }
+  async rearm(){
+    if(!this.scheduler)return;const configs=this.state.snapshot().configs;
+    for(const [id,config]of Object.entries(configs)){
+      if(config.enabled&&config.nextAt)await this.arm(id,config.nextAt);else await this.scheduler.remove(id).catch(()=>{});
+    }
+  }
+  async arm(profileId,nextAt){
+    if(!this.scheduler)return;
+    try{await this.scheduler.add(profileId,new Date(nextAt));await this.state.change(d=>{const c=d.configs[profileId];if(c){c.scheduleError='';c.rearmAt=null;}});}
+    catch{await this.state.change(d=>{const c=d.configs[profileId];if(c){c.scheduleError='A próxima rotina não foi registrada no sistema. O app tentará novamente; mantenha-o aberto ou salve a rotina de novo.';c.rearmAt=new Date(this.now()+60000).toISOString();}});}
+    await this.changed(profileId);
+  }
+  async enqueue(profileId){
+    validId(profileId);this.clientForToken();if(!this.state.snapshot().binding)throw new Error('Vincule sua conversa do Telegram.');
+    const config=validateConfig(this.state.snapshot().configs[profileId]||DEFAULT_CONFIG);
+    if(!config.accounts.length)throw new Error('Escolha as contas do Instagram e salve a rotina.');
+    await this.rt.inProfile(profileId,()=>{this.rt.ensureConnected();this.rt.social.pick(config.accounts);if(!this.rt.store.state().profile?.brandContext?.trim())throw new Error('Conclua o Contexto da Marca antes de gerar.');});
+    const job={id:randomUUID(),profileId,config,accounts:config.accounts,status:'queued',createdAt:new Date(this.now()).toISOString(),error:'',title:'Próxima pauta do Radar'};
+    await this.state.change(data=>{if(data.jobs.some(j=>j.profileId===profileId&&!TERMINAL.has(j.status)))throw new Error('Este perfil já tem um carrossel aguardando. Conclua ou descarte antes de criar outro.');data.jobs.push(job);});await this.changed(profileId);return job;
+  }
+  async call(action,args={}){
+    const result=await this.rt.request(action,args),token=this.rt.job;if(token?.done)await token.done;
+    if(args.id){const p=this.rt.store.get(args.id);if(p.status==='error'||p.error)throw new Error(p.error||'A geração não terminou.');}
+    return result;
+  }
+  async generate(job){
+    await this.rt.inProfile(job.profileId,async()=>{
+      await this.patch(job.id,{status:'generating',error:''});let project;
+      if(job.projectId)project=this.rt.store.state().projects.find(p=>p.id===job.projectId);
+      if(!project){
+        let ideas=this.rt.store.ideaBatches().filter(b=>b.source==='radar').flatMap(b=>b.ideas||[]);
+        const used=new Set(this.state.snapshot().jobs.filter(j=>j.profileId===job.profileId).map(j=>j.ideaId));
+        let idea=job.idea||ideas.find(i=>!used.has(i.id));
+        if(!idea){await this.call('radar');ideas=this.rt.store.ideaBatches().filter(b=>b.source==='radar').flatMap(b=>b.ideas||[]);idea=ideas.find(i=>!used.has(i.id));}
+        if(!idea)throw new Error('O Radar não trouxe uma pauta disponível.');
+        // Reserva o id antes de criar para retomar sem duplicar após um encerramento.
+        const projectId=job.projectId||randomUUID();await this.patch(job.id,{ideaId:idea.id,idea,projectId,title:idea.theme||idea.hook});
+        project=await this.rt.store.createProject({title:idea.theme||idea.hook,brief:[idea.theme,idea.hook,idea.why,idea.deliverable,idea.connection].filter(Boolean).join('\n'),style:job.config.style,cardCount:job.config.cardCount},{reservedId:projectId});
+        this.rt.publish(project);
+      }
+      const id=project.id;
+      if(project.error)project=await this.rt.update(id,{error:null,status:project.slides.length?'ready':'draft'});
+      if(!project.slides.length){await this.call('generatePlan',{id});project=this.rt.store.get(id);}
+      if(project.slides.length!==job.config.cardCount)throw new Error(`O texto veio com ${project.slides.length} cards. O piloto pediu ${job.config.cardCount}. Ajuste no Estúdio antes de retomar.`);
+      if(!project.textApproved)await this.call('approveText',{id});
+      project=this.rt.store.get(id);
+      if(!project.slides[0]?.image){if(!project.coverOptions?.length)await this.call('generateCovers',{id,count:1});const cover=this.rt.store.get(id).coverOptions[0];if(!cover)throw new Error('A capa não ficou pronta.');await this.call('chooseCover',{id,optionId:cover.id});}
+      project=this.rt.store.get(id);
+      if(project.slides.some(s=>!s.image||s.state!=='complete'))await this.call('generateSlides',{id});
+      project=this.rt.store.get(id);if(!project.stories?.length)await this.call('stories',{id});
+      else if(project.stories.some(s=>!s.image))await this.call('storyTheme',{id,theme:project.storyTheme||'preto'});
+      await this.preview(job.id);
+    });
+  }
+  async preview(id){
+    const job=this.state.snapshot().jobs.find(j=>j.id===id),p=this.rt.store.get(job.projectId);postable(p);
+    const binding=this.state.snapshot().binding;if(!binding)throw new Error('O Telegram foi desconectado.');
+    const reviewId=randomBytes(12).toString('hex'),hash=fingerprint(p);await this.patch(id,{status:'sending',reviewId,messageId:null,fingerprint:hash});
+    const client=this.clientForToken(),name=this.rt.store.state().profile?.brand||'Sua marca';
+    await client.sendText(binding.chatId,`${name} · ${p.title}\nPrévia do carrossel. Confira os cards e a legenda antes de aprovar.`);
+    const files=await this.rt.exportedFiles(p.id),photos=Object.entries(files).filter(([name])=>/^\d+\.png$/.test(name)).map(([name,bytes])=>({name,bytes}));
+    if(photos.length!==p.slides.length)throw new Error('Não foi possível preparar todos os cards.');
+    await client.sendPhotos(binding.chatId,photos);await client.sendText(binding.chatId,`Legenda:\n${p.caption||'(sem legenda)'}`);
+    const stories=Object.entries(files).filter(([name])=>name.startsWith('stories/')&&name.endsWith('.png')).map(([name,bytes])=>({name,bytes}));
+    if(stories.length){await client.sendText(binding.chatId,'Stories de apoio · para postar manualmente:');await client.sendPhotos(binding.chatId,stories);}
+    const accounts=this.rt.social.pick(job.accounts).map(a=>`@${a.username}`).join(', ');
+    const messages=await client.sendText(binding.chatId,`Marca: ${name}\nContas: ${accounts}\nO que fazer com este carrossel?`,{reply_markup:{inline_keyboard:[[{text:'Postar agora',callback_data:`p:${reviewId}:post`},{text:'Agendar',callback_data:`p:${reviewId}:schedule`}],[{text:'Refazer',callback_data:`p:${reviewId}:redo`},{text:'Descartar',callback_data:`p:${reviewId}:discard`}]]}});
+    await this.patch(id,{status:'ready',messageId:messages.at(-1).message_id,title:p.title,error:''});
+  }
+  async ack(id,message){await this.clientForToken().answerCallbackQuery(id,message).catch(()=>{});}
+  async handleUpdate(update){
+    const data=this.state.snapshot(),message=update.message,query=update.callback_query,client=this.clientForToken();
+    if(message?.chat?.type==='private'&&message.from?.id){
+      const code=/^\/start(?:@\w+)?\s+([a-f0-9]+)$/.exec(message.text||'')?.[1];
+      if(!data.binding&&code&&data.pairing?.code===code&&new Date(data.pairing.expiresAt)>this.now()){
+        let paired=false;await this.state.change(next=>{if(!next.binding&&next.pairing?.code===code&&new Date(next.pairing.expiresAt)>this.now()){next.binding={chatId:message.chat.id,userId:message.from.id};next.pairing=null;paired=true;}});
+        if(paired){await this.changed();await client.sendText(message.chat.id,'Telegram conectado ao Carrossell. Configure a rotina no computador; toda publicação espera sua aprovação.');}return;
+      }
+      if(data.binding?.chatId===message.chat.id&&data.binding.userId===message.from.id){
+        const job=[...data.jobs].reverse().find(j=>j.status==='scheduleDate');if(!job)return;
+        try{
+          const at=parseWhen(message.text,new Date(this.now())).toISOString();
+          const title=await this.rt.inProfile(job.profileId,()=>this.rt.store.state().profile?.brand||'Sua marca');
+          const messages=await client.sendText(message.chat.id,`${title} · ${job.title}\nAgendar para ${new Date(at).toLocaleString('pt-BR')} (horário do computador)?\nContas: ${job.accounts.join(', ')}`,{reply_markup:{inline_keyboard:[[{text:'Confirmar agendamento',callback_data:`p:${job.reviewId}:confirm`}],[{text:'Cancelar',callback_data:`p:${job.reviewId}:cancel`}]]}});
+          await this.patch(job.id,{status:'scheduleConfirm',at,messageId:messages.at(-1).message_id});
+        }catch(error){await client.sendText(message.chat.id,`${messageError(error)}\nEnvie a data como 2026-11-03 18:00, no horário do computador.`);}return;
+      }
+    }
+    if(!query)return;
+    if(!data.binding||query.from?.id!==data.binding.userId||query.message?.chat?.id!==data.binding.chatId||query.message.chat.type!=='private'){await this.ack(query.id,'Esta conversa não está vinculada ao seu Carrossell.');return;}
+    const match=/^p:([a-f0-9]{24}):(post|schedule|redo|discard|confirm|cancel)$/.exec(query.data||'');
+    const job=match&&data.jobs.find(j=>j.reviewId===match[1]&&j.messageId===query.message.message_id&&decisionStates.has(j.status));
+    if(!job){await this.ack(query.id,'Esta prévia já foi respondida ou substituída.');return;}
+    let current;
+    try{current=await this.rt.inProfile(job.profileId,()=>this.rt.store.get(job.projectId));}
+    catch{await this.patch(job.id,{status:'discarded',error:'O projeto ou perfil desta prévia foi removido.'});await this.ack(query.id,'Este projeto não está mais disponível no Carrossell.');return;}
+    if(fingerprint(current)!==job.fingerprint){await this.patch(job.id,{status:'error',error:'O projeto mudou depois da prévia. Retome para enviar uma nova revisão antes de aprovar.'});await this.ack(query.id,'O projeto mudou. Envie uma nova prévia pelo app.');return;}
+    const action=match[2];let status;
+    if(action==='post'&&job.status==='ready')status='approved';
+    if(action==='schedule'&&['ready','scheduleDate'].includes(job.status))status='scheduleDate';
+    if(action==='confirm'&&job.status==='scheduleConfirm')status='approvedSchedule';
+    if(action==='cancel'&&['scheduleDate','scheduleConfirm'].includes(job.status))status='resend';
+    if(action==='redo'&&job.status==='ready')status='redo';
+    if(action==='discard')status='discarded';
+    if(!status){await this.ack(query.id,'Use os botões da mensagem mais recente.');return;}
+    let accepted=false;
+    await this.state.change(next=>{const saved=next.jobs.find(j=>j.id===job.id);if(status==='scheduleDate'&&next.jobs.some(j=>j.id!==job.id&&['scheduleDate','scheduleConfirm'].includes(j.status)))return;if(saved?.status===job.status&&saved.messageId===job.messageId){saved.status=status;accepted=true;}});
+    await this.ack(query.id,accepted?'Recebido. O Carrossell vai processar sua escolha.':'Conclua a escolha pendente antes de iniciar outra.');
+    if(!accepted)return;await this.changed(job.profileId);await client.editMessageReplyMarkup(data.binding.chatId,job.messageId).catch(()=>{});
+    if(status==='scheduleDate'){
+      const messages=await client.sendText(data.binding.chatId,`Envie a data e hora para “${job.title}”, como 2026-11-03 18:00. Use o horário do computador. A próxima mensagem pedirá confirmação.`,{reply_markup:{inline_keyboard:[[{text:'Cancelar',callback_data:`p:${job.reviewId}:cancel`}]]}});
+      await this.patch(job.id,{messageId:messages.at(-1).message_id});
+    }
+  }
+  async retry(id){
+    const job=this.state.snapshot().jobs.find(j=>j.id===validId(id));if(!job)throw new Error('Trabalho não encontrado.');
+    if(job.status==='uncertain')throw new Error('Confira o Instagram e os agendamentos no app antes de qualquer nova tentativa.');
+    if(job.status!=='error')throw new Error('Só é possível retomar um trabalho com erro.');
+    await this.state.change(data=>{const saved=data.jobs.find(j=>j.id===id);if(saved.status!=='error')throw new Error('Este trabalho já foi retomado.');if(data.jobs.some(j=>j.id!==id&&j.profileId===saved.profileId&&!TERMINAL.has(j.status)))throw new Error('Este perfil já tem um carrossel aguardando.');Object.assign(saved,{status:'queued',error:'',reviewId:null,messageId:null});});await this.changed(job.profileId);
+  }
+  async discard(id){
+    const job=this.state.snapshot().jobs.find(j=>j.id===validId(id));if(!job||!['ready','error','queued','scheduleDate','scheduleConfirm'].includes(job.status))throw new Error('Este trabalho não pode ser descartado agora.');
+    await this.patch(id,{status:'discarded'});
+  }
+  async removeProfile(profileId){
+    await this.state.change(data=>{delete data.configs[profileId];for(const job of data.jobs)if(job.profileId===profileId&&!TERMINAL.has(job.status))job.status='discarded';});
+    await this.scheduler?.remove(profileId).catch(()=>{});
+  }
+  async removeProject(profileId,projectId){
+    await this.state.change(data=>{for(const job of data.jobs)if(job.profileId===profileId&&job.projectId===projectId&&!TERMINAL.has(job.status))job.status='discarded';});
+  }
+  async step(){
+    if(this.processing||this.rt.job||this.rt.resizing||!this.secrets.getTelegramToken?.())return;
+    this.processing=this.work();try{await this.processing;}finally{this.processing=null;}
+  }
+  async work(){
+    const initial=this.state.snapshot();
+    for(const [profileId,config]of Object.entries(initial.configs))if(config.enabled&&config.rearmAt&&new Date(config.rearmAt)<=this.now())await this.arm(profileId,config.nextAt);
+    for(const [profileId,config]of Object.entries(initial.configs))if(config.enabled&&config.nextAt&&new Date(config.nextAt)<=this.now()){
+      // No cold start o login persistido é carregado assincronamente. Não gastar
+      // a ocorrência antes de a sessão estar disponível ou um trabalho ser criado.
+      if(!this.rt.codex.status.account.connected){
+        if(!config.runError){await this.state.change(d=>{d.configs[profileId].runError='Aguardando a conexão da conta ChatGPT para gerar. Abra o app se precisar conectar novamente.';});await this.changed(profileId);}continue;
+      }
+      const nextAt=nextRun(config,new Date(this.now()));await this.state.change(d=>{d.configs[profileId].nextAt=nextAt;});
+      try{await this.enqueue(profileId);await this.state.change(d=>{d.configs[profileId].runError='';});}
+      catch(error){await this.state.change(d=>{d.configs[profileId].runError=messageError(error);});await this.changed(profileId);}
+      await this.arm(profileId,nextAt);
+    }
+    const job=this.state.snapshot().jobs.find(j=>['queued','approved','approvedSchedule','redo','resend'].includes(j.status));if(!job)return;
+    try{
+      await this.rt.inProfile(job.profileId,async()=>{
+        if(job.status==='queued'){await this.generate(job);return;}
+        if(job.status==='redo'){
+          // Novo projeto preserva o rascunho anterior e jamais reaproveita a aprovação.
+          await this.patch(job.id,{status:'queued',projectId:null,reviewId:null,messageId:null});await this.generate({...job,projectId:null});return;
+        }
+        if(job.status==='resend'){await this.preview(job.id);return;}
+        const p=this.rt.store.get(job.projectId);if(fingerprint(p)!==job.fingerprint)throw new Error('O projeto mudou depois da aprovação. Retome para receber outra prévia.');
+        if(job.status==='approved'){
+          await this.patch(job.id,{status:'publishing'});
+          if(fingerprint(this.rt.store.get(job.projectId))!==job.fingerprint)throw new Error('O projeto mudou depois da aprovação. Envie outra prévia.');
+          try{await this.rt.social.publish(job.projectId,{accounts:job.accounts});await this.patch(job.id,{status:'published',error:''});}
+          catch(error){await this.patch(job.id,{status:'uncertain',error:`Confira o Instagram antes de tentar novamente. ${messageError(error)}`});}
+        }else{
+          await this.patch(job.id,{status:'scheduling'});
+          if(fingerprint(this.rt.store.get(job.projectId))!==job.fingerprint)throw new Error('O projeto mudou depois da aprovação. Envie outra prévia.');
+          try{await this.rt.social.schedule(job.projectId,job.at,job.accounts,{approvalFingerprint:job.fingerprint});await this.patch(job.id,{status:'scheduled',error:''});}
+          catch(error){await this.patch(job.id,{status:'uncertain',error:`Confira os agendamentos no app. ${messageError(error)}`});}
+        }
+        const final=this.state.snapshot().jobs.find(j=>j.id===job.id),binding=this.state.snapshot().binding;
+        await this.clientForToken().sendText(binding.chatId,`${job.title}: ${final.status==='published'?'publicado nas contas escolhidas.':final.status==='scheduled'?'agendamento confirmado.':final.error}`);
+      });
+    }catch(error){
+      const current=this.state.snapshot().jobs.find(j=>j.id===job.id);
+      if(!['published','scheduled','uncertain'].includes(current.status)){
+        await this.patch(job.id,{status:'error',error:messageError(error)});
+        const config=this.state.snapshot().configs[job.profileId];
+        if(config?.enabled)await this.saveConfig(job.profileId,{...config,enabled:false});
+        const binding=this.state.snapshot().binding;
+        if(binding)await this.clientForToken().sendText(binding.chatId,`${job.title}: não foi possível concluir. ${messageError(error)}\nAbra o piloto no Carrossell para retomar.`).catch(()=>{});
+      }
+    }
+  }
+  start(){
+    this.started=true;if(this.controller)return;const controller=new AbortController();this.controller=controller;
+    void this.poll(controller.signal);this.timer??=setInterval(()=>void this.step().catch(error=>{this.connectionError=messageError(error);void this.changed();}),5000);this.timer.unref?.();
+  }
+  async poll(signal){
+    let failures=0;
+    while(!signal.aborted){
+      if(!this.secrets.getTelegramToken?.()){await sleep(2000,signal);continue;}
+      try{
+        const updates=await this.clientForToken().getUpdates(this.state.snapshot().offset,{signal});
+        if(signal.aborted)break;
+        for(const update of updates){if(signal.aborted)break;await this.handleUpdate(update);await this.state.change(data=>{data.offset=Math.max(data.offset,update.update_id+1);});}
+        failures=0;if(this.connectionError){this.connectionError='';await this.changed();}
+        if(!updates.length)await sleep(250,signal);
+      }catch(error){
+        if(signal.aborted)break;this.connectionError=messageError(error);await this.changed();failures++;
+        await sleep(Math.max((error.retryAfter||0)*1000,Math.min(60000,1000*2**Math.min(failures,6))),signal);
+      }
+    }
+  }
+  stop(){this.started=false;this.controller?.abort();this.controller=null;clearInterval(this.timer);this.timer=null;}
+}

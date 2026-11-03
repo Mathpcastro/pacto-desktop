@@ -13,6 +13,10 @@ import { Runtime, ACTIONS } from '../core/runtime.mjs';
 import { loadKnowledge } from '../core/knowledge.mjs';
 import { normalizeExport, normalizeFiles, jpegCards } from '../core/export.mjs';
 import { OsScheduler, SCHEDULE_FLAG } from '../core/schedule.mjs';
+import { PilotScheduler, PILOT_FLAG } from '../core/autopilot-schedule.mjs';
+import { AutopilotStore } from '../core/autopilot-store.mjs';
+import { Autopilot } from '../core/autopilot.mjs';
+import { TelegramClient } from '../core/telegram.mjs';
 import { createSecrets } from './secrets.mjs';
 import { Composio, COMPOSIO_BASE } from '../core/composio.mjs';
 import { startUpdates } from './updater.mjs';
@@ -77,9 +81,9 @@ function appMenu(){
   const edit={label:'Editar',submenu:[{label:'Desfazer',role:'undo'},{label:'Refazer',role:'redo'},{type:'separator'},{label:'Recortar',role:'cut'},{label:'Copiar',role:'copy'},{label:'Colar',role:'paste'},{label:'Colar sem formatação',role:'pasteAndMatchStyle'},{label:'Selecionar tudo',role:'selectAll'}]};
   const view={label:'Exibir',submenu:[{label:'Aumentar',role:'zoomIn'},{label:'Diminuir',role:'zoomOut'},{label:'Tamanho original',role:'resetZoom'},{type:'separator'},{label:'Tela cheia',role:'togglefullscreen'}]};
   const mac=process.platform==='darwin'?[{label:'Carrossell',submenu:[{role:'about',label:'Sobre o Carrossell'},{type:'separator'},{role:'hide',label:'Ocultar'},{role:'quit',label:'Sair'}]}]:[];
-  return Menu.buildFromTemplate([...mac,edit,view,{label:'Janela',submenu:[{label:'Minimizar',role:'minimize'},{label:'Fechar',role:'close'}]}]);
+  return Menu.buildFromTemplate([...mac,edit,view,{label:'Janela',submenu:[{label:'Minimizar',role:'minimize'},{label:'Fechar',role:'close'},{type:'separator'},{label:'Sair',role:'quit'}]}]);
 }
-app.on('second-instance',(_event,argv)=>{if(argv.includes(SCHEDULE_FLAG))void publishDue?.();else if(!argv.includes(BACKGROUND))void showUI?.();});
+app.on('second-instance',(_event,argv)=>{if(argv.includes(PILOT_FLAG))void runtime?.autopilot?.step();else if(argv.includes(SCHEDULE_FLAG))void publishDue?.();else if(!argv.includes(BACKGROUND))void showUI?.();});
 // Link de conexão do Instagram: só https do Composio, Instagram ou Facebook abre no navegador.
 // Só em desenvolvimento: PACTO_COMPOSIO_URL aponta para um Composio falso local (provas de interface) e o link não abre o navegador.
 const fakeComposio=!app.isPackaged&&/^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.PACTO_COMPOSIO_URL||'')?process.env.PACTO_COMPOSIO_URL:'';
@@ -93,8 +97,10 @@ app.whenReady().then(async()=>{
   codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
   const render=createRenderer({folder:join(app.getPath('userData'),'render'),fontsDir:join(root,'node_modules','@fontsource','archivo','files')});
   const run=promisify(execFile);
-  const scheduler=new OsScheduler({exe:process.execPath,args:app.isPackaged?[BACKGROUND]:[root,BACKGROUND],run:(cmd,args)=>run(cmd,args,{windowsHide:true}),writeFile:async(file,data)=>{await mkdir(dirname(file),{recursive:true});await writeFile(file,data);},rm:file=>rm(file,{force:true}),tempDir:app.getPath('temp'),agentsDir:join(homedir(),'Library','LaunchAgents'),uid:process.getuid?.()??0});
-  runtime=new Runtime({store,profiles,codex,knowledge,emit,instagram:{composio:options=>new Composio({...options,base:fakeComposio?`${fakeComposio}/api/v3.1`:COMPOSIO_BASE})},dialogs:{login,render,readPage,cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),secrets:createSecrets(app.getPath('userData')),scheduler,openAuth,toJpeg:pngs=>jpegCards(pngs,nativeImage),
+  const schedulerOptions={exe:process.execPath,args:app.isPackaged?[BACKGROUND]:[root,BACKGROUND],run:(cmd,args)=>run(cmd,args,{windowsHide:true}),writeFile:async(file,data)=>{await mkdir(dirname(file),{recursive:true});await writeFile(file,data);},rm:file=>rm(file,{force:true}),tempDir:app.getPath('temp'),agentsDir:join(homedir(),'Library','LaunchAgents'),uid:process.getuid?.()??0};
+  const scheduler=new OsScheduler(schedulerOptions);
+  const pilotScheduler=!app.isPackaged&&process.env.PACTO_AUTOPILOT_NO_TASKS==='1'?{add:async()=>{},remove:async()=>{}}:new PilotScheduler(schedulerOptions);
+  runtime=new Runtime({store,profiles,codex,knowledge,emit,instagram:{composio:options=>new Composio({...options,base:fakeComposio?`${fakeComposio}/api/v3.1`:COMPOSIO_BASE})},dialogs:{login,render,readPage,openTelegram:async raw=>{const url=new URL(raw);if(url.protocol!=='https:'||url.hostname!=='t.me')throw new Error('Link do Telegram inválido.');return shell.openExternal(url.href);},cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),secrets:createSecrets(app.getPath('userData')),scheduler,openAuth,toJpeg:pngs=>jpegCards(pngs,nativeImage),
     async savePdf(project,bytes){const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'documento';const result=await dialog.showSaveDialog(window,{title:'Salvar PDF',defaultPath:`${suggested}.pdf`,filters:[{name:'PDF',extensions:['pdf']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,bytes);return {path:result.filePath};},
     async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:'Exportar carrossel',defaultPath:`${suggested}.zip`,filters:[{name:'Carrossel ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
     async normalizeFiles(files){return normalizeFiles(files,nativeImage);},
@@ -102,6 +108,10 @@ app.whenReady().then(async()=>{
     async openCourse(url){const u=new URL(url);if(u.protocol!=='https:'||u.hostname!=='www.youtube.com')throw new Error('Link do curso inválido.');await shell.openExternal(u.href);},
     async importReference(){const result=await dialog.showOpenDialog(window,{title:'Importar referência visual',properties:['openFile'],filters:[{name:'Imagens',extensions:['png','jpg','jpeg','webp']}]});if(result.canceled||!result.filePaths[0])return {cancelled:true};const file=result.filePaths[0];if((await stat(file)).size>20*1024*1024)throw new Error('Use uma referência de até 20 MB.');const bytes=await readFile(file);if(nativeImage.createFromBuffer(bytes).isEmpty())throw new Error('Não foi possível ler a imagem.');const extension=extname(file).toLowerCase();const mime=extension==='.png'?'png':extension==='.webp'?'webp':'jpeg';const ref=validateReference({name:file.split(/[\\/]/).at(-1),dataUrl:`data:image/${mime};base64,${bytes.toString('base64')}`});return ref;}
   }});
+  const telegramBase=!app.isPackaged&&/^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.PACTO_TELEGRAM_URL||'')?process.env.PACTO_TELEGRAM_URL:undefined;
+  runtime.autopilot=new Autopilot({runtime,state:await new AutopilotStore(app.getPath('userData')).init(),secrets:runtime.dialogs.secrets,scheduler:pilotScheduler,clientFactory:token=>new TelegramClient({token,...(telegramBase?{base:telegramBase}:{})})});
+  try{await runtime.autopilot.rearm();}catch{runtime.autopilot.connectionError='Não foi possível registrar a rotina no sistema. Abra o piloto e salve a configuração novamente.';}
+  runtime.autopilot.start();void runtime.autopilot.step();
   ipcMain.handle('pacto:request',async(event,action,args)=>{
     if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'||action==='titleBar'))throw new Error('Solicitação não permitida.');
     if(action==='installUpdate'){updates?.install();return {ok:true};}
@@ -115,13 +125,13 @@ app.whenReady().then(async()=>{
   publishDue=async()=>{
     try{const r=await runtime.request('publishDue');if(r.published.length)notify('Carrossell · post publicado',r.published.length>1?`${r.published.length} carrosséis agendados foram publicados no Instagram.`:'O carrossel agendado foi publicado no Instagram.');for(const f of r.failed)notify('Carrossell · o post agendado não saiu',f.error);if(r.late.length)notify('Carrossell · post agendado atrasado','O computador estava desligado na hora marcada. Abra o Carrossell para postar agora ou cancelar.');}
     catch(error){console.error(`Agendados: ${safeError(error).message}`);}
-    if(headless&&process.argv.includes(SCHEDULE_FLAG)&&!windowOpen()&&!control?.clients()&&!runtime.job)app.quit();
+    if(headless&&process.argv.includes(SCHEDULE_FLAG)&&!windowOpen()&&!control?.clients()&&!runtime.job&&!runtime.autopilot?.keepAlive())app.quit();
   };
   const metrics=async()=>{if(!runtime.dialogs.secrets.hasKey())return;for(const p of profiles.list())await runtime.request('refreshMetrics',{profileId:p.id}).catch(()=>{});};
   void publishDue();
   setTimeout(()=>void metrics(),60000).unref();setInterval(()=>void metrics(),30*60000).unref();
   // Sem janela, sem trabalho e sem CLI conectada por 10 minutos: fecha.
-  setInterval(()=>{if(!windowOpen()&&!runtime.job&&!control?.clients()&&Date.now()-lastActivity>IDLE_MS)app.quit();},Math.min(30000,IDLE_MS)).unref();
+  setInterval(()=>{if(!windowOpen()&&!runtime.job&&!runtime.autopilot?.keepAlive()&&!control?.clients()&&Date.now()-lastActivity>IDLE_MS)app.quit();},Math.min(30000,IDLE_MS)).unref();
   let started=false;
   showUI=async()=>{
     if(windowOpen()){if(window.isMinimized())window.restore();window.show();window.focus();return;}
@@ -136,4 +146,4 @@ app.whenReady().then(async()=>{
   void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
 }).catch(error=>{dialog.showErrorBox('Não foi possível abrir o Carrossell',safeError(error).message);app.quit();});
 // Fechar a janela com a CLI conectada ou trabalho rodando deixa o app em segundo plano até terminar.
-app.on('window-all-closed',()=>{if(control?.clients()||runtime?.job)return;app.quit();});app.on('before-quit',()=>{void runtime?.sharing?.stop();codex?.stop();});
+app.on('window-all-closed',()=>{if(control?.clients()||runtime?.job||runtime?.autopilot?.keepAlive())return;app.quit();});app.on('before-quit',()=>{runtime?.autopilot?.stop();void runtime?.sharing?.stop();codex?.stop();});

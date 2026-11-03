@@ -139,8 +139,10 @@ export class Store {
     }
     this.data.settings=next;await this.persist();return this.state();
   }
-  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId='',attachments=[],madeBy=''}){
-    const now=new Date().toISOString();const f=format(kind);const p={id:randomUUID(),format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',madeBy:text(String(madeBy||''),40),stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
+  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId='',attachments=[],madeBy=''}, {reservedId}={}){
+    const id=reservedId?validId(reservedId):randomUUID();
+    if(this.data.projects.some(p=>p.id===id))return this.get(id);
+    const now=new Date().toISOString();const f=format(kind);const p={id,format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',madeBy:text(String(madeBy||''),40),stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
     this.data.projects.unshift(p);await this.persist();return this.get(p.id);
   }
   async saveProject(args){

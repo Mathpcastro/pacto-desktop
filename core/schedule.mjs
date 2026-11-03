@@ -29,10 +29,10 @@ const localStamp=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate()
 const xml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const quote=a=>/[\s"]/.test(a)?`"${a.replace(/"/g,'\\"')}"`:a;
 // Tarefa do usuário atual, sem administrador; StartWhenAvailable roda depois se o PC estava desligado.
-export function windowsTaskXml({at,exe,args}){
+export function windowsTaskXml({at,exe,args,executionTimeLimit='PT1H',description='Carrossell: publicar um post agendado no Instagram'}){
   return `<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-  <RegistrationInfo><Description>Carrossell: publicar um post agendado no Instagram</Description></RegistrationInfo>
+  <RegistrationInfo><Description>${xml(description)}</Description></RegistrationInfo>
   <Triggers><TimeTrigger><StartBoundary>${localStamp(at)}</StartBoundary><Enabled>true</Enabled></TimeTrigger></Triggers>
   <Principals><Principal id="Author"><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
   <Settings>
@@ -41,7 +41,7 @@ export function windowsTaskXml({at,exe,args}){
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
     <StartWhenAvailable>true</StartWhenAvailable>
     <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
-    <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
+    <ExecutionTimeLimit>${xml(executionTimeLimit)}</ExecutionTimeLimit>
     <Enabled>true</Enabled>
   </Settings>
   <Actions Context="Author"><Exec><Command>${xml(exe)}</Command><Arguments>${xml(args.map(quote).join(' '))}</Arguments></Exec></Actions>
@@ -76,7 +76,7 @@ export class OsScheduler {
     if(this.platform==='win32'){
       const file=this.join(this.tempDir,`carrossell-task-${id}.xml`);
       // O Agendador lê o XML em UTF-16 com BOM.
-      await this.writeFile(file,Buffer.concat([Buffer.from([0xff,0xfe]),Buffer.from(windowsTaskXml({at,exe:this.exe,args:this.args}),'utf16le')]));
+      await this.writeFile(file,Buffer.concat([Buffer.from([0xff,0xfe]),Buffer.from(windowsTaskXml({at,exe:this.exe,args:this.args,...this.xmlOptions}),'utf16le')]));
       try{await this.run('schtasks.exe',['/Create','/TN',this.name(id),'/XML',file,'/F']);}finally{await this.rm(file).catch(()=>{});}
     }else if(this.platform==='darwin'){
       const label=this.name(id),file=this.join(this.agentsDir,`${label}.plist`);

@@ -257,3 +257,13 @@ Especificação: `docs/superpowers/specs/2026-11-02-telegram-autopilot-design.md
 Nenhuma funcionalidade Telegram implementada, token cadastrado, conta alterada, mensagem enviada, geração real ou publicação feita. Nenhum push/merge/release desta frente. O piloto exige manutenção do processo em segundo plano, pairing privado e decisões persistidas para evitar cliques repetidos e publicação duplicada; esses pontos estão detalhados na especificação.
 
 Usuário acrescentou a revisão obrigatória das versões 0.7.2 e 0.7.3 após o término das frentes paralelas: conferir diffs, integração, regressões e prontidão da release antes de avançar. Checklist detalhado na especificação do piloto Telegram. Sem autorização adicional de publicação.
+
+## 02/11/2026 — Piloto Telegram implementado localmente sobre 0.7.3
+
+Autorização para retomar recebida após conclusão das duas frentes. Worktree `C:\Users\Admin2\Documents\pacto-app-telegram`, branch `codex/telegram-autopilot`, atualizada para tag `v0.7.3` / `9614d92`. Revisadas as mudanças efetivas .1→.2→.3 e o workflow 41554166253 (sucesso; release 0.7.3 pública). Adaptado ao tamanho 2–10 para publicar, `Runtime.job.done`, assets/logotipo e invalidação de revisões após alterações no Estúdio.
+
+Cliente Telegram, cofre seguro, pairing, config por perfil, motor, agenda própria, segundo plano e interface integrados. Aprovação explícita antes de publicar/agendar; estados incertos não são repetidos automaticamente. Guards para cold start, exclusão de projeto/perfil, callbacks antigos e rascunhos editados após agendamento. Detalhes na especificação e plano em `docs/superpowers/`.
+
+Validação final: 162 testes; build; renderer9; fases46; referências16; pilotoUI14, todos aprovados. Tarefa real Windows / PT0S executou programa marcador e foi removida. Telegram real autorizado confirmou vínculo, álbum de 2 cards manuais renderizados, legenda e callback Descartar; sem geração por IA ou Instagram real. Token removido do cofre temporário e fora de fontes/relatórios. Revisão independente sem P1/P2 remanescentes nos pontos revisados.
+
+Sem push, merge, instalador novo ou release do piloto. Permanece nesta worktree. Faltam validações externas do fluxo completo com conta ChatGPT e postagem real e Mac físico; falhas de publicação ficam incertas para conferência manual porque o Social existente não classifica com segurança uma resposta perdida.

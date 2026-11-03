@@ -1,4 +1,5 @@
 import { Composio } from './composio.mjs';
+import { approvalFingerprint } from './approval.mjs';
 import { accountInfo, fetchMetrics, nextMetricsAt, postable, publishCarousel, recentPosts } from './instagram.mjs';
 import { duePosts, parseWhen } from './schedule.mjs';
 import { text } from './store.mjs';
@@ -97,7 +98,9 @@ export class Social {
     return this.changed();
   }
   async publish(id,{accounts,fromSchedule=false}={}){
-    const p=this.store.get(id);postable(p);const targets=this.pick(accounts);
+    const p=this.store.get(id);
+    if(p.schedule?.approvalFingerprint&&approvalFingerprint(p)!==p.schedule.approvalFingerprint)throw new Error('O carrossel foi alterado depois da aprovação no Telegram. Cancele o agendamento e aprove uma nova prévia.');
+    postable(p);const targets=this.pick(accounts);
     const done=p.instagram?.posts||[],todo=targets.filter(a=>!done.some(x=>x.accountId===a.id));
     if(!todo.length)throw new Error(targets.length>1?'Este carrossel já foi postado nessas contas.':`Este carrossel já foi postado em @${targets[0].username}.`);
     if(this.posting.has(id))throw new Error('Este carrossel já está sendo postado.');
@@ -123,13 +126,13 @@ export class Social {
     if(errors.length)throw new Error(posted.length?`Postado em ${posted.map(r=>`@${r.username}`).join(', ')}. Não saiu em ${errors.join(' · ')}`:errors.join(' · '));
     return this.store.get(id);
   }
-  async schedule(id,at,accounts){
+  async schedule(id,at,accounts,{approvalFingerprint:approved}={}){
     const when=parseWhen(at,new Date(this.now())),p=this.store.get(id);postable(p);
     const done=p.instagram?.posts||[],targets=this.pick(accounts).filter(a=>!done.some(x=>x.accountId===a.id));
     if(!targets.length)throw new Error('Este carrossel já foi postado nessas contas.');
     if(!this.rt.dialogs.scheduler)throw new Error('Disponível só no aplicativo.');
     await this.rt.dialogs.scheduler.add(id,when);
-    return this.rt.update(id,{schedule:{at:when.toISOString(),accounts:targets.map(a=>a.id),usernames:targets.map(a=>a.username),status:'scheduled',error:'',createdAt:new Date(this.now()).toISOString()}});
+    return this.rt.update(id,{schedule:{at:when.toISOString(),accounts:targets.map(a=>a.id),usernames:targets.map(a=>a.username),status:'scheduled',error:'',createdAt:new Date(this.now()).toISOString(),...(approved?{approvalFingerprint:approved}:{})}});
   }
   async unschedule(id){this.store.get(id);await this.rt.dialogs.scheduler?.remove(id).catch(()=>{});return this.rt.update(id,{schedule:null});}
   // Roda em todos os perfis: chamado pela tarefa do sistema e sempre que o app abre.

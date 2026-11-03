@@ -2,7 +2,21 @@
 
 Data: 02/11/2026. Pedido autorizado: implementar o fluxo descrito pelo usuário, isolado das duas frentes em andamento, aguardando biblioteca/seletor de cards e correção do logotipo.
 
-## Estado desta preparação
+## Estado atual — implementação local concluída
+
+Esta seção substitui o estado histórico de preparação abaixo. Em 02/11/2026, o usuário confirmou que as frentes anteriores estavam prontas e autorizou começar. A worktree foi atualizada para `v0.7.3` / `9614d92`, preservando os dois commits documentais locais por rebase. A 0.7.2 e a 0.7.3 foram revisadas; a release 0.7.3 terminou com sucesso no workflow 41554166253.
+
+Implementados: cliente Telegram, cofre cifrado com gravação serial, vínculo privado, configuração por perfil, rotina por dias/horário, execução Radar → texto → primeira capa → cards → stories, prévia e decisões, confirmação de agendamento, revisão por fingerprint, recuperação e segundo plano. O piloto permite 2–10 cards, respeitando a publicação existente; a geração manual de 1 card da 0.7.3 permanece igual.
+
+A execução espera `Runtime.job.done` e a conexão inicial do ChatGPT sem perder o horário devido. Mudanças posteriores à prévia ou a um agendamento invalidam a aprovação. Exclusões invalidam os botões; ACK expirado do Telegram não bloqueia a fila. Tarefas próprias do piloto usam PT0S no Windows; erros de rearme permanecem visíveis e são tentados novamente. No Mac, a tarefa usa um launcher separado para não encerrar o app ao ser rearmada; não houve teste físico de Mac.
+
+Verificações: 162/162 testes, build, 9 regressões do renderer, 46 verificações de fases, 16 da biblioteca e 14 da nova tela. Agendador Windows real executou processo marcador com PT0S, sem abrir/publicar no Instagram. Bot real autorizado: vínculo, álbum de 2 cards de texto manual renderizados pelo app, legenda e callback Descartar recebidos. Essa prova não usou IA nem publicou. Token de teste removido do cofre temporário; nenhum segredo no código/relatórios.
+
+Revisões independentes de conformidade e qualidade encerradas sem P1/P2 remanescentes nos pontos revisados. Sem push, merge, instalador novo ou release desta branch. A versão do pacote continua 0.7.3 apenas como base; o piloto ainda não foi distribuído aos compradores.
+
+Limite deliberado: o Social atual não preserva classificação confiável entre falha definitiva e resposta de publicação perdida. Por segurança, qualquer erro ao publicar fica como resultado incerto e exige conferência manual, preservando os recibos das contas já publicadas. Não há reenvio automático nem botão de retry para esse estado. Geração real completa com ChatGPT e postagem real pelo piloto permanecem sem validação externa; testes automatizados usam provedores simulados.
+
+## Estado histórico desta preparação
 
 - Worktree exclusiva: `C:\Users\Admin2\Documents\pacto-app-telegram`.
 - Branch: `codex/telegram-autopilot`.

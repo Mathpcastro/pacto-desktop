@@ -6,6 +6,7 @@ import AgentSetup from "./AgentSetup.jsx";
 import { InstagramLogo, InstagramSummary } from "./Instagram.jsx";
 import { BarChart3 } from "lucide-react";
 import Analytics from "./Analytics.jsx";
+import Autopilot from "./Autopilot.jsx";
 
 // Marca em seções, como nas configurações dos bons apps: barra lateral à esquerda e uma seção por vez.
 const BRAND_TABS = {
@@ -17,6 +18,7 @@ const BRAND_TABS = {
   otimizar: { group: "Ensinar", label: "Otimizar", icon: GraduationCap },
   instagram: { group: "Conexões", label: "Instagram", icon: null },
   analytics: { group: "Conexões", label: "Analytics", icon: BarChart3 },
+  piloto: { group: "Conexões", label: "Piloto automático", icon: Bot },
   agentes: { group: "Conexões", label: "Agentes", icon: Bot },
 };
 const TAB_KEY = "carrossell-brand-tab";
@@ -491,6 +493,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
         )}
       {tab === "instagram" && <InstagramSummary state={state} request={request} onNotice={onNotice} onOpen={onInstagram} />}
       {tab === "analytics" && <Analytics key={state.profileId} state={state} request={request} onNotice={onNotice} onInstagram={onInstagram} />}
+      {tab === "piloto" && <Autopilot key={state.profileId} state={state} request={request} onNotice={onNotice} />}
       {tab === "agentes" && <AgentSetup request={request} isPending={isPending} onNotice={onNotice} onOpen={onAgents} />}
         </div>
       </div>
