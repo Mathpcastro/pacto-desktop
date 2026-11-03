@@ -1,11 +1,11 @@
 ---
 project: carrossell
-status: teste-local (não publicada)
-tags: [carrossell, release, teste-local]
+status: aprovada-para-publicacao
+tags: [carrossell, release]
 ---
-# Build local de teste Carrossell 0.7.3 — 02/11/2026
+# Release Carrossell 0.7.3 — 02/11/2026
 
-Esta versão está em preparação somente para teste local do usuário. Não foi publicada e não houve merge, push, tag, release ou execução de workflow. A publicação está condicionada ao teste e à aprovação do usuário.
+O usuário testou o build local e aprovou a publicação, pedindo somente remover a mensagem "Gasta menos do limite da conta" da opção de 4 cards. A mensagem foi removida no commit `3ba15e7`. A correção de anexar logotipo na entrevista de marca/design, enviada separadamente à `main` em `6a61ce8`, foi incorporada pelo merge `5cf0078`.
 
 ## Novidades
 
@@ -13,29 +13,28 @@ Esta versão está em preparação somente para teste local do usuário. Não fo
 - Quantidade de cards Automática ou de 1 a 10 no composer e seletor Tamanho no Estúdio.
 - Alteração do tamanho durante escrita e geração de arte pela ação `resizeCarousel`, com cancelamento seguro da operação anterior, adaptação da copy e retomada somente das artes pendentes.
 - Carrossel de um card permitido do texto à exportação; documentos continuam exigindo ao menos duas páginas.
+- Opção de 4 cards sem a antiga mensagem sobre limite da conta.
+- Correção remota preservada: anexar logotipo e outras imagens na entrevista de marca/design.
 
-## Evidências já observadas antes do bump
+## Evidências da versão integrada
 
-- Base `c04635b` limpa.
-- Suíte completa: 130/130 testes aprovados.
-- Build Vite concluído.
+- Suíte completa: 131/131 testes aprovados após integrar `origin/main`.
+- Build Vite concluído com `package.json` e lockfile em 0.7.3.
 - Regressões do renderer: 9/9 aprovadas.
 - Fases da interface: 46/46 aprovadas.
 - Provas de Referências/Tamanho: 16/16 aprovadas.
-
-## Validação do build local 0.7.3
-
-- `npm run dist` concluído com Node independente e `--publish never`: `release/Carrossell-Setup-0.7.3.exe`, 226944563 bytes, SHA-256 `bf9a460571c92a3422b109f2b9de253035ca6d5c45e3c35a3bfa91e35ec30728`.
-- `release/win-unpacked/Carrossell.exe` gerado com `FileVersion` 0.7.3 e `ProductVersion` 0.7.3.0.
-- ASAR com `package.json` 0.7.3, chunk de Referências, 36 IDs e 36 miniaturas WebP embutidas.
-- `scripts/packaged-smoke.mjs` aprovado sobre cópia temporária da biblioteca de prova: 8 aulas, ZIP com dois PNGs 1080×1350 e legenda, modelo 1080×1350, PDF válido de 21479 bytes e zero erros de página. O app instalado não foi aberto e dados reais do usuário não foram alterados.
-- Testes focados após o bump: 26/26 em `value`, `images` e `references`.
+- Revisão final independente: `APPROVED FOR RELEASE`.
 - `git diff --check` sem erros.
 
-## Limites desta etapa
+## Validação do build local de teste 0.7.3
 
-- IA real e alteração de tamanho durante processamento real não foram testadas nesta etapa; as provas anteriores não substituem esse teste do usuário.
-- Não houve teste em Mac físico nem build local de macOS.
-- Instalador Windows sem assinatura de código; macOS segue sem assinatura e notarização Apple.
-- Não abrir o app instalado nem alterar dados reais do usuário nesta preparação.
-- Não há release pública, tag, merge, push ou workflow associado a este build de teste.
+- `npm run dist` concluiu com `--publish never`: `release/Carrossell-Setup-0.7.3.exe`, 226944563 bytes, SHA-256 `bf9a460571c92a3422b109f2b9de253035ca6d5c45e3c35a3bfa91e35ec30728`. Esse build antecedeu apenas a remoção da mensagem e a integração da correção remota; os binários públicos serão produzidos pelo workflow da tag final.
+- ASAR conferido com package 0.7.3, 36 IDs e 36 miniaturas WebP embutidas.
+- `scripts/packaged-smoke.mjs` aprovado: ZIP com dois PNGs 1080×1350 e legenda, modelo 1080×1350, PDF válido e zero erros de página.
+
+## Limites
+
+- A troca de tamanho durante processamento foi validada com mocks e interface, sem uma nova prova ponta a ponta com IA real nesta etapa.
+- Não houve teste em Mac físico; builds de macOS dependem do workflow.
+- Instaladores sem assinatura de código; macOS segue sem notarização Apple e com atualização manual.
+- Resultados da publicação, feed e downloads serão registrados somente após verificação real.
