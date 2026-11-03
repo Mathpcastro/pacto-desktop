@@ -104,6 +104,7 @@ try {
   });
   await openPilot();
   await page.screenshot({ path: join(out, "01-disconnected.png"), fullPage: true });
+  await page.getByRole("button", { name: "Conectar Telegram", exact: true }).click();
   const tokenInput = page.getByLabel("Token do bot do Telegram", { exact: true });
   await check("campo de token é protegido e não oferece preenchimento automático", async () => {
     await expect(tokenInput).toHaveAttribute("type", "password");
@@ -164,6 +165,7 @@ try {
     await page.getByRole("heading", { name: "O que vamos criar hoje?" }).waitFor();
     assert.equal((await bootstrap()).autopilot.pairing.code, pendingPair.code);
     await openPilot();
+    await page.getByRole("button", { name: "Gerenciar conexão", exact: true }).click();
     await expect(page.getByText(pendingPair.code, { exact: true })).toBeVisible();
   });
 
@@ -179,6 +181,8 @@ try {
     assert.equal(delivered[0].chatId, 42);
     assert.match(delivered[0].text, /Telegram conectado ao Carrossell/);
   });
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Configurar rotina", exact: true }).click();
   const save = page.getByRole("button", { name: "Salvar rotina", exact: true });
   const cards = page.getByLabel("Quantidade de cards, de 2 a 10", { exact: true });
   await check("cards aceitam apenas 2 a 10 na interface", async () => {
@@ -211,6 +215,7 @@ try {
     assert.equal(config.cardCount, 10);
     assert.deepEqual(config.accounts, []);
     assert.equal(config.nextAt, null);
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: "Ativar rotina", exact: true })).toBeDisabled();
     await expect(page.getByRole("button", { name: "Gerar agora", exact: true })).toBeDisabled();
   });
@@ -219,6 +224,7 @@ try {
     await page.reload();
     await page.getByRole("heading", { name: "O que vamos criar hoje?" }).waitFor();
     await openPilot();
+    await page.getByRole("button", { name: "Configurar rotina", exact: true }).click();
     await expect(page.getByLabel("Horário da rotina", { exact: true })).toHaveValue("18:35");
     await expect(cards).toHaveValue("10");
     assert.equal((await bootstrap()).autopilot.paired, true);
@@ -232,20 +238,25 @@ try {
       return id;
     }, profile);
     await page.getByLabel("Horário da rotina", { exact: true }).fill("22:12");
+    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: /Perfil:.*Trocar de perfil/ }).click();
     await page.getByRole("menuitemradio", { name: "Segundo perfil de prova", exact: true }).click();
     await openPilot();
     assert.equal((await bootstrap()).profileId, secondId);
+    await page.getByRole("button", { name: "Configurar rotina", exact: true }).click();
     await expect(page.getByLabel("Horário da rotina", { exact: true })).toHaveValue("09:00");
     await expect(cards).toHaveValue("6");
     assert.equal((await bootstrap()).autopilot.paired, true);
+    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: /Perfil:.*Trocar de perfil/ }).click();
     const firstName = (await bootstrap()).profiles.find((item) => item.id === firstProfile).name;
     await page.getByRole("menuitemradio", { name: firstName, exact: true }).click();
     await openPilot();
+    await page.getByRole("button", { name: "Configurar rotina", exact: true }).click();
     await expect(page.getByLabel("Horário da rotina", { exact: true })).toHaveValue("18:35");
     await expect(cards).toHaveValue("10");
   });
+  await page.keyboard.press("Escape");
   await check("telas clara e escura não geram overflow horizontal", async () => {
     for (const theme of ["light", "dark"]) {
       await page.evaluate((value) => { document.documentElement.dataset.theme = value; }, theme);
@@ -299,18 +310,21 @@ try {
       const state = { profileId: "fixture-only", account: { connected: false }, composio: { accounts: [] }, autopilot: { hasToken: false, paired: false, config: { enabled: false }, jobs: batch.map(([status], index) => ({ id: `fixture-${status}`, title: `Exemplo: ${status}`, status, createdAt: new Date(Date.UTC(2026, 10, 2, 12, index)).toISOString() })) } };
       await fixtureRoot.evaluate((view, state) => view.render(state), state);
       const fixture = page.locator("#pilot-render-fixture");
+      await fixture.getByRole("button", { name: "Ver últimos pedidos", exact: true }).click();
+      const history = page.getByRole("dialog", { name: "Últimos pedidos do piloto", exact: true });
       for (const [status, label] of batch) {
-        const item = fixture.locator(".pending-item").filter({ hasText: `Exemplo: ${status}` });
+        const item = history.locator(".pending-item").filter({ hasText: `Exemplo: ${status}` });
         await expect(item).toHaveCount(1);
         await expect(item.getByRole("status")).toHaveText(label);
         await expect(item.getByRole("button", { name: /^Descartar pedido:/ })).toHaveCount(discardable.has(status) ? 1 : 0);
         await expect(item.getByRole("button", { name: "Retomar", exact: true })).toHaveCount(status === "error" ? 1 : 0);
         if (status === "uncertain") await expect(item).toContainText("Confira no Instagram se o post saiu");
       }
-      await fixture.locator(".pending-item").first().scrollIntoViewIfNeeded();
+      await history.locator(".pending-item").first().scrollIntoViewIfNeeded();
       await page.screenshot({ path: join(out, `05-status-fixture-${start / 6 + 1}-top.png`), fullPage: true });
-      await fixture.locator(".pending-item").last().scrollIntoViewIfNeeded();
+      await history.locator(".pending-item").last().scrollIntoViewIfNeeded();
       await page.screenshot({ path: join(out, `05-status-fixture-${start / 6 + 1}-bottom.png`), fullPage: true });
+      await page.keyboard.press("Escape");
     }
     const after = await bootstrap();
     assert.deepEqual(after.autopilot.jobs, before.autopilot.jobs);

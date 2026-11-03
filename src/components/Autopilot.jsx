@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, CalendarClock, ExternalLink, Pause, Play, RefreshCw } from "lucide-react";
+import { CalendarClock, ExternalLink, Pause, Play, RefreshCw, Monitor, Check, MessageCircle } from "lucide-react";
 import { STYLES } from "../../core/templates.mjs";
 import { Spinner } from "../ui.jsx";
+import Dialog from "./Dialog.jsx";
+import telegramLogo from "../assets/telegram.svg";
 
 const STYLE_LABEL = { ia: "Arte com IA", tweet: "Tweet", texto: "Texto em fundo claro", textopreto: "Texto em fundo preto", fototexto: "Texto + foto", fundo: "Foto de fundo", recorte: "Capa com sua foto" };
 const DAYS = [[1, "Segunda", "Seg"], [2, "Terça", "Ter"], [3, "Quarta", "Qua"], [4, "Quinta", "Qui"], [5, "Sexta", "Sex"], [6, "Sábado", "Sáb"], [0, "Domingo", "Dom"]];
@@ -41,6 +43,9 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
   const accounts = (state.composio?.accounts || []).filter((account) => account.status === "ACTIVE");
   const [draft, setDraft] = useState(() => editable(saved));
   const edited = useRef(false);
+  const [dialog, setDialog] = useState(null);
+  const [previewId, setPreviewId] = useState(null);
+  const closeDialog = () => { setDialog(null); setToken(""); setEditingToken(false); setDisconnecting(false); };
   const [token, setToken] = useState("");
   const [editingToken, setEditingToken] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -104,27 +109,66 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
     await act("saveAutopilot", { config: { ...editable(saved), enabled: !saved.enabled } }, saved.enabled ? "Rotina pausada. Seus ajustes foram mantidos." : "Rotina ativada.");
   };
 
+  const summary = editable(saved);
+  const daySummary = same(summary.days, [1, 2, 3, 4, 5]) ? "Seg–sex" : DAYS.filter(([day]) => summary.days.includes(day)).map(([, , short]) => short).join(", ") || "Escolha os dias";
+  const [hour, minute] = summary.time.split(":");
+  const connectionStatus = pilot.connectionError ? "Conexão precisa de atenção" : connected ? "Conectado" : pilot.hasToken ? "Falta vincular a conversa" : "Não conectado";
+  const activeJobs = jobs.filter((job) => !["published", "complete", "discarded", "cancelled", "scheduled"].includes(job.status));
+  const previewProject = (state.projects || []).find((project) => project.id === previewId);
+  const renderJobs = (list) => list.map((job) => <div className="pending-item" key={job.id}>
+    <div className="row"><b style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{job.title || "Preparação de carrossel"}</b><span className={`chip ${job.status === "published" || job.status === "complete" ? "good" : ""}`} role="status">{JOB_LABEL[job.status] || "Em andamento"}</span></div>
+    {job.projectId && <button className="ghost-btn pilot-preview-link" onClick={() => { setPreviewId(job.projectId); setDialog("preview"); }}>Ver prévia</button>}
+    {job.createdAt && <span className="hint">{when(job.createdAt)}</span>}
+    {job.error && <p className="hint pilot-error">{job.error}</p>}
+    {job.status === "ready" && <p className="hint">Revise as imagens e aprove pelo Telegram para publicar.</p>}
+    {job.status === "uncertain" && <p className="hint">Confira no Instagram se o post saiu antes de qualquer nova tentativa. A publicação não será repetida automaticamente.</p>}
+    {DISCARDABLE.has(job.status) && <div className="row">
+      {job.status === "error" && <button className="btn small" disabled={Boolean(pending) || !connected || !state.account?.connected || running} onClick={() => act("retryAutopilot", { id: job.id }, "Pedido retomado.")}><RefreshCw size={14} /> Retomar</button>}
+      <button className="ghost-btn" disabled={Boolean(pending)} aria-label={`Descartar pedido: ${job.title || "carrossel"}`} onClick={() => act("discardAutopilot", { id: job.id }, "Pedido descartado.")}>Descartar pedido</button>
+    </div>}
+  </div>);
+
   return (
-    <section className="card-box" aria-label="Piloto automático">
-      <div className="section-head">
-        <Bot size={20} aria-hidden="true" />
-        <h2>{heading}</h2>
-        <span className="spacer" />
-        <span className={`chip ${saved.enabled ? "good" : ""}`} role="status">{saved.enabled ? "Rotina ativa" : "Rotina pausada"}</span>
-      </div>
-      <p className="hint" style={{ margin: 0 }}>O Carrossell prepara um carrossel nos dias escolhidos e envia para você revisar no Telegram. Só publica depois da sua aprovação. Os stories ficam prontos para você postar manualmente.</p>
-
-      <section className="sub telegram-guide" aria-label="Usar a conversa do Telegram">
-        <h3>Converse com o Carrossell pelo Telegram</h3>
-        <p>Depois de vincular sua conversa, envie um pedido em palavras. O Carrossell prepara o texto primeiro; você revisa e escolhe os próximos passos.</p>
-        <div className="telegram-examples"><blockquote>Crie um carrossel com 6 cards sobre erros ao vender serviços. Me mostre o texto primeiro.</blockquote><blockquote>Como foram os últimos 7 dias no Instagram da minha marca?</blockquote></div>
-        <p className="hint">Use <code>/ajuda</code> para ver o que está disponível, <code>/marcas</code> e <code>/projetos</code> para escolher o contexto, <code>/status</code> para acompanhar e <code>/cancelar</code> para parar o pedido da conversa.</p>
-        <p className="hint">Os pedidos de conteúdo usam o ChatGPT conectado ao app, com o computador ligado e sem suspensão. Claude e Gemini usam o modo separado de agentes e CLI. Publicar e agendar continuam dependendo da sua aprovação na prévia.</p>
+    <section className="pilot-layout" aria-label="Piloto automático">
+      {heading === "Piloto automático" && <header className="pilot-legacy-heading"><h2>{heading}</h2><p>Crie por rotina ou peça pelo Telegram.</p></header>}
+      <section className="pilot-connection" aria-labelledby="pilot-telegram-title">
+        <img className="pilot-telegram-logo" src={telegramLogo} alt="Telegram" />
+        <div className="pilot-connection-copy"><span className="pilot-eyebrow">TELEGRAM</span><h2 id="pilot-telegram-title">Seu Carrossell, no Telegram</h2><p>{connected ? `${pilot.bot?.username ? `@${pilot.bot.username.replace(/^@/, "")} · ` : ""}Sua conversa está vinculada.` : "Peça conteúdos e receba as prévias em uma conversa."}</p></div>
+        <div className="pilot-connection-actions"><span className={`pilot-connection-status ${connected ? "connected" : ""}`} role="status">{connectionStatus}</span><button className="btn primary" disabled={Boolean(pending)} onClick={() => connected ? act("openTelegramPair") : setDialog("connection")}>{connected ? "Abrir Telegram" : "Conectar Telegram"}<ExternalLink size={15} /></button><button className="ghost-btn" onClick={() => setDialog("connection")}>{pilot.hasToken ? "Gerenciar conexão" : "Como conectar"}</button></div>
       </section>
+      <div className="pilot-columns">
+        <section className="pilot-panel pilot-routine" aria-labelledby="pilot-routine-title">
+          <div className="pilot-section-top"><h2 id="pilot-routine-title">Sua rotina</h2><span className={`chip ${saved.enabled ? "good" : ""}`} role="status">{saved.enabled ? "Ativa" : "Pausada"}</span></div>
+          <p className="pilot-schedule">{daySummary}, às {Number(hour)}h{minute !== "00" ? minute : ""}</p>
+          <p className="pilot-routine-meta">{summary.cardCount} cards <span aria-hidden="true">·</span> {STYLE_LABEL[summary.style]}</p>
+          <div className="pilot-routine-footer"><div className="pilot-account-note"><strong>{summary.accounts.length ? summary.accounts.map((id) => { const account = accounts.find((a) => a.id === id); return account ? `@${(account.username || "conta sem nome").replace(/^@/, "")}` : "Conta indisponível"; }).join(", ") : "Nenhuma conta selecionada"}</strong><span>{summary.accounts.length ? "Contas para publicação" : "Defina na configuração"}</span></div><button className="btn" onClick={() => setDialog("routine")}>Configurar rotina</button></div>
+      <div className="pilot-routine-actions">
+        <div className="row">
+          <button className="btn" disabled={Boolean(pending) || (!saved.enabled && (!connected || !savedValid || !state.account?.connected))} onClick={toggleRoutine}>{saved.enabled ? <Pause size={15} /> : <Play size={15} />}{saved.enabled ? "Pausar rotina" : "Ativar rotina"}</button>
+          <button className="btn" disabled={Boolean(pending) || !connected || !state.account?.connected || !savedValid || dirty || running || Boolean(state.working)} onClick={() => act("runAutopilot", {}, "Preparação iniciada. Acompanhe o pedido abaixo.")}><CalendarClock size={15} />{pending === "runAutopilot" ? "Iniciando…" : "Gerar agora"}</button>
+        </div>
+        {dirty && <p className="hint" style={{ margin: 0 }}>Salve as alterações antes de gerar. Ativar ou pausar usa a rotina já salva e mantém o que você está editando.</p>}
+        {!connected && <p className="hint" style={{ margin: 0 }}>Conecte o bot e vincule sua conversa para ativar ou gerar.</p>}
+        {!state.account?.connected && <p className="hint" style={{ margin: 0 }}>Conecte sua conta ChatGPT no Carrossell para preparar os textos e os stories.</p>}
+        {saved.enabled && saved.nextAt && <p className="hint" role="status" style={{ margin: 0 }}>Próxima preparação: {when(saved.nextAt)}.</p>}
 
+      </div>
+
+        </section>
+        <section className="pilot-panel pilot-review" aria-labelledby="pilot-review-title"><div className="pilot-section-top"><h2 id="pilot-review-title">Para revisar</h2>{activeJobs.length > 0 && <span className="chip">{activeJobs.length} pedido{activeJobs.length > 1 ? "s" : ""}</span>}</div>
+          {activeJobs.length ? <div className="pilot-job-list">{renderJobs(activeJobs)}</div> : <div className="pilot-review-empty"><MessageCircle size={27} aria-hidden="true" /><div><strong>As próximas ideias chegam aqui.</strong><p>{connected ? "Peça um conteúdo pelo Telegram ou use sua rotina." : "Conecte o Telegram para pedir seu primeiro conteúdo."}</p></div></div>}
+          <p className="pilot-approval-rule"><Check size={16} aria-hidden="true" />Você revisa antes de publicar.</p>
+          {jobs.length > 0 && <button className="ghost-btn" onClick={() => setDialog("history")}>Ver últimos pedidos</button>}
+        </section>
+      </div>
+      <section className="pilot-conversation" aria-labelledby="pilot-conversation-title"><h2 id="pilot-conversation-title">Peça pelo Telegram</h2><p>Uma mensagem é o ponto de partida. Experimente um pedido:</p><div className="pilot-examples"><blockquote>Crie um carrossel sobre [tema]. Me mostre o texto primeiro.</blockquote><blockquote>Como foram os últimos 7 dias no Instagram da minha marca?</blockquote></div><details className="pilot-commands"><summary>Ver exemplos e comandos</summary><div><p><code>/ajuda</code> O que você pode pedir · <code>/marcas</code> Escolher a marca · <code>/projetos</code> Escolher o projeto · <code>/status</code> Acompanhar · <code>/cancelar</code> Parar o pedido</p><p>Os stories ficam prontos para postagem manual. Claude e Gemini usam o modo separado de agentes e CLI. Publicar e agendar dependem da sua aprovação na prévia.</p></div></details></section>
+      <footer className="pilot-requirement"><Monitor size={18} aria-hidden="true" /><span>Requer computador ligado e conta ChatGPT conectada. Você pode fechar a janela; escolher Sair encerra o piloto.</span></footer>
+      {pending && <div className="row hint" role="status"><Spinner /> Aguarde…</div>}
+      {error && !dialog && <p role="alert" className="pilot-error">{error}</p>}
+      {dialog === "connection" && <Dialog title="Conexão do Telegram" onClose={closeDialog} className="pilot-dialog"><div className="pilot-dialog-body">
       <div className="sub" aria-label="Conexão do Telegram">
         <div className="sub-head">
-          <b>1. Conecte o Telegram</b>
+          <b>Seu bot e sua conversa</b>
           <span className={`chip ${connected ? "good" : ""}`} role="status">{pilot.connectionError ? "Conexão precisa de atenção" : connected ? "Conectado" : pilot.hasToken ? "Bot conectado · falta vincular a conversa" : "Não conectado"}</span>
         </div>
         {pilot.connectionError && <p className="hint" role="alert" style={{ margin: 0, color: "var(--danger)", overflowWrap: "anywhere" }}>{pilot.connectionError}</p>}
@@ -181,8 +225,11 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
         <p className="hint" style={{ margin: 0 }}>O bot e a conversa valem para todos os perfis deste computador. A rotina abaixo vale só para este perfil.</p>
       </div>
 
+        {error && <p role="alert" className="pilot-error">{error}</p>}
+      </div></Dialog>}
+      {dialog === "routine" && <Dialog title="Configurar rotina" onClose={closeDialog} className="pilot-dialog"><div className="pilot-dialog-body">
       <form className="sub" aria-label="Rotina deste perfil" onSubmit={saveRoutine}>
-        <div className="sub-head"><b>2. Escolha a rotina</b><span className="hint">Um carrossel por dia escolhido</span></div>
+        <div className="sub-head"><b>Rotina deste perfil</b><span className="hint">Um carrossel por dia escolhido</span></div>
         <fieldset disabled={Boolean(pending)} style={{ display: "grid", gap: 12, padding: 0, margin: 0, border: 0, minWidth: 0 }}>
           <legend className="hint" style={{ marginBottom: 8 }}>Dias da semana</legend>
           <div className="row" role="group" aria-label="Dias da rotina">
@@ -209,35 +256,13 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
         </fieldset>
       </form>
 
-      <div className="sub">
-        <div className="row">
-          <button className="btn" disabled={Boolean(pending) || (!saved.enabled && (!connected || !savedValid || !state.account?.connected))} onClick={toggleRoutine}>{saved.enabled ? <Pause size={15} /> : <Play size={15} />}{saved.enabled ? "Pausar rotina" : "Ativar rotina"}</button>
-          <button className="btn" disabled={Boolean(pending) || !connected || !state.account?.connected || !savedValid || dirty || running || Boolean(state.working)} onClick={() => act("runAutopilot", {}, "Preparação iniciada. Acompanhe o pedido abaixo.")}><CalendarClock size={15} />{pending === "runAutopilot" ? "Iniciando…" : "Gerar agora"}</button>
-        </div>
-        {dirty && <p className="hint" style={{ margin: 0 }}>Salve as alterações antes de gerar. Ativar ou pausar usa a rotina já salva e mantém o que você está editando.</p>}
-        {!connected && <p className="hint" style={{ margin: 0 }}>Conecte o bot e vincule sua conversa para ativar ou gerar.</p>}
-        {!state.account?.connected && <p className="hint" style={{ margin: 0 }}>Conecte sua conta ChatGPT no Carrossell para preparar os textos e os stories.</p>}
-        {saved.enabled && saved.nextAt && <p className="hint" role="status" style={{ margin: 0 }}>Próxima preparação: {when(saved.nextAt)}.</p>}
-        <p className="hint" style={{ margin: 0 }}>Mantenha o computador ligado, conectado à internet e sem suspensão. Você pode fechar a janela; escolher Sair encerra o piloto.</p>
-      </div>
-
-      <div className="sub" aria-label="Últimos pedidos do piloto">
-        <div className="sub-head"><b>Últimos pedidos</b><span className="hint">Até 8 mais recentes</span></div>
-        {!jobs.length && <p className="hint" style={{ margin: 0 }}>Os carrosséis preparados pelo piloto vão aparecer aqui.</p>}
-        {jobs.map((job) => <div className="pending-item" key={job.id} style={{ paddingTop: 12 }}>
-          <div className="row"><b style={{ flex: 1, minWidth: 150, overflowWrap: "anywhere" }}>{job.title || "Preparação de carrossel"}</b><span className={`chip ${job.status === "published" || job.status === "complete" ? "good" : ""}`} role="status">{JOB_LABEL[job.status] || "Em andamento"}</span></div>
-          {job.createdAt && <span className="hint">{when(job.createdAt)}</span>}
-          {job.error && <p className="hint" style={{ margin: 0, color: "var(--danger)", overflowWrap: "anywhere" }}>{job.error}</p>}
-          {job.status === "ready" && <p className="hint" style={{ margin: 0 }}>Revise as imagens e aprove pelo Telegram para publicar.</p>}
-          {job.status === "uncertain" && <p className="hint" style={{ margin: 0 }}>Confira no Instagram se o post saiu antes de qualquer nova tentativa. A publicação não será repetida automaticamente.</p>}
-          {DISCARDABLE.has(job.status) && <div className="row">
-            {job.status === "error" && <button className="btn small" disabled={Boolean(pending) || !connected || !state.account?.connected || running} onClick={() => act("retryAutopilot", { id: job.id }, "Pedido retomado.")}><RefreshCw size={14} /> Retomar</button>}
-            <button className="ghost-btn" disabled={Boolean(pending)} aria-label={`Descartar pedido: ${job.title || "carrossel"}`} onClick={() => act("discardAutopilot", { id: job.id }, "Pedido descartado.")}>Descartar pedido</button>
-          </div>}
-        </div>)}
-      </div>
-      {pending && <div className="row hint" role="status"><Spinner /> Aguarde…</div>}
-      {error && <p role="alert" style={{ margin: 0, color: "var(--danger)" }}>{error}</p>}
+        {error && <p role="alert" className="pilot-error">{error}</p>}
+      </div></Dialog>}
+      {dialog === "preview" && <Dialog title="Prévia do carrossel" onClose={closeDialog} className="pilot-dialog" wide><div className="pilot-dialog-body">
+        <p className="hint">{previewProject?.title || "Projeto indisponível"} · A aprovação para publicar acontece pelo Telegram.</p>
+        {previewProject?.slides?.some((slide) => slide.image) ? <div className="pilot-preview-images">{previewProject.slides.map((slide, index) => slide.image ? <figure key={slide.id || index}><img src={slide.image} alt={`Card ${index + 1} do carrossel`} /><figcaption>Card {index + 1}</figcaption></figure> : <p className="hint" key={slide.id || index}>Card {index + 1}: imagem ainda não disponível.</p>)}</div> : <p className="hint">{previewProject ? "As imagens deste projeto ainda não estão disponíveis." : "Este projeto não está mais disponível neste perfil."}</p>}
+      </div></Dialog>}
+      {dialog === "history" && <Dialog title="Últimos pedidos do piloto" onClose={closeDialog} className="pilot-dialog"><div className="pilot-dialog-body"><p className="hint">Até 8 pedidos mais recentes. As aprovações acontecem pelo Telegram.</p>{renderJobs(jobs)}{error && <p role="alert" className="pilot-error">{error}</p>}</div></Dialog>}
     </section>
   );
 }

@@ -4,6 +4,7 @@ import App from "./App.jsx";
 import "./styles.css";
 import "./studio.css";
 import "./discovery.css";
+import "./autopilot.css";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>

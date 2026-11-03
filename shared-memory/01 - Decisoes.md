@@ -60,3 +60,8 @@ O padrão atual deve permanecer igual ao tutorial; o usuário pediu personaliza�
 ## 30/10/2026 — Painel de Analytics
 
 Pedido do usuário: implementar o painel do anexo mantendo a estrutura visual atual. Analytics foi integrado a Marca › Conexões, com filtro por conta e 7/30 dias, ranking e referências para o Replicador. Ausência de métricas não vira zero, alcance é total único do período, e o histórico de seguidores usa somente coletas reais. Ver [[31 - Analytics do Instagram]].
+
+
+## 03/11/2026 — Hierarquia do piloto aprovada
+
+HTML aprovado aplicado ao app: Telegram destacado, blocos separados e configuração em diálogos. Mantidas ações e regras de aprovação. Ver [[38 - Hierarquia do piloto automatico]].

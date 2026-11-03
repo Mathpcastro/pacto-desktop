@@ -424,7 +424,16 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       case 'saveTelegramToken':await this.autopilot.connect(args.token);return this.state();
       case 'disconnectTelegram':await this.autopilot.disconnect();return this.state();
       case 'pairTelegram':await this.autopilot.pair();return this.state();
-      case 'openTelegramPair':{const url=this.autopilot.status(this.profileId()).pairing?.url;if(!url)throw new Error('Gere um novo código para vincular a conversa.');await this.dialogs.openTelegram?.(url);return this.state();}
+      case 'openTelegramPair':{
+        const pilot=this.autopilot,status=pilot?.status(this.profileId()),username=status?.bot?.username;
+        if(!status?.hasToken||typeof username!=='string'||!/^[a-zA-Z0-9_]{5,64}$/.test(username))throw new Error('Conecte um bot válido do Telegram.');
+        let url='https://t.me/'+username;
+        if(status.paired){if(!pilot.bindingActive())throw new Error('Vincule novamente sua conversa antes de abrir o bot.');}
+        else if(/^[a-f0-9]{32}$/.test(status.pairing?.code||''))url+='?start='+status.pairing.code;
+        else throw new Error('Gere um novo código para vincular a conversa.');
+        if(typeof this.dialogs.openTelegram!=='function')throw new Error('Abra o Telegram pelo aplicativo para computador.');
+        await this.dialogs.openTelegram(url);return this.state();
+      }
       case 'saveAutopilot':await this.autopilot.saveConfig(this.profileId(),args.config);return this.state();
       case 'runAutopilot':await this.autopilot.enqueue(this.profileId());return this.state();
       case 'retryAutopilot':case 'discardAutopilot':{

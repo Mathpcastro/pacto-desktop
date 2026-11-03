@@ -277,3 +277,8 @@ Implementação local sobre 0.7.3, branch codex/telegram-autopilot. Ver [[36 - C
 ## 03/11/2026 — Release 0.7.4 publicada
 
 Ver [[37 - Release Carrossell 0.7.4]]. Latest com Windows e dois Macs, workflow 41677450506 aprovado, zero artefatos de Actions, feed 0.7.4 e checksum do instalador publico conferidos. Inclui piloto/conversa Telegram, descoberta de recursos e home simplificada. A autorizacao de publicacao foi recebida nesta etapa.
+
+
+## 03/11/2026 — Novo layout do piloto implementado
+
+[[38 - Hierarquia do piloto automatico]]: branch codex/pilot-layout, 209 testes e build passaram, provas de interface e revisão independente PASS. Versão continua 0.7.4; esta mudança ainda não foi publicada.

@@ -1,0 +1,105 @@
+import { _electron, expect } from '@playwright/test';
+import { createServer } from 'vite';
+import { mkdtemp, mkdir, rm, writeFile, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { Store } from '../core/store.mjs';
+const root = resolve('.'), out = join(root,'.cache/pilot-layout-proof');
+await mkdir(out,{recursive:true});
+const userData = await mkdtemp(join(tmpdir(),'carrossell-layout-proof-'));
+const env = {...process.env,PACTO_USER_DATA:userData,PACTO_AUTOPILOT_NO_TASKS:'1'}; delete env.ELECTRON_RUN_AS_NODE;
+const vite = await createServer({root,logLevel:'error',server:{host:'127.0.0.1',port:0}});
+let app; const checks=[];
+try {
+ await vite.listen(); env.PACTO_DEV_URL=`http://127.0.0.1:${vite.httpServer.address().port}`;
+ app=await _electron.launch({args:['.'],cwd:root,env}); const page=await app.firstWindow();
+ await page.getByRole('region',{name:'Configuração do projeto'}).waitFor();
+ await page.evaluate(()=>window.pacto.request('saveProfile',{profile:{brand:'Prova local',product:'Interface',audience:'Teste',brandContext:'Fixture local para validar o layout. Sem contas ou geração.',designKit:'Preto e branco.'}}));
+ await page.reload(); await page.getByRole('heading',{name:'O que vamos criar hoje?'}).waitFor();
+ await page.getByRole('button',{name:'Piloto automático',exact:true}).first().click();
+ await expect(page.getByRole('heading',{name:'Seu Carrossell, no Telegram'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Sua rotina',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Para revisar',exact:true})).toBeVisible();
+ await expect(page.getByLabel('Token do bot do Telegram',{exact:true})).toHaveCount(0);
+ checks.push('separação e token fora da página');
+ for(const [name,width,height,theme] of [['desktop',1440,1000,'dark'],['compact',1093,580,'dark'],['light',1440,1000,'light'],['compact-125',1093,580,'dark'],['mobile',390,844,'dark']]) {
+  await page.setViewportSize({width,height}); await page.evaluate(({theme,zoom})=>{document.documentElement.dataset.theme=theme;document.documentElement.style.setProperty('--app-zoom',zoom);},{theme,zoom:name==='compact-125'?'1.25':'1'});
+  await page.screenshot({path:join(out,`${name}.png`),fullPage:true});
+  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)) throw Error(`overflow ${name}`);
+ }
+ await page.setViewportSize({width:1093,height:760});
+ await page.evaluate(()=>document.documentElement.style.setProperty('--app-zoom','1'));
+ await page.getByRole('button',{name:'Configurar rotina',exact:true}).click();
+ await expect(page.getByRole('dialog',{name:'Configurar rotina',exact:true})).toBeVisible();
+ const monday=page.getByRole('button',{name:'Segunda',exact:true});
+ await monday.focus(); await page.keyboard.press('Space'); await expect(monday).toHaveAttribute('aria-pressed','false');
+ await page.keyboard.press('Space'); await expect(monday).toHaveAttribute('aria-pressed','true');
+ await page.getByLabel('Horário da rotina',{exact:true}).fill('18:35');
+ await page.screenshot({path:join(out,'routine-dialog.png')});
+ await page.keyboard.press('Escape');
+ await expect(page.getByRole('button',{name:'Configurar rotina',exact:true})).toBeFocused();
+ await page.getByRole('button',{name:'Configurar rotina',exact:true}).click();
+ await expect(page.getByLabel('Horário da rotina',{exact:true})).toHaveValue('18:35');
+ await page.keyboard.press('Escape');
+ await page.getByRole('button',{name:'Conectar Telegram',exact:true}).click();
+ await expect(page.getByLabel('Token do bot do Telegram',{exact:true})).toHaveAttribute('type','password');
+ await page.screenshot({path:join(out,'connection-dialog.png')});
+ checks.push('dialogs, Escape, foco, rascunho, dias por teclado e token protegido');
+ await page.keyboard.press('Escape');
+ for(const [name,width,height,zoom] of [['compact125',1093,580,'1.25'],['phone',390,844,'1']]) {
+  await page.setViewportSize({width,height});
+  await page.evaluate(zoom=>document.documentElement.style.setProperty('--app-zoom',zoom),zoom);
+  await page.getByRole('button',{name:'Configurar rotina',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'Configurar rotina',exact:true});
+  const body=dialog.locator('.pilot-dialog-body');
+  await expect(body).toHaveCount(1);
+  if(await body.evaluate(el=>!['auto','scroll'].includes(getComputedStyle(el).overflowY))) throw Error(`dialog body not user-scrollable ${name}`);
+  const save=dialog.getByRole('button',{name:'Salvar rotina',exact:true});
+  await save.scrollIntoViewIfNeeded();
+  await save.click({trial:true,timeout:1500});
+  if(await dialog.evaluate(el=>el.scrollWidth>el.clientWidth+1)) throw Error(`dialog horizontal overflow ${name}`);
+  const visible=await save.evaluate(el=>{const r=el.getBoundingClientRect(),d=el.closest('dialog').getBoundingClientRect();return r.top>=d.top&&r.bottom<=d.bottom&&r.left>=d.left&&r.right<=d.right;});
+  if(!visible) throw Error(`save clipped ${name}`);
+  await page.screenshot({path:join(out,`${name}-dialog-save.png`)});
+  await page.keyboard.press('Escape');
+ }
+ checks.push('Salvar rotina alcançável sem corte a 125% e no telefone');
+ // Persist a genuine local project/image through Store, then mount the real
+ // component with an explicit job fixture. The image is the existing branding
+ // sheet test asset; no generation, account, Telegram request or publish occurs.
+ const storePath=join(userData,'preview-fixture');
+ const store=await new Store(storePath).init();
+ const project=await store.createProject({title:'Fixture local · imagem de marca',brief:'Validação da prévia, sem publicação.',cardCount:2,style:'texto'});
+ await store.saveProject({id:project.id,slides:[{title:'Imagem de teste'}]});
+ await store.addImage(project.id,store.get(project.id).slides[0].id,await readFile(join(root,'resources/branding/brand-sheet.png')));
+ const reopened=await new Store(storePath).init();
+ const persisted=reopened.state().projects;
+ const main=(await vite.transformRequest('/src/main.jsx')).code;
+ const reactUrl=main.match(/from "([^"\n]*\/react\.js[^"\n]*)"/)[1];
+ const clientUrl=main.match(/from "([^"\n]*\/react-dom_client\.js[^"\n]*)"/)[1];
+ const fixture=await page.evaluateHandle(async({reactUrl,clientUrl,projects})=>{
+  const [reactModule,clientModule,{default:Autopilot}]=await Promise.all([import(reactUrl),import(clientUrl),import('/src/components/Autopilot.jsx')]);
+  const React=reactModule.default||reactModule,{createRoot}=clientModule.default||clientModule;
+  const container=document.createElement('div');container.id='layout-preview-fixture';container.style.cssText='position:fixed;inset:0;overflow:auto;padding:24px;background:var(--paper);z-index:9999';document.body.append(container);document.querySelector('#root').style.display='none';
+  const root=createRoot(container);
+  const state={profileId:'layout-fixture',projects,composio:{accounts:[]},account:{connected:false},autopilot:{config:{enabled:false},jobs:[{id:'preview-job',projectId:projects[0].id,status:'ready',title:'Fixture local · imagem persistida'}]}};
+  return {render(projects){root.render(React.createElement(Autopilot,{state:{...state,projects},request:()=>{throw Error('No fixture effects allowed');}}));},dispose(){root.unmount();container.remove();document.querySelector('#root').style.display='';}};
+ },{reactUrl,clientUrl,projects:persisted});
+ await fixture.evaluate((view,projects)=>view.render(projects),persisted);
+ await page.getByRole('button',{name:'Ver prévia',exact:true}).click();
+ const preview=page.getByRole('dialog',{name:'Prévia do carrossel',exact:true});
+ const image=preview.getByRole('img',{name:'Card 1 do carrossel',exact:true});
+ await expect(image).toHaveAttribute('src',persisted[0].slides[0].image);
+ await expect.poll(()=>image.evaluate(el=>el.complete&&el.naturalWidth>0)).toBe(true);
+ await page.screenshot({path:join(out,'preview-persisted-fixture.png')});
+ await page.keyboard.press('Escape');
+ await fixture.evaluate(view=>view.render([]));
+ await page.getByRole('button',{name:'Ver prévia',exact:true}).click();
+ await expect(preview).toContainText('Este projeto não está mais disponível neste perfil.');
+ await expect(preview.getByRole('img')).toHaveCount(0);
+ await page.screenshot({path:join(out,'preview-deleted-fixture.png')});
+ await page.keyboard.press('Escape');await fixture.evaluate(view=>view.dispose());await fixture.dispose();
+ checks.push('prévia usa imagem do projeto persistido e fallback honesto quando excluído');
+ console.log(JSON.stringify({passed:true,checks,out}));
+ await writeFile(join(out,'results.json'),JSON.stringify({passed:true,checks,out},null,2));
+} finally { if(app) {await app.evaluate(({app})=>app.quit()).catch(()=>{}); await app.close().catch(()=>{});} await vite.close(); await rm(userData,{recursive:true,force:true}); }

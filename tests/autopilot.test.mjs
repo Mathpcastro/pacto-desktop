@@ -31,6 +31,28 @@ async function pilotFixture(t){
 
 const callback=(job,action='post',extra={})=>({callback_query:{id:'callback1',from:{id:7},message:{message_id:job.messageId,chat:{id:42,type:'private'}},data:`p:${job.reviewId}:${action}`,...extra}});
 
+test('opening Telegram after pairing opens only the validated linked bot',async t=>{
+  const f=await pilotFixture(t),opened=[];f.runtime.dialogs.openTelegram=async url=>opened.push(url);
+  await f.runtime.request('openTelegramPair');
+  assert.deepEqual(opened,['https://t.me/pilot_test_bot']);
+});
+
+test('opening an unpaired bot retains the valid private pairing link',async t=>{
+  const f=await pilotFixture(t),opened=[];f.runtime.dialogs.openTelegram=async url=>opened.push(url);
+  await f.state.change(data=>{data.binding=null;});const pairing=await f.pilot.pair();
+  await f.runtime.request('openTelegramPair');assert.deepEqual(opened,[pairing.url]);
+});
+
+test('Telegram opening rejects expired, absent and malformed destinations without invoking a browser',async t=>{
+  const f=await pilotFixture(t),opened=[];f.runtime.dialogs.openTelegram=async url=>opened.push(url);
+  await f.state.change(data=>{data.binding.expiresAt=new Date(0).toISOString();});
+  await assert.rejects(()=>f.runtime.request('openTelegramPair'),/vincul|código|conversa/i);
+  await f.state.change(data=>{delete data.binding.expiresAt;data.bot.username='evil.example/path';});
+  await assert.rejects(()=>f.runtime.request('openTelegramPair'),/bot|Telegram/i);
+  await f.pilot.disconnect();await assert.rejects(()=>f.runtime.request('openTelegramPair'),/bot|Telegram|vincul|código/i);
+  assert.deepEqual(opened,[]);
+});
+
 test('pilot generates a real local draft through Runtime and requires a valid private decision before posting',async t=>{
   const f=await pilotFixture(t);await f.pilot.enqueue('principal');await f.pilot.step();
   let job=f.state.snapshot().jobs[0];assert.equal(job.status,'ready');assert.equal(f.posts(),0);assert.ok(f.store.get(job.projectId).stories.length);

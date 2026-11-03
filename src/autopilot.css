@@ -1,0 +1,312 @@
+/* Telegram-first pilot. All colors and reading scale inherit the app preferences. */
+.pilot-layout {
+  display:grid;
+  gap:28px;
+  min-width:0;
+  font-size:1rem}
+.pilot-layout h2 {
+  font-size:1.35rem;
+  line-height:1.25;
+  margin:0;
+  letter-spacing:-.025em}
+.pilot-page-intro {
+  margin-bottom:0;
+  gap:0}
+.pilot-page-intro .page-sub {
+  margin-top:8px}
+.pilot-connection,.pilot-panel {
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px}
+.pilot-connection {
+  display:flex;
+  align-items:center;
+  gap:25px;
+  padding:30px 32px}
+.pilot-telegram-logo {
+  width:66px;
+  height:66px;
+  flex-shrink:0}
+.pilot-connection-copy {
+  flex:1;
+  min-width:0}
+.pilot-eyebrow {
+  font-size:.8125rem;
+  font-weight:700;
+  letter-spacing:.12em;
+  color:var(--muted)}
+.pilot-connection h2 {
+  font-size:1.8rem;
+  margin:7px 0 9px}
+.pilot-connection p,.pilot-conversation>p {
+  color:var(--muted);
+  margin:0;
+  line-height:1.5}
+.pilot-connection-actions {
+  display:grid;
+  gap:10px;
+  min-width:190px}
+.pilot-connection-actions .btn {
+  justify-content:center;
+  gap:16px}
+.pilot-connection-status {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  color:var(--muted);
+  font-size:.875rem}
+.pilot-connection-status:before {
+  content:'';
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:currentColor}
+.pilot-connection-status.connected {
+  color:var(--good,#70a98b)}
+.pilot-columns {
+  display:grid;
+  grid-template-columns:1.12fr 1fr;
+  gap:25px;
+  align-items:start}
+.pilot-panel {
+  padding:27px;
+  min-width:0}
+.pilot-section-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px}
+.pilot-schedule {
+  font-size:1.9rem;
+  letter-spacing:-.035em;
+  line-height:1.3;
+  margin:29px 0 9px}
+.pilot-routine-meta {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:var(--muted);
+  margin:0}
+.pilot-routine-footer {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin-top:26px}
+.pilot-account-note {
+  display:grid;
+  gap:5px;
+  font-size:.875rem;
+  min-width:0;
+  overflow-wrap:anywhere}
+.pilot-account-note span {
+  color:var(--muted)}
+.pilot-routine-footer .btn {
+  font-size:.875rem;
+  white-space:nowrap}
+.pilot-routine-actions {
+  display:grid;
+  gap:12px;
+  margin-top:22px;
+  padding-top:19px;
+  border-top:1px solid var(--line)}
+.pilot-routine-actions>.row {
+  gap:10px}
+.pilot-routine-actions .hint {
+  font-size:.8125rem;
+  line-height:1.5}
+.pilot-review-empty {
+  display:flex;
+  gap:15px;
+  align-items:center;
+  padding:33px 0}
+.pilot-review-empty>svg {
+  color:var(--muted);
+  flex-shrink:0}
+.pilot-review-empty strong {
+  font-size:.9375rem;
+  font-weight:500}
+.pilot-review-empty p {
+  font-size:.875rem;
+  color:var(--muted);
+  line-height:1.5;
+  margin:7px 0 0}
+.pilot-approval-rule {
+  border-top:1px solid var(--line);
+  padding-top:17px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:.875rem;
+  margin:0}
+.pilot-approval-rule svg {
+  color:var(--good,#70a98b)}
+.pilot-conversation>p {
+  margin-top:9px;
+  font-size:.9375rem}
+.pilot-examples {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-top:18px}
+.pilot-examples blockquote {
+  margin:0;
+  padding:16px 19px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  font-size:.9375rem;
+  line-height:1.5;
+  background:var(--surface)}
+.pilot-commands {
+  margin-top:17px;
+  font-size:.875rem;
+  color:var(--muted)}
+.pilot-commands summary {
+  cursor:pointer;
+  width:fit-content}
+.pilot-commands div {
+  line-height:1.7;
+  max-width:85ch}
+.pilot-requirement {
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  color:var(--muted);
+  font-size:.8125rem;
+  line-height:1.5}
+.pilot-requirement svg {
+  flex-shrink:0;
+  margin-top:2px}
+.pilot-dialog {
+  font-size:1rem}
+.pilot-dialog-body>.sub {
+  padding:0;
+  border:0;
+  background:none}
+.pilot-dialog .sub-head {
+  flex-wrap:wrap;
+  gap:8px}
+.pilot-dialog .hint {
+  line-height:1.6}
+.pilot-dialog .row {
+  flex-wrap:wrap}
+.pilot-dialog .fld {
+  min-width:0}
+.pilot-dialog .pending-item,.pilot-job-list .pending-item {
+  display:grid;
+  gap:9px;
+  padding:18px 0;
+  border-top:1px solid var(--line)}
+.pilot-job-list {
+  margin:15px 0}
+.pilot-layout .pending-item .row {
+  flex-wrap:wrap}
+.pilot-layout .pending-item .chip {
+  white-space:normal}
+.pilot-error {
+  color:var(--danger);
+  overflow-wrap:anywhere}
+.pilot-legacy-heading p {
+  color:var(--muted);
+  margin-bottom:0}
+.pilot-layout button:focus-visible,.pilot-commands summary:focus-visible {
+  outline:2px solid var(--accent);
+  outline-offset:4px}
+
+@media(max-width:1150px) {
+  .pilot-connection {
+  padding:25px;
+  gap:20px}
+.pilot-connection h2 {
+  font-size:1.6rem}
+.pilot-panel {
+  padding:23px}
+.pilot-columns {
+  gap:20px}
+.pilot-routine-footer {
+  flex-wrap:wrap}
+.pilot-schedule {
+  font-size:1.65rem}
+}
+
+@media(max-width:760px) {
+  .pilot-columns {
+  grid-template-columns:1fr}
+.pilot-connection {
+  display:grid;
+  grid-template-columns:48px 1fr;
+  padding:23px;
+  gap:15px}
+.pilot-telegram-logo {
+  width:48px;
+  height:48px}
+.pilot-connection-actions {
+  grid-column:1/-1;
+  margin-top:4px}
+.pilot-connection-status {
+  justify-content:flex-start}
+.pilot-connection h2 {
+  font-size:1.4rem}
+.pilot-examples {
+  grid-template-columns:1fr}
+.pilot-layout {
+  gap:22px}
+.pilot-routine-footer .btn {
+  white-space:normal}
+.pilot-dialog .fld {
+  width:100%}
+.pilot-dialog .pill {
+  padding:8px}
+.pilot-dialog {
+  max-width:calc(100vw - 24px)}
+}
+
+
+.pilot-preview-link {
+  justify-self:start}
+.pilot-preview-images {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:18px}
+.pilot-preview-images figure {
+  margin:0;
+  min-width:0}
+.pilot-preview-images img {
+  width:100%;
+  height:auto;
+  display:block}
+.pilot-preview-images figcaption {
+  margin-top:8px;
+  color:var(--muted);
+  font-size:.875rem}
+
+
+.pilot-layout .hint,.pilot-dialog .hint,.pilot-layout .chip,.pilot-dialog .chip {
+  font-size: max(13px, .8125rem)}
+
+
+/* Keep the native dialog header fixed and every form/history/preview reachable. */
+.pilot-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: calc(100dvh / var(--app-zoom, 1) - 32px);
+}
+.pilot-dialog > .dialog-header,
+.pilot-dialog > .dialog-error {
+  flex-shrink: 0;
+}
+.pilot-dialog-body {
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 0 30px 28px;
+}
+@media(max-width: 760px) {
+  .pilot-dialog .dialog-header { padding: 22px 22px 20px; }
+  .pilot-dialog-body { padding: 0 22px 24px; }
+}
