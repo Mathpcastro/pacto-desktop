@@ -1,6 +1,6 @@
 ---
 project: carrossell
-status: aprovada-para-publicacao
+status: publicada
 tags: [carrossell, release]
 ---
 # Release Carrossell 0.7.3 — 02/11/2026
@@ -32,9 +32,19 @@ O usuário testou o build local e aprovou a publicação, pedindo somente remove
 - ASAR conferido com package 0.7.3, 36 IDs e 36 miniaturas WebP embutidas.
 - `scripts/packaged-smoke.mjs` aprovado: ZIP com dois PNGs 1080×1350 e legenda, modelo 1080×1350, PDF válido e zero erros de página.
 
+## Resultado publicado e verificado
+
+- Código e tag `v0.7.3` enviados a `Mathpcastro/pacto-desktop` no commit `9614d92`.
+- Workflow [41554166253](https://github.com/Mathpcastro/pacto-desktop/actions/runs/41554166253) concluído com sucesso em preparação, Windows, Mac x64, Mac ARM64 e publicação. Smoke dos dois Macs aprovado nos runners.
+- Release pública Latest: https://github.com/Mathpcastro/pacto-releases/releases/tag/v0.7.3, sem rascunho nem prerelease, com 11 assets.
+- Windows `Carrossell-Setup-0.7.3.exe`: 224794038 bytes. Mac ARM64: 271515088 bytes. Mac x64: 286584373 bytes.
+- Feed `latest.yml`: `version: 0.7.3`, instalador e tamanho corretos.
+- Links `latest/download` de Windows, Mac Apple Silicon, Mac Intel e `latest.yml` responderam HTTP 200.
+- API do workflow confirmou `total_count: 0`: nenhum artefato de Actions.
+- Release de referência sem binários: https://github.com/Mathpcastro/pacto-desktop/releases/tag/v0.7.3, com links diretos para os três instaladores.
+
 ## Limites
 
 - A troca de tamanho durante processamento foi validada com mocks e interface, sem uma nova prova ponta a ponta com IA real nesta etapa.
-- Não houve teste em Mac físico; builds de macOS dependem do workflow.
+- Não houve teste de atualização completa em dispositivo físico nem instalação em Mac físico; builds de macOS foram testados nos runners.
 - Instaladores sem assinatura de código; macOS segue sem notarização Apple e com atualização manual.
-- Resultados da publicação, feed e downloads serão registrados somente após verificação real.
