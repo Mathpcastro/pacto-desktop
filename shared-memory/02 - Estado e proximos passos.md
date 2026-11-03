@@ -282,3 +282,8 @@ Ver [[37 - Release Carrossell 0.7.4]]. Latest com Windows e dois Macs, workflow 
 ## 03/11/2026 — Novo layout do piloto implementado
 
 [[38 - Hierarquia do piloto automatico]]: branch codex/pilot-layout, 209 testes e build passaram, provas de interface e revisão independente PASS. Versão continua 0.7.4; esta mudança ainda não foi publicada.
+
+
+## 03/11/2026 — Release 0.7.5 publicada
+
+[[39 - Release Carrossell 0.7.5]]: novo layout do piloto publicado como Latest, Windows e os dois Macs disponíveis, zero artefatos de Actions. Feed e download completo Windows verificados, SHA-512 confere.
