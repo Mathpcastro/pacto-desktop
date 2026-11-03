@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   Copy,
@@ -14,11 +14,15 @@ import {
   Trash2,
   Trophy,
   X,
+  ArrowRight,
+  Bot,
+  Compass,
+  SlidersHorizontal,
 } from "lucide-react";
 import { rhythm } from "../../core/rhythm.mjs";
 import Dialog from "./Dialog.jsx";
 import { FORMAT_LABEL, Grow, STYLE_LIST, Spinner, firstLine, statusLabels, usePopover } from "../ui.jsx";
-import { AgentCard } from "./AgentSetup.jsx";
+import { InstagramSummary } from "./Instagram.jsx";
 import { replaceReferenceAttachment } from "../referenceLibrary.js";
 
 const References = lazy(() => import("./References.jsx"));
@@ -105,7 +109,7 @@ function Measure({ project, request, onDone }) {
   );
 }
 
-export default function Home({ view, state, request, isPending, onOpen, onNotice, onShowHome, composerRef, connected, onAgents }) {
+export default function Home({ view, state, request, isPending, onOpen, onNotice, onShowHome, composerRef, connected, onAgents, onDiscover, onView, onPilot, onStories, onInstagram, target }) {
   const pop = usePopover();
   const [text, setText] = useState("");
   const [format, setFormat] = useState("carrossel");
@@ -114,6 +118,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
   const [size, setSize] = useState(0);
   const [architectureId, setArchitectureId] = useState("");
   const [more, setMore] = useState(false);
+  const [adjustments, setAdjustments] = useState(false);
   const [editorialLine, setEditorialLine] = useState("");
   const [visualConcept, setVisualConcept] = useState("");
   const [creating, setCreating] = useState(false);
@@ -140,14 +145,24 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
   const projects = useMemo(
     () =>
       [...state.projects]
-        .filter((p) => (filter === "all" ? true : filter === "done" ? p.status === "complete" : p.status !== "complete"))
-        .filter((p) => `${p.title} ${p.brief}`.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR")))
+        .filter((p) => view === "home" || (filter === "all" ? true : filter === "done" ? p.status === "complete" : p.status !== "complete"))
+        .filter((p) => view === "home" || `${p.title} ${p.brief}`.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR")))
         .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt))),
-    [state.projects, search, filter],
+    [state.projects, search, filter, view],
   );
-  const visible = showAll || search ? projects : projects.slice(0, 8);
+  const visible = view === "home" ? projects.slice(0, 3) : showAll || search ? projects : projects.slice(0, 8);
+  useEffect(() => {
+    if (target?.format) {
+      setFormat(target.format);
+      if (target.format !== "carrossel" && size === 1) setSize(0);
+    }
+    if (target?.source) { setSource(target.source); setTool(target.source === "modelador" ? "modelador" : null); }
+    // The target is an explicit navigation request, not a reset of the draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target?.n]);
   const archName = architectures.find((a) => a.id === architectureId)?.name || "Automático";
   const useIdea = (idea) => {
+    onShowHome();
     setFormat("carrossel");
     setText(
       [idea.hook || idea.theme, idea.theme && idea.hook && `Tema: ${idea.theme}`, idea.deliverable && `Entrega: ${idea.deliverable}`, idea.connection && `Conexão com a oferta: ${idea.connection}`]
@@ -155,8 +170,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
         .join("\n"),
     );
     setArchitectureId(architectures.find((a) => a.name === idea.architecture)?.id || "");
-    composerRef.current?.focus();
-    composerRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    setTimeout(() => { composerRef.current?.focus(); composerRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }); }, 0);
   };
   const create = async () => {
     if (!text.trim()) {
@@ -249,10 +263,15 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
     );
   }
   return (
-    <main className="page" ref={pop.ref}>
-      <h1 className="page-title">O que vamos publicar hoje?</h1>
-      <section className="composer" aria-label="Criar">
+    <div className={`page home-page ${view === "home" ? "calm-home" : ""}`} ref={pop.ref}>
+      <div className="home-intro">
+        <div>{view === "home" && <span className="eyebrow">SEU ESTÚDIO DE CONTEÚDO</span>}<h1 className="page-title">{({ home: "O que vamos criar hoje?", library: "Seus conteúdos", ideas: "Encontre sua próxima pauta", rhythm: "Resultados e próximos conteúdos", calendar: "Publicações agendadas" })[view] || "O que vamos criar hoje?"}</h1></div>
+        {view === "home" ? <button className="ghost-btn discovery-entry" onClick={onDiscover}><Compass size={17} />O que posso fazer no Carrossell?</button> : <button className="ghost-btn" onClick={onShowHome}>Voltar ao início<ArrowRight size={16} /></button>}
+      </div>
+      <section className="composer" aria-label="Criar" hidden={view !== "home"}>
+        <label className="composer-label" htmlFor="home-topic">Sobre o que é seu próximo conteúdo?</label>
         <Grow
+          id="home-topic"
           inputRef={composerRef}
           aria-label="Tema ou ideia"
           placeholder={PLACEHOLDER[format]}
@@ -262,7 +281,15 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) create();
           }}
         />
-        <div className="row">
+        <div className="composer-formatbar">
+          <div className="home-formats" role="tablist" aria-label="Formato do conteúdo">
+            <button role="tab" aria-selected={format === "carrossel"} onClick={() => setFormat("carrossel")}>Carrossel</button>
+            <button role="tab" aria-selected="false" onClick={onStories}>Stories</button>
+            <button role="tab" aria-selected={format === "material"} onClick={() => { setFormat("material"); if (size === 1) setSize(0); }}>Material gratuito</button>
+          </div>
+          <button className="ghost-btn" aria-expanded={adjustments} aria-controls="composer-adjustments" onClick={() => { setAdjustments(!adjustments); pop.setOpen(null); }}><SlidersHorizontal size={16} />Ajustes</button>
+        </div>
+        <div className="row composer-adjustments" id="composer-adjustments" hidden={!adjustments}>
           {menu("format", "Formato", FORMAT_LABEL[format], FORMATS, (next) => {
             setFormat(next);
             if (next !== "carrossel" && size === 1) setSize(0);
@@ -278,7 +305,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
             </button>
           )}
         </div>
-        {more && format === "carrossel" && (
+        {adjustments && more && format === "carrossel" && (
           <div className="composer-more">
             <label className="fld">
               <span>
@@ -297,8 +324,8 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
         <div className="composer-foot">
           {format === "carrossel" && (
             <div className="attach-row">
-              <button type="button" className="ghost-btn" onClick={attach} disabled={attachments.length >= 6}>
-                <ImagePlus size={16} /> Anexar foto de referência ou o que você quer que vá no carrossel
+              <button type="button" className="ghost-btn" aria-label="Anexar foto de referência ou o que você quer que vá no carrossel" onClick={attach} disabled={attachments.length >= 6}>
+                <ImagePlus size={16} /> Anexar
               </button>
               {attachments.length > 0 && (
                 <div className="attach-list" aria-label="Imagens anexadas">
@@ -316,7 +343,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
           )}
           <span className="spacer" />
           <button className="btn primary" disabled={creating || !text.trim()} onClick={create} title="Ctrl + Enter">
-            {creating ? <Spinner /> : <Sparkles size={16} />}
+            {creating ? <Spinner /> : <ArrowRight size={16} />}
             {creating ? "Criando…" : format === "carrossel" ? "Criar carrossel" : format === "material" ? "Criar material" : "Criar apresentação"}
           </button>
           {!connected && (
@@ -330,9 +357,10 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
           )}
         </div>
       </section>
-      <AgentCard onOpen={onAgents} />
-      <div className="home-grid">
-        <section className="section" aria-label="Ideias">
+      {view === "home" && <section className="home-pilot-row" aria-label="Resumo do piloto automático"><span className="home-pilot-icon"><Bot size={21} /></span><div><h2>Piloto automático</h2><p>{state.autopilot?.jobs?.some((job) => job.status === "ready") ? "Há conteúdo esperando sua aprovação pelo Telegram." : state.autopilot?.config?.enabled ? "Rotina ativa · revisão pelo Telegram antes de publicar." : "Crie uma rotina e revise o conteúdo pelo Telegram."}</p></div>{state.autopilot?.config?.enabled && state.autopilot.config.nextAt && <span className="hint home-pilot-next">Próxima preparação<br /><b>{new Date(state.autopilot.config.nextAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</b></span>}<button className="ghost-btn" onClick={onPilot}>Abrir piloto<ArrowRight size={16} /></button></section>}
+      {view === "calendar" && <><InstagramSummary state={state} request={request} onNotice={onNotice} onOpen={onInstagram} /><section className="section" aria-label="Conteúdos agendados">{state.projects.filter((project) => project.schedule).map((project) => <button className="btn scheduled-project" key={project.id} onClick={() => onOpen(project.id)}><span>{project.title}<small>{new Date(project.schedule.at).toLocaleString("pt-BR")} · {({ scheduled: "Agendado", late: "Atrasado", failed: "Não saiu", partial: "Publicado em parte", published: "Publicado" })[project.schedule.status] || project.schedule.status}</small></span><ArrowRight size={16} /></button>)}{!state.projects.some((project) => project.schedule) && <p className="hint">Nenhum conteúdo agendado neste perfil. Abra um carrossel pronto para escolher a data e as contas.</p>}</section></>}
+      <div className="home-grid goal-workspace" hidden={!["ideas", "rhythm"].includes(view)}>
+        <section className="section" aria-label="Ideias" hidden={view !== "ideas"}>
           <div className="section-head">
             <h2>Ideias para testar</h2>
             <div className="seg" style={{ margin: 0 }} role="tablist">
@@ -477,7 +505,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
             )
           )}
         </section>
-        <div className="section">
+        <div className="section" hidden={view !== "rhythm"}>
           <section className="card-box week" aria-label="Meta da semana">
             <div className="week-top">
               <Ring value={data.publishedThisWeek} goal={data.goal} />
@@ -541,6 +569,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
                           disabled={!connected || ideaBusy}
                           onClick={() => {
                             setSource("replicador");
+                            onView("ideas");
                             request("replicate", { id: w.id }).catch(() => {});
                           }}
                         >
@@ -556,12 +585,13 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
           </section>
         </div>
       </div>
-      <section className="section" aria-label="Seus projetos">
+      <section className={`section ${view === "home" ? "home-recent" : ""}`} aria-label="Seus projetos" hidden={!["home", "library"].includes(view)}>
         <div className="section-head">
-          <h2>Seus projetos</h2>
-          <span className="meta">{state.projects.length}</span>
+          <h2>{view === "home" ? "Continue de onde parou" : "Biblioteca"}</h2>
+          {view !== "home" && <span className="meta">{state.projects.length}</span>}
           <span className="spacer" />
-          <div className="lib-tools">
+          {view === "home" && <button className="ghost-btn" onClick={() => onView("library")}>Ver conteúdos<ArrowRight size={16} /></button>}
+          <div className="lib-tools" hidden={view === "home"}>
             <div className="seg" style={{ margin: 0 }}>
               {[
                 ["all", "Todos"],
@@ -636,7 +666,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
         ) : (
           <div className="empty-state">{search ? "Nenhum projeto com esse nome." : "Seus carrosséis e PDFs aparecem aqui."}</div>
         )}
-        {!showAll && !search && projects.length > 8 && (
+        {view !== "home" && !showAll && !search && projects.length > 8 && (
           <button className="ghost-btn" style={{ justifySelf: "center" }} onClick={() => setShowAll(true)}>
             Ver todos os {projects.length} projetos
           </button>
@@ -664,6 +694,6 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
           </div>
         </Dialog>
       )}
-    </main>
+    </div>
   );
 }

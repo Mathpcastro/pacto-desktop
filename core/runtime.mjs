@@ -342,7 +342,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
   // Operações curtas fora do projeto (entrevista, pautas): a resposta da chamada já traz o resultado.
   async exclusive(id,kind,activity,work){
     this.ensureIdle();this.ensureConnected();
-    const token={id,kind,cancelled:false};this.job=token;
+    const token={id,kind,cancelled:false,owner:this.scope.getStore()?.conversationOwner};this.job=token;
     try{this.emit({type:'state',state:this.state()});this.emit({type:'activity',message:activity});await work(token);}
     catch(error){if(!token.cancelled)throw safeError(error);}
     finally{if(this.job===token)this.job=null;if(!this.job)this.emit({type:'activity',message:''});this.emit({type:'state',state:this.state()});}
@@ -482,7 +482,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       case 'cancelInterview':case 'cancelWork':{
         const job=this.job;if(!job)return this.state();
         // Libera na hora: a leitura da página ou o Codex podem demorar a parar; o trabalho antigo confere token.cancelled antes de salvar.
-        if(['onboarding','ideas','media'].includes(job.id)||['cta','stories'].includes(job.kind)){job.cancelled=true;if(this.job===job)this.job=null;await this.codex.cancel();this.emit({type:'activity',message:''});return this.state();}
+        if(['onboarding','ideas','media'].includes(job.id)||['cta','stories','conversation'].includes(job.kind)){job.cancelled=true;if(this.job===job)this.job=null;await this.codex.cancel();this.emit({type:'activity',message:''});return this.state();}
         await this.request('cancel',{id:job.id});return this.state();
       }
       case 'radar':return this.ideas('radar',{focus:args.focus?text(args.focus,1000).trim():''});
@@ -603,7 +603,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     if(!options.template)this.ensureConnected();
     if(kind==='images'&&!p.slides.length)throw new Error('Crie o plano antes de gerar imagens.');
     if(options.slideId&&!p.slides.some(s=>s.id===options.slideId))throw new Error('Slide não encontrado.');
-    const token={id,kind,cancelled:false};token.done=new Promise(resolve=>{token.finish=resolve;});this.job=token;
+    const token={id,kind,cancelled:false,owner:this.scope.getStore()?.conversationOwner};token.done=new Promise(resolve=>{token.finish=resolve;});this.job=token;
     try{
       const patch={status:['images','covers','story'].includes(kind)?'generating':'planning',error:null};
       if(options.message)patch.messages=[...p.messages,{id:randomUUID(),role:'user',text:options.message}];

@@ -77,7 +77,7 @@ async function check(name, verify) {
 const bootstrap = () => page.evaluate(() => window.pacto.request("bootstrap"));
 async function openPilot() {
   await page.getByRole("button", { name: "Marca", exact: true }).click();
-  await page.getByRole("button", { name: "Piloto automático", exact: true }).click();
+  await page.getByRole("navigation", { name: "Seções da marca" }).getByRole("button", { name: "Piloto automático", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Piloto automático", exact: true })).toBeVisible();
 }
 function observePage(target) { target.on("pageerror", (error) => pageErrors.push(cleanError(error))); }
@@ -94,7 +94,7 @@ try {
   await page.getByRole("region", { name: "Configuração do projeto" }).waitFor();
   await page.evaluate((value) => window.pacto.request("saveProfile", { profile: value }), profile);
   await page.reload();
-  await page.getByRole("heading", { name: "O que vamos publicar hoje?" }).waitFor();
+  await page.getByRole("heading", { name: "O que vamos criar hoje?" }).waitFor();
   const initial = await bootstrap();
   const firstProfile = initial.profileId;
   await check("instalação temporária começa sem contas reais", async () => {
@@ -161,7 +161,7 @@ try {
     await expect.poll(() => application.windows().filter((window) => !window.isClosed()).length, { timeout: 10000 }).toBe(1);
     page = application.windows().find((window) => !window.isClosed());
     observePage(page);
-    await page.getByRole("heading", { name: "O que vamos publicar hoje?" }).waitFor();
+    await page.getByRole("heading", { name: "O que vamos criar hoje?" }).waitFor();
     assert.equal((await bootstrap()).autopilot.pairing.code, pendingPair.code);
     await openPilot();
     await expect(page.getByText(pendingPair.code, { exact: true })).toBeVisible();
@@ -217,7 +217,7 @@ try {
   await page.screenshot({ path: join(out, "03-paired-paused.png"), fullPage: true });
   await check("recarregar conserva rotina e vínculo sem expor token", async () => {
     await page.reload();
-    await page.getByRole("heading", { name: "O que vamos publicar hoje?" }).waitFor();
+    await page.getByRole("heading", { name: "O que vamos criar hoje?" }).waitFor();
     await openPilot();
     await expect(page.getByLabel("Horário da rotina", { exact: true })).toHaveValue("18:35");
     await expect(cards).toHaveValue("10");

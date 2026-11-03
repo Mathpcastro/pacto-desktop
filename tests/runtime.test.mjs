@@ -96,6 +96,13 @@ test('Codex cancel ends the call right away even if the interrupted turn never r
   client.active={threadId:'owned',turnId:'owned-turn',finish:error=>{ended=error;},text:[],images:[]};
   await client.cancel();assert.match(ended?.message||'',/cancelada/);assert.equal(client.active.cancelled,true);
 });
+
+test('Codex text-only planner disables native image and code-mode tools per thread',async()=>{
+  const {CodexClient}=await import('../core/codex.mjs');const client=new CodexClient({home:tmpdir(),workspace:tmpdir()});let threadOptions;
+  client.start=async()=>{};client.status={account:{connected:true}};client.selected={model:'existing-account-model'};client.isolation={web_search:'disabled'};
+  client.request=async(method,options)=>{if(method==='thread/start'){threadOptions=options;return{thread:{id:'planner'}};}if(method==='turn/start'){setImmediate(()=>client.receive({method:'turn/completed',params:{threadId:'planner',turn:{id:'turn',status:'completed'}}}));return{turn:{id:'turn'}};}};
+  await client.run({prompt:'Interpret this request',textOnly:true});assert.equal(threadOptions.config['features.image_generation'],false);assert.equal(threadOptions.config['features.code_mode_host'],false);assert.equal(threadOptions.config['features.code_mode'],false);assert.doesNotMatch(threadOptions.baseInstructions,/generatedImage|image_gen/);
+});
 test('runtime never reports success when native image generation returns no pixels',async t=>{
   const {Runtime}=await import('../core/runtime.mjs');const {store}=await fixture(t);const p=await store.createProject({title:'A',brief:'B'});
   await store.saveProject({id:p.id,slides:[{id:'one',title:'A',body:'B',visual:'C',prompt:'D'}]});

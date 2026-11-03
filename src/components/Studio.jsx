@@ -1294,7 +1294,7 @@ export default function Studio({ project, state, request, pending, activity, onB
 
 const STICKER_LABEL = { Enquete: "enquete", "Caixa de perguntas": "caixa de perguntas" };
 // Stories só de texto feitos a partir do carrossel. O app monta os PNGs 1080×1920; a arte com IA é opcional.
-function StoriesPanel({ project, busy, connected, infer, onNotice }) {
+export function StoriesPanel({ project, busy, connected, infer, onNotice }) {
   const stories = project.stories || [];
   const theme = project.storyTheme || "preto";
   return (

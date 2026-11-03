@@ -6,6 +6,22 @@ const token = '123456:super-secret-test-token';
 const ok = result => ({ ok: true, status: 200, json: async () => ({ ok: true, result }) });
 const photos = n => Array.from({ length: n }, (_, i) => ({ name: `${i}.png`, bytes: Buffer.from([i, 1, 2]) }));
 
+test('Telegram documents upload only bounded ZIP/PDF bytes using safe filenames',async()=>{
+  const {TelegramClient}=await module();const requests=[];const client=new TelegramClient({token,fetchImpl:async(url,options)=>{requests.push({url,...options});return ok({message_id:1});}});
+  const bytes=Buffer.from('%PDF-1.7\nexample');await client.sendDocument(42,{name:'carrossell-test.pdf',bytes});assert.equal(requests[0].body.get('document').name,'carrossell-test.pdf');assert.equal(requests[0].body.get('chat_id'),'42');
+  await assert.rejects(client.sendDocument(42,{name:'../../secret.pdf',bytes}),/inválid/i);await assert.rejects(client.sendDocument(42,{name:'file.exe',bytes}),/inválid/i);await assert.rejects(client.sendDocument(42,{name:'file.pdf',bytes:Buffer.alloc(46*1024*1024)}),/45 MB/);assert.equal(requests.length,1);
+});
+test('Telegram download accepts only server paths and bounds actual streaming bytes',async()=>{
+  const {TelegramClient}=await module();let calls=0;
+  const client=new TelegramClient({token,fetchImpl:async(url)=>{calls++;if(url.endsWith('getFile'))return ok({file_path:'photos/file_1.jpg',file_size:4});return{ok:true,headers:new Headers(),body:new ReadableStream({start(c){c.enqueue(new Uint8Array([1,2,3]));c.enqueue(new Uint8Array([4,5,6]));c.close();}})};}});
+  await assert.rejects(client.downloadFile('registered-id',{maxBytes:4}),/limite|tamanho/i);assert.equal(calls,2);
+  const unsafe=new TelegramClient({token,fetchImpl:async()=>ok({file_path:'../secret',file_size:4})});await assert.rejects(unsafe.downloadFile('registered-id'),/inválid/i);
+});
+test('Telegram download redacts upstream credential URL and rejects redirects',async()=>{
+  const {TelegramClient}=await module();let n=0;const client=new TelegramClient({token,fetchImpl:async(url,options)=>{if(++n===1)return ok({file_path:'photos/file.jpg',file_size:1});assert.equal(options.redirect,'error');throw new Error(`network ${url}`);}});
+  await assert.rejects(client.downloadFile('registered-id'),error=>!error.message.includes(token)&&!/https:/.test(error.message));
+});
+
 test('Telegram JSON methods return results and constrain polling updates', async () => {
   const { TelegramClient } = await module();
   const requests = [];

@@ -78,10 +78,11 @@ try {
   await body.fill("Rascunho salvo ao voltar");
   await page.getByRole("button", { name: "Voltar ao início", exact: true }).click();
   await check("leaving the studio saves the pending draft first", async () => {
-    await page.getByRole("heading", { name: "O que vamos publicar hoje?" }).waitFor();
+    await page.getByRole("heading", { name: "O que vamos criar hoje?" }).waitFor();
     await expect.poll(async () => (await saved()).body, { timeout: 5000 }).toBe("Rascunho salvo ao voltar");
   });
   await check("single card count resets for documents and valid sizes are preserved", async () => {
+    await page.getByRole("button", { name: "Ajustes", exact: true }).click();
     const format = page.getByRole("button", { name: /Formato/ });
     const size = page.getByRole("button", { name: /Tamanho/ });
     const choose = async (button, name) => {

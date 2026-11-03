@@ -35,7 +35,7 @@ export default function Autopilot(props) {
   return <AutopilotPanel key={props.state.profileId || "default"} {...props} />;
 }
 
-function AutopilotPanel({ state, request, onNotice }) {
+function AutopilotPanel({ state, request, onNotice, heading = "Piloto automático" }) {
   const pilot = state.autopilot || {};
   const saved = pilot.config || {};
   const accounts = (state.composio?.accounts || []).filter((account) => account.status === "ACTIVE");
@@ -108,11 +108,19 @@ function AutopilotPanel({ state, request, onNotice }) {
     <section className="card-box" aria-label="Piloto automático">
       <div className="section-head">
         <Bot size={20} aria-hidden="true" />
-        <h2>Piloto automático</h2>
+        <h2>{heading}</h2>
         <span className="spacer" />
         <span className={`chip ${saved.enabled ? "good" : ""}`} role="status">{saved.enabled ? "Rotina ativa" : "Rotina pausada"}</span>
       </div>
       <p className="hint" style={{ margin: 0 }}>O Carrossell prepara um carrossel nos dias escolhidos e envia para você revisar no Telegram. Só publica depois da sua aprovação. Os stories ficam prontos para você postar manualmente.</p>
+
+      <section className="sub telegram-guide" aria-label="Usar a conversa do Telegram">
+        <h3>Converse com o Carrossell pelo Telegram</h3>
+        <p>Depois de vincular sua conversa, envie um pedido em palavras. O Carrossell prepara o texto primeiro; você revisa e escolhe os próximos passos.</p>
+        <div className="telegram-examples"><blockquote>Crie um carrossel com 6 cards sobre erros ao vender serviços. Me mostre o texto primeiro.</blockquote><blockquote>Como foram os últimos 7 dias no Instagram da minha marca?</blockquote></div>
+        <p className="hint">Use <code>/ajuda</code> para ver o que está disponível, <code>/marcas</code> e <code>/projetos</code> para escolher o contexto, <code>/status</code> para acompanhar e <code>/cancelar</code> para parar o pedido da conversa.</p>
+        <p className="hint">Os pedidos de conteúdo usam o ChatGPT conectado ao app, com o computador ligado e sem suspensão. Claude e Gemini usam o modo separado de agentes e CLI. Publicar e agendar continuam dependendo da sua aprovação na prévia.</p>
+      </section>
 
       <div className="sub" aria-label="Conexão do Telegram">
         <div className="sub-head">

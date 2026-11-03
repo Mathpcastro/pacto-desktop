@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useId, useRef } from "react";
 import { X } from "lucide-react";
 import IconButton from "./IconButton.jsx";
 import { RuntimeErrorContext } from "../usePacto.js";
@@ -9,8 +9,10 @@ export default function Dialog({
   onClose,
   children,
   wide = false,
+  className = "",
 }) {
   const ref = useRef(null);
+  const titleId = useId();
   const error = useContext(RuntimeErrorContext);
   useEffect(() => {
     const element = ref.current;
@@ -24,8 +26,8 @@ export default function Dialog({
   return (
     <dialog
       ref={ref}
-      className={`dialog ${wide ? "dialog-wide" : ""}`}
-      aria-labelledby="dialog-title"
+      className={`dialog ${wide ? "dialog-wide" : ""} ${className}`}
+      aria-labelledby={titleId}
       onCancel={(e) => {
         e.preventDefault();
         onClose();
@@ -46,7 +48,7 @@ export default function Dialog({
       <header className="dialog-header">
         <div>
           {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-          <h2 id="dialog-title">{title}</h2>
+          <h2 id={titleId}>{title}</h2>
         </div>
         <IconButton label="Fechar janela" onClick={onClose}>
           <X size={19} />

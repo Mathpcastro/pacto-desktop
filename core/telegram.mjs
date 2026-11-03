@@ -105,6 +105,42 @@ export class TelegramClient {
     return messages;
   }
 
+  // Only app-produced ZIP/PDF bytes; never accept a local path or remote URL.
+  async sendDocument(chatId,{name,bytes}) {
+    if(!Buffer.isBuffer(bytes)||!bytes.length)throw new TelegramError('Documento inválido.','EINVAL');
+    if(bytes.length>45*1024*1024)throw new TelegramError('O arquivo ultrapassa 45 MB. Exporte pelo computador.','EINVAL');
+    if(typeof name!=='string'||!/^[A-Za-z0-9_-][A-Za-z0-9_.-]{0,150}\.(pdf|zip)$/.test(name)||name.includes('..'))throw new TelegramError('Nome ou tipo de documento inválido.','EINVAL');
+    const pdf=name.endsWith('.pdf');
+    if(pdf?!bytes.subarray(0,5).equals(Buffer.from('%PDF-')):!(bytes[0]===0x50&&bytes[1]===0x4b&&[0x03,0x05,0x07].includes(bytes[2])))throw new TelegramError('Conteúdo do documento inválido.','EINVAL');
+    const form=new FormData();form.set('chat_id',String(chatId));form.set('document',new Blob([bytes],{type:pdf?'application/pdf':'application/zip'}),name);
+    return this.call('sendDocument',form);
+  }
+
+  // fileId comes only from an authenticated incoming update. getFile supplies
+  // the server-relative path; neither the user nor the planner supplies a URL.
+  async downloadFile(fileId,{maxBytes=10*1024*1024,signal}={}) {
+    if(typeof fileId!=='string'||!/^[A-Za-z0-9_-]{1,300}$/.test(fileId)||!Number.isInteger(maxBytes)||maxBytes<1||maxBytes>10*1024*1024)throw new TelegramError('Arquivo ou limite inválido.','EINVAL');
+    const metadata=await this.call('getFile',{file_id:fileId},{signal}),path=metadata?.file_path;
+    if(typeof path!=='string'||path.length>300||!path.split('/').every(segment=>/^[A-Za-z0-9_-][A-Za-z0-9_.-]*$/.test(segment)&&!segment.includes('..')))throw new TelegramError('Caminho de arquivo inválido.','EINVAL');
+    if(metadata.file_size!==undefined&&(!Number.isSafeInteger(metadata.file_size)||metadata.file_size<1||metadata.file_size>maxBytes))throw new TelegramError('O tamanho do arquivo excede o limite permitido.','EINVAL');
+    if(signal?.aborted)throw new TelegramError('Download cancelado.','ABORT_ERR');
+    const controller=new AbortController(),cancel=()=>controller.abort();signal?.addEventListener('abort',cancel,{once:true});
+    let onAbort;const aborted=new Promise((_,reject)=>{onAbort=()=>reject(new TelegramError('Download cancelado ou tempo de espera esgotado.','ABORT_ERR'));controller.signal.addEventListener('abort',onAbort,{once:true});});
+    const timer=setTimeout(cancel,this.#timeoutMs);
+    try{
+      const download=async()=>{
+        const response=await this.#fetch(`${this.#base}/file/bot${this.#token}/${path}`,{signal:controller.signal,redirect:'error'});
+        if(!response.ok||response.redirected||!response.body?.getReader)throw new TelegramError('Não foi possível baixar o arquivo do Telegram.','ETELEGRAM_RESPONSE');
+        const length=Number(response.headers?.get('content-length'));if(length>maxBytes)throw new TelegramError('O tamanho do arquivo excede o limite permitido.','EINVAL');
+        const reader=response.body.getReader(),chunks=[];let size=0;
+        try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>maxBytes)throw new TelegramError('O tamanho do arquivo excede o limite permitido.','EINVAL');chunks.push(Buffer.from(value));}if(!size)throw new TelegramError('Arquivo vazio.','EINVAL');return Buffer.concat(chunks,size);}
+        finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
+      };
+      return await Promise.race([download(),aborted]);
+    }catch(error){if(error instanceof TelegramError)throw error;throw new TelegramError('Falha de conexão ao baixar do Telegram.','ETELEGRAM_NETWORK');}
+    finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel);controller.signal.removeEventListener('abort',onAbort);controller.abort();}
+  }
+
   async sendPhotos(chatId, photos, { caption = '' } = {}) {
     if (!Array.isArray(photos) || photos.some(photo => !photo || typeof photo.name !== 'string' || !photo.name || !Buffer.isBuffer(photo.bytes) || !photo.bytes.length)) {
       throw new TelegramError('Foto inválida para envio ao Telegram.', 'EINVAL');

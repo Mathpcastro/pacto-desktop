@@ -163,11 +163,12 @@ try {
     { avatar, face },
   );
   await page.reload();
-  await page.getByRole("heading", { name: "O que vamos publicar hoje?" }).waitFor();
+  await page.getByRole("heading", { name: "O que vamos criar hoje?" }).waitFor();
   await check("a barra única tem poucos controles", async () => {
     const a = await audit(page);
-    // A biblioteca de Referências adiciona um controle explícito à barra da 0.7.0.
-    assert.ok(a.barControls <= 8, `controles na barra: ${a.barControls}`);
+    // Navigation now exposes Contents and Pilot; discovery replaces the old
+    // references-only entry while preserving account and profile controls.
+    assert.ok(a.barControls <= 9, `controles na barra: ${a.barControls}`);
   });
   await page.getByRole("button", { name: "Marca", exact: true }).click();
   await page.getByRole("heading", { name: "Agendei", level: 1 }).waitFor();
@@ -213,6 +214,7 @@ try {
   });
   if (await page.locator(".scrim").count()) await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Início", exact: true }).click();
+  await page.getByRole("button", { name: "Ajustes", exact: true }).click();
   await check("barra de criar troca o formato e esconde opções de carrossel", async () => {
     await page.getByRole("button", { name: /Formato/ }).click();
     await page.getByRole("menuitemradio", { name: /Material gratuito/ }).click();
@@ -529,6 +531,8 @@ try {
   await page.getByRole("heading", { name: "Imagens da marca", exact: true }).scrollIntoViewIfNeeded();
   await shot(page, "18-imagens-da-marca");
   await page.getByRole("button", { name: "Início", exact: true }).click();
+  // Format is now deliberately preserved while navigating through Studio/Brand.
+  await page.getByRole("tab", { name: "Carrossel", exact: true }).click();
   await page.getByRole("button", { name: "Anexar foto de referência ou o que você quer que vá no carrossel" }).click();
   await check("Início: o anexo aparece na barra antes de criar", async () => {
     await expect(page.getByLabel("Imagens anexadas").locator("figure")).toHaveCount(1);

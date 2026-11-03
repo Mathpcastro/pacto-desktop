@@ -20,7 +20,13 @@ function useCli(request, onNotice) {
     request("installCli")
       .then((next) => (setInfo(next), onNotice("Comando instalado. Feche e abra o terminal (ou o Codex) para ele aparecer.")))
       .catch(() => {});
-  const copy = (text, notice) => navigator.clipboard.writeText(text).then(() => onNotice(notice));
+  const copy = async (text, notice) => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error();
+      await navigator.clipboard.writeText(text);
+      onNotice(notice);
+    } catch { onNotice("Não foi possível copiar. Selecione o texto e use Ctrl+C (ou Command+C)."); }
+  };
   return { info, install, copy };
 }
 function InstallButton({ info, install, busy }) {
@@ -77,14 +83,14 @@ export function AgentCard({ onOpen }) {
 // o Codex pode usar a conta ChatGPT conectada no app. O que eles criam fica na biblioteca do app.
 const AGENTS = {
   claude: {
-    label: "Claude",
+    label: "Claude Code",
     install: "irm https://claude.ai/install.ps1 | iex",
     installHint: "Cole no PowerShell. Precisa de uma assinatura do Claude (Pro ou Max). Também funciona na aba Code do app Claude para computador.",
     open: "claude",
     file: "CLAUDE.md",
   },
   gemini: {
-    label: "Gemini",
+    label: "Gemini CLI",
     install: "npm install -g @google/gemini-cli",
     installHint: "Cole no PowerShell. Precisa do Node.js 20 ou mais novo (nodejs.org). Na primeira vez, escolha \"Sign in with Google\".",
     open: "gemini",
@@ -106,9 +112,9 @@ const AGENT_PROMPTS = [
 
 export function AgentModal({ request, isPending, onNotice, onClose, initialAgent = "claude" }) {
   const { info, install, copy } = useCli(request, onNotice);
-  const [agent, setAgent] = useState(initialAgent);
+  const [agent, setAgent] = useState(AGENTS[initialAgent] ? initialAgent : "claude");
   const a = AGENTS[agent];
-  const prompts = agent === "codex" ? PROMPTS : AGENT_PROMPTS;
+  const prompts = AGENT_PROMPTS;
   return (
     <Dialog title="Gere carrosséis pelo Claude, Gemini ou Codex" eyebrow="USAR COM AGENTES" onClose={onClose} wide>
       <div className="dialog-fields agent-modal">
@@ -120,11 +126,9 @@ export function AgentModal({ request, isPending, onNotice, onClose, initialAgent
           ))}
         </div>
         <p style={{ margin: 0, color: "var(--muted)" }}>
-          {agent === "codex"
-            ? "O Codex usa o Carrossell por você: lê a sua marca, escreve, gera as artes com a conta ChatGPT conectada aqui, exporta, posta e agenda no Instagram."
-            : `O ${a.label} usa o Carrossell com a sua própria conta dele, sem a conta ChatGPT: escreve o texto e desenha os cards seguindo o método e a sua marca, e o Carrossell guarda, monta, exporta e posta.`}{" "}
-          Tudo o que ele criar aparece aqui no Início, como os outros carrosséis, e você pode abrir, revisar e baixar normalmente.
+          Seu agente escreve e monta os cards. Tudo aparece no Carrossell para revisar e baixar. No modo agente, o {a.label} usa a própria conta dele, sem exigir uma conta ChatGPT conectada aqui.
         </p>
+        <p className="hint" style={{ margin: 0 }}>Cards em modelos ou HTML podem ser feitos sem o ChatGPT. Imagens por IA dependem das ferramentas do seu agente. O piloto e a conversa do Telegram usam a conta ChatGPT conectada ao app.</p>
         <ol className="ig-steps agent-steps">
           <li>
             <span className="n">1</span>
@@ -198,7 +202,7 @@ export default function AgentSetup({ request, isPending, onNotice, onOpen }) {
         </button>
       </div>
       <p style={{ margin: 0, color: "var(--muted)" }}>
-        Um agente controla o Carrossell pelo comando <code>carrossell</code>: lê a sua marca, cria carrosséis, gera as artes com a sua conta, exporta e posta. Funciona com o app fechado.
+        Seu agente controla o Carrossell pelo comando <code>carrossell</code>: escreve, monta cards em HTML ou modelos, exporta e pode publicar quando você pede. Imagens por IA dependem das ferramentas do agente. Os projetos ficam no app para revisar e baixar, mesmo sem ChatGPT conectado.
       </p>
       <div className="row">
         <InstallButton info={info} install={install} busy={isPending("installCli")} />

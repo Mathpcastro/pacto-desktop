@@ -267,3 +267,8 @@ Cliente Telegram, cofre seguro, pairing, config por perfil, motor, agenda própr
 Validação final: 162 testes; build; renderer9; fases46; referências16; pilotoUI14, todos aprovados. Tarefa real Windows / PT0S executou programa marcador e foi removida. Telegram real autorizado confirmou vínculo, álbum de 2 cards manuais renderizados, legenda e callback Descartar; sem geração por IA ou Instagram real. Token removido do cofre temporário e fora de fontes/relatórios. Revisão independente sem P1/P2 remanescentes nos pontos revisados.
 
 Sem push, merge, instalador novo ou release do piloto. Permanece nesta worktree. Faltam validações externas do fluxo completo com conta ChatGPT e postagem real e Mac físico; falhas de publicação ficam incertas para conferência manual porque o Social existente não classifica com segurança uma resposta perdida.
+
+
+## 03/11/2026 — Conversa Telegram e descoberta no app
+
+Implementação local sobre 0.7.3, branch codex/telegram-autopilot. Ver [[36 - Conversa Telegram e descoberta]] para interface aprovada, ações do bot, limites e validações: 206 testes, build, fases46, renderer9, referências16, descoberta15 e pilotoUI14. Sem push, merge, versão nova ou release. Novo fluxo de conversa validado com fixtures; validação externa de ChatGPT/Telegram/Instagram real e Mac físico permanece pendente.

@@ -52,7 +52,11 @@ const audit = (page) => page.evaluate(() => {
 });
 
 const openReferences = async (page) => {
-  await page.getByRole("button", { name: "Referências", exact: true }).click();
+  await page.getByRole("button", { name: "Início", exact: true }).click();
+  await page.getByRole("button", { name: "O que posso fazer no Carrossell?", exact: true }).click();
+  const panel = page.getByRole("dialog", { name: "O que posso fazer no Carrossell?", exact: true });
+  await panel.getByRole("button", { name: "Encontrar pautas", exact: true }).click();
+  await panel.getByRole("button", { name: "Abrir referências", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Referências que valem estudar" })).toBeVisible();
 };
 
@@ -66,7 +70,7 @@ try {
     await window.pacto.request("saveProfile", { profile: { brand: "Prova de referências", product: "Catálogo local", audience: "Teste de interface" } });
   });
   await page.reload();
-  await page.getByRole("heading", { name: "O que vamos publicar hoje?" }).waitFor();
+  await page.getByRole("heading", { name: "O que vamos criar hoje?" }).waitFor();
 
   const connected = await page.evaluate(async () => Boolean((await window.pacto.request("bootstrap")).account?.connected));
   assert.equal(connected, false, "A prova deve navegar sem uma conta conectada");
@@ -114,6 +118,7 @@ try {
   await page.getByRole("button", { name: "Início", exact: true }).click();
   const draft = "Tema manual preservado: uma rotina simples para organizar o trabalho.";
   await page.getByLabel("Tema ou ideia").fill(draft);
+  await page.getByRole("button", { name: "Ajustes", exact: true }).click();
   await page.getByRole("button", { name: /Objetivo/ }).click();
   await page.getByRole("menuitemradio", { name: "Comentários", exact: true }).click();
   await page.getByRole("button", { name: /Tipo/ }).click();
@@ -149,7 +154,7 @@ try {
 
   await openReferences(page);
   await page.locator(".reference-use").nth(0).click();
-  await expect(page.getByRole("heading", { name: "O que vamos publicar hoje?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "O que vamos criar hoje?" })).toBeVisible();
   await check("usar referência preserva tema, anexo manual e opções do composer", async () => {
     await expect(page.getByLabel("Tema ou ideia")).toHaveValue(draft);
     await expect(page.getByLabel("Imagens anexadas").locator("figure")).toHaveCount(2);
@@ -161,7 +166,7 @@ try {
 
   await openReferences(page);
   await page.locator(".reference-use").nth(1).click();
-  await expect(page.getByRole("heading", { name: "O que vamos publicar hoje?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "O que vamos criar hoje?" })).toBeVisible();
   await check("trocar referência mantém o manual e somente uma da biblioteca", async () => {
     const attached = page.getByLabel("Imagens anexadas").locator("figure");
     await expect(attached).toHaveCount(2);
@@ -246,7 +251,7 @@ try {
   await expect(page.getByRole("button", { name: "Criar material", exact: true })).toBeVisible();
   await openReferences(page);
   await page.locator(".reference-use").first().click();
-  await expect(page.getByRole("heading", { name: "O que vamos publicar hoje?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "O que vamos criar hoje?" })).toBeVisible();
   await check("seis manuais em Material voltam para Carrossel", () => expect(page.getByRole("button", { name: "Criar carrossel", exact: true })).toBeVisible());
   await check("seis manuais permanecem visíveis após o aviso", () => expect(page.getByLabel("Imagens anexadas").locator("figure")).toHaveCount(6));
   await check("o aviso orienta remover um anexo manual", () => expect(page.locator(".snack")).toContainText("Você já tem 6 anexos manuais. Remova um para trocar a referência."));

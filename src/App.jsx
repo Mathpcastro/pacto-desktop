@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, ArrowLeft, Check, Home as HomeIcon, Laptop, LayoutTemplate, LogOut, Palette, RefreshCw, Search, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Bot, Check, Compass, Home as HomeIcon, Laptop, Layers, LayoutTemplate, LogOut, Palette, RefreshCw, Search, X } from "lucide-react";
 import { RuntimeErrorContext, usePacto } from "./usePacto.js";
 import Dialog from "./components/Dialog.jsx";
 import Profile from "./components/Profile.jsx";
@@ -11,6 +11,9 @@ import CommandPalette from "./components/CommandPalette.jsx";
 import ProfileSwitcher from "./components/ProfileSwitcher.jsx";
 import { InstagramButton, InstagramModal } from "./components/Instagram.jsx";
 import { AgentModal } from "./components/AgentSetup.jsx";
+import Capabilities from "./components/Capabilities.jsx";
+import Autopilot from "./components/Autopilot.jsx";
+import StoriesWorkspace from "./components/StoriesWorkspace.jsx";
 import { CourseContext, LessonPlayer, formatMoment } from "./course.jsx";
 import { rhythm } from "../core/rhythm.mjs";
 import { Spinner, usePopover } from "./ui.jsx";
@@ -52,6 +55,14 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [igOpen, setIgOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
+  const [agentProvider, setAgentProvider] = useState("claude");
+  const [capabilities, setCapabilities] = useState(false);
+  const [capabilityGoal, setCapabilityGoal] = useState("create");
+  const [homeTarget, setHomeTarget] = useState({ n: 0 });
+  const [projectPicker, setProjectPicker] = useState(null);
+  const [storiesProjectId, setStoriesProjectId] = useState(null);
+  const openAgents = (provider = "claude") => { setAgentProvider(["claude", "gemini", "codex"].includes(provider) ? provider : "claude"); setAgentsOpen(true); };
+  const openCapabilities = (goal = "create") => { setCapabilityGoal(typeof goal === "string" ? goal : "create"); setCapabilities(true); };
   // Abrir a Marca já numa seção (links do estúdio e Ctrl K).
   const [brandTarget, setBrandTarget] = useState({ tab: null, n: 0 });
   const openBrand = (tab) => {
@@ -77,12 +88,28 @@ export default function App() {
   };
   useEffect(() => {
     const go = (event) => {
-      setView(event.detail === "rhythm" || event.detail === "ideas" ? "home" : event.detail);
+      setView(event.detail);
       setProjectId(null);
     };
     window.addEventListener("pacto:navigate", go);
     return () => window.removeEventListener("pacto:navigate", go);
   }, []);
+  const goView = (next) => { setView(next); setProjectId(null); setSetup(null); };
+  const discoverAction = (action) => {
+    setCapabilities(false);
+    if (["carousel", "material", "presentation"].includes(action)) {
+      goHome(); setHomeTarget((current) => ({ n: current.n + 1, format: { carousel: "carrossel", material: "material", presentation: "apresentacao" }[action] }));
+      setTimeout(() => composerRef.current?.focus(), 0);
+    } else if (["radar", "model"].includes(action)) {
+      goView("ideas"); setHomeTarget((current) => ({ n: current.n + 1, source: action === "radar" ? "radar" : "modelador" }));
+    } else if (["references", "calendar"].includes(action)) goView(action);
+    else if (action === "pilot") goView("pilot");
+    else if (action === "results") goView("rhythm");
+    else if (action === "analytics") openBrand("analytics");
+    else if (action.startsWith("brand-")) openBrand({ "brand-context": "contexto", "brand-design": "design", "brand-images": "imagens" }[action]);
+    else if (action === "instagram") setIgOpen(true);
+    else if (["stories", "publish", "export"].includes(action)) setProjectPicker(action);
+  };
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = preferences.theme;
@@ -129,14 +156,19 @@ export default function App() {
       ...projectCommands.map((c) => (editing ? c : { ...c, hidden: true })),
       { id: "new", label: "Novo carrossel", hint: "Ctrl + N", run: () => (goHome(), setTimeout(() => composerRef.current?.focus(), 50)) },
       { id: "home", label: "Ir para o Início", run: goHome },
+      { id: "capabilities", label: "O que posso fazer no Carrossell?", hint: "Recursos por objetivo", run: () => openCapabilities() },
+      { id: "library", label: "Abrir meus conteúdos", hint: "Biblioteca", run: () => goView("library") },
+      { id: "references", label: "Abrir biblioteca de referências", hint: "Ideias e estilos", run: () => goView("references") },
+      { id: "pilot", label: "Abrir piloto automático", hint: "Telegram e rotina", run: () => goView("pilot") },
+      { id: "results", label: "Registrar resultados e ver vencedores", run: () => goView("rhythm") },
       { id: "brand", label: "Abrir Marca", hint: "Contexto, Design Kit e fotos", run: () => openBrand() },
       ...[["contexto", "Contexto da marca"], ["design", "Design Kit"], ["perfil", "Perfil (nome, @ e foto)"], ["fotos", "Fotos e cenas"], ["imagens", "Imagens da marca (logo e produtos)"], ["otimizar", "Otimizar o Carrossell"]].map(([tab, label]) => ({ id: `brand-${tab}`, label: `Marca: ${label}`, hint: "Marca", run: () => openBrand(tab) })),
-      { id: "radar", label: "Gerar 30 pautas com o Radar", hint: "Aula 02", disabled: !connected, run: () => (goHome(), request("radar", {}).catch(() => {})) },
+      { id: "radar", label: "Abrir Radar de ideias", hint: "Pautas da marca", run: () => discoverAction("radar") },
       { id: "scenes", label: "Sugerir cenas para fotos simples", hint: "Marca", disabled: !connected, run: () => (setView("brand"), request("suggestScenes").catch(() => {})) },
       { id: "theme", label: preferences.theme === "dark" ? "Usar tema claro" : "Usar tema escuro", run: () => set({ theme: preferences.theme === "dark" ? "light" : "dark" }) },
       { id: "instagram", label: "Conectar Instagram", hint: "Postar e agendar", run: () => setIgOpen(true) },
       { id: "analytics", label: "Marca: Analytics do Instagram", hint: "Desempenho e Replicador", run: () => openBrand("analytics") },
-      { id: "agents", label: "Usar o Carrossell com um agente", hint: "Claude, Gemini, Codex", run: () => setAgentsOpen(true) },
+      { id: "agents", label: "Usar o Carrossell com agentes e CLI", hint: "Claude, Gemini, Codex", run: () => openCapabilities("agents") },
       { id: "course", label: "Abrir as aulas do método", hint: "Opcional", run: () => setCourseOpen(true) },
       { id: "account", label: connected ? "Desconectar a conta ChatGPT" : "Conectar a conta ChatGPT", run: () => request(connected ? "disconnect" : "connect").catch(() => {}) },
       ...(state.profiles || []).filter((p) => p.id !== state.profileId).map((p) => ({ id: `profile-${p.id}`, label: `Trocar para o perfil ${p.name}`, hint: "Perfis", run: () => request("switchProfile", { id: p.id }).then(goHome).catch(() => {}) })),
@@ -250,32 +282,19 @@ export default function App() {
         </div>
       </main>
     );
-  else if (editing)
-    body = (
-      <Studio
-        key={project.id}
-        project={project}
-        state={state}
-        request={request}
-        pending={pending}
-        activity={activity}
-        onBack={goHome}
-        onOpen={openProject}
-        onNotice={setNotice}
-        onCommands={setProjectCommands}
-        onBrand={openBrand}
-        onInstagram={() => setIgOpen(true)}
-      />
-    );
   else
     body = (
-      <main className="shell-main">
-        {view === "brand" ? (
-          <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} onAgents={() => setAgentsOpen(true)} target={brandTarget} />
-        ) : (
-          <Home view={view} state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} onShowHome={goHome} composerRef={composerRef} connected={connected} onAgents={() => setAgentsOpen(true)} />
-        )}
-      </main>
+      <>
+        <main className="shell-main" hidden={Boolean(editing)}>
+          <div hidden={view === "brand" || view === "pilot" || view === "stories"}>
+            <Home key={state.profileId} view={view} state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} onShowHome={goHome} composerRef={composerRef} connected={connected} onAgents={openAgents} onDiscover={openCapabilities} onView={goView} onPilot={() => goView("pilot")} onStories={() => setProjectPicker("stories")} onInstagram={() => setIgOpen(true)} target={homeTarget} />
+          </div>
+          {view === "brand" && <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} onAgents={openAgents} target={brandTarget} />}
+          {view === "pilot" && <section className="page pilot-page"><div className="pilot-page-intro"><h1 className="page-title">Piloto automático</h1><p className="page-sub">Crie uma rotina. Revise e controle pelo Telegram.</p></div><Autopilot heading="Rotina e Telegram" state={state} request={request} onNotice={setNotice} /></section>}
+          {view === "stories" && <StoriesWorkspace project={state.projects.find((item) => item.id === storiesProjectId)} state={state} request={request} pending={pending} onBack={() => goView("library")} onOpen={openProject} onNotice={setNotice} />}
+        </main>
+        {editing && <Studio key={project.id} project={project} state={state} request={request} pending={pending} activity={activity} onBack={goHome} onOpen={openProject} onNotice={setNotice} onCommands={setProjectCommands} onBrand={openBrand} onInstagram={() => setIgOpen(true)} />}
+      </>
     );
   return (
     <RuntimeErrorContext.Provider value={error}>
@@ -292,10 +311,12 @@ export default function App() {
                 <nav className="topnav" aria-label="Navegação principal">
                   <button aria-current={view === "home" ? "page" : undefined} onClick={goHome}>
                     <HomeIcon size={16} /> Início
-                    {pendingResults > 0 && <span className="count-badge" aria-label={`${pendingResults} resultados para registrar`}>{pendingResults}</span>}
                   </button>
-                  <button aria-current={view === "references" ? "page" : undefined} onClick={() => { setView("references"); setProjectId(null); }}>
-                    <LayoutTemplate size={16} /> Referências
+                  <button aria-current={view === "library" ? "page" : undefined} onClick={() => goView("library")}>
+                    <Layers size={16} /> Conteúdos
+                  </button>
+                  <button aria-current={view === "pilot" ? "page" : undefined} onClick={() => goView("pilot")}>
+                    <Bot size={16} /> Piloto automático<span className={`pilot-nav-dot ${state.autopilot?.config?.enabled ? "active" : ""}`} aria-hidden="true" />
                   </button>
                   <button aria-current={view === "brand" ? "page" : undefined} onClick={() => setView("brand")}>
                     <Palette size={16} /> Marca
@@ -336,7 +357,14 @@ export default function App() {
           {body}
         </div>
         {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
-        {agentsOpen && <AgentModal request={request} isPending={isPending} onNotice={setNotice} onClose={() => setAgentsOpen(false)} />}
+        {capabilities && <Capabilities initialGoal={capabilityGoal} onClose={() => setCapabilities(false)} onAction={discoverAction} onAgents={openAgents} onNotice={setNotice} />}
+        {agentsOpen && <AgentModal key={agentProvider} initialAgent={agentProvider} request={request} isPending={isPending} onNotice={setNotice} onClose={() => setAgentsOpen(false)} />}
+        {projectPicker && <Dialog title={projectPicker === "stories" ? "De qual carrossel vamos preparar os stories?" : projectPicker === "publish" ? "Qual carrossel você quer revisar e publicar?" : "Qual conteúdo você quer baixar?"} onClose={() => setProjectPicker(null)} wide>
+          <div className="dialog-fields project-picker"><p className="hint">{projectPicker === "stories" ? "Os stories usam o texto de um carrossel, mesmo sem as artes prontas. Você revisa, baixa e posta manualmente." : "Escolha um projeto para abrir os controles de revisão, publicação e exportação do Estúdio."}</p>
+          {state.projects.filter((item) => projectPicker === "export" || (item.format || "carrossel") === "carrossel" && (projectPicker === "stories" ? item.slides?.length > 0 : item.status === "complete")).map((item) => <button key={item.id} className="btn" onClick={() => { const stories = projectPicker === "stories"; setProjectPicker(null); if (stories) { setStoriesProjectId(item.id); goView("stories"); } else openProject(item.id); }}>{item.title}<ArrowLeft size={15} style={{ transform: "rotate(180deg)" }} /></button>)}
+          {!state.projects.some((item) => projectPicker === "export" || (item.format || "carrossel") === "carrossel" && (projectPicker === "stories" ? item.slides?.length > 0 : item.status === "complete")) && <div className="empty-state"><p>{projectPicker === "export" ? "Você ainda não tem conteúdo neste perfil." : projectPicker === "stories" ? "Crie o texto de um carrossel primeiro. As artes não precisam estar prontas." : "Nenhum carrossel pronto neste perfil. Conclua um carrossel no Estúdio para continuar."}</p><button className="btn" onClick={() => { setProjectPicker(null); goView("library"); }}>Abrir meus conteúdos</button></div>}
+          </div>
+        </Dialog>}
         {igOpen && <InstagramModal state={state} request={request} isPending={isPending} onNotice={setNotice} onClose={() => setIgOpen(false)} />}
         {(error || notice) && (
           <div className="snack" role={error ? "alert" : "status"} style={error ? { background: "var(--danger)", color: "#fff" } : undefined}>

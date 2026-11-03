@@ -37,11 +37,13 @@ try {
     await window.pacto.request("saveProfile", { profile: { brand: "Produção de referências", product: "Catálogo local", audience: "Teste file protocol" } });
   });
   await page.reload();
-  await page.getByRole("heading", { name: "O que vamos publicar hoje?" }).waitFor();
+  await page.getByRole("heading", { name: "O que vamos criar hoje?" }).waitFor();
   const draft = "Tema manual preservado no build de produção.";
   await page.getByLabel("Tema ou ideia").fill(draft);
 
-  await page.getByRole("button", { name: "Referências", exact: true }).click();
+  await page.getByRole("button", { name: "O que posso fazer no Carrossell?", exact: true }).click();
+  await page.getByRole("button", { name: "Encontrar pautas", exact: true }).click();
+  await page.getByRole("button", { name: "Abrir referências", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Referências que valem estudar" })).toBeVisible();
   await expect(page.locator(".reference-card")).toHaveCount(36);
   await expect(page.getByRole("main")).toHaveCount(1);
@@ -54,7 +56,7 @@ try {
   await page.screenshot({ path: join(out, "references-production.png") });
 
   await page.getByRole("button", { name: /^Usar referência CAR-0004:/ }).click();
-  await expect(page.getByRole("heading", { name: "O que vamos publicar hoje?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "O que vamos criar hoje?" })).toBeVisible();
   await expect(page.getByLabel("Tema ou ideia")).toHaveValue(draft);
   const attached = page.getByLabel("Imagens anexadas").locator("figure");
   await expect(attached).toHaveCount(1);
