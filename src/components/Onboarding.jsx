@@ -49,13 +49,31 @@ function Interview({ kind, data, busy, connected, request, extra, children }) {
   useEffect(() => {
     end.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [messages.length, busy]);
+  const [files, setFiles] = useState([]);
+  const [isLogo, setIsLogo] = useState(true);
+  const [picking, setPicking] = useState(false);
   const send = (args) => request("interview", { kind, ...extra, ...args }).catch(() => {});
+  const attach = async () => {
+    setPicking(true);
+    try {
+      const ref = await request("importReference");
+      if (ref?.dataUrl) setFiles((list) => [...list, { name: ref.name, dataUrl: ref.dataUrl }].slice(0, 6));
+    } catch {
+    } finally {
+      setPicking(false);
+    }
+  };
   const submit = (event) => {
     event?.preventDefault();
-    const text = answer.trim();
-    if (!text || busy) return;
+    const typed = answer.trim();
+    if ((!typed && !files.length) || busy) return;
+    const sent = files;
+    const label = sent.length ? `\n\n(Anexei ${sent.length === 1 ? "1 imagem" : `${sent.length} imagens`}${isLogo ? ": o meu logotipo" : ""}.)` : "";
     setAnswer("");
-    send({ text });
+    setFiles([]);
+    if (sent.length && isLogo)
+      request("saveMedia", { addAssets: sent.map((f) => ({ name: f.name.replace(/\.[a-z]+$/i, "") || "Logotipo", dataUrl: f.dataUrl, kind: "logo" })) }).catch(() => {});
+    send({ text: `${typed || "Segue o anexo."}${label}`, ...(sent.length ? { references: [...(extra?.references || []), ...sent].slice(0, 6) } : {}) });
   };
   if (!messages.length && !busy)
     return (
@@ -88,7 +106,25 @@ function Interview({ kind, data, busy, connected, request, extra, children }) {
         )}
         <div ref={end} />
       </div>
+      {files.length > 0 && (
+        <div className="attached">
+          {files.map((f, i) => (
+            <span className="thumb" key={`${f.name}-${i}`}>
+              <img src={f.dataUrl} alt={f.name || "Imagem anexada"} />
+              <button type="button" className="icon-only" aria-label={`Remover ${f.name}`} onClick={() => setFiles((list) => list.filter((_, n) => n !== i))}>
+                <Trash2 size={12} />
+              </button>
+            </span>
+          ))}
+          <label className="check">
+            <input type="checkbox" checked={isLogo} onChange={(e) => setIsLogo(e.target.checked)} /> É o meu logotipo (guardar na marca)
+          </label>
+        </div>
+      )}
       <form className="ask" onSubmit={submit}>
+        <button type="button" className="icon-only" aria-label="Anexar imagem (logotipo, produto ou print)" title="Anexar imagem: logotipo, produto ou print" disabled={busy || picking || files.length >= 6} onClick={attach}>
+          {picking ? <Spinner /> : <ImagePlus size={16} />}
+        </button>
         <Grow
           aria-label="Sua resposta"
           placeholder="Responda com o máximo de detalhes. Dá para responder várias perguntas de uma vez."
@@ -99,7 +135,7 @@ function Interview({ kind, data, busy, connected, request, extra, children }) {
             if (e.key === "Enter" && !e.shiftKey) submit(e);
           }}
         />
-        <button className="icon-only" aria-label="Enviar resposta" disabled={busy || !answer.trim() || !connected}>
+        <button className="icon-only" aria-label="Enviar resposta" disabled={busy || (!answer.trim() && !files.length) || !connected}>
           <Send size={16} />
         </button>
       </form>
