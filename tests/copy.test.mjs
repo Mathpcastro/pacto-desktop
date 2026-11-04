@@ -21,3 +21,15 @@ test('story template escapes text and keeps the Instagram safe zones', () => {
   assert.match(html,/&lt;b&gt;Oi&lt;\/b&gt;/); assert.match(html,/background:#ffffff/); assert.match(html,/padding:300px 112px 420px/);
   assert.match(storyHtml({story:{text:'x'},theme:'outro'}),/background:#000000/);
 });
+test('copy rules carry spoken voice, persuasion and the flow of the chosen architecture', async () => {
+  const { flowRules, PERSUASION_RULES, VOICE_RULES, ARCHITECTURE_FLOW } = await import('../core/copy.mjs');
+  assert.match(VOICE_RULES, /Escreva como fala/);
+  assert.match(PERSUASION_RULES, /Benefício antes de recurso/);
+  for (const id of ['lista-util', 'tutorial', 'framework', 'estudo-de-caso', 'historia-metodo-oferta']) {
+    const rules = flowRules(id);
+    assert.match(rules, /FIO CONDUTOR/);
+    assert.ok(rules.includes(ARCHITECTURE_FLOW[id]));
+  }
+  const any = flowRules('');
+  for (const flow of Object.values(ARCHITECTURE_FLOW)) assert.ok(any.includes(flow));
+});

@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { VOICE_RULES, aiTells } from './copy.mjs';
+import { VOICE_RULES, PERSUASION_RULES, flowRules, aiTells } from './copy.mjs';
 
 export const DEFAULT_KNOWLEDGE_ROOT = fileURLToPath(new URL('../resources/pacto/', import.meta.url));
 const normalize = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -101,6 +101,8 @@ export function prepareCarousel(knowledge, profile, brief, architecture) {
       'Siga Pauta → Arquitetura → Copy → Tratamento visual → Oferta. Entregue roteiro e legenda, peça revisão antes das imagens. Use 4:5; cada card é um arquivo separado, nunca uma colagem.',
       'Se faltarem dados essenciais, faça perguntas específicas. CTA precisa explicar o benefício e o material exato entregue. O aplicativo não envia DMs nem publica sozinho.',
       VOICE_RULES,
+      PERSUASION_RULES,
+      flowRules(chosen?.id),
       'Stories (opcional, depois do carrossel): de 5 a 7 só de texto, em fundo preto ou branco: Gancho, de 2 a 4 Conteúdo (um ponto do carrossel por story, reescrito como fala), Enquete ou Caixa de perguntas e CTA para o post com a palavra-chave.',
       knowledge.method,
       `CONTEXTO DO COMPRADOR (JSON):\n${JSON.stringify(b.context,null,2)}`,
