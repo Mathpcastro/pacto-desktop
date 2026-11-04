@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarClock, ExternalLink, Pause, Play, RefreshCw, Monitor, Check, MessageCircle } from "lucide-react";
+import { CalendarClock, ExternalLink, Pause, Play, RefreshCw, Monitor, Check, MessageCircle, Plus, X } from "lucide-react";
 import { STYLES } from "../../core/templates.mjs";
 import { Spinner } from "../ui.jsx";
 import Dialog from "./Dialog.jsx";
@@ -16,19 +16,31 @@ const JOB_LABEL = {
 };
 const RUNNING = new Set(["ready", "scheduleDate", "scheduleConfirm", "queued", "planning", "writing", "generating", "rendering", "notifying", "sending", "approved", "approvedSchedule", "publishing", "scheduling", "redo", "resend"]);
 const DISCARDABLE = new Set(["ready", "error", "queued", "scheduleDate", "scheduleConfirm"]);
+const CLOSED = new Set(["published", "scheduled", "discarded", "error", "uncertain", "complete", "cancelled", "failed"]);
+const MAX_TIMES = 6;
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+const hourLabel = (time) => { const [h, m] = time.split(":"); return `${Number(h)}h${m !== "00" ? m : ""}`; };
+const joinPt = (items) => items.length > 1 ? `${items.slice(0, -1).join(", ")} e ${items.at(-1)}` : items[0] || "";
+const runLabel = (iso) => {
+  const date = new Date(iso), today = new Date(), tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+  const day = date.toDateString() === today.toDateString() ? "Hoje" : date.toDateString() === tomorrow.toDateString() ? "Amanhã" : date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
+  return `${day}, ${hourLabel(date.toTimeString().slice(0, 5))}`;
+};
 const when = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 };
 const editable = (config = {}) => ({
-  time: config.time || "09:00",
+  times: Array.isArray(config.times) && config.times.length ? [...config.times].sort() : [config.time || "09:00"],
   days: Array.isArray(config.days) ? [...config.days].sort((a, b) => a - b) : [1, 2, 3, 4, 5],
   style: config.style || "texto",
   cardCount: config.cardCount ?? 6,
   accounts: Array.isArray(config.accounts) ? [...config.accounts].sort() : [],
 });
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const valid = (config, accounts, requireAccounts = true) => /^([01]\d|2[0-3]):[0-5]\d$/.test(config.time)
+const valid = (config, accounts, requireAccounts = true) => config.times.length > 0 && config.times.length <= MAX_TIMES
+  && config.times.every((time) => TIME.test(time)) && new Set(config.times).size === config.times.length
   && config.days.length > 0 && config.days.every((day) => Number.isInteger(day) && day >= 0 && day <= 6)
   && STYLES.includes(config.style) && Number.isInteger(config.cardCount) && config.cardCount >= 2 && config.cardCount <= 10
   && (!requireAccounts || config.accounts.length > 0) && config.accounts.every((id) => accounts.some((account) => account.id === id));
@@ -93,6 +105,9 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
   const savedValid = valid(editable(saved), accounts);
   const jobs = [...(pilot.jobs || [])].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 8);
   const running = (pilot.jobs || []).some((job) => RUNNING.has(job.status));
+  // Cabem tantos carrosséis esperando aprovação quanto horários na rotina.
+  const openJobs = (pilot.jobs || []).filter((job) => !CLOSED.has(job.status)).length;
+  const full = openJobs >= Math.max(1, editable(saved).times.length);
   const pairing = pilot.pairing;
   const expires = pairing?.expiresAt ? new Date(pairing.expiresAt).getTime() : NaN;
   const expired = Number.isFinite(expires) && expires <= now;
@@ -100,7 +115,8 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
   const saveRoutine = async (event) => {
     event.preventDefault();
     if (!draftValid) return;
-    const result = await act("saveAutopilot", { config: { ...draft, enabled: Boolean(saved.enabled) } }, "Rotina salva para este perfil.");
+    const config = { ...draft, times: [...draft.times].sort(), enabled: Boolean(saved.enabled) };
+    const result = await act("saveAutopilot", { config }, "Rotina salva para este perfil.");
     if (result) {
       edited.current = false;
       setDraft(editable(result.autopilot?.config || { ...draft, enabled: saved.enabled }));
@@ -112,7 +128,9 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
 
   const summary = editable(saved);
   const daySummary = same(summary.days, [1, 2, 3, 4, 5]) ? "Seg–sex" : DAYS.filter(([day]) => summary.days.includes(day)).map(([, , short]) => short).join(", ") || "Escolha os dias";
-  const [hour, minute] = summary.time.split(":");
+  const perDay = summary.times.length;
+  const upcoming = pilot.upcoming || [];
+  const duplicateTime = new Set(draft.times).size !== draft.times.length;
   const connectionStatus = pilot.connectionError ? "Conexão precisa de atenção" : connected ? "Conectado" : pilot.hasToken ? "Falta vincular a conversa" : "Não conectado";
   const activeJobs = jobs.filter((job) => !["published", "complete", "discarded", "cancelled", "scheduled"].includes(job.status));
   const previewProject = (state.projects || []).find((project) => project.id === previewId);
@@ -124,7 +142,7 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
     {job.status === "ready" && <p className="hint">Revise as imagens e aprove pelo Telegram para publicar.</p>}
     {job.status === "uncertain" && <p className="hint">Confira no Instagram se o post saiu antes de qualquer nova tentativa. A publicação não será repetida automaticamente.</p>}
     {DISCARDABLE.has(job.status) && <div className="row">
-      {job.status === "error" && <button className="btn small" disabled={Boolean(pending) || !connected || !state.account?.connected || running} onClick={() => act("retryAutopilot", { id: job.id }, "Pedido retomado.")}><RefreshCw size={14} /> Retomar</button>}
+      {job.status === "error" && <button className="btn small" disabled={Boolean(pending) || !connected || !state.account?.connected || full} onClick={() => act("retryAutopilot", { id: job.id }, "Pedido retomado.")}><RefreshCw size={14} /> Retomar</button>}
       <button className="ghost-btn" disabled={Boolean(pending)} aria-label={`Descartar pedido: ${job.title || "carrossel"}`} onClick={() => act("discardAutopilot", { id: job.id }, "Pedido descartado.")}>Descartar pedido</button>
     </div>}
   </div>);
@@ -140,20 +158,28 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
       <div className="pilot-columns">
         <section className="pilot-panel pilot-routine" aria-labelledby="pilot-routine-title">
           <div className="pilot-section-top"><h2 id="pilot-routine-title">Sua rotina</h2><span className={`chip ${saved.enabled ? "good" : ""}`} role="status">{saved.enabled ? "Ativa" : "Pausada"}</span></div>
-          <p className="pilot-schedule">{daySummary}, às {Number(hour)}h{minute !== "00" ? minute : ""}</p>
-          <p className="pilot-routine-meta">{summary.cardCount} cards <span aria-hidden="true">·</span> {STYLE_LABEL[summary.style]}</p>
+          <p className="pilot-schedule">{daySummary}, às {joinPt(summary.times.map(hourLabel))}</p>
+          <p className="pilot-routine-meta">{perDay === 1 ? "1 carrossel por dia" : `${perDay} carrosséis por dia`} <span aria-hidden="true">·</span> {summary.cardCount} cards <span aria-hidden="true">·</span> {STYLE_LABEL[summary.style]}</p>
           <div className="pilot-routine-footer"><div className="pilot-account-note"><strong>{summary.accounts.length ? summary.accounts.map((id) => { const account = accounts.find((a) => a.id === id); return account ? `@${(account.username || "conta sem nome").replace(/^@/, "")}` : "Conta indisponível"; }).join(", ") : "Nenhuma conta selecionada"}</strong><span>{summary.accounts.length ? "Contas para publicação" : "Defina na configuração"}</span></div><button className="btn" onClick={() => setDialog("routine")}>Configurar rotina</button></div>
       <div className="pilot-routine-actions">
         <div className="row">
           <button className="btn" disabled={Boolean(pending) || (!saved.enabled && (!connected || !savedValid || !state.account?.connected))} onClick={toggleRoutine}>{saved.enabled ? <Pause size={15} /> : <Play size={15} />}{saved.enabled ? "Pausar rotina" : "Ativar rotina"}</button>
-          <button className="btn" disabled={Boolean(pending) || !connected || !state.account?.connected || !savedValid || dirty || running || Boolean(state.working)} onClick={() => act("runAutopilot", {}, "Preparação iniciada. Acompanhe o pedido abaixo.")}><CalendarClock size={15} />{pending === "runAutopilot" ? "Iniciando…" : "Gerar agora"}</button>
+          <button className="btn" disabled={Boolean(pending) || !connected || !state.account?.connected || !savedValid || dirty || full || Boolean(state.working)} onClick={() => act("runAutopilot", {}, "Preparação iniciada. Acompanhe o pedido abaixo.")}><CalendarClock size={15} />{pending === "runAutopilot" ? "Iniciando…" : "Gerar agora"}</button>
         </div>
         {dirty && <p className="hint" style={{ margin: 0 }}>Salve as alterações antes de gerar. Ativar ou pausar usa a rotina já salva e mantém o que você está editando.</p>}
         {!connected && <p className="hint" style={{ margin: 0 }}>Conecte o bot e vincule sua conversa para ativar ou gerar.</p>}
         {!state.account?.connected && <p className="hint" style={{ margin: 0 }}>Conecte sua conta ChatGPT no Carrossell para preparar os textos e os stories.</p>}
         {saved.enabled && saved.nextAt && <p className="hint" role="status" style={{ margin: 0 }}>Próxima preparação: {when(saved.nextAt)}.</p>}
+        {full && connected && <p className="hint" style={{ margin: 0 }}>{openJobs === 1 ? "Há um carrossel" : `Há ${openJobs} carrosséis`} esperando você. Aprove ou descarte para a rotina preparar o próximo.</p>}
 
       </div>
+      {saved.enabled && upcoming.length > 0 && <div className="pilot-upcoming" aria-labelledby="pilot-upcoming-title">
+        <b id="pilot-upcoming-title">Próximos horários</b>
+        <ul>{upcoming.map((run) => <li key={run.at} className={run.skipped ? "skipped" : ""}>
+          <span>{runLabel(run.at)}{run.skipped && <em> · pulado</em>}</span>
+          <button className="ghost-btn" disabled={Boolean(pending)} aria-label={`${run.skipped ? "Voltar a preparar" : "Pular"} ${runLabel(run.at)}`} onClick={() => act("skipAutopilotRun", { at: run.at, skip: !run.skipped }, run.skipped ? "Este horário volta a preparar um carrossel." : "Horário pulado. Os outros continuam.")}>{run.skipped ? "Voltar a preparar" : "Pular"}</button>
+        </li>)}</ul>
+      </div>}
 
         </section>
         <section className="pilot-panel pilot-review" aria-labelledby="pilot-review-title"><div className="pilot-section-top"><h2 id="pilot-review-title">Para revisar</h2>{activeJobs.length > 0 && <span className="chip">{activeJobs.length} pedido{activeJobs.length > 1 ? "s" : ""}</span>}</div>
@@ -235,14 +261,23 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
       </div></Dialog>}
       {dialog === "routine" && <Dialog title="Configurar rotina" onClose={closeDialog} className="pilot-dialog"><div className="pilot-dialog-body">
       <form className="sub" aria-label="Rotina deste perfil" onSubmit={saveRoutine}>
-        <div className="sub-head"><b>Rotina deste perfil</b><span className="hint">Um carrossel por dia escolhido</span></div>
+        <div className="sub-head"><b>Rotina deste perfil</b><span className="hint">Um carrossel em cada horário</span></div>
         <fieldset disabled={Boolean(pending)} style={{ display: "grid", gap: 12, padding: 0, margin: 0, border: 0, minWidth: 0 }}>
           <legend className="hint" style={{ marginBottom: 8 }}>Dias da semana</legend>
           <div className="row" role="group" aria-label="Dias da rotina">
             {DAYS.map(([day, label, short]) => <button type="button" className="pill" key={day} aria-label={label} aria-pressed={draft.days.includes(day)} onClick={() => change({ days: (draft.days.includes(day) ? draft.days.filter((value) => value !== day) : [...draft.days, day]).sort((a, b) => a - b) })}>{short}</button>)}
           </div>
+          <div className="pilot-times" role="group" aria-label="Horários da rotina">
+            <span className="hint">Horários neste computador · até {MAX_TIMES} por dia</span>
+            {draft.times.map((time, index) => <div className="pilot-time" key={index}>
+              <input type="time" required aria-label={`Horário ${index + 1} da rotina`} value={time} onChange={(event) => change({ times: draft.times.map((value, i) => i === index ? event.target.value : value) })} />
+              {draft.times.length > 1 && <button type="button" className="ghost-btn" aria-label={`Remover horário ${index + 1}`} onClick={() => change({ times: draft.times.filter((_, i) => i !== index) })}><X size={14} /></button>}
+            </div>)}
+            {draft.times.length < MAX_TIMES && <button type="button" className="ghost-btn" onClick={() => { const last = draft.times.at(-1) || "09:00"; const [h, m] = last.split(":").map(Number); const next = `${String((h + 3) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`; change({ times: [...draft.times, draft.times.includes(next) ? "" : next] }); }}><Plus size={14} /> Adicionar horário</button>}
+            {duplicateTime && <p className="hint" style={{ margin: 0, color: "var(--danger)" }}>Há dois horários iguais. Troque ou remova um deles.</p>}
+            <p className="hint" style={{ margin: 0 }}>Cada horário prepara um carrossel e manda a prévia no Telegram. Nada é publicado sem a sua aprovação. Deixe pelo menos 1 hora entre os horários: cada carrossel leva alguns minutos para ficar pronto.</p>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
-            <label className="fld"><span>Horário neste computador</span><input type="time" required aria-label="Horário da rotina" value={draft.time} onChange={(event) => change({ time: event.target.value })} /></label>
             <label className="fld"><span>Estilo</span><select aria-label="Estilo do carrossel" value={draft.style} onChange={(event) => change({ style: event.target.value })}>{STYLES.map((style) => <option key={style} value={style}>{STYLE_LABEL[style] || style}</option>)}</select></label>
             <label className="fld"><span>Quantidade de cards</span><input type="number" min="2" max="10" step="1" required aria-label="Quantidade de cards, de 2 a 10" value={draft.cardCount} onChange={(event) => change({ cardCount: event.target.value === "" ? "" : Number(event.target.value) })} /></label>
           </div>
@@ -254,7 +289,7 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
             </label>) : <p className="hint" style={{ margin: 0 }}>Conecte uma conta em Instagram para escolher onde publicar.</p>}
             {draft.accounts.some((id) => !accounts.some((account) => account.id === id)) && <p className="hint" style={{ margin: 0, color: "var(--danger)" }}>Uma conta escolhida não está mais conectada. <button type="button" className="link-btn" onClick={() => change({ accounts: draft.accounts.filter((id) => accounts.some((account) => account.id === id)) })}>Remover contas indisponíveis</button></p>}
           </div>
-          <p className="hint" style={{ margin: 0 }}>Escolha ao menos um dia e de 2 a 10 cards. Marque uma conta antes de ativar ou gerar.</p>
+          <p className="hint" style={{ margin: 0 }}>Escolha ao menos um dia, um horário e de 2 a 10 cards. Marque uma conta antes de ativar ou gerar.</p>
           <div className="row">
             <button className="btn primary" disabled={!draftValid}>{pending === "saveAutopilot" ? "Salvando…" : "Salvar rotina"}</button>
             {dirty && <span className="hint" role="status">Há alterações para salvar.</span>}

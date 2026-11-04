@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { approvalFingerprint as fingerprint } from './approval.mjs';
 import { TelegramClient } from './telegram.mjs';
-import { DEFAULT_CONFIG, nextRun, validateConfig } from './autopilot-schedule.mjs';
+import { DEFAULT_CONFIG, nextRun, validateConfig, upcomingRuns, liveSkips } from './autopilot-schedule.mjs';
 import { parseWhen } from './schedule.mjs';
 import { postable } from './instagram.mjs';
 import { validId } from './store.mjs';
@@ -11,6 +11,9 @@ import { TelegramSchedule, SCHEDULE_COMMAND } from './telegram-schedule.mjs';
 
 const TERMINAL=new Set(['published','scheduled','discarded','error','uncertain']);
 const decisionStates=new Set(['ready','scheduleDate','scheduleConfirm']);
+// Com vários horários por dia, cabem tantos carrosséis esperando aprovação quanto horários.
+const pendingLimit=config=>Math.max(1,(config?.times||[]).length);
+const waiting=n=>n===1?'um carrossel aguardando':`${n} carrosséis aguardando`;
 const messageError=error=>String(error?.message||'Não foi possível concluir a operação.').replace(/https?:\/\/\S+/g,'[endereço omitido]').replace(/\b\d{5,}:[A-Za-z0-9_-]+/g,'[token omitido]').slice(0,600);
 const sleep=(ms,signal)=>new Promise(resolve=>{if(signal?.aborted)return resolve();const done=()=>{clearTimeout(timer);signal?.removeEventListener('abort',done);resolve();};const timer=setTimeout(done,ms);timer.unref?.();signal?.addEventListener('abort',done,{once:true});});
 
@@ -24,8 +27,9 @@ export class Autopilot {
   bindingActive(){const binding=this.state.snapshot().binding;return !!binding&&(!binding.expiresAt||new Date(binding.expiresAt)>this.now());}
   status(profileId){
     const data=this.state.snapshot();return {hasToken:Boolean(this.secrets.getTelegramToken?.()),bot:data.bot,paired:Boolean(data.binding),pairing:data.pairing&&new Date(data.pairing.expiresAt)>this.now()?{...data.pairing,url:`https://t.me/${data.bot.username}?start=${data.pairing.code}`}:null,connectionError:data.configs[profileId]?.scheduleError||data.configs[profileId]?.runError||this.connectionError,
-      config:{...DEFAULT_CONFIG,...data.configs[profileId]},jobs:data.jobs.filter(j=>j.profileId===profileId).slice(-12).reverse().map(({id,projectId,status,title,error,createdAt})=>({id,projectId,status,title,error,createdAt}))};
+      config:{...DEFAULT_CONFIG,...data.configs[profileId],times:data.configs[profileId]?.times||[data.configs[profileId]?.time||DEFAULT_CONFIG.time]},upcoming:this.upcoming(data.configs[profileId]),jobs:data.jobs.filter(j=>j.profileId===profileId).slice(-12).reverse().map(({id,projectId,status,title,error,createdAt})=>({id,projectId,status,title,error,createdAt}))};
   }
+  upcoming(config){if(!config)return [];try{return upcomingRuns(validateConfig(config),new Date(this.now()),8);}catch{return [];}}
   keepAlive(){const data=this.state.snapshot();return Boolean(this.secrets.getTelegramToken?.()&&(data.pairing&&new Date(data.pairing.expiresAt)>this.now()||data.binding&&(!data.binding.expiresAt||new Date(data.binding.expiresAt)>this.now())));}
   async changed(profileId){
     if(profileId&&!this.rt.profileList().some(p=>p.id===profileId))profileId=undefined;
@@ -55,7 +59,11 @@ export class Autopilot {
     await this.state.change(data=>{data.pairing=pairing;});await this.changed();return {...pairing,url:`https://t.me/${this.state.snapshot().bot.username}?start=${pairing.code}`};
   }
   async saveConfig(profileId,input){
-    validId(profileId);this.rt.profiles?.find(profileId);const config=validateConfig(input);
+    validId(profileId);this.rt.profiles?.find(profileId);
+    // A tela não envia os pulos; eles continuam valendo enquanto o horário existir.
+    const before=this.state.snapshot().configs[profileId];
+    const config=validateConfig(input&&typeof input==='object'&&input.skips===undefined?{...input,skips:before?.skips||[]}:input);
+    config.skips=liveSkips(config.skips,new Date(this.now()));
     if(config.enabled){if(!this.state.snapshot().binding)throw new Error('Vincule sua conversa do Telegram primeiro.');this.clientForToken();await this.rt.inProfile(profileId,()=>this.rt.social.pick(config.accounts));}
     const next={...config,nextAt:config.enabled?nextRun(config,new Date(this.now())):null};
     // Configuração persistida antes do registro no SO; uma tarefa órfã não gera se disabled.
@@ -63,6 +71,15 @@ export class Autopilot {
     try{if(this.scheduler){if(config.enabled)await this.scheduler.add(profileId,new Date(next.nextAt));else await this.scheduler.remove(profileId).catch(()=>{});}}
     catch(error){await this.state.change(data=>{data.configs[profileId].enabled=false;data.configs[profileId].nextAt=null;});await this.changed(profileId);throw new Error(`Não foi possível ativar a rotina no sistema: ${messageError(error)}`);}
     await this.changed(profileId);return next;
+  }
+  // Pula (ou volta a preparar) uma ocorrência da rotina sem mudar os horários.
+  async skipRun(profileId,at,skip=true){
+    validId(profileId);const config=this.state.snapshot().configs[profileId];if(!config)throw new Error('Salve a rotina antes.');
+    const iso=new Date(typeof at==='string'?at:NaN);if(Number.isNaN(iso.getTime()))throw new Error('Horário inválido.');
+    const key=iso.toISOString();
+    if(skip&&!upcomingRuns(validateConfig(config),new Date(this.now()),30).some(run=>run.at===key))throw new Error('Este horário não está entre os próximos da rotina.');
+    const skips=liveSkips(config.skips||[],new Date(this.now())).filter(a=>a!==key);if(skip)skips.push(key);
+    return this.saveConfig(profileId,{...config,skips});
   }
   async rearm(){
     if(!this.scheduler)return;const configs=this.state.snapshot().configs;
@@ -82,7 +99,7 @@ export class Autopilot {
     if(!config.accounts.length)throw new Error('Escolha as contas do Instagram e salve a rotina.');
     await this.rt.inProfile(profileId,()=>{this.rt.ensureConnected();this.rt.social.pick(config.accounts);if(!this.rt.store.state().profile?.brandContext?.trim())throw new Error('Conclua o Contexto da Marca antes de gerar.');});
     const job={id:randomUUID(),profileId,config,accounts:config.accounts,status:'queued',createdAt:new Date(this.now()).toISOString(),error:'',title:'Próxima pauta do Radar'};
-    await this.state.change(data=>{if(data.jobs.some(j=>j.profileId===profileId&&!TERMINAL.has(j.status)))throw new Error('Este perfil já tem um carrossel aguardando. Conclua ou descarte antes de criar outro.');data.jobs.push(job);});await this.changed(profileId);return job;
+    await this.state.change(data=>{const open=data.jobs.filter(j=>j.profileId===profileId&&!TERMINAL.has(j.status)).length;if(open>=pendingLimit(config))throw new Error(`Este perfil já tem ${waiting(open)}. Aprove ou descarte no Telegram antes de criar outro.`);data.jobs.push(job);});await this.changed(profileId);return job;
   }
   async call(action,args={}){
     const result=await this.rt.request(action,args),token=this.rt.job;if(token?.done)await token.done;
@@ -197,7 +214,7 @@ export class Autopilot {
     const job=this.state.snapshot().jobs.find(j=>j.id===validId(id));if(!job)throw new Error('Trabalho não encontrado.');
     if(job.status==='uncertain')throw new Error('Confira o Instagram e os agendamentos no app antes de qualquer nova tentativa.');
     if(job.status!=='error')throw new Error('Só é possível retomar um trabalho com erro.');
-    await this.state.change(data=>{const saved=data.jobs.find(j=>j.id===id);if(saved.status!=='error')throw new Error('Este trabalho já foi retomado.');if(data.jobs.some(j=>j.id!==id&&j.profileId===saved.profileId&&!TERMINAL.has(j.status)))throw new Error('Este perfil já tem um carrossel aguardando.');Object.assign(saved,{status:'queued',error:'',reviewId:null,messageId:null});});await this.changed(job.profileId);
+    await this.state.change(data=>{const saved=data.jobs.find(j=>j.id===id);if(saved.status!=='error')throw new Error('Este trabalho já foi retomado.');const open=data.jobs.filter(j=>j.id!==id&&j.profileId===saved.profileId&&!TERMINAL.has(j.status)).length;if(open>=pendingLimit(data.configs[saved.profileId]))throw new Error(`Este perfil já tem ${waiting(open)}.`);Object.assign(saved,{status:'queued',error:'',reviewId:null,messageId:null});});await this.changed(job.profileId);
   }
   async discard(id){
     const job=this.state.snapshot().jobs.find(j=>j.id===validId(id));if(!job||!['ready','error','queued','scheduleDate','scheduleConfirm'].includes(job.status))throw new Error('Este trabalho não pode ser descartado agora.');
@@ -228,7 +245,7 @@ export class Autopilot {
       if(!this.rt.codex.status.account.connected){
         if(!config.runError){await this.state.change(d=>{d.configs[profileId].runError='Aguardando a conexão da conta ChatGPT para gerar. Abra o app se precisar conectar novamente.';});await this.changed(profileId);}continue;
       }
-      const nextAt=nextRun(config,new Date(this.now()));await this.state.change(d=>{d.configs[profileId].nextAt=nextAt;});
+      const nextAt=nextRun(validateConfig(config),new Date(this.now()));await this.state.change(d=>{const c=d.configs[profileId];c.nextAt=nextAt;c.skips=liveSkips(c.skips||[],new Date(this.now()));});
       try{await this.enqueue(profileId);await this.state.change(d=>{d.configs[profileId].runError='';});}
       catch(error){await this.state.change(d=>{d.configs[profileId].runError=messageError(error);});await this.changed(profileId);}
       await this.arm(profileId,nextAt);

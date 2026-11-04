@@ -196,7 +196,7 @@ test('pilot configuration accepts the new publishable sizes and rejects unsafe s
   const config=validateConfig({enabled:true,time:'09:00',days:[1,2,3,4,5],style:'texto',cardCount:3,accounts:['ig1','ig1']});
   assert.deepEqual(config.accounts,['ig1']);assert.equal(config.cardCount,3);
   assert.throws(()=>validateConfig({...config,cardCount:1}),/2.*10/);
-  assert.throws(()=>validateConfig({...config,time:'24:05'}),/horário/i);
+  assert.throws(()=>validateConfig({...config,times:undefined,time:'24:05'}),/horário/i);
   assert.throws(()=>validateConfig({...config,days:[]}),/dia/i);
   assert.throws(()=>validateConfig({...config,accounts:[]}),/conta/i);
   assert.throws(()=>validateConfig({...config,style:'unknown'}),/estilo/i);
@@ -247,4 +247,43 @@ test('/agendados lists scheduled posts and changes or cancels them only after a 
   assert.equal(f.store.get(p.id).schedule,null);assert.match(f.sent.at(-1).text,/Agendamento cancelado/);
   await f.pilot.handleUpdate(message('/agendados'));assert.match(f.sent.at(-1).text,/Nenhum post agendado/);
   assert.equal(drop.startsWith('s:'),true);
+});
+
+test('routine runs at several times per day, skips chosen occurrences and keeps legacy single-time configs',async()=>{
+  const {validateConfig,nextRun,upcomingRuns}=await import('../core/autopilot-schedule.mjs');
+  const legacy=validateConfig({enabled:false,time:'09:00',days:[1],style:'texto',cardCount:3,accounts:[]});
+  assert.deepEqual(legacy.times,['09:00']);assert.equal(legacy.time,'09:00');
+  const config=validateConfig({enabled:true,times:['18:00','09:00','13:30'],days:[1,2],style:'texto',cardCount:3,accounts:['ig1']});
+  assert.deepEqual(config.times,['09:00','13:30','18:00']);assert.equal(config.time,'09:00');
+  const monday=new Date(2026,10,2,10);
+  assert.equal(new Date(nextRun(config,monday)).getHours(),13);
+  const runs=upcomingRuns(config,monday,5).map(r=>new Date(r.at));
+  assert.deepEqual(runs.map(d=>[d.getDate(),d.getHours()]),[[2,13],[2,18],[3,9],[3,13],[3,18]]);
+  const skipped=validateConfig({...config,skips:[runs[0].toISOString()]});
+  assert.equal(new Date(nextRun(skipped,monday)).getHours(),18);
+  assert.equal(upcomingRuns(skipped,monday,2)[0].skipped,true);
+  assert.throws(()=>validateConfig({...config,times:['09:00','09:00']}),/iguais/);
+  assert.throws(()=>validateConfig({...config,times:['09:00','10:00','11:00','12:00','13:00','14:00','15:00']}),/até 6/);
+  assert.throws(()=>validateConfig({...config,times:[]}),/horário/i);
+  assert.throws(()=>validateConfig({...config,times:['25:00']}),/horário/i);
+});
+
+test('pilot keeps one waiting carousel per routine time and lets the user skip a run from the app',async t=>{
+  const f=await pilotFixture(t);
+  await f.pilot.enqueue('principal');await assert.rejects(f.pilot.enqueue('principal'),/aguardando/i);
+  await f.pilot.saveConfig('principal',{enabled:false,times:['09:00','14:00'],days:[1,2,3,4,5],style:'texto',cardCount:2,accounts:['ig1']});
+  await f.pilot.enqueue('principal');assert.equal(f.state.snapshot().jobs.length,2);
+  await assert.rejects(f.pilot.enqueue('principal'),/2 carrosséis aguardando/);
+  await f.pilot.saveConfig('principal',{enabled:true,times:['14:00','18:00'],days:[1,2,3,4,5],style:'texto',cardCount:2,accounts:['ig1']});
+  let status=f.pilot.status('principal');
+  assert.deepEqual(status.config.times,['14:00','18:00']);assert.equal(new Date(status.config.nextAt).getHours(),14);
+  const first=status.upcoming[0].at;
+  await f.runtime.request('skipAutopilotRun',{at:first});
+  status=f.pilot.status('principal');assert.equal(status.upcoming[0].skipped,true);assert.equal(new Date(status.config.nextAt).getHours(),18);
+  // Salvar a rotina pela tela (sem a lista de pulos) mantém o horário pulado.
+  await f.pilot.saveConfig('principal',{enabled:true,times:['14:00','18:00'],days:[1,2,3,4,5],style:'texto',cardCount:3,accounts:['ig1']});
+  assert.equal(f.pilot.status('principal').upcoming[0].skipped,true);
+  await f.runtime.request('skipAutopilotRun',{at:first,skip:false});
+  status=f.pilot.status('principal');assert.equal(status.upcoming[0].skipped,false);assert.equal(new Date(status.config.nextAt).getHours(),14);
+  await assert.rejects(f.runtime.request('skipAutopilotRun',{at:new Date(2026,10,2,15,7).toISOString()}),/próximos/);
 });
