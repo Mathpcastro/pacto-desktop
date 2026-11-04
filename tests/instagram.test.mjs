@@ -289,3 +289,21 @@ test("dates, the Windows task and the Mac agent", async () => {
   assert.deepEqual(runs.at(-1), ["launchctl", "bootstrap", "gui/501", "/Users/a/Library/LaunchAgents/com.carrossell.post.p2.plist"]);
   assert.deepEqual(duePosts([{ id: "a", schedule: { status: "scheduled", at: "2026-11-02T10:00:00Z" } }, { id: "b", schedule: { status: "published", at: "2026-11-02T10:00:00Z" } }], Date.parse("2026-11-02T11:00:00Z")), [{ id: "a", at: "2026-11-02T10:00:00Z", late: false }]);
 });
+
+test("rescheduling moves the date and the system task, keeps the accounts and works for late posts", async (t) => {
+  const ctx = await withKey(t);
+  const id = await readyProject(ctx.runtime, 2);
+  await assert.rejects(ctx.runtime.request("reschedulePost", { id, at: new Date(ctx.now.value + HOUR).toISOString() }), /não está agendado/);
+  await ctx.runtime.request("schedulePost", { id, at: new Date(ctx.now.value + 2 * HOUR).toISOString(), accounts: ["ca_ana", "ca_loja"] });
+  const moved = new Date(ctx.now.value + 26 * HOUR);
+  const p = await ctx.runtime.request("reschedulePost", { id, at: moved.toISOString() });
+  assert.deepEqual([p.schedule.status, p.schedule.at, p.schedule.usernames], ["scheduled", moved.toISOString(), ["ana.doces", "loja.oficial"]]);
+  assert.equal(ctx.sched.tasks.get(id).getTime(), moved.getTime(), "a tarefa do sistema vai para a nova data");
+  await assert.rejects(ctx.runtime.request("reschedulePost", { id, at: "2026-11-02T12:00:30Z" }), /2 minutos/);
+  assert.equal(ctx.runtime.store.get(id).schedule.at, moved.toISOString(), "data inválida não mexe no agendamento");
+  ctx.now.value = moved.getTime() + LATE_LIMIT_MS + 2 * HOUR;
+  await ctx.runtime.request("publishDue");
+  assert.equal(ctx.runtime.store.get(id).schedule.status, "late");
+  const again = await ctx.runtime.request("reschedulePost", { id, at: new Date(ctx.now.value + HOUR).toISOString() });
+  assert.equal(again.schedule.status, "scheduled", "um post atrasado pode ganhar nova data");
+});

@@ -3,6 +3,7 @@ import { CalendarClock, ExternalLink, Pause, Play, RefreshCw, Monitor, Check, Me
 import { STYLES } from "../../core/templates.mjs";
 import { Spinner } from "../ui.jsx";
 import Dialog from "./Dialog.jsx";
+import { ScheduledPosts } from "./Instagram.jsx";
 import telegramLogo from "../assets/telegram.svg";
 
 const STYLE_LABEL = { ia: "Arte com IA", tweet: "Tweet", texto: "Texto em fundo claro", textopreto: "Texto em fundo preto", fototexto: "Texto + foto", fundo: "Foto de fundo", recorte: "Capa com sua foto" };
@@ -161,6 +162,11 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
           {jobs.length > 0 && <button className="ghost-btn" onClick={() => setDialog("history")}>Ver últimos pedidos</button>}
         </section>
       </div>
+      <section className="pilot-panel pilot-scheduled" aria-labelledby="pilot-scheduled-title">
+        <div className="pilot-section-top"><h2 id="pilot-scheduled-title">Agendados</h2></div>
+        <ScheduledPosts projects={state.projects} request={request} onNotice={onNotice} title="" empty="Nenhum post agendado. Quando você agendar uma prévia pelo Telegram ou pelo app, ela aparece aqui para trocar a data ou cancelar." />
+        <p className="hint" style={{ margin: 0 }}>No Telegram, envie /agendados para ver, trocar a data ou cancelar.</p>
+      </section>
       <section className="pilot-conversation" aria-labelledby="pilot-conversation-title"><h2 id="pilot-conversation-title">Peça pelo Telegram</h2><p>Uma mensagem é o ponto de partida. Experimente um pedido:</p><div className="pilot-examples"><blockquote>Crie um carrossel sobre [tema]. Me mostre o texto primeiro.</blockquote><blockquote>Como foram os últimos 7 dias no Instagram da minha marca?</blockquote></div><details className="pilot-commands"><summary>Ver exemplos e comandos</summary><div><p><code>/ajuda</code> O que você pode pedir · <code>/marcas</code> Escolher a marca · <code>/projetos</code> Escolher o projeto · <code>/status</code> Acompanhar · <code>/cancelar</code> Parar o pedido</p><p>Os stories ficam prontos para postagem manual. Claude e Gemini usam o modo separado de agentes e CLI. Publicar e agendar dependem da sua aprovação na prévia.</p></div></details></section>
       <footer className="pilot-requirement"><Monitor size={18} aria-hidden="true" /><span>Requer computador ligado e conta ChatGPT conectada. Você pode fechar a janela; escolher Sair encerra o piloto.</span></footer>
       {pending && <div className="row hint" role="status"><Spinner /> Aguarde…</div>}

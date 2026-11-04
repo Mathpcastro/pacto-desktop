@@ -134,6 +134,11 @@ export class Social {
     await this.rt.dialogs.scheduler.add(id,when);
     return this.rt.update(id,{schedule:{at:when.toISOString(),accounts:targets.map(a=>a.id),usernames:targets.map(a=>a.username),status:'scheduled',error:'',createdAt:new Date(this.now()).toISOString(),...(approved?{approvalFingerprint:approved}:{})}});
   }
+  // Troca só a data: mantém as contas que faltam e a aprovação de um agendamento vindo do piloto.
+  async reschedule(id,at){
+    const s=this.store.get(id).schedule;if(!s||!['scheduled','late','failed','partial'].includes(s.status))throw new Error('Este carrossel não está agendado.');
+    return this.schedule(id,at,s.accounts,{approvalFingerprint:s.approvalFingerprint});
+  }
   async unschedule(id){this.store.get(id);await this.rt.dialogs.scheduler?.remove(id).catch(()=>{});return this.rt.update(id,{schedule:null});}
   // Roda em todos os perfis: chamado pela tarefa do sistema e sempre que o app abre.
   async publishDue({includeLate=false}={}){

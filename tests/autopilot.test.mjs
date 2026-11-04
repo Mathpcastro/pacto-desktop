@@ -213,3 +213,38 @@ test('OS pilot tasks have distinct identities and launch their own background fl
   assert.doesNotMatch(files[0][1].subarray(2).toString('utf16le'),/--publicar-agendados/);
   assert.match(files[0][1].subarray(2).toString('utf16le'),/<ExecutionTimeLimit>PT0S/);
 });
+
+test('/agendados lists scheduled posts and changes or cancels them only after a confirmation button',async t=>{
+  const f=await pilotFixture(t);const calls=[];
+  const p=await f.store.createProject({title:'Post da semana',brief:'B'});
+  const schedule={at:new Date(2026,10,3,18).toISOString(),accounts:['ig1'],usernames:['marca'],status:'scheduled',error:''};
+  await f.runtime.update(p.id,{schedule});
+  f.runtime.social.reschedule=async(id,at)=>{calls.push(['move',id,at]);return f.runtime.update(id,{schedule:{...schedule,at:new Date(at).toISOString()}});};
+  const message=text=>({message:{text,chat:{id:42,type:'private'},from:{id:7}}});
+  const press=(data,messageId)=>({callback_query:{id:'q',from:{id:7},message:{message_id:messageId,chat:{id:42,type:'private'}},data}});
+  const chat=()=>f.state.snapshot().scheduleChat;
+  await f.pilot.handleUpdate(message('/agendados'));
+  const list=f.sent.at(-1);assert.match(list.text,/Post da semana/);assert.match(list.text,/@marca/);
+  const [move,drop]=list.reply_markup.inline_keyboard[0].map(b=>b.callback_data);
+  await f.pilot.handleUpdate(press(move,999));assert.equal(chat().pending,null,'botão de outra mensagem não vale');
+  await f.pilot.handleUpdate(press(move,chat().menu.messageId));assert.match(f.sent.at(-1).text,/nova data/);
+  await f.pilot.handleUpdate(message('amanhã cedo'));assert.match(f.sent.at(-1).text,/2026-11-03 18:00/);assert.equal(calls.length,0);
+  await f.pilot.handleUpdate(message('2026-11-04 10:00'));assert.match(f.sent.at(-1).text,/Trocar a data/);assert.equal(calls.length,0,'só muda depois de confirmar');
+  const ok=f.sent.at(-1).reply_markup.inline_keyboard[0][0].callback_data;
+  await f.pilot.handleUpdate(press(ok,chat().pending.messageId));
+  assert.deepEqual(calls,[['move',p.id,new Date(2026,10,4,10).toISOString()]]);assert.match(f.sent.at(-1).text,/Nova data salva/);
+  // Cancelar: pede confirmação e não mexe se o agendamento mudou no app depois da lista.
+  await f.pilot.handleUpdate(message('/agendados'));
+  let dropKey=f.sent.at(-1).reply_markup.inline_keyboard[0][1].callback_data;
+  await f.pilot.handleUpdate(press(dropKey,chat().menu.messageId));
+  await f.runtime.update(p.id,{schedule:{...schedule,at:new Date(2026,10,5,9).toISOString()}});
+  await f.pilot.handleUpdate(press(f.sent.at(-1).reply_markup.inline_keyboard[0][0].callback_data,chat().pending.messageId));
+  assert.match(f.sent.at(-1).text,/mudou no app/);assert.ok(f.store.get(p.id).schedule);
+  await f.pilot.handleUpdate(message('/agendados'));
+  dropKey=f.sent.at(-1).reply_markup.inline_keyboard[0][1].callback_data;
+  await f.pilot.handleUpdate(press(dropKey,chat().menu.messageId));
+  await f.pilot.handleUpdate(press(f.sent.at(-1).reply_markup.inline_keyboard[0][0].callback_data,chat().pending.messageId));
+  assert.equal(f.store.get(p.id).schedule,null);assert.match(f.sent.at(-1).text,/Agendamento cancelado/);
+  await f.pilot.handleUpdate(message('/agendados'));assert.match(f.sent.at(-1).text,/Nenhum post agendado/);
+  assert.equal(drop.startsWith('s:'),true);
+});

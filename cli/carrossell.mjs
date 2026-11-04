@@ -69,6 +69,7 @@ Uso: carrossell <comando> [opções]   (saída em JSON)
                                  publica agora (ou agenda com --em); sem --contas, nas padrão
   agendados                      posts agendados deste perfil
   cancelar-agendamento <id>      cancela um post agendado
+  reagendar <id> --em "AAAA-MM-DD HH:MM"  troca a data de um post agendado
   metricas [<id>]                números do Instagram (atualiza o carrossel indicado)
   posts-instagram [--conta @a] [--limite 25]  posts recentes da conta, para o Replicador
   chamar <ação> [--json '<args>'] qualquer ação do app (veja API.md)
@@ -257,6 +258,7 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir()}={
         await client.call('publishInstagram',scoped({id,accounts}));out(await client.call('project',scoped({id})));break;
       }
       case 'agendados':out((await client.call('instagramStatus',scoped())).scheduled);break;
+      case 'reagendar':{const id=needId(rest[0],'reagendar');if(typeof flags.em!=='string')throw new Error('Use: reagendar <id> --em "2026-11-03 18:00"');out(await client.call('reschedulePost',scoped({id,at:flags.em})));break;}
       case 'cancelar-agendamento':{const id=needId(rest[0],'cancelar-agendamento');await client.call('cancelSchedule',scoped({id}));out(await client.call('project',scoped({id})));break;}
       case 'metricas':{
         if(rest[0]){await client.call('refreshMetrics',scoped({id:rest[0]}));out((await client.call('project',scoped({id:rest[0]}))).instagram);break;}

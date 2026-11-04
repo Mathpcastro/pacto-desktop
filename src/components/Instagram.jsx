@@ -15,6 +15,79 @@ function tomorrowAt18() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T18:00`;
 }
 
+// Valor do campo datetime-local a partir de uma data ISO, no horário local.
+function localInput(iso) {
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+const OPEN_SCHEDULE = ["scheduled", "late", "failed", "partial"];
+export const scheduledProjects = (projects = []) =>
+  projects.filter((p) => p.schedule && OPEN_SCHEDULE.includes(p.schedule.status)).sort((a, b) => a.schedule.at.localeCompare(b.schedule.at));
+
+// Trocar a data de um post agendado: campo de data e hora com salvar e voltar.
+export function RescheduleForm({ project, request, onNotice, onDone }) {
+  const [at, setAt] = useState(() => (new Date(project.schedule.at) > new Date() ? localInput(project.schedule.at) : tomorrowAt18()));
+  const [saving, setSaving] = useState(false);
+  const save = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await request("reschedulePost", { id: project.id, at });
+      onNotice?.(`Nova data salva: ${when(new Date(at).toISOString())}.`);
+      onDone?.();
+    } catch {
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <form className="row reschedule" onSubmit={save} aria-label={`Trocar a data de ${project.title}`}>
+      <input type="datetime-local" aria-label="Nova data e hora" value={at} required onChange={(e) => setAt(e.target.value)} />
+      <button className="btn small primary" disabled={saving || !at}>
+        {saving ? <Spinner /> : <Check size={14} />} Salvar nova data
+      </button>
+      <button type="button" className="ghost-btn" onClick={onDone}>
+        Voltar
+      </button>
+    </form>
+  );
+}
+
+// Lista de agendados com trocar data e cancelar (Marca › Instagram, Calendário e Piloto automático).
+export function ScheduledPosts({ projects, request, onNotice, title = "Agendados", empty = "" }) {
+  const [editing, setEditing] = useState("");
+  const list = scheduledProjects(projects);
+  if (!list.length) return empty ? <p className="hint" style={{ margin: 0 }}>{empty}</p> : null;
+  return (
+    <div className="scheduled-list" aria-label="Posts agendados">
+      {title && <b>{title}</b>}
+      {list.map((p) => (
+        <div className="scheduled-item" key={p.id}>
+          <div className="row">
+            <span className={`chip ${p.schedule.status === "scheduled" ? "" : "accent"}`}>{SCHEDULE_LABEL[p.schedule.status] || p.schedule.status}</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <b>{when(p.schedule.at)}</b> · {p.title} · {(p.schedule.usernames || []).map((u) => `@${u}`).join(", ")}
+              {p.schedule.error ? <small style={{ display: "block", color: "var(--danger)" }}>{p.schedule.error}</small> : null}
+            </span>
+            {editing !== p.id && (
+              <>
+                <button className="ghost-btn" aria-label={`Trocar a data de ${p.title}`} onClick={() => setEditing(p.id)}>
+                  <CalendarClock size={14} /> Trocar data
+                </button>
+                <button className="ghost-btn" aria-label={`Cancelar o agendamento de ${p.title}`} onClick={() => request("cancelSchedule", { id: p.id }).then(() => onNotice?.("Agendamento cancelado. O carrossel continua salvo.")).catch(() => {})}>
+                  <X size={14} /> Cancelar
+                </button>
+              </>
+            )}
+          </div>
+          {editing === p.id && <RescheduleForm project={p} request={request} onNotice={onNotice} onDone={() => setEditing("")} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Logo minimalista: o contorno do Instagram com o degradê da marca.
 export function InstagramLogo({ size = 18 }) {
   const id = useId().replace(/:/g, "");
@@ -177,7 +250,6 @@ export function InstagramSummary({ state, request, onNotice, onOpen }) {
   const composio = state.composio || {};
   const accounts = usable(composio);
   const defaults = accounts.filter((a) => (composio.defaults || []).includes(a.id));
-  const scheduled = state.projects.filter((p) => p.schedule && ["scheduled", "late", "failed", "partial"].includes(p.schedule.status));
   return (
     <section className="card-box" aria-label="Instagram">
       <div className="section-head">
@@ -197,23 +269,7 @@ export function InstagramSummary({ state, request, onNotice, onOpen }) {
             ? `Este perfil posta por padrão em ${defaults.map((a) => `@${a.username}`).join(", ")}. Na hora de postar, dá para escolher outras.`
             : `${accounts.length} ${accounts.length === 1 ? "conta disponível" : "contas disponíveis"}. Marque as contas padrão deste perfil em Gerenciar contas.`}
       </p>
-      {scheduled.length > 0 && (
-        <div className="scheduled-list" aria-label="Posts agendados">
-          <b>Agendados</b>
-          {scheduled.map((p) => (
-            <div className="row" key={p.id}>
-              <span className={`chip ${p.schedule.status === "scheduled" ? "" : "accent"}`}>{SCHEDULE_LABEL[p.schedule.status] || p.schedule.status}</span>
-              <span style={{ flex: 1 }}>
-                {when(p.schedule.at)} · {p.title} · {(p.schedule.usernames || []).map((u) => `@${u}`).join(", ")}
-                {p.schedule.error ? <small style={{ display: "block", color: "var(--danger)" }}>{p.schedule.error}</small> : null}
-              </span>
-              <button className="ghost-btn" aria-label={`Cancelar o agendamento de ${p.title}`} onClick={() => request("cancelSchedule", { id: p.id }).then(() => onNotice("Agendamento cancelado.")).catch(() => {})}>
-                <X size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      <ScheduledPosts projects={state.projects} request={request} onNotice={onNotice} />
     </section>
   );
 }
@@ -261,8 +317,22 @@ export function InstagramPost({ project, state, request, isPending, activity, on
             <span className="chip">
               <CalendarClock size={13} /> Agendado para {when(s.at)} em {(s.usernames || []).map((u) => `@${u}`).join(", ")}
             </span>
+            <button className="ghost-btn" onClick={() => setMode(mode === "move" ? "" : "move")}>
+              Trocar data
+            </button>
             <button className="ghost-btn" onClick={() => run("cancelSchedule", {}, "Agendamento cancelado.")}>
               Cancelar
+            </button>
+          </div>
+        )}
+        {["scheduled", "late", "failed", "partial"].includes(s?.status) && mode === "move" && <RescheduleForm project={project} request={request} onNotice={onNotice} onDone={() => setMode("")} />}
+        {["late", "failed", "partial"].includes(s?.status) && mode !== "move" && (
+          <div className="row">
+            <button className="ghost-btn" onClick={() => setMode("move")}>
+              <CalendarClock size={14} /> Escolher nova data
+            </button>
+            <button className="ghost-btn" onClick={() => run("cancelSchedule", {}, "Agendamento cancelado.")}>
+              Cancelar agendamento
             </button>
           </div>
         )}

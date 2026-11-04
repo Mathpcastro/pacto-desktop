@@ -7,6 +7,7 @@ import { postable } from './instagram.mjs';
 import { validId } from './store.mjs';
 import { emptyConversation } from './autopilot-store.mjs';
 import { TelegramConversation } from './telegram-conversation.mjs';
+import { TelegramSchedule, SCHEDULE_COMMAND } from './telegram-schedule.mjs';
 
 const TERMINAL=new Set(['published','scheduled','discarded','error','uncertain']);
 const decisionStates=new Set(['ready','scheduleDate','scheduleConfirm']);
@@ -17,7 +18,7 @@ const sleep=(ms,signal)=>new Promise(resolve=>{if(signal?.aborted)return resolve
 // sempre precede publicar; uma resposta incerta nunca vira tentativa automática.
 export class Autopilot {
   constructor({runtime,state,secrets,scheduler=null,clientFactory=token=>new TelegramClient({token}),now=()=>Date.now()}){
-    Object.assign(this,{rt:runtime,state,secrets,scheduler,clientFactory,now});this.client=null;this.processing=null;this.controller=null;this.connectionError='';this.conversation=new TelegramConversation(this);
+    Object.assign(this,{rt:runtime,state,secrets,scheduler,clientFactory,now});this.client=null;this.processing=null;this.controller=null;this.connectionError='';this.schedules=new TelegramSchedule(this);this.conversation=new TelegramConversation(this);
   }
   clientForToken(){const token=this.secrets.getTelegramToken?.();if(!token)throw new Error('Conecte o bot do Telegram.');return this.client??=this.clientFactory(token);}
   bindingActive(){const binding=this.state.snapshot().binding;return !!binding&&(!binding.expiresAt||new Date(binding.expiresAt)>this.now());}
@@ -151,6 +152,8 @@ export class Autopilot {
         if(paired){await this.changed();await client.sendText(message.chat.id,'Telegram conectado ao Carrossell. Configure a rotina no computador; toda publicação espera sua aprovação.');}return;
       }
       if(this.bindingActive()&&data.binding?.chatId===message.chat.id&&data.binding.userId===message.from.id){
+        if(SCHEDULE_COMMAND.test(message.text||'')){await this.schedules.list().catch(error=>client.sendText(message.chat.id,messageError(error)));return;}
+        if(await this.schedules.handleMessage(message))return;
         const job=[...data.jobs].reverse().find(j=>j.status==='scheduleDate');if(!job||/^\/(?:ajuda|status|marcas|projetos|cancelar|parar)(?:@\w+)?(?:\s|$)/i.test(message.text||'')){
           if(job&&/^\/(?:cancelar|parar)(?:@\w+)?(?:\s|$)/i.test(message.text||''))await this.patch(job.id,{status:'resend',at:null});
           await this.conversation.handle(update);return;
@@ -165,6 +168,7 @@ export class Autopilot {
     }
     if(!query)return;
     if(!this.bindingActive()||!data.binding||query.from?.id!==data.binding.userId||query.message?.chat?.id!==data.binding.chatId||query.message.chat.type!=='private'){await this.ack(query.id,'Esta conversa não está vinculada ao seu Carrossell.');return;}
+    if(String(query.data||'').startsWith('s:')){await this.schedules.handleQuery(query);return;}
     const match=/^p:([a-f0-9]{24}):(post|schedule|redo|discard|confirm|cancel)$/.exec(query.data||'');
     const job=match&&data.jobs.find(j=>j.reviewId===match[1]&&j.messageId===query.message.message_id&&decisionStates.has(j.status));
     if(!job){await this.ack(query.id,'Esta prévia já foi respondida ou substituída.');return;}
