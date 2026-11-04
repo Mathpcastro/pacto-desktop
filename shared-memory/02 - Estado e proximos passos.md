@@ -287,3 +287,8 @@ Ver [[37 - Release Carrossell 0.7.4]]. Latest com Windows e dois Macs, workflow 
 ## 03/11/2026 — Release 0.7.5 publicada
 
 [[39 - Release Carrossell 0.7.5]]: novo layout do piloto publicado como Latest, Windows e os dois Macs disponíveis, zero artefatos de Actions. Feed e download completo Windows verificados, SHA-512 confere.
+
+
+## 04/11/2026 — Release 0.7.6 publicada
+
+[[40 - Release Carrossell 0.7.6]]: copy falada com fio condutor por arquitetura e reagendamento (app, Telegram /agendados e CLI). Latest com Windows e os dois Macs, zero artefatos de Actions. Feed e download completo do Windows verificados.
