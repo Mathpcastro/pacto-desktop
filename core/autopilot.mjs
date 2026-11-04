@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { approvalFingerprint as fingerprint } from './approval.mjs';
 import { TelegramClient } from './telegram.mjs';
-import { DEFAULT_CONFIG, nextRun, validateConfig, upcomingRuns, liveSkips } from './autopilot-schedule.mjs';
+import { DEFAULT_CONFIG, nextRun, validateConfig, upcomingRuns, liveSkips, slotFor } from './autopilot-schedule.mjs';
 import { parseWhen } from './schedule.mjs';
 import { postable } from './instagram.mjs';
 import { validId } from './store.mjs';
@@ -27,7 +27,12 @@ export class Autopilot {
   bindingActive(){const binding=this.state.snapshot().binding;return !!binding&&(!binding.expiresAt||new Date(binding.expiresAt)>this.now());}
   status(profileId){
     const data=this.state.snapshot();return {hasToken:Boolean(this.secrets.getTelegramToken?.()),bot:data.bot,paired:Boolean(data.binding),pairing:data.pairing&&new Date(data.pairing.expiresAt)>this.now()?{...data.pairing,url:`https://t.me/${data.bot.username}?start=${data.pairing.code}`}:null,connectionError:data.configs[profileId]?.scheduleError||data.configs[profileId]?.runError||this.connectionError,
-      config:{...DEFAULT_CONFIG,...data.configs[profileId],times:data.configs[profileId]?.times||[data.configs[profileId]?.time||DEFAULT_CONFIG.time]},upcoming:this.upcoming(data.configs[profileId]),jobs:data.jobs.filter(j=>j.profileId===profileId).slice(-12).reverse().map(({id,projectId,status,title,error,createdAt})=>({id,projectId,status,title,error,createdAt}))};
+      config:this.shownConfig(data.configs[profileId]),upcoming:this.upcoming(data.configs[profileId]),jobs:data.jobs.filter(j=>j.profileId===profileId).slice(-12).reverse().map(({id,projectId,status,title,error,createdAt})=>({id,projectId,status,title,error,createdAt}))};
+  }
+  shownConfig(saved){
+    if(!saved)return {...DEFAULT_CONFIG};
+    try{const v=validateConfig(saved);return {...DEFAULT_CONFIG,...saved,time:v.time,times:v.times,slots:v.slots,style:v.style,cardCount:v.cardCount};}
+    catch{return {...DEFAULT_CONFIG,...saved};}
   }
   upcoming(config){if(!config)return [];try{return upcomingRuns(validateConfig(config),new Date(this.now()),8);}catch{return [];}}
   keepAlive(){const data=this.state.snapshot();return Boolean(this.secrets.getTelegramToken?.()&&(data.pairing&&new Date(data.pairing.expiresAt)>this.now()||data.binding&&(!data.binding.expiresAt||new Date(data.binding.expiresAt)>this.now())));}
@@ -93,9 +98,11 @@ export class Autopilot {
     catch{await this.state.change(d=>{const c=d.configs[profileId];if(c){c.scheduleError='A próxima rotina não foi registrada no sistema. O app tentará novamente; mantenha-o aberto ou salve a rotina de novo.';c.rearmAt=new Date(this.now()+60000).toISOString();}});}
     await this.changed(profileId);
   }
-  async enqueue(profileId){
+  // "at" é a ocorrência da rotina (ou o horário escolhido): define o tipo de carrossel daquele horário.
+  async enqueue(profileId,at=null){
     validId(profileId);this.clientForToken();if(!this.state.snapshot().binding)throw new Error('Vincule sua conversa do Telegram.');
-    const config=validateConfig(this.state.snapshot().configs[profileId]||DEFAULT_CONFIG);
+    const saved=validateConfig(this.state.snapshot().configs[profileId]||DEFAULT_CONFIG),slot=slotFor(saved,at||saved.nextAt||this.state.snapshot().configs[profileId]?.nextAt);
+    const config={...saved,style:slot.style,cardCount:slot.cardCount,architectureId:slot.architectureId||'',slot:slot.time};
     if(!config.accounts.length)throw new Error('Escolha as contas do Instagram e salve a rotina.');
     await this.rt.inProfile(profileId,()=>{this.rt.ensureConnected();this.rt.social.pick(config.accounts);if(!this.rt.store.state().profile?.brandContext?.trim())throw new Error('Conclua o Contexto da Marca antes de gerar.');});
     const job={id:randomUUID(),profileId,config,accounts:config.accounts,status:'queued',createdAt:new Date(this.now()).toISOString(),error:'',title:'Próxima pauta do Radar'};
@@ -118,7 +125,7 @@ export class Autopilot {
         if(!idea)throw new Error('O Radar não trouxe uma pauta disponível.');
         // Reserva o id antes de criar para retomar sem duplicar após um encerramento.
         const projectId=job.projectId||randomUUID();await this.patch(job.id,{ideaId:idea.id,idea,projectId,title:idea.theme||idea.hook});
-        project=await this.rt.store.createProject({title:idea.theme||idea.hook,brief:[idea.theme,idea.hook,idea.why,idea.deliverable,idea.connection].filter(Boolean).join('\n'),style:job.config.style,cardCount:job.config.cardCount},{reservedId:projectId});
+        project=await this.rt.store.createProject({title:idea.theme||idea.hook,brief:[idea.theme,idea.hook,idea.why,idea.deliverable,idea.connection].filter(Boolean).join('\n'),style:job.config.style,cardCount:job.config.cardCount,architectureId:job.config.architectureId||''},{reservedId:projectId});
         this.rt.publish(project);
       }
       const id=project.id;
@@ -245,8 +252,8 @@ export class Autopilot {
       if(!this.rt.codex.status.account.connected){
         if(!config.runError){await this.state.change(d=>{d.configs[profileId].runError='Aguardando a conexão da conta ChatGPT para gerar. Abra o app se precisar conectar novamente.';});await this.changed(profileId);}continue;
       }
-      const nextAt=nextRun(validateConfig(config),new Date(this.now()));await this.state.change(d=>{const c=d.configs[profileId];c.nextAt=nextAt;c.skips=liveSkips(c.skips||[],new Date(this.now()));});
-      try{await this.enqueue(profileId);await this.state.change(d=>{d.configs[profileId].runError='';});}
+      const dueAt=config.nextAt,nextAt=nextRun(validateConfig(config),new Date(this.now()));await this.state.change(d=>{const c=d.configs[profileId];c.nextAt=nextAt;c.skips=liveSkips(c.skips||[],new Date(this.now()));});
+      try{await this.enqueue(profileId,dueAt);await this.state.change(d=>{d.configs[profileId].runError='';});}
       catch(error){await this.state.change(d=>{d.configs[profileId].runError=messageError(error);});await this.changed(profileId);}
       await this.arm(profileId,nextAt);
     }

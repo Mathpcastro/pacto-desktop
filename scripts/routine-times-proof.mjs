@@ -62,6 +62,13 @@ try{
   await dialog.getByLabel('Horário 2 da rotina',{exact:true}).fill('19:00');
   await dialog.getByRole('button',{name:'Adicionar horário'}).click();
   await dialog.getByLabel('Horário 3 da rotina',{exact:true}).fill('13:30');
+  // Um tipo diferente em cada horário.
+  await dialog.getByLabel('Tipo de carrossel do horário 1',{exact:true}).selectOption({label:'Lista Útil'});
+  await dialog.getByLabel('Tipo de carrossel do horário 2',{exact:true}).selectOption({label:'Framework'});
+  await dialog.getByLabel('Estilo do horário 2',{exact:true}).selectOption('tweet');
+  await dialog.getByLabel('Quantidade de cards do horário 2, de 2 a 10',{exact:true}).fill('5');
+  await dialog.getByLabel('Tipo de carrossel do horário 3',{exact:true}).selectOption({label:'Estudo de Caso'});
+  await dialog.getByLabel('Estilo do horário 3',{exact:true}).selectOption('textopreto');
   await dialog.getByRole('checkbox').first().check();
   await page.screenshot({path:join(out,'1-configurar-varios-horarios.png')});
   await dialog.getByRole('button',{name:'Salvar rotina'}).click();
@@ -69,14 +76,17 @@ try{
   await page.keyboard.press('Escape');
   await expect(page.locator('.pilot-schedule')).toHaveText(/às 9h, 13h30 e 19h$/);
   await expect(page.locator('.pilot-routine-meta')).toContainText('3 carrosséis por dia');
-  ok('resumo mostra os três horários');
+  await expect(page.locator('.pilot-slot-summary li')).toHaveText([/9h.*Lista Útil.*Texto em fundo claro.*6 cards/,/13h30.*Estudo de Caso.*Texto em fundo preto.*6 cards/,/19h.*Framework.*Tweet.*5 cards/]);
+  ok('resumo mostra os três horários, cada um com o seu tipo');
   // Sem conta ChatGPT na prova o botão fica desligado; ativa pelo mesmo comando que ele chama.
   await expect(page.getByRole('button',{name:'Ativar rotina'})).toBeDisabled();
-  await page.evaluate(async()=>{const s=(await window.pacto.request('telegramStatus')).autopilot.config;await window.pacto.request('saveAutopilot',{config:{times:s.times,days:s.days,style:s.style,cardCount:s.cardCount,accounts:s.accounts,enabled:true}});});
+  await page.evaluate(async()=>{const s=(await window.pacto.request('telegramStatus')).autopilot.config;await window.pacto.request('saveAutopilot',{config:{slots:s.slots,days:s.days,accounts:s.accounts,enabled:true}});});
   await expect(page.getByText('Próximos horários',{exact:true})).toBeVisible();
   const items=page.locator('.pilot-upcoming li');await expect(items).toHaveCount(8);
   const saved=await page.evaluate(async()=>(await window.pacto.request('telegramStatus')).autopilot);
   assert.deepEqual(saved.config.times,['09:00','13:30','19:00']);
+  assert.deepEqual(saved.config.slots.map(x=>[x.time,x.architectureId,x.style,x.cardCount]),[['09:00','lista-util','texto',6],['13:30','estudo-de-caso','textopreto',6],['19:00','framework','tweet',5]]);
+  await expect(page.locator('.pilot-upcoming li').first()).toContainText(/Lista Útil|Estudo de Caso|Framework/);
   assert.equal(saved.config.nextAt,saved.upcoming[0].at);
   ok('rotina ativa com 8 próximos horários');
   await items.first().getByRole('button',{name:/^Pular/}).click();

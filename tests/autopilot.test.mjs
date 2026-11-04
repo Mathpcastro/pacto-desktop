@@ -193,13 +193,14 @@ test('autopilot persists serialized decisions and recovers an interrupted public
 
 test('pilot configuration accepts the new publishable sizes and rejects unsafe schedule and destinations',async()=>{
   const {validateConfig,nextRun}=await import('../core/autopilot-schedule.mjs');
-  const config=validateConfig({enabled:true,time:'09:00',days:[1,2,3,4,5],style:'texto',cardCount:3,accounts:['ig1','ig1']});
+  const input={enabled:true,time:'09:00',days:[1,2,3,4,5],style:'texto',cardCount:3,accounts:['ig1','ig1']};
+  const config=validateConfig(input);
   assert.deepEqual(config.accounts,['ig1']);assert.equal(config.cardCount,3);
-  assert.throws(()=>validateConfig({...config,cardCount:1}),/2.*10/);
-  assert.throws(()=>validateConfig({...config,times:undefined,time:'24:05'}),/horário/i);
-  assert.throws(()=>validateConfig({...config,days:[]}),/dia/i);
-  assert.throws(()=>validateConfig({...config,accounts:[]}),/conta/i);
-  assert.throws(()=>validateConfig({...config,style:'unknown'}),/estilo/i);
+  assert.throws(()=>validateConfig({...input,cardCount:1}),/2.*10/);
+  assert.throws(()=>validateConfig({...input,time:'24:05'}),/horário/i);
+  assert.throws(()=>validateConfig({...input,days:[]}),/dia/i);
+  assert.throws(()=>validateConfig({...input,accounts:[]}),/conta/i);
+  assert.throws(()=>validateConfig({...input,style:'unknown'}),/estilo/i);
   const friday=new Date(2026,10,6,10);const monday=new Date(nextRun(config,friday));
   assert.equal(monday.getDay(),1);assert.equal(monday.getDate(),9);assert.equal(monday.getHours(),9);
 });
@@ -253,7 +254,8 @@ test('routine runs at several times per day, skips chosen occurrences and keeps 
   const {validateConfig,nextRun,upcomingRuns}=await import('../core/autopilot-schedule.mjs');
   const legacy=validateConfig({enabled:false,time:'09:00',days:[1],style:'texto',cardCount:3,accounts:[]});
   assert.deepEqual(legacy.times,['09:00']);assert.equal(legacy.time,'09:00');
-  const config=validateConfig({enabled:true,times:['18:00','09:00','13:30'],days:[1,2],style:'texto',cardCount:3,accounts:['ig1']});
+  const input={enabled:true,times:['18:00','09:00','13:30'],days:[1,2],style:'texto',cardCount:3,accounts:['ig1']};
+  const config=validateConfig(input);
   assert.deepEqual(config.times,['09:00','13:30','18:00']);assert.equal(config.time,'09:00');
   const monday=new Date(2026,10,2,10);
   assert.equal(new Date(nextRun(config,monday)).getHours(),13);
@@ -262,10 +264,10 @@ test('routine runs at several times per day, skips chosen occurrences and keeps 
   const skipped=validateConfig({...config,skips:[runs[0].toISOString()]});
   assert.equal(new Date(nextRun(skipped,monday)).getHours(),18);
   assert.equal(upcomingRuns(skipped,monday,2)[0].skipped,true);
-  assert.throws(()=>validateConfig({...config,times:['09:00','09:00']}),/iguais/);
-  assert.throws(()=>validateConfig({...config,times:['09:00','10:00','11:00','12:00','13:00','14:00','15:00']}),/até 6/);
-  assert.throws(()=>validateConfig({...config,times:[]}),/horário/i);
-  assert.throws(()=>validateConfig({...config,times:['25:00']}),/horário/i);
+  assert.throws(()=>validateConfig({...input,times:['09:00','09:00']}),/iguais/);
+  assert.throws(()=>validateConfig({...input,times:['09:00','10:00','11:00','12:00','13:00','14:00','15:00']}),/até 6/);
+  assert.throws(()=>validateConfig({...input,times:[]}),/horário/i);
+  assert.throws(()=>validateConfig({...input,times:['25:00']}),/horário/i);
 });
 
 test('pilot keeps one waiting carousel per routine time and lets the user skip a run from the app',async t=>{
@@ -286,4 +288,30 @@ test('pilot keeps one waiting carousel per routine time and lets the user skip a
   await f.runtime.request('skipAutopilotRun',{at:first,skip:false});
   status=f.pilot.status('principal');assert.equal(status.upcoming[0].skipped,false);assert.equal(new Date(status.config.nextAt).getHours(),14);
   await assert.rejects(f.runtime.request('skipAutopilotRun',{at:new Date(2026,10,2,15,7).toISOString()}),/próximos/);
+});
+
+test('each routine time keeps its own carousel type and the due time decides what the pilot creates',async t=>{
+  const {validateConfig,slotFor}=await import('../core/autopilot-schedule.mjs');
+  const slots=[{time:'19:00',style:'tweet',cardCount:5,architectureId:'framework'},{time:'09:00',style:'texto',cardCount:7,architectureId:'lista-util'},{time:'13:00',style:'ia',cardCount:4,architectureId:''}];
+  const config=validateConfig({enabled:false,slots,days:[1,2,3,4,5],accounts:[]});
+  assert.deepEqual(config.times,['09:00','13:00','19:00']);assert.equal(config.style,'texto');assert.equal(config.cardCount,7);
+  assert.equal(slotFor(config,new Date(2026,10,2,19).toISOString()).architectureId,'framework');
+  assert.throws(()=>validateConfig({...config,slots:[{...slots[0],architectureId:'inventada'}]}),/tipo de carrossel/);
+  assert.throws(()=>validateConfig({...config,slots:[{...slots[0],style:'nada'}]}),/estilo.*19:00/);
+  assert.throws(()=>validateConfig({...config,slots:[{...slots[0],cardCount:11}]}),/2 a 10.*19:00/);
+  const legacy=validateConfig({enabled:false,times:['08:00','12:00'],style:'tweet',cardCount:4,days:[1],accounts:[]});
+  assert.deepEqual(legacy.slots,[{time:'08:00',style:'tweet',cardCount:4,architectureId:''},{time:'12:00',style:'tweet',cardCount:4,architectureId:''}]);
+
+  const f=await pilotFixture(t);
+  await f.pilot.saveConfig('principal',{enabled:true,slots,days:[1,2,3,4,5],accounts:['ig1']});
+  assert.deepEqual(f.pilot.status('principal').config.slots.map(x=>x.time),['09:00','13:00','19:00']);
+  // Às 19:00 de segunda a rotina vence: o trabalho leva o tipo daquele horário.
+  await f.state.change(d=>{d.configs.principal.nextAt=new Date(2026,10,2,11,59).toISOString();});
+  const dueSlot={...slots[0],time:'11:59',cardCount:2};
+  await f.pilot.saveConfig('principal',{enabled:true,slots:[dueSlot,slots[1]],days:[1,2,3,4,5],accounts:['ig1']});
+  await f.state.change(d=>{d.configs.principal.nextAt=new Date(2026,10,2,11,59).toISOString();});
+  await f.pilot.step();
+  const job=f.state.snapshot().jobs[0];
+  assert.equal(job.config.slot,'11:59');assert.equal(job.config.style,'tweet');assert.equal(job.config.architectureId,'framework');
+  const project=f.store.get(job.projectId);assert.equal(project.style,'tweet');assert.equal(project.architectureId,'framework');assert.equal(project.cardCount,2);
 });

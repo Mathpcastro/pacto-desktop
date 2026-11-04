@@ -441,7 +441,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       }
       case 'saveAutopilot':await this.autopilot.saveConfig(this.profileId(),args.config);return this.state();
       case 'skipAutopilotRun':await this.autopilot.skipRun(this.profileId(),args.at,args.skip!==false);return this.state();
-      case 'runAutopilot':await this.autopilot.enqueue(this.profileId());return this.state();
+      case 'runAutopilot':await this.autopilot.enqueue(this.profileId(),typeof args.at==='string'?args.at:null);return this.state();
       case 'retryAutopilot':case 'discardAutopilot':{
         const job=this.autopilot.state.snapshot().jobs.find(j=>j.id===args.id);
         if(!job||job.profileId!==this.profileId())throw new Error('Trabalho não encontrado neste perfil.');

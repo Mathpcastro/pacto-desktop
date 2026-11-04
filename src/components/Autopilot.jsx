@@ -31,18 +31,20 @@ const when = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 };
+// Cada horário tem o seu tipo de carrossel: arquitetura, estilo e quantidade de cards.
+const slotOf = (slot = {}, config = {}) => ({ time: slot.time || "09:00", architectureId: slot.architectureId || "", style: slot.style || config.style || "texto", cardCount: slot.cardCount ?? config.cardCount ?? 6 });
 const editable = (config = {}) => ({
-  times: Array.isArray(config.times) && config.times.length ? [...config.times].sort() : [config.time || "09:00"],
+  slots: (Array.isArray(config.slots) && config.slots.length ? config.slots
+    : (Array.isArray(config.times) && config.times.length ? config.times : [config.time || "09:00"]).map((time) => ({ time }))
+  ).map((slot) => slotOf(slot, config)).sort((a, b) => a.time.localeCompare(b.time)),
   days: Array.isArray(config.days) ? [...config.days].sort((a, b) => a - b) : [1, 2, 3, 4, 5],
-  style: config.style || "texto",
-  cardCount: config.cardCount ?? 6,
   accounts: Array.isArray(config.accounts) ? [...config.accounts].sort() : [],
 });
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const valid = (config, accounts, requireAccounts = true) => config.times.length > 0 && config.times.length <= MAX_TIMES
-  && config.times.every((time) => TIME.test(time)) && new Set(config.times).size === config.times.length
+const validSlot = (slot) => TIME.test(slot.time) && STYLES.includes(slot.style) && Number.isInteger(slot.cardCount) && slot.cardCount >= 2 && slot.cardCount <= 10;
+const valid = (config, accounts, requireAccounts = true) => config.slots.length > 0 && config.slots.length <= MAX_TIMES
+  && config.slots.every(validSlot) && new Set(config.slots.map((slot) => slot.time)).size === config.slots.length
   && config.days.length > 0 && config.days.every((day) => Number.isInteger(day) && day >= 0 && day <= 6)
-  && STYLES.includes(config.style) && Number.isInteger(config.cardCount) && config.cardCount >= 2 && config.cardCount <= 10
   && (!requireAccounts || config.accounts.length > 0) && config.accounts.every((id) => accounts.some((account) => account.id === id));
 
 // Um rascunho pertence ao perfil aberto; o bot e a conversa são desta instalação.
@@ -107,7 +109,7 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
   const running = (pilot.jobs || []).some((job) => RUNNING.has(job.status));
   // Cabem tantos carrosséis esperando aprovação quanto horários na rotina.
   const openJobs = (pilot.jobs || []).filter((job) => !CLOSED.has(job.status)).length;
-  const full = openJobs >= Math.max(1, editable(saved).times.length);
+  const full = openJobs >= Math.max(1, editable(saved).slots.length);
   const pairing = pilot.pairing;
   const expires = pairing?.expiresAt ? new Date(pairing.expiresAt).getTime() : NaN;
   const expired = Number.isFinite(expires) && expires <= now;
@@ -115,7 +117,7 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
   const saveRoutine = async (event) => {
     event.preventDefault();
     if (!draftValid) return;
-    const config = { ...draft, times: [...draft.times].sort(), enabled: Boolean(saved.enabled) };
+    const config = { ...draft, slots: [...draft.slots].sort((a, b) => a.time.localeCompare(b.time)), enabled: Boolean(saved.enabled) };
     const result = await act("saveAutopilot", { config }, "Rotina salva para este perfil.");
     if (result) {
       edited.current = false;
@@ -128,9 +130,14 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
 
   const summary = editable(saved);
   const daySummary = same(summary.days, [1, 2, 3, 4, 5]) ? "Seg–sex" : DAYS.filter(([day]) => summary.days.includes(day)).map(([, , short]) => short).join(", ") || "Escolha os dias";
-  const perDay = summary.times.length;
+  const perDay = summary.slots.length;
   const upcoming = pilot.upcoming || [];
-  const duplicateTime = new Set(draft.times).size !== draft.times.length;
+  const duplicateTime = new Set(draft.slots.map((slot) => slot.time)).size !== draft.slots.length;
+  const architectures = state.architectures || [];
+  const typeName = (slot) => architectures.find((a) => a.id === slot.architectureId)?.name || "Tipo escolhido pela pauta";
+  const typeLabel = (slot) => `${typeName(slot)} · ${STYLE_LABEL[slot.style] || slot.style} · ${slot.cardCount} cards`;
+  const slotAt = (time) => summary.slots.find((slot) => slot.time === time);
+  const changeSlot = (index, values) => change({ slots: draft.slots.map((slot, i) => i === index ? { ...slot, ...values } : slot) });
   const connectionStatus = pilot.connectionError ? "Conexão precisa de atenção" : connected ? "Conectado" : pilot.hasToken ? "Falta vincular a conversa" : "Não conectado";
   const activeJobs = jobs.filter((job) => !["published", "complete", "discarded", "cancelled", "scheduled"].includes(job.status));
   const previewProject = (state.projects || []).find((project) => project.id === previewId);
@@ -158,13 +165,14 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
       <div className="pilot-columns">
         <section className="pilot-panel pilot-routine" aria-labelledby="pilot-routine-title">
           <div className="pilot-section-top"><h2 id="pilot-routine-title">Sua rotina</h2><span className={`chip ${saved.enabled ? "good" : ""}`} role="status">{saved.enabled ? "Ativa" : "Pausada"}</span></div>
-          <p className="pilot-schedule">{daySummary}, às {joinPt(summary.times.map(hourLabel))}</p>
-          <p className="pilot-routine-meta">{perDay === 1 ? "1 carrossel por dia" : `${perDay} carrosséis por dia`} <span aria-hidden="true">·</span> {summary.cardCount} cards <span aria-hidden="true">·</span> {STYLE_LABEL[summary.style]}</p>
+          <p className="pilot-schedule">{daySummary}, às {joinPt(summary.slots.map((slot) => hourLabel(slot.time)))}</p>
+          <p className="pilot-routine-meta">{perDay === 1 ? "1 carrossel por dia" : `${perDay} carrosséis por dia`}</p>
+          <ul className="pilot-slot-summary" aria-label="Tipo de carrossel de cada horário">{summary.slots.map((slot) => <li key={slot.time}><b>{hourLabel(slot.time)}</b><span>{typeLabel(slot)}</span></li>)}</ul>
           <div className="pilot-routine-footer"><div className="pilot-account-note"><strong>{summary.accounts.length ? summary.accounts.map((id) => { const account = accounts.find((a) => a.id === id); return account ? `@${(account.username || "conta sem nome").replace(/^@/, "")}` : "Conta indisponível"; }).join(", ") : "Nenhuma conta selecionada"}</strong><span>{summary.accounts.length ? "Contas para publicação" : "Defina na configuração"}</span></div><button className="btn" onClick={() => setDialog("routine")}>Configurar rotina</button></div>
       <div className="pilot-routine-actions">
         <div className="row">
           <button className="btn" disabled={Boolean(pending) || (!saved.enabled && (!connected || !savedValid || !state.account?.connected))} onClick={toggleRoutine}>{saved.enabled ? <Pause size={15} /> : <Play size={15} />}{saved.enabled ? "Pausar rotina" : "Ativar rotina"}</button>
-          <button className="btn" disabled={Boolean(pending) || !connected || !state.account?.connected || !savedValid || dirty || full || Boolean(state.working)} onClick={() => act("runAutopilot", {}, "Preparação iniciada. Acompanhe o pedido abaixo.")}><CalendarClock size={15} />{pending === "runAutopilot" ? "Iniciando…" : "Gerar agora"}</button>
+          <button className="btn" disabled={Boolean(pending) || !connected || !state.account?.connected || !savedValid || dirty || full || Boolean(state.working)} onClick={() => act("runAutopilot", saved.nextAt ? { at: saved.nextAt } : {}, "Preparação iniciada. Acompanhe o pedido abaixo.")}><CalendarClock size={15} />{pending === "runAutopilot" ? "Iniciando…" : "Gerar agora"}</button>
         </div>
         {dirty && <p className="hint" style={{ margin: 0 }}>Salve as alterações antes de gerar. Ativar ou pausar usa a rotina já salva e mantém o que você está editando.</p>}
         {!connected && <p className="hint" style={{ margin: 0 }}>Conecte o bot e vincule sua conversa para ativar ou gerar.</p>}
@@ -176,7 +184,7 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
       {saved.enabled && upcoming.length > 0 && <div className="pilot-upcoming" aria-labelledby="pilot-upcoming-title">
         <b id="pilot-upcoming-title">Próximos horários</b>
         <ul>{upcoming.map((run) => <li key={run.at} className={run.skipped ? "skipped" : ""}>
-          <span>{runLabel(run.at)}{run.skipped && <em> · pulado</em>}</span>
+          <span>{runLabel(run.at)}{slotAt(run.time) && <small> · {typeName(slotAt(run.time))}</small>}{run.skipped && <em> · pulado</em>}</span>
           <button className="ghost-btn" disabled={Boolean(pending)} aria-label={`${run.skipped ? "Voltar a preparar" : "Pular"} ${runLabel(run.at)}`} onClick={() => act("skipAutopilotRun", { at: run.at, skip: !run.skipped }, run.skipped ? "Este horário volta a preparar um carrossel." : "Horário pulado. Os outros continuam.")}>{run.skipped ? "Voltar a preparar" : "Pular"}</button>
         </li>)}</ul>
       </div>}
@@ -269,17 +277,16 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
           </div>
           <div className="pilot-times" role="group" aria-label="Horários da rotina">
             <span className="hint">Horários neste computador · até {MAX_TIMES} por dia</span>
-            {draft.times.map((time, index) => <div className="pilot-time" key={index}>
-              <input type="time" required aria-label={`Horário ${index + 1} da rotina`} value={time} onChange={(event) => change({ times: draft.times.map((value, i) => i === index ? event.target.value : value) })} />
-              {draft.times.length > 1 && <button type="button" className="ghost-btn" aria-label={`Remover horário ${index + 1}`} onClick={() => change({ times: draft.times.filter((_, i) => i !== index) })}><X size={14} /></button>}
+            {draft.slots.map((slot, index) => <div className="pilot-slot" key={index} role="group" aria-label={`Horário ${index + 1}`}>
+              <label className="fld pilot-slot-time"><span>Horário</span><input type="time" required aria-label={`Horário ${index + 1} da rotina`} value={slot.time} onChange={(event) => changeSlot(index, { time: event.target.value })} /></label>
+              <label className="fld pilot-slot-type"><span>Tipo de carrossel</span><select aria-label={`Tipo de carrossel do horário ${index + 1}`} value={slot.architectureId} onChange={(event) => changeSlot(index, { architectureId: event.target.value })}><option value="">Escolhido pela pauta</option>{architectures.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+              <label className="fld pilot-slot-style"><span>Estilo</span><select aria-label={`Estilo do horário ${index + 1}`} value={slot.style} onChange={(event) => changeSlot(index, { style: event.target.value })}>{STYLES.map((style) => <option key={style} value={style}>{STYLE_LABEL[style] || style}</option>)}</select></label>
+              <label className="fld pilot-slot-cards"><span>Cards</span><input type="number" min="2" max="10" step="1" required aria-label={`Quantidade de cards do horário ${index + 1}, de 2 a 10`} value={slot.cardCount} onChange={(event) => changeSlot(index, { cardCount: event.target.value === "" ? "" : Number(event.target.value) })} /></label>
+              {draft.slots.length > 1 && <button type="button" className="ghost-btn pilot-slot-remove" aria-label={`Remover horário ${index + 1}`} onClick={() => change({ slots: draft.slots.filter((_, i) => i !== index) })}><X size={14} /></button>}
             </div>)}
-            {draft.times.length < MAX_TIMES && <button type="button" className="ghost-btn" onClick={() => { const last = draft.times.at(-1) || "09:00"; const [h, m] = last.split(":").map(Number); const next = `${String((h + 3) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`; change({ times: [...draft.times, draft.times.includes(next) ? "" : next] }); }}><Plus size={14} /> Adicionar horário</button>}
+            {draft.slots.length < MAX_TIMES && <button type="button" className="ghost-btn" onClick={() => { const last = draft.slots.at(-1) || slotOf(); const [h, m] = (TIME.test(last.time) ? last.time : "09:00").split(":").map(Number); const next = `${String((h + 3) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`; change({ slots: [...draft.slots, { ...last, time: draft.slots.some((slot) => slot.time === next) ? "" : next }] }); }}><Plus size={14} /> Adicionar horário</button>}
             {duplicateTime && <p className="hint" style={{ margin: 0, color: "var(--danger)" }}>Há dois horários iguais. Troque ou remova um deles.</p>}
-            <p className="hint" style={{ margin: 0 }}>Cada horário prepara um carrossel e manda a prévia no Telegram. Nada é publicado sem a sua aprovação. Deixe pelo menos 1 hora entre os horários: cada carrossel leva alguns minutos para ficar pronto.</p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
-            <label className="fld"><span>Estilo</span><select aria-label="Estilo do carrossel" value={draft.style} onChange={(event) => change({ style: event.target.value })}>{STYLES.map((style) => <option key={style} value={style}>{STYLE_LABEL[style] || style}</option>)}</select></label>
-            <label className="fld"><span>Quantidade de cards</span><input type="number" min="2" max="10" step="1" required aria-label="Quantidade de cards, de 2 a 10" value={draft.cardCount} onChange={(event) => change({ cardCount: event.target.value === "" ? "" : Number(event.target.value) })} /></label>
+            <p className="hint" style={{ margin: 0 }}>Cada horário prepara um carrossel do tipo escolhido e manda a prévia no Telegram. Nada é publicado sem a sua aprovação. Deixe pelo menos 1 hora entre os horários: cada carrossel leva alguns minutos para ficar pronto.</p>
           </div>
           <div style={{ display: "grid", gap: 10 }} role="group" aria-label="Contas escolhidas para publicação">
             <b>Publicar nas contas que você marcar</b>
