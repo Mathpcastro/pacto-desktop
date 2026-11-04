@@ -292,3 +292,8 @@ Ver [[37 - Release Carrossell 0.7.4]]. Latest com Windows e dois Macs, workflow 
 ## 04/11/2026 — Release 0.7.6 publicada
 
 [[40 - Release Carrossell 0.7.6]]: copy falada com fio condutor por arquitetura e reagendamento (app, Telegram /agendados e CLI). Latest com Windows e os dois Macs, zero artefatos de Actions. Feed e download completo do Windows verificados.
+
+
+## 04/11/2026 — Release 0.7.7 publicada
+
+[[41 - Release Carrossell 0.7.7]]: ícone na bandeja do Windows com Abrir, Procurar atualização e Sair. A busca de atualização passou a rodar a cada hora e ao reabrir a janela. Latest com Windows e os dois Macs, zero artefatos de Actions, SHA-512 do instalador público confere.
