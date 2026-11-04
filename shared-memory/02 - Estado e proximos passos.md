@@ -302,3 +302,8 @@ Ver [[37 - Release Carrossell 0.7.4]]. Latest com Windows e dois Macs, workflow 
 ## 04/11/2026 — Release 0.7.8 publicada
 
 [[42 - Release Carrossell 0.7.8]]: rotina com até 6 horários por dia, lista dos próximos horários com Pular e Voltar a preparar, e um carrossel esperando aprovação por horário. Latest com Windows e os dois Macs, zero artefatos de Actions, SHA-512 do instalador público confere.
+
+
+## 04/11/2026 — Release 0.7.9 publicada
+
+[[43 - Release Carrossell 0.7.9]]: cada horário da rotina tem o seu tipo de carrossel (arquitetura, estilo e cards). Latest com Windows e os dois Macs, zero artefatos de Actions, SHA-512 do instalador público confere. O perfil Carrossell foi refocado em quem tem SaaS e não vende.
