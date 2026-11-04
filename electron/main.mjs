@@ -20,6 +20,7 @@ import { TelegramClient } from '../core/telegram.mjs';
 import { createSecrets } from './secrets.mjs';
 import { Composio, COMPOSIO_BASE } from '../core/composio.mjs';
 import { startUpdates } from './updater.mjs';
+import { createTray } from './tray.mjs';
 import { configureIdentity } from './identity.mjs';
 import { createRenderer } from './render.mjs';
 import { readPage } from './page.mjs';
@@ -37,7 +38,7 @@ const headless=process.argv.includes(BACKGROUND);
 const primary=app.requestSingleInstanceLock();
 if(!primary)app.quit();
 const IDLE_MS=Number(process.env.PACTO_IDLE_MS)||10*60*1000;
-let window,runtime,codex,updates,control,showUI,publishDue,awaitingLogin=false,lastActivity=Date.now();
+let window,runtime,codex,updates,control,showUI,publishDue,tray,warnedBackground=false,awaitingLogin=false,lastActivity=Date.now();
 function emit(event){lastActivity=Date.now();if(window&&!window.isDestroyed())window.webContents.send('pacto:event',event);control?.broadcast(event);}
 const windowOpen=()=>Boolean(window&&!window.isDestroyed());
 function authUrlAllowed(raw){try{const u=new URL(raw);return u.protocol==='https:'&&['auth.openai.com','auth0.openai.com','chatgpt.com','auth.chatgpt.com'].includes(u.hostname);}catch{return false;}}
@@ -134,16 +135,24 @@ app.whenReady().then(async()=>{
   setInterval(()=>{if(!windowOpen()&&!runtime.job&&!runtime.autopilot?.keepAlive()&&!control?.clients()&&Date.now()-lastActivity>IDLE_MS)app.quit();},Math.min(30000,IDLE_MS)).unref();
   let started=false;
   showUI=async()=>{
-    if(windowOpen()){if(window.isMinimized())window.restore();window.show();window.focus();return;}
+    if(windowOpen()){if(window.isMinimized())window.restore();window.show();window.focus();updates?.refresh();return;}
     app.dock?.show();await createWindow();if(headless){window.show();window.focus();}
-    if(started)return;started=true;
+    if(started){updates?.refresh();return;}started=true;
     updates=startUpdates({app,emit,notify:(body,title='Carrossell · atualização pronta')=>{if(Notification.isSupported())new Notification({title,icon:join(root,'resources','branding','icon-256.png'),body}).show();},open:url=>{const u=new URL(url);if(u.protocol==='https:'&&u.hostname==='github.com'||u.protocol==='http:'&&u.hostname==='127.0.0.1')return shell.openExternal(u.href);}});
     // Lembrete diário em qualquer perfil com resultado pendente; o primeiro encontrado avisa.
     let remind='',remindStore=store,remindProfile=profiles.active;for(const p of profiles.list()){const s=await profiles.store(p.id).catch(()=>null);const r=s&&reminder(s.state().projects,s.state().settings);if(r){remind=profiles.list().length>1?`${p.name}: ${r}`:r;remindStore=s;remindProfile=p.id;break;}}
     if(remind&&Notification.isSupported()){const note=new Notification({title:'Carrossell · hora de medir',icon:join(root,'resources','branding','icon-256.png'),body:remind});note.on('click',async()=>{window?.show();window?.focus();if(remindProfile!==profiles.active)await runtime.request('switchProfile',{id:remindProfile}).then(state=>emit({type:'state',state})).catch(()=>{});emit({type:'navigate',view:'rhythm'});});note.show();await remindStore.saveSettings({lastReminderAt:new Date().toISOString()});}
   };
+  // Windows: com o piloto ligado o app segue rodando sem janela; a bandeja abre, procura atualização e sai.
+  if(process.platform==='win32')tray=createTray({icon:join(root,'resources','branding',process.platform==='win32'?'carrossell.ico':'icon-32.png'),show:()=>void showUI?.(),checkUpdates:()=>updates?updates.check():notify('Carrossell · atualização','Abra o Carrossell para procurar atualização.'),quit:()=>app.quit()});
   if(!headless)await showUI();
   void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
 }).catch(error=>{dialog.showErrorBox('Não foi possível abrir o Carrossell',safeError(error).message);app.quit();});
 // Fechar a janela com a CLI conectada ou trabalho rodando deixa o app em segundo plano até terminar.
-app.on('window-all-closed',()=>{if(control?.clients()||runtime?.job||runtime?.autopilot?.keepAlive())return;app.quit();});app.on('before-quit',()=>{runtime?.autopilot?.stop();void runtime?.sharing?.stop();codex?.stop();});
+app.on('window-all-closed',()=>{
+  if(control?.clients()||runtime?.job||runtime?.autopilot?.keepAlive()){
+    if(!warnedBackground&&tray){warnedBackground=true;notify('Carrossell continua aberto','O piloto automático segue funcionando. Para sair, clique com o botão direito no ícone do Carrossell perto do relógio e escolha Sair.');}
+    return;
+  }
+  app.quit();
+});app.on('before-quit',()=>{runtime?.autopilot?.stop();void runtime?.sharing?.stop();codex?.stop();});
