@@ -805,3 +805,10 @@
   .pilot-approval { display: grid; gap: 6px; }
   .pilot-approval legend { margin-bottom: 4px; }
 }
+
+@layer studio {
+  .reference-paste { display: grid; justify-items: center; gap: 10px; padding: 24px 16px; border: 1px dashed var(--muted); border-radius: var(--radius-sm); text-align: center; }
+  .reference-paste:focus-within, .reference-paste:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .reference-grid .tile { min-width: 0; }
+  .reference-grid .tile > span { display: block; overflow-wrap: anywhere; }
+}

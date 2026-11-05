@@ -7,11 +7,13 @@ import { InstagramLogo, InstagramSummary } from "./Instagram.jsx";
 import { BarChart3 } from "lucide-react";
 import Analytics from "./Analytics.jsx";
 import Autopilot from "./Autopilot.jsx";
+import VisualReferences from "./VisualReferences.jsx";
 
 // Marca em seções, como nas configurações dos bons apps: barra lateral à esquerda e uma seção por vez.
 const BRAND_TABS = {
   contexto: { group: "Marca", label: "Contexto da marca", icon: FileText },
   design: { group: "Marca", label: "Design Kit", icon: PaletteIcon },
+  referencias: { group: "Aparência", label: "Referências visuais", icon: ImagePlus },
   perfil: { group: "Aparência", label: "Perfil", icon: UserRound, title: "Perfil", hint: "Nome, @ e foto que aparecem nos estilos prontos" },
   fotos: { group: "Aparência", label: "Fotos", icon: Camera, title: "Fotos", hint: "Seu rosto e cenas para as fotos simples" },
   imagens: { group: "Aparência", label: "Imagens da marca", icon: ImageIcon, title: "Imagens da marca", hint: "Logo, produtos e o que pode aparecer nos cards" },
@@ -199,6 +201,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
   }, [target?.n]);
   const igAccounts = (state.composio?.accounts || []).filter((a) => a.status === "ACTIVE");
   const meta = {
+    referencias: profile.references?.length ? String(profile.references.length) : "",
     contexto: profile.brandContext?.trim() ? "" : "vazio",
     design: profile.designKit?.trim() ? "" : "vazio",
     perfil: media.handle ? `@${media.handle}` : "",
@@ -288,6 +291,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           </button>
         </div>
       )}
+        {tab === "referencias" && <VisualReferences key={state.profileId} profile={profile} request={request} onNotice={onNotice} />}
         {tab === "contexto" && <StrategyImprover value={profile.brandContext} request={request} connected={connected} working={working} onSave={saveDoc("brandContext")} />}
         {tab === "contexto" && <DocSection title="Contexto da marca" value={profile.brandContext} hint="Aula 02" onSave={saveDoc("brandContext")} />}
         {tab === "design" && (
