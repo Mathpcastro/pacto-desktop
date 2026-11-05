@@ -321,3 +321,7 @@ Ver [[37 - Release Carrossell 0.7.4]]. Latest com Windows e dois Macs, workflow 
 ## 05/11/2026 — Referências visuais da marca (local)
 
 Implementação isolada em pacto-app-visual-refs, branch feat/brand-visual-references. Marca › Referências visuais aceita upload/colar/remover; contexto e referências acompanham novas artes e fotos. 227 testes e build passaram; prova Electron e uma capa nativa de trading conferidas. Sem release. Evidências e limpeza temporária pendente em [[48 - Referencias visuais da marca]].
+
+## 05/11/2026 — Release 0.10.0 publicada
+
+[[49 - Release Carrossell 0.10.0]]: Referências visuais por marca com upload e colar; novas artes ligadas ao contexto de cada negócio. 227 testes, build e prova Electron passaram; uma capa nativa de trading conferida. Latest, feed, downloads e SHA-512 verificados pela skill do Obsidian. Aviso v0-10-0 publicado.
