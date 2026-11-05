@@ -312,3 +312,8 @@ Ver [[37 - Release Carrossell 0.7.4]]. Latest com Windows e dois Macs, workflow 
 ## 05/11/2026 — Release 0.8.0 publicada
 
 [[45 - Release Carrossell 0.8.0]]: o Contexto da Marca passa a ser montado como plano de venda (skills de marketing do Corey). Perfis antigos ganharam o botão Melhorar estratégia. O app também lê avisos do dono ([[44 - Avisos para usuarios]]), e o primeiro aviso já está publicado. Latest com Windows e os dois Macs, zero artefatos, SHA-512 confere.
+
+
+## 05/11/2026 — Release 0.9.0 publicada
+
+[[47 - Release Carrossell 0.9.0]]: a rotina pode publicar sem revisão, e as prévias podem ser aprovadas no app (Publicar agora ou Agendar). Latest verificada pela skill, SHA-512 confere. O aviso v0-9-0 está publicado.
