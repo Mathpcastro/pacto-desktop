@@ -307,3 +307,8 @@ Ver [[37 - Release Carrossell 0.7.4]]. Latest com Windows e dois Macs, workflow 
 ## 04/11/2026 — Release 0.7.9 publicada
 
 [[43 - Release Carrossell 0.7.9]]: cada horário da rotina tem o seu tipo de carrossel (arquitetura, estilo e cards). Latest com Windows e os dois Macs, zero artefatos de Actions, SHA-512 do instalador público confere. O perfil Carrossell foi refocado em quem tem SaaS e não vende.
+
+
+## 05/11/2026 — Release 0.8.0 publicada
+
+[[45 - Release Carrossell 0.8.0]]: o Contexto da Marca passa a ser montado como plano de venda (skills de marketing do Corey). Perfis antigos ganharam o botão Melhorar estratégia. O app também lê avisos do dono ([[44 - Avisos para usuarios]]), e o primeiro aviso já está publicado. Latest com Windows e os dois Macs, zero artefatos, SHA-512 confere.
