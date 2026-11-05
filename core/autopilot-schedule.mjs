@@ -6,19 +6,22 @@ import { ARCHITECTURE_FLOW } from './copy.mjs';
 export const ARCHITECTURES=Object.keys(ARCHITECTURE_FLOW);
 
 export const PILOT_FLAG='--piloto-automatico';
-export const DEFAULT_CONFIG={enabled:false,time:'09:00',times:['09:00'],slots:[{time:'09:00',style:'texto',cardCount:6,architectureId:''}],days:[1,2,3,4,5],style:'texto',cardCount:6,accounts:[],skips:[],nextAt:null};
+export const DEFAULT_CONFIG={enabled:false,time:'09:00',times:['09:00'],slots:[{time:'09:00',style:'texto',cardCount:6,architectureId:''}],days:[1,2,3,4,5],style:'texto',cardCount:6,accounts:[],skips:[],approval:'review',nextAt:null};
 // Horários por dia: cada um prepara um carrossel. Seis cobre quem posta muito sem lotar a fila.
 export const MAX_TIMES=6;
+export const APPROVALS=['review','auto'];
 const TIME=/^([01]\d|2[0-3]):[0-5]\d$/;
 const ISO=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
 export function validateConfig(input){
   if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('Configuração do piloto inválida.');
-  const {enabled=false,time='09:00',days=[1,2,3,4,5],style='texto',cardCount=6,accounts=[],skips=[]}=input;
+  const {enabled=false,time='09:00',days=[1,2,3,4,5],style='texto',cardCount=6,accounts=[],skips=[],approval='review'}=input;
   // Cada horário tem o seu tipo de carrossel. Rotinas antigas têm "times" (0.7.8) ou só "time",
   // com um estilo e uma quantidade de cards para todos.
   const legacy=input.times===undefined?[time]:input.times;
   const slots=input.slots===undefined?(Array.isArray(legacy)?legacy.map(t=>({time:t,style,cardCount,architectureId:''})):legacy):input.slots;
   if(typeof enabled!=='boolean')throw new Error('Ativação inválida.');
+  // review: a prévia espera aprovação (Telegram ou app). auto: publica assim que fica pronto.
+  if(!APPROVALS.includes(approval))throw new Error('Escolha se a rotina publica com ou sem revisão.');
   if(!Array.isArray(slots)||!slots.length||slots.some(x=>!x||typeof x!=='object'||typeof x.time!=='string'||!TIME.test(x.time)))throw new Error('Escolha um horário válido.');
   if(slots.length>MAX_TIMES)throw new Error(`Escolha até ${MAX_TIMES} horários por dia.`);
   if(new Set(slots.map(x=>x.time)).size!==slots.length)throw new Error('Há dois horários iguais. Troque ou remova um deles.');
@@ -32,7 +35,7 @@ export function validateConfig(input){
   if(!Array.isArray(accounts)||accounts.length>30||accounts.some(a=>typeof a!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(a))||enabled&&!accounts.length)throw new Error('Escolha uma conta do Instagram.');
   const sorted=slots.map(({time,style,cardCount,architectureId=''})=>({time,style,cardCount,architectureId})).sort((a,b)=>a.time.localeCompare(b.time));
   // time/times/style/cardCount espelham o primeiro horário para quem ainda lê o formato antigo.
-  return {enabled,time:sorted[0].time,times:sorted.map(x=>x.time),slots:sorted,days:[...new Set(days)].sort(),style:sorted[0].style,cardCount:sorted[0].cardCount,accounts:[...new Set(accounts)],skips:[...new Set(skips)].sort()};
+  return {enabled,time:sorted[0].time,times:sorted.map(x=>x.time),slots:sorted,days:[...new Set(days)].sort(),style:sorted[0].style,cardCount:sorted[0].cardCount,accounts:[...new Set(accounts)],skips:[...new Set(skips)].sort(),approval};
 }
 // Próximas ocorrências em ordem, incluindo as puladas (marcadas), para mostrar e controlar.
 export function upcomingRuns(config,now=new Date(),count=8){

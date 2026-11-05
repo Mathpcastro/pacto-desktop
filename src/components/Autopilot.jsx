@@ -10,7 +10,7 @@ const STYLE_LABEL = { ia: "Arte com IA", tweet: "Tweet", texto: "Texto em fundo 
 const DAYS = [[1, "Segunda", "Seg"], [2, "Terça", "Ter"], [3, "Quarta", "Qua"], [4, "Quinta", "Qui"], [5, "Sexta", "Sex"], [6, "Sábado", "Sáb"], [0, "Domingo", "Dom"]];
 const JOB_LABEL = {
   queued: "Na fila", planning: "Escolhendo a pauta", writing: "Escrevendo", generating: "Criando o carrossel", rendering: "Preparando as imagens",
-  notifying: "Enviando para o Telegram", ready: "Esperando sua aprovação no Telegram", approved: "Aprovado", publishing: "Publicando",
+  notifying: "Enviando para o Telegram", ready: "Esperando sua aprovação", approved: "Aprovado", publishing: "Publicando",
   sending: "Enviando prévia", scheduleDate: "Esperando data", scheduleConfirm: "Esperando confirmação", approvedSchedule: "Agendamento aprovado", scheduling: "Agendando", redo: "Refazendo", resend: "Reenviando prévia", scheduled: "Agendado",
   published: "Publicado", complete: "Concluído", error: "Precisa de atenção", failed: "Precisa de atenção", uncertain: "Confira o Instagram", discarded: "Descartado", cancelled: "Cancelado",
 };
@@ -39,7 +39,10 @@ const editable = (config = {}) => ({
   ).map((slot) => slotOf(slot, config)).sort((a, b) => a.time.localeCompare(b.time)),
   days: Array.isArray(config.days) ? [...config.days].sort((a, b) => a - b) : [1, 2, 3, 4, 5],
   accounts: Array.isArray(config.accounts) ? [...config.accounts].sort() : [],
+  approval: config.approval === "auto" ? "auto" : "review",
 });
+// Valor inicial do campo de agendar: amanhã às 18h, no horário do computador.
+const tomorrowAt18 = () => { const d = new Date(); d.setDate(d.getDate() + 1); const pad = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T18:00`; };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const validSlot = (slot) => TIME.test(slot.time) && STYLES.includes(slot.style) && Number.isInteger(slot.cardCount) && slot.cardCount >= 2 && slot.cardCount <= 10;
 const valid = (config, accounts, requireAccounts = true) => config.slots.length > 0 && config.slots.length <= MAX_TIMES
@@ -67,6 +70,8 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
   const [pending, setPending] = useState("");
   const inFlight = useRef(false);
   const [error, setError] = useState("");
+  // Aprovação pelo app: { id, mode: "post" | "schedule", at }.
+  const [approving, setApproving] = useState(null);
   const [now, setNow] = useState(Date.now());
   const savedKey = JSON.stringify(editable(saved));
   useEffect(() => {
@@ -146,7 +151,18 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
     {job.projectId && <button className="ghost-btn pilot-preview-link" onClick={() => { setPreviewId(job.projectId); setDialog("preview"); }}>Ver prévia</button>}
     {job.createdAt && <span className="hint">{when(job.createdAt)}</span>}
     {job.error && <p className="hint pilot-error">{job.error}</p>}
-    {job.status === "ready" && <p className="hint">Revise as imagens e aprove pelo Telegram para publicar.</p>}
+    {job.status === "ready" && <p className="hint">Veja a prévia e aprove aqui ou pelo Telegram.</p>}
+    {job.status === "ready" && (approving?.id === job.id ? <div className="pilot-approve" role="group" aria-label={`Aprovar ${job.title || "carrossel"}`}>
+      {approving.mode === "schedule" && <label className="fld"><span>Data e hora no computador</span><input type="datetime-local" aria-label="Data e hora do agendamento" value={approving.at} onChange={(event) => setApproving({ ...approving, at: event.target.value })} /></label>}
+      <p className="hint" style={{ margin: 0 }}>{approving.mode === "post" ? "O carrossel vai para o Instagram agora, nas contas da rotina." : "O carrossel fica agendado nas contas da rotina."}</p>
+      <div className="row">
+        <button className="btn small primary" disabled={Boolean(pending) || (approving.mode === "schedule" && !approving.at)} onClick={async () => { if (await act("approveAutopilot", { id: job.id, ...(approving.mode === "schedule" ? { at: approving.at } : {}) }, approving.mode === "post" ? "Aprovado. Publicando agora." : "Aprovado. O post foi para os agendados.")) setApproving(null); }}>{approving.mode === "post" ? "Confirmar e publicar" : "Confirmar agendamento"}</button>
+        <button className="ghost-btn" disabled={Boolean(pending)} onClick={() => setApproving(null)}>Voltar</button>
+      </div>
+    </div> : <div className="row">
+      <button className="btn small primary" disabled={Boolean(pending) || !connected} onClick={() => setApproving({ id: job.id, mode: "post" })}>Publicar agora</button>
+      <button className="btn small" disabled={Boolean(pending) || !connected} onClick={() => setApproving({ id: job.id, mode: "schedule", at: tomorrowAt18() })}><CalendarClock size={14} /> Agendar</button>
+    </div>)}
     {job.status === "uncertain" && <p className="hint">Confira no Instagram se o post saiu antes de qualquer nova tentativa. A publicação não será repetida automaticamente.</p>}
     {DISCARDABLE.has(job.status) && <div className="row">
       {job.status === "error" && <button className="btn small" disabled={Boolean(pending) || !connected || !state.account?.connected || full} onClick={() => act("retryAutopilot", { id: job.id }, "Pedido retomado.")}><RefreshCw size={14} /> Retomar</button>}
@@ -166,7 +182,7 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
         <section className="pilot-panel pilot-routine" aria-labelledby="pilot-routine-title">
           <div className="pilot-section-top"><h2 id="pilot-routine-title">Sua rotina</h2><span className={`chip ${saved.enabled ? "good" : ""}`} role="status">{saved.enabled ? "Ativa" : "Pausada"}</span></div>
           <p className="pilot-schedule">{daySummary}, às {joinPt(summary.slots.map((slot) => hourLabel(slot.time)))}</p>
-          <p className="pilot-routine-meta">{perDay === 1 ? "1 carrossel por dia" : `${perDay} carrosséis por dia`}</p>
+          <p className="pilot-routine-meta">{perDay === 1 ? "1 carrossel por dia" : `${perDay} carrosséis por dia`} <span aria-hidden="true">·</span> {summary.approval === "auto" ? "publica sem revisão" : "com revisão antes de publicar"}</p>
           <ul className="pilot-slot-summary" aria-label="Tipo de carrossel de cada horário">{summary.slots.map((slot) => <li key={slot.time}><b>{hourLabel(slot.time)}</b><span>{typeLabel(slot)}</span></li>)}</ul>
           <div className="pilot-routine-footer"><div className="pilot-account-note"><strong>{summary.accounts.length ? summary.accounts.map((id) => { const account = accounts.find((a) => a.id === id); return account ? `@${(account.username || "conta sem nome").replace(/^@/, "")}` : "Conta indisponível"; }).join(", ") : "Nenhuma conta selecionada"}</strong><span>{summary.accounts.length ? "Contas para publicação" : "Defina na configuração"}</span></div><button className="btn" onClick={() => setDialog("routine")}>Configurar rotina</button></div>
       <div className="pilot-routine-actions">
@@ -192,7 +208,7 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
         </section>
         <section className="pilot-panel pilot-review" aria-labelledby="pilot-review-title"><div className="pilot-section-top"><h2 id="pilot-review-title">Para revisar</h2>{activeJobs.length > 0 && <span className="chip">{activeJobs.length} pedido{activeJobs.length > 1 ? "s" : ""}</span>}</div>
           {activeJobs.length ? <div className="pilot-job-list">{renderJobs(activeJobs)}</div> : <div className="pilot-review-empty"><MessageCircle size={27} aria-hidden="true" /><div><strong>As próximas ideias chegam aqui.</strong><p>{connected ? "Peça um conteúdo pelo Telegram ou use sua rotina." : "Conecte o Telegram para pedir seu primeiro conteúdo."}</p></div></div>}
-          <p className="pilot-approval-rule"><Check size={16} aria-hidden="true" />Você revisa antes de publicar.</p>
+          <p className="pilot-approval-rule"><Check size={16} aria-hidden="true" />{summary.approval === "auto" ? "A rotina publica sem revisão. Pedidos pelo Telegram continuam esperando você." : "Você revisa antes de publicar, aqui ou no Telegram."}</p>
           {jobs.length > 0 && <button className="ghost-btn" onClick={() => setDialog("history")}>Ver últimos pedidos</button>}
         </section>
       </div>
@@ -286,8 +302,14 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
             </div>)}
             {draft.slots.length < MAX_TIMES && <button type="button" className="ghost-btn" onClick={() => { const last = draft.slots.at(-1) || slotOf(); const [h, m] = (TIME.test(last.time) ? last.time : "09:00").split(":").map(Number); const next = `${String((h + 3) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`; change({ slots: [...draft.slots, { ...last, time: draft.slots.some((slot) => slot.time === next) ? "" : next }] }); }}><Plus size={14} /> Adicionar horário</button>}
             {duplicateTime && <p className="hint" style={{ margin: 0, color: "var(--danger)" }}>Há dois horários iguais. Troque ou remova um deles.</p>}
-            <p className="hint" style={{ margin: 0 }}>Cada horário prepara um carrossel do tipo escolhido e manda a prévia no Telegram. Nada é publicado sem a sua aprovação. Deixe pelo menos 1 hora entre os horários: cada carrossel leva alguns minutos para ficar pronto.</p>
+            <p className="hint" style={{ margin: 0 }}>Cada horário prepara um carrossel do tipo escolhido e manda a prévia no Telegram. Deixe pelo menos 1 hora entre os horários: cada carrossel leva alguns minutos para ficar pronto.</p>
           </div>
+          <fieldset className="pilot-approval" style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+            <legend><b>Antes de publicar</b></legend>
+            <label className="toggle"><input type="radio" name="pilot-approval" checked={draft.approval === "review"} onChange={() => change({ approval: "review" })} /> Revisar antes, pelo Telegram ou pelo app</label>
+            <label className="toggle"><input type="radio" name="pilot-approval" checked={draft.approval === "auto"} onChange={() => change({ approval: "auto" })} /> Publicar sem revisão</label>
+            {draft.approval === "auto" && <p className="hint" role="note" style={{ margin: 0 }}>Cada carrossel da rotina vai para o Instagram assim que fica pronto, sem você ver antes. A prévia chega no Telegram como registro. Teste antes com "Gerar agora" no modo com revisão e confira o Contexto da Marca. Pedidos feitos pelo Telegram continuam esperando a sua aprovação.</p>}
+          </fieldset>
           <div style={{ display: "grid", gap: 10 }} role="group" aria-label="Contas escolhidas para publicação">
             <b>Publicar nas contas que você marcar</b>
             {accounts.length ? accounts.map((account) => <label className="toggle" key={account.id}>

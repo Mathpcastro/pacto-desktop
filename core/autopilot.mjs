@@ -154,7 +154,12 @@ export class Autopilot {
     const stories=Object.entries(files).filter(([name])=>name.startsWith('stories/')&&name.endsWith('.png')).map(([name,bytes])=>({name,bytes}));
     if(stories.length){await client.sendText(binding.chatId,'Stories de apoio · para postar manualmente:');await client.sendPhotos(binding.chatId,stories);}
     const accounts=this.rt.social.pick(job.accounts).map(a=>`@${a.username}`).join(', ');
-    const messages=await client.sendText(binding.chatId,`Marca: ${name}\nContas: ${accounts}\nO que fazer com este carrossel?`,{reply_markup:{inline_keyboard:[[{text:'Postar agora',callback_data:`p:${reviewId}:post`},{text:'Agendar',callback_data:`p:${reviewId}:schedule`}],[{text:'Refazer',callback_data:`p:${reviewId}:redo`},{text:'Descartar',callback_data:`p:${reviewId}:discard`}]]}});
+    // Rotina sem revisão: a prévia fica no Telegram como registro e o carrossel segue direto para publicar.
+    if(job.config?.approval==='auto'&&job.origin!=='conversation'){
+      await client.sendText(binding.chatId,`Marca: ${name}\nContas: ${accounts}\nRotina sem revisão: publicando agora. Para revisar antes, mude em Piloto automático › Configurar rotina.`);
+      await this.patch(id,{status:'approved',messageId:null,title:p.title,error:'',auto:true});return;
+    }
+    const messages=await client.sendText(binding.chatId,`Marca: ${name}\nContas: ${accounts}\nO que fazer com este carrossel? Você também pode aprovar no app.`,{reply_markup:{inline_keyboard:[[{text:'Postar agora',callback_data:`p:${reviewId}:post`},{text:'Agendar',callback_data:`p:${reviewId}:schedule`}],[{text:'Refazer',callback_data:`p:${reviewId}:redo`},{text:'Descartar',callback_data:`p:${reviewId}:discard`}]]}});
     await this.patch(id,{status:'ready',messageId:messages.at(-1).message_id,title:p.title,error:''});
   }
   async reviewProject(profileId,projectId,accounts){
@@ -222,6 +227,25 @@ export class Autopilot {
     if(job.status==='uncertain')throw new Error('Confira o Instagram e os agendamentos no app antes de qualquer nova tentativa.');
     if(job.status!=='error')throw new Error('Só é possível retomar um trabalho com erro.');
     await this.state.change(data=>{const saved=data.jobs.find(j=>j.id===id);if(saved.status!=='error')throw new Error('Este trabalho já foi retomado.');const open=data.jobs.filter(j=>j.id!==id&&j.profileId===saved.profileId&&!TERMINAL.has(j.status)).length;if(open>=pendingLimit(data.configs[saved.profileId]))throw new Error(`Este perfil já tem ${waiting(open)}.`);Object.assign(saved,{status:'queued',error:'',reviewId:null,messageId:null});});await this.changed(job.profileId);
+  }
+  // Aprovação pelo app: publicar agora ou agendar a prévia que está esperando no Telegram.
+  async approve(id,at=null){
+    const job=this.state.snapshot().jobs.find(j=>j.id===validId(id));
+    if(!job||job.status!=='ready')throw new Error('Esta prévia já foi respondida ou ainda não está pronta.');
+    const current=await this.rt.inProfile(job.profileId,()=>this.rt.store.get(job.projectId));
+    if(fingerprint(current)!==job.fingerprint)throw new Error('O projeto mudou depois da prévia. Descarte e gere outra, ou revise no Estúdio.');
+    let when=null;if(at!==null&&at!==undefined&&at!==''){when=parseWhen(String(at),new Date(this.now())).toISOString();}
+    let accepted=false;
+    await this.state.change(data=>{const saved=data.jobs.find(j=>j.id===id);if(saved?.status==='ready'&&saved.messageId===job.messageId){Object.assign(saved,when?{status:'approvedSchedule',at:when}:{status:'approved'});saved.approvedIn='app';accepted=true;}});
+    if(!accepted)throw new Error('Esta prévia acabou de ser respondida no Telegram.');
+    await this.changed(job.profileId);
+    const binding=this.state.snapshot().binding;
+    if(binding){
+      const client=this.clientForToken();
+      if(job.messageId)await client.editMessageReplyMarkup(binding.chatId,job.messageId).catch(()=>{});
+      await client.sendText(binding.chatId,`${job.title}: aprovado no app. ${when?`Agendando para ${new Date(when).toLocaleString('pt-BR')}.`:'Publicando agora.'}`).catch(()=>{});
+    }
+    return this.state.snapshot().jobs.find(j=>j.id===id);
   }
   async discard(id){
     const job=this.state.snapshot().jobs.find(j=>j.id===validId(id));if(!job||!['ready','error','queued','scheduleDate','scheduleConfirm'].includes(job.status))throw new Error('Este trabalho não pode ser descartado agora.');

@@ -799,3 +799,9 @@
   .notice-banner-text { display: grid; gap: 2px; flex: 1; min-width: 220px; }
   .notice-banner-text span { color: var(--muted); font-size: var(--t-sm); overflow-wrap: anywhere; }
 }
+
+@layer studio {
+  .pilot-approve { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+  .pilot-approval { display: grid; gap: 6px; }
+  .pilot-approval legend { margin-bottom: 4px; }
+}

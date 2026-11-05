@@ -315,3 +315,55 @@ test('each routine time keeps its own carousel type and the due time decides wha
   assert.equal(job.config.slot,'11:59');assert.equal(job.config.style,'tweet');assert.equal(job.config.architectureId,'framework');
   const project=f.store.get(job.projectId);assert.equal(project.style,'tweet');assert.equal(project.architectureId,'framework');assert.equal(project.cardCount,2);
 });
+
+test('routine without review publishes as soon as the carousel is ready and keeps the preview as a record',async t=>{
+  const {validateConfig}=await import('../core/autopilot-schedule.mjs');
+  assert.equal(validateConfig({enabled:false,days:[1],accounts:[]}).approval,'review');
+  assert.throws(()=>validateConfig({enabled:false,days:[1],accounts:[],approval:'sempre'}),/revisão/);
+  const f=await pilotFixture(t);
+  await f.pilot.saveConfig('principal',{enabled:false,times:['09:00'],days:[1,2,3,4,5],style:'texto',cardCount:2,accounts:['ig1'],approval:'auto'});
+  assert.equal(f.pilot.status('principal').config.approval,'auto');
+  await f.store.saveIdeaBatch({id:'radar-extra',source:'radar',ideas:[{id:'idea2',theme:'Segunda pauta',hook:'Mais uma'},{id:'idea3',theme:'Terceira pauta',hook:'E outra'}]});
+  await f.pilot.enqueue('principal');await f.pilot.step();
+  let job=f.state.snapshot().jobs[0];assert.equal(job.status,'approved');assert.equal(job.auto,true);assert.equal(f.posts(),0);
+  const record=f.sent.filter(m=>m.text).at(-1);assert.match(record.text,/Rotina sem revisão: publicando agora/);assert.equal(record.reply_markup,undefined);
+  await f.pilot.step();
+  assert.equal(f.posts(),1);assert.equal(f.state.snapshot().jobs[0].status,'published');
+  assert.match(f.sent.at(-1).text,/publicado nas contas escolhidas/);
+  // Editar o projeto entre a prévia e a publicação ainda bloqueia: nada publica um texto que mudou.
+  await f.pilot.enqueue('principal');await f.pilot.step();job=f.state.snapshot().jobs[1];assert.equal(job.status,'approved');
+  await f.store.saveProject({id:job.projectId,caption:'Outra legenda'});await f.pilot.step();
+  assert.equal(f.posts(),1);assert.equal(f.state.snapshot().jobs[1].status,'error');
+});
+
+test('a carousel requested in the Telegram conversation still waits for review in a routine without review',async t=>{
+  const f=await pilotFixture(t);
+  await f.pilot.saveConfig('principal',{enabled:false,times:['09:00'],days:[1,2,3,4,5],style:'texto',cardCount:2,accounts:['ig1'],approval:'auto'});
+  await f.pilot.enqueue('principal');await f.pilot.step();await f.pilot.step();const project=f.state.snapshot().jobs[0].projectId;
+  const job=await f.pilot.reviewProject('principal',project,['ig1']);
+  assert.equal(f.state.snapshot().jobs.find(j=>j.id===job.id).status,'ready');assert.equal(f.posts(),1);
+});
+
+test('a preview can be approved in the app to publish now or schedule, only once and only while unchanged',async t=>{
+  const f=await pilotFixture(t);let scheduled=[];f.runtime.social.schedule=async(id,at,accounts)=>{scheduled.push({id,at,accounts});};
+  const edits=[];f.client.editMessageReplyMarkup=async(chat,id)=>{edits.push(id);};
+  await f.store.saveIdeaBatch({id:'radar-extra',source:'radar',ideas:[{id:'idea2',theme:'Segunda pauta',hook:'Mais uma'},{id:'idea3',theme:'Terceira pauta',hook:'E outra'}]});
+  await f.pilot.enqueue('principal');await f.pilot.step();let job=f.state.snapshot().jobs[0];assert.equal(job.status,'ready');
+  await f.runtime.request('approveAutopilot',{id:job.id});
+  assert.equal(f.state.snapshot().jobs[0].status,'approved');assert.equal(f.state.snapshot().jobs[0].approvedIn,'app');
+  assert.deepEqual(edits,[job.messageId],'os botões da prévia no Telegram somem');assert.match(f.sent.at(-1).text,/aprovado no app\. Publicando agora/);
+  await assert.rejects(f.runtime.request('approveAutopilot',{id:job.id}),/já foi respondida/);
+  await f.pilot.handleUpdate(callback(job));
+  await f.pilot.step();assert.equal(f.posts(),1);assert.equal(f.state.snapshot().jobs[0].status,'published');
+  // Agendar pelo app.
+  await f.pilot.enqueue('principal');await f.pilot.step();job=f.state.snapshot().jobs[1];
+  await assert.rejects(f.runtime.request('approveAutopilot',{id:job.id,at:'2026-11-02 12:00'}),/2 minutos/);
+  await f.runtime.request('approveAutopilot',{id:job.id,at:'2026-11-03T18:00'});
+  assert.equal(f.state.snapshot().jobs[1].status,'approvedSchedule');await f.pilot.step();
+  assert.equal(scheduled.length,1);assert.equal(new Date(scheduled[0].at).getHours(),18);assert.equal(f.state.snapshot().jobs[1].status,'scheduled');
+  // Projeto alterado depois da prévia não é aprovado.
+  await f.pilot.enqueue('principal');await f.pilot.step();job=f.state.snapshot().jobs[2];
+  await f.store.saveProject({id:job.projectId,caption:'Mudou'});
+  await assert.rejects(f.runtime.request('approveAutopilot',{id:job.id}),/mudou depois da prévia/);
+  assert.equal(f.state.snapshot().jobs[2].status,'ready');
+});
