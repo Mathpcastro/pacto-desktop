@@ -35,7 +35,7 @@ test("the copy-paste prompt is anchored on what the person sells and carries bot
   assert.match(prompt, /memória, projetos e conversas anteriores/);
   assert.match(prompt, /abra o link/);
   assert.match(prompt, /HIPÓTESE/);
-  assert.match(prompt, /PERGUNTAS DA AULA 02[\s\S]*PERGUNTAS DA AULA 05/);
+  assert.match(prompt, /PERGUNTAS DA AULA 02[\s\S]*ESTRATÉGIA DE VENDA[\s\S]*PERGUNTAS DA AULA 05/);
   for (const s of Object.values(SECTIONS)) assert.match(prompt, new RegExp(`=== ${s} ===`));
   const plain = setupPrompt("agenda online para clínicas, R$ 49/mês");
   assert.match(plain, /para vender isto: agenda online para clínicas, R\$ 49\/mês/);
@@ -83,6 +83,12 @@ test("quickSetup reads the page, sends its text and screenshot, and writes both 
   assert.match(calls[0].prompt, /MODO RÁPIDO DO APLICATIVO: não faça perguntas/);
   assert.match(calls[0].prompt, /O QUE O USUÁRIO VENDE[^\n]*agendei\.app/);
   assert.match(calls[0].prompt, /Texto da página:\nAgenda online para clínicas/);
+  // O Contexto sai como plano de venda, não como resumo da página.
+  assert.match(calls[0].prompt, /ESTRATÉGIA DE VENDA/);
+  assert.match(calls[0].prompt, /quem NÃO é o público/);
+  assert.match(calls[0].prompt, /Nunca liste recursos do produto como territórios/);
+  assert.match(calls[0].prompt, /HIPÓTESE só para fatos/);
+  assert.doesNotMatch(calls[1].prompt, /ESTRATÉGIA DE VENDA/);
   assert.match(calls[1].prompt, /Cores mais usadas no site: #3cc8a0, #1e2328/);
   assert.match(calls[1].prompt, /CONTEXTO OFICIAL DA MARCA JÁ MONTADO:\n# CONTEXTO OFICIAL DA MARCA/);
   assert.deepEqual(calls[1].references, [png]);
@@ -179,4 +185,20 @@ test("feedback is stored by area and reaches the copy and image prompts that mat
   const after = await runtime.request("removeFeedback", { id: state.feedback.find((f) => f.area === "texto").id });
   assert.equal(after.feedback.length, 2);
   assert.doesNotMatch(runtime.brandContext(), /emoji/);
+});
+
+test("improveBrandStrategy proposes a sales-strategy version of the saved context without saving it", async (t) => {
+  const store = await fixture(t);
+  await store.saveProfile({ brand: "Agendei", brandContext: brandDoc, designKit: designDoc });
+  const calls = [];
+  const better = brandDoc.replace("## Negócio", "## 1. Negócio e oferta") + "\n## 6. Regras de conteúdo\n- 70% ensinam sobre faltas na agenda.";
+  const runtime = new Runtime({ store, knowledge, codex: { status: { account: { connected: true } }, run: async (o) => { calls.push(o); return { text: JSON.stringify({ reply: "Público e territórios refeitos.", complete: true, brandName: "Agendei", document: better }) }; } } });
+  const result = await runtime.request("improveBrandStrategy");
+  assert.equal(result.proposal.document, better.trim());
+  assert.equal(result.proposal.reply, "Público e territórios refeitos.");
+  assert.match(calls[0].prompt, /ESTRATÉGIA DE VENDA[\s\S]*Preserve todos os fatos[\s\S]*CONTEXTO OFICIAL DA MARCA ATUAL[^\n]*\n# CONTEXTO OFICIAL DA MARCA/);
+  assert.equal(store.state().profile.brandContext, brandDoc, "a versão atual só muda quando a pessoa escolhe usar a nova");
+  const empty = await fixture(t);
+  const idle = new Runtime({ store: empty, knowledge, codex: { status: { account: { connected: true } }, run: async () => ({}) } });
+  await assert.rejects(idle.request("improveBrandStrategy"), /Monte o Contexto/);
 });

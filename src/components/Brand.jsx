@@ -100,6 +100,47 @@ function DocSection({ title, value, onSave, hint, extra }) {
   );
 }
 
+// Perfis antigos têm um Contexto que descreve o produto. Este bloco pede uma versão com
+// estratégia de venda (público, territórios, mistura de posts e CTA) e só salva se a pessoa escolher.
+function StrategyImprover({ value, request, connected, working, onSave }) {
+  const [proposal, setProposal] = useState(null);
+  const [failed, setFailed] = useState("");
+  const running = working === "strategy";
+  if (!value?.trim()) return null;
+  const run = async () => {
+    setFailed("");
+    try {
+      const result = await request("improveBrandStrategy");
+      if (result?.proposal?.document) setProposal(result.proposal);
+    } catch (error) {
+      setFailed(String(error?.message || "").replace(/^Error invoking remote method '[^']+': (?:\w*Error: )?/, "") || "Não foi possível melhorar agora. Tente de novo.");
+    }
+  };
+  return (
+    <section className="card-box strategy-box" aria-label="Estratégia de venda do Contexto">
+      {proposal ? <>
+        <div className="section-head"><h2>Nova versão com estratégia de venda</h2></div>
+        {proposal.reply && <p className="hint">{proposal.reply}</p>}
+        <Markdown text={proposal.document} />
+        <div className="row">
+          <button className="btn small primary" onClick={async () => { if (await onSave(proposal.document)) setProposal(null); }}>Usar esta versão</button>
+          <button className="ghost-btn" onClick={() => setProposal(null)}>Manter a atual</button>
+        </div>
+        <p className="hint">A versão atual só é trocada se você escolher "Usar esta versão". Depois dá para editar normalmente.</p>
+      </> : <>
+        <div className="section-head"><h2>Melhorar a estratégia de venda</h2></div>
+        <p className="hint">O Carrossell reescreve o seu Contexto como um plano de venda: para quem falar, quais assuntos atraem o cliente antes de ele conhecer o produto, quanto de cada tipo de post e onde o produto entra. Os fatos do seu negócio continuam os mesmos, e você revisa antes de trocar.</p>
+        <div className="row">
+          <button className="btn small" disabled={!connected || Boolean(working)} onClick={run}>{running ? <><Spinner /> Melhorando…</> : "Melhorar estratégia"}</button>
+          {running && <button className="ghost-btn" onClick={() => request("cancelWork").catch(() => {})}>Parar</button>}
+          {!connected && <span className="hint">Conecte sua conta ChatGPT para usar.</span>}
+        </div>
+        {failed && <p className="hint" role="alert" style={{ color: "var(--danger)" }}>{failed}</p>}
+      </>}
+    </section>
+  );
+}
+
 export default function Brand({ state, request, isPending, onRedo, onManual, onNotice, onInstagram, onAgents, target }) {
   const profile = state.profile || {};
   const media = state.media || { faces: [], scenes: [], verified: true };
@@ -247,6 +288,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           </button>
         </div>
       )}
+        {tab === "contexto" && <StrategyImprover value={profile.brandContext} request={request} connected={connected} working={working} onSave={saveDoc("brandContext")} />}
         {tab === "contexto" && <DocSection title="Contexto da marca" value={profile.brandContext} hint="Aula 02" onSave={saveDoc("brandContext")} />}
         {tab === "design" && (
         <DocSection

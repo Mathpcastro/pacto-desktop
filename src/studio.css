@@ -787,3 +787,15 @@
     .pilot-slot { grid-template-columns: minmax(0, 1fr) 80px auto; grid-template-areas: "time time remove" "type type type" "style cards cards"; }
   }
 }
+
+@layer studio {
+  .notice-bell { position: relative; }
+  .notice-count { position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 10px; line-height: 16px; text-align: center; font-weight: 700; }
+  .notice-list { display: grid; gap: 12px; }
+  .notice-item { display: grid; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+  .notice-item.unread { border-color: var(--accent); }
+  .notice-item p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+  .notice-banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 12px auto 0; max-width: 1064px; width: calc(100% - 32px); padding: 12px 14px; border: 1px solid var(--accent); border-radius: var(--radius-sm); background: var(--panel); }
+  .notice-banner-text { display: grid; gap: 2px; flex: 1; min-width: 220px; }
+  .notice-banner-text span { color: var(--muted); font-size: var(--t-sm); overflow-wrap: anywhere; }
+}

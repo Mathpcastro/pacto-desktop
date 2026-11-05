@@ -11,6 +11,7 @@ import CommandPalette from "./components/CommandPalette.jsx";
 import ProfileSwitcher from "./components/ProfileSwitcher.jsx";
 import { InstagramButton, InstagramModal } from "./components/Instagram.jsx";
 import { AgentModal } from "./components/AgentSetup.jsx";
+import { NoticeBell, NoticeBanner } from "./components/Notices.jsx";
 import Capabilities from "./components/Capabilities.jsx";
 import Autopilot from "./components/Autopilot.jsx";
 import StoriesWorkspace from "./components/StoriesWorkspace.jsx";
@@ -69,6 +70,14 @@ export default function App() {
     if (typeof tab === "string") setBrandTarget((t) => ({ tab, n: t.n + 1 }));
     setView("brand");
     setProjectId(null);
+  };
+  // Ação de um aviso: abre o lugar do app que ele indica.
+  const goNotice = (target) => {
+    if (target?.startsWith("brand:")) openBrand(target.slice(6));
+    else if (target === "brand") openBrand();
+    else if (target === "instagram") setIgOpen(true);
+    else if (target === "home") goHome();
+    else if (["library", "pilot"].includes(target)) goView(target);
   };
   const composerRef = useRef(null);
   const menu = usePopover();
@@ -332,9 +341,11 @@ export default function App() {
                   <kbd>Ctrl K</kbd>
                 </button>
               )}
+              {hasProfile && available && <NoticeBell notices={state.notices} request={request} onGo={goNotice} />}
               {available && accountMenu}
             </header>
           )}
+          {!editing && hasProfile && available && !setup && <NoticeBanner notices={state.notices} request={request} onGo={goNotice} />}
           {editing ? null : update?.status === "manual" ? (
             <div className="notice-strip info" role="status">
               <RefreshCw size={16} />

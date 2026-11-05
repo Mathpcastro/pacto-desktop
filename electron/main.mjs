@@ -21,6 +21,7 @@ import { createSecrets } from './secrets.mjs';
 import { Composio, COMPOSIO_BASE } from '../core/composio.mjs';
 import { startUpdates } from './updater.mjs';
 import { createTray } from './tray.mjs';
+import { Notices, NOTICES_URL } from '../core/notices.mjs';
 import { configureIdentity } from './identity.mjs';
 import { createRenderer } from './render.mjs';
 import { readPage } from './page.mjs';
@@ -101,7 +102,7 @@ app.whenReady().then(async()=>{
   const schedulerOptions={exe:process.execPath,args:app.isPackaged?[BACKGROUND]:[root,BACKGROUND],run:(cmd,args)=>run(cmd,args,{windowsHide:true}),writeFile:async(file,data)=>{await mkdir(dirname(file),{recursive:true});await writeFile(file,data);},rm:file=>rm(file,{force:true}),tempDir:app.getPath('temp'),agentsDir:join(homedir(),'Library','LaunchAgents'),uid:process.getuid?.()??0};
   const scheduler=new OsScheduler(schedulerOptions);
   const pilotScheduler=!app.isPackaged&&process.env.PACTO_AUTOPILOT_NO_TASKS==='1'?{add:async()=>{},remove:async()=>{}}:new PilotScheduler(schedulerOptions);
-  runtime=new Runtime({store,profiles,codex,knowledge,emit,instagram:{composio:options=>new Composio({...options,base:fakeComposio?`${fakeComposio}/api/v3.1`:COMPOSIO_BASE})},dialogs:{login,render,readPage,openTelegram:async raw=>{const url=new URL(raw);if(url.protocol!=='https:'||url.hostname!=='t.me')throw new Error('Link do Telegram inválido.');return shell.openExternal(url.href);},cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),secrets:createSecrets(app.getPath('userData')),scheduler,openAuth,toJpeg:pngs=>jpegCards(pngs,nativeImage),
+  runtime=new Runtime({store,profiles,codex,knowledge,emit,instagram:{composio:options=>new Composio({...options,base:fakeComposio?`${fakeComposio}/api/v3.1`:COMPOSIO_BASE})},dialogs:{login,render,readPage,openTelegram:async raw=>{const url=new URL(raw);if(url.protocol!=='https:'||url.hostname!=='t.me')throw new Error('Link do Telegram inválido.');return shell.openExternal(url.href);},openNotice:async raw=>{const u=new URL(raw);if(u.protocol!=='https:')throw new Error('Link do aviso inválido.');return shell.openExternal(u.href);},cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),secrets:createSecrets(app.getPath('userData')),scheduler,openAuth,toJpeg:pngs=>jpegCards(pngs,nativeImage),
     async savePdf(project,bytes){const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'documento';const result=await dialog.showSaveDialog(window,{title:'Salvar PDF',defaultPath:`${suggested}.pdf`,filters:[{name:'PDF',extensions:['pdf']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,bytes);return {path:result.filePath};},
     async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:'Exportar carrossel',defaultPath:`${suggested}.zip`,filters:[{name:'Carrossel ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
     async normalizeFiles(files){return normalizeFiles(files,nativeImage);},
@@ -113,6 +114,16 @@ app.whenReady().then(async()=>{
   runtime.autopilot=new Autopilot({runtime,state:await new AutopilotStore(app.getPath('userData')).init(),secrets:runtime.dialogs.secrets,scheduler:pilotScheduler,clientFactory:token=>new TelegramClient({token,...(telegramBase?{base:telegramBase}:{})})});
   try{await runtime.autopilot.rearm();}catch{runtime.autopilot.connectionError='Não foi possível registrar a rotina no sistema. Abra o piloto e salve a configuração novamente.';}
   runtime.autopilot.start();void runtime.autopilot.step();
+  // Avisos do dono do app: lê o arquivo público ao abrir e a cada hora, e avisa no sistema o que é novo.
+  // Só em desenvolvimento PACTO_NOTICES_URL aponta para um servidor local de prova.
+  const noticesUrl=!app.isPackaged&&/^http:\/\/127\.0\.0\.1:\d+\//.test(process.env.PACTO_NOTICES_URL||'')?process.env.PACTO_NOTICES_URL:NOTICES_URL;
+  runtime.notices=await new Notices({root:app.getPath('userData'),version:app.getVersion(),url:noticesUrl}).init();
+  const noticeTick=async()=>{
+    if(!await runtime.notices.refresh())return;
+    for(const n of await runtime.notices.takeNew())if(Notification.isSupported()){const note=new Notification({title:`Carrossell · ${n.title}`,icon:join(root,'resources','branding','icon-256.png'),body:n.body.slice(0,240)});note.on('click',()=>void showUI?.());note.show();}
+    try{emit({type:'state',state:runtime.state()});}catch{}
+  };
+  setTimeout(()=>void noticeTick(),process.env.PACTO_NOTICES_URL?1500:20000).unref?.();setInterval(()=>void noticeTick(),60*60*1000).unref?.();
   ipcMain.handle('pacto:request',async(event,action,args)=>{
     if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'||action==='titleBar'))throw new Error('Solicitação não permitida.');
     if(action==='installUpdate'){updates?.install();return {ok:true};}

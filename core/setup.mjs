@@ -2,6 +2,8 @@
 // Três caminhos: gerar com a conta conectada, copiar um prompt para o ChatGPT/Claude da
 // pessoa (e colar a resposta de volta) ou responder à entrevista completa.
 
+import { BRAND_STRATEGY_RULES } from './brand-strategy.mjs';
+
 // Aceita "https://...", "http://..." e domínios digitados sem protocolo ("meusaas.com.br/oferta").
 export function asUrl(input) {
   const value = String(input || "").trim();
@@ -34,11 +36,13 @@ Tudo abaixo é sobre ESSE produto, não sobre outro que eu venda ou já tenha ve
 COMO RESPONDER
 1. Use o que você já sabe sobre mim e sobre esse negócio: memória, projetos e conversas anteriores.${link ? `\n2. Se você consegue navegar, abra o link e leia a página: promessa, para quem é, preço, oferta, diferenciais e perguntas frequentes.` : ""}
 ${link ? "3" : "2"}. Se faltar algo essencial que você não saiba, me faça no máximo 3 perguntas curtas antes. Depois entregue tudo de uma vez.
-${link ? "4" : "3"}. Não invente números, depoimentos, resultados, clientes ou preços. O que for suposição, escreva com a palavra HIPÓTESE para eu conferir.
+${link ? "4" : "3"}. Não invente números, depoimentos, resultados, clientes ou preços. Fato que você não souber, escreva com a palavra HIPÓTESE para eu conferir.
 ${link ? "5" : "4"}. Responda em português do Brasil.
 
 PARTE 1 — CONTEXTO DA MARCA (siga este roteiro, mas sem me entrevistar rodada por rodada: responda você mesmo com o que sabe)
 ${brandPrompt.trim()}
+
+${BRAND_STRATEGY_RULES}
 
 PARTE 2 — DESIGN KIT (mesma regra: responda você mesmo; use as cores e o estilo que o produto já tem)
 ${designPrompt.trim()}
