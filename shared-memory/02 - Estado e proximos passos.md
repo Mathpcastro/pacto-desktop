@@ -325,3 +325,7 @@ Implementação isolada em pacto-app-visual-refs, branch feat/brand-visual-refer
 ## 05/11/2026 — Release 0.10.0 publicada
 
 [[49 - Release Carrossell 0.10.0]]: Referências visuais por marca com upload e colar; novas artes ligadas ao contexto de cada negócio. 227 testes, build e prova Electron passaram; uma capa nativa de trading conferida. Latest, feed, downloads e SHA-512 verificados pela skill do Obsidian. Aviso v0-10-0 publicado.
+
+## 07/11/2026 — Release 0.10.1 publicada
+
+[[50 - Release Carrossell 0.10.1]]: imagem do card tenta até 3 vezes (ERR_FAILED do cliente Fabio); pedido que falha tenta de novo em 2 minutos; um erro não pausa mais a rotina. 229 testes, build e prova Electron passaram. Latest, feed, downloads e SHA-512 verificados. Aviso importante v0-10-1 publicado.
