@@ -367,3 +367,27 @@ test('a preview can be approved in the app to publish now or schedule, only once
   await assert.rejects(f.runtime.request('approveAutopilot',{id:job.id}),/mudou depois da prévia/);
   assert.equal(f.state.snapshot().jobs[2].status,'ready');
 });
+
+test('a failed card render is retried once after 2 minutes and never pauses the routine',async t=>{
+  const f=await pilotFixture(t);let clock=new Date(2026,10,2,12).getTime();f.pilot.now=()=>clock;
+  await f.pilot.saveConfig('principal',{enabled:true,times:['09:00','21:00'],days:[1,2,3,4,5],style:'texto',cardCount:2,accounts:['ig1']});
+  const real=f.runtime.exportedFiles.bind(f.runtime);let failures=1;
+  f.runtime.exportedFiles=async(...a)=>{if(failures-->0)throw new Error("ERR_FAILED (-2) loading 'file:///C:/render/x.html'");return real(...a);};
+  await f.pilot.enqueue('principal');await f.pilot.step();
+  let job=f.state.snapshot().jobs[0];assert.equal(job.status,'queued');assert.equal(job.retries,1);assert.match(job.error,/Tentando de novo/);
+  assert.equal(f.state.snapshot().configs.principal.enabled,true,'a rotina continua ativa');
+  await f.pilot.step();assert.equal(f.state.snapshot().jobs[0].status,'queued','espera os 2 minutos');
+  clock+=2*60000+1000;await f.pilot.step();
+  job=f.state.snapshot().jobs[0];assert.equal(job.status,'ready');assert.equal(f.store.state().projects.length,1,'retoma o mesmo projeto, sem duplicar');
+});
+
+test('a second render failure marks the job as error, keeps the routine active and tells Telegram',async t=>{
+  const f=await pilotFixture(t);let clock=new Date(2026,10,2,12).getTime();f.pilot.now=()=>clock;
+  await f.pilot.saveConfig('principal',{enabled:true,times:['21:00'],days:[1,2,3,4,5],style:'texto',cardCount:2,accounts:['ig1']});
+  f.runtime.exportedFiles=async()=>{throw new Error("ERR_FAILED (-2) loading 'file:///C:/render/x.html'");};
+  await f.pilot.enqueue('principal');await f.pilot.step();clock+=2*60000+1000;await f.pilot.step();
+  const job=f.state.snapshot().jobs[0];assert.equal(job.status,'error');assert.match(job.error,/ERR_FAILED/);
+  const config=f.state.snapshot().configs.principal;assert.equal(config.enabled,true);assert.ok(config.nextAt);
+  assert.match(config.runError,/continua ativa/);assert.match(f.sent.at(-1).text,/A rotina continua ativa nos próximos horários/);
+  await f.pilot.retry(job.id);assert.equal(f.state.snapshot().jobs[0].status,'queued');
+});

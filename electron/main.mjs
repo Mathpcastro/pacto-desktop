@@ -97,7 +97,9 @@ app.whenReady().then(async()=>{
   Menu.setApplicationMenu(appMenu());
   const profiles=await new Profiles(join(app.getPath('userData'),'library')).init();const store=await profiles.store();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
   codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
-  const render=createRenderer({folder:join(app.getPath('userData'),'render'),fontsDir:join(root,'node_modules','@fontsource','archivo','files')});
+  const render=createRenderer({folder:join(app.getPath('userData'),'render'),fontsDir:join(root,'node_modules','@fontsource','archivo','files'),failFirst:!app.isPackaged?Number(process.env.PACTO_RENDER_FAIL_FIRST||0):0});
+  // Só em desenvolvimento: a prova de renderização cria renderizadores próprios com falhas forçadas.
+  if(!app.isPackaged&&process.env.PACTO_PROOF_RENDER==='1')globalThis.__pactoCreateRenderer=createRenderer;
   const run=promisify(execFile);
   const schedulerOptions={exe:process.execPath,args:app.isPackaged?[BACKGROUND]:[root,BACKGROUND],run:(cmd,args)=>run(cmd,args,{windowsHide:true}),writeFile:async(file,data)=>{await mkdir(dirname(file),{recursive:true});await writeFile(file,data);},rm:file=>rm(file,{force:true}),tempDir:app.getPath('temp'),agentsDir:join(homedir(),'Library','LaunchAgents'),uid:process.getuid?.()??0};
   const scheduler=new OsScheduler(schedulerOptions);

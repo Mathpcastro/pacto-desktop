@@ -11,6 +11,8 @@ import { TelegramSchedule, SCHEDULE_COMMAND } from './telegram-schedule.mjs';
 
 const TERMINAL=new Set(['published','scheduled','discarded','error','uncertain']);
 const decisionStates=new Set(['ready','scheduleDate','scheduleConfirm']);
+// Uma nova tentativa automática quando a preparação falha (por exemplo, a imagem de um card).
+const RETRIES=1,RETRY_MS=2*60000;
 // Com vários horários por dia, cabem tantos carrosséis esperando aprovação quanto horários.
 const pendingLimit=config=>Math.max(1,(config?.times||[]).length);
 const waiting=n=>n===1?'um carrossel aguardando':`${n} carrosséis aguardando`;
@@ -281,7 +283,7 @@ export class Autopilot {
       catch(error){await this.state.change(d=>{d.configs[profileId].runError=messageError(error);});await this.changed(profileId);}
       await this.arm(profileId,nextAt);
     }
-    const jobs=this.state.snapshot().jobs,job=jobs.find(j=>['approved','approvedSchedule'].includes(j.status))||jobs.find(j=>['queued','redo','resend'].includes(j.status));if(!job){await this.conversation.step();return;}
+    const jobs=this.state.snapshot().jobs,due=j=>!j.retryAt||new Date(j.retryAt)<=this.now(),job=jobs.find(j=>['approved','approvedSchedule'].includes(j.status))||jobs.find(j=>['queued','redo','resend'].includes(j.status)&&due(j));if(!job){await this.conversation.step();return;}
     try{
       await this.rt.inProfile(job.profileId,async()=>{
         if(!this.bindingActive())throw new Error('O vínculo do Telegram expirou. Reconecte e envie uma nova prévia.');
@@ -311,11 +313,18 @@ export class Autopilot {
     }catch(error){
       const current=this.state.snapshot().jobs.find(j=>j.id===job.id);
       if(!['published','scheduled','uncertain'].includes(current.status)){
-        await this.patch(job.id,{status:'error',error:messageError(error)});
+        // Falha ao preparar (texto, artes ou prévia): tenta mais uma vez sozinho em 2 minutos, do ponto
+        // em que parou. A rotina nunca é pausada por um erro: os próximos horários continuam.
+        const preparing=['queued','generating','sending','redo','resend'].includes(current.status);
+        if(preparing&&(current.retries||0)<RETRIES){
+          await this.patch(job.id,{status:'queued',retries:(current.retries||0)+1,retryAt:new Date(this.now()+RETRY_MS).toISOString(),error:`Tentando de novo em 2 minutos. ${messageError(error)}`});return;
+        }
+        await this.patch(job.id,{status:'error',error:messageError(error),retryAt:null});
         const config=this.state.snapshot().configs[job.profileId];
-        if(config?.enabled)await this.saveConfig(job.profileId,{...config,enabled:false});
+        if(config?.enabled)await this.state.change(d=>{const c=d.configs[job.profileId];if(c)c.runError=`O carrossel "${job.title}" não ficou pronto. A rotina continua ativa nos próximos horários. ${messageError(error)}`;});
+        await this.changed(job.profileId);
         const binding=this.state.snapshot().binding;
-        if(binding)await this.clientForToken().sendText(binding.chatId,`${job.title}: não foi possível concluir. ${messageError(error)}\nAbra o piloto no Carrossell para retomar.`).catch(()=>{});
+        if(binding)await this.clientForToken().sendText(binding.chatId,`${job.title}: não foi possível concluir. ${messageError(error)}\n${config?.enabled?'A rotina continua ativa nos próximos horários. ':''}Abra o piloto no Carrossell para retomar este carrossel.`).catch(()=>{});
       }
     }
   }
