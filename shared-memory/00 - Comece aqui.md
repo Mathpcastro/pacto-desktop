@@ -92,3 +92,8 @@ Nome do app: **Carrossell**, direção visual 02. O método continua P.A.C.T.O. 
 ## 11/11/2026 — Radar na navegação
 
 [[54 - Radar na navegacao]] registra o menu Radar, a fila por perfil e a prévia local para Windows.
+
+
+## 11/11/2026 — Release 1.10.2 publicada
+
+[[55 - Release Carrossell 1.10.2]] registra o Radar no menu principal e a publicação para Windows, Mac Apple Silicon e Mac Intel. Links, feed, SHA-512, zero artefatos de Actions e aviso público conferidos.

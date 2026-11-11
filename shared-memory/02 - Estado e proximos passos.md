@@ -338,3 +338,8 @@ Implementação isolada em pacto-app-visual-refs, branch feat/brand-visual-refer
 ## 11/11/2026 — Radar na navegação
 
 [[54 - Radar na navegacao]] implementado sobre a 0.10.1, com executável Windows testado em perfil isolado. A alteração está na branch local `codex/radar-navegacao`.
+
+
+## 11/11/2026 — Release 1.10.2 publicada
+
+[[55 - Release Carrossell 1.10.2]] registra o Radar no menu principal e a publicação para Windows, Mac Apple Silicon e Mac Intel. Links, feed, SHA-512, zero artefatos de Actions e aviso público conferidos.
