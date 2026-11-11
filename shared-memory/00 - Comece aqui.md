@@ -87,3 +87,8 @@ Nome do app: **Carrossell**, direção visual 02. O método continua P.A.C.T.O. 
 ## Release 0.7.0 publicada — 02/11/2026
 
 [[34 - Release Carrossell 0.7.0]]: Latest com Windows e os dois Macs, zero artefatos de Actions, links HTTP 200 e feed Windows 0.7.0. Stories de texto, copy anti-IA e modo agente (Claude/Gemini pela CLI) incluídos.
+
+
+## 11/11/2026 — Radar na navegação
+
+[[54 - Radar na navegacao]] registra o menu Radar, a fila por perfil e a prévia local para Windows.

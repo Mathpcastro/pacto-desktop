@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, ArrowLeft, Bot, Check, Compass, Home as HomeIcon, Laptop, Layers, LayoutTemplate, LogOut, Palette, RefreshCw, Search, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, Compass, Home as HomeIcon, Laptop, Layers, LayoutTemplate, LogOut, Palette, Radar, RefreshCw, Search, X } from "lucide-react";
 import { RuntimeErrorContext, usePacto } from "./usePacto.js";
 import Dialog from "./components/Dialog.jsx";
 import Profile from "./components/Profile.jsx";
@@ -14,6 +14,7 @@ import { AgentModal } from "./components/AgentSetup.jsx";
 import { NoticeBell, NoticeBanner } from "./components/Notices.jsx";
 import Capabilities from "./components/Capabilities.jsx";
 import Autopilot from "./components/Autopilot.jsx";
+import RadarNavigation from "./components/RadarNavigation.jsx";
 import StoriesWorkspace from "./components/StoriesWorkspace.jsx";
 import { CourseContext, LessonPlayer, formatMoment } from "./course.jsx";
 import { rhythm } from "../core/rhythm.mjs";
@@ -85,6 +86,8 @@ export default function App() {
   const connected = Boolean(state.account?.connected);
   const hasProfile = Boolean(state.profile);
   const pendingResults = rhythm(state.projects, state.settings).pending.length;
+  const pendingReviews = (state.autopilot?.jobs || []).filter(job => job.status === "ready").length;
+  const radarOpen = ["ideas", "review", "pilot"].includes(view);
   const editing = view === "studio" && project;
   const goHome = () => {
     setView("home");
@@ -295,11 +298,16 @@ export default function App() {
     body = (
       <>
         <main className="shell-main" hidden={Boolean(editing)}>
-          <div hidden={view === "brand" || view === "pilot" || view === "stories"}>
-            <Home key={state.profileId} view={view} state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} onShowHome={goHome} composerRef={composerRef} connected={connected} onAgents={openAgents} onDiscover={openCapabilities} onView={goView} onPilot={() => goView("pilot")} onStories={() => setProjectPicker("stories")} onInstagram={() => setIgOpen(true)} target={homeTarget} />
+            {radarOpen && <RadarNavigation view={view} pendingReviews={pendingReviews} onView={goView} />}
+            <div hidden={view === "brand" || view === "pilot" || view === "review" || view === "stories"}
+              {...(view === "ideas" ? { id: "radar-workspace", role: "tabpanel", "aria-labelledby": "radar-tab-ideas", tabIndex: 0 } : {})}>
+              <Home key={state.profileId} view={view} state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} onShowHome={goHome} composerRef={composerRef} connected={connected} onAgents={openAgents} onDiscover={openCapabilities} onView={goView} pendingReviews={pendingReviews} onStories={() => setProjectPicker("stories")} onInstagram={() => setIgOpen(true)} target={homeTarget} />
           </div>
           {view === "brand" && <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} onAgents={openAgents} target={brandTarget} />}
-          {view === "pilot" && <section className="page pilot-page"><div className="pilot-page-intro"><h1 className="page-title">Piloto automático</h1><p className="page-sub">Crie por rotina ou peça pelo Telegram.</p></div><Autopilot heading="Rotina e Telegram" state={state} request={request} onNotice={setNotice} /></section>}
+            {(view === "review" || view === "pilot") && <section className="page radar-content" id="radar-workspace" role="tabpanel" aria-labelledby={`radar-tab-${view}`} tabIndex={0}>
+              <Autopilot heading="Rotina e Telegram" pane={view === "review" ? "review" : "routine"} state={state} request={request} onNotice={setNotice}
+                onPilot={() => goView("pilot")} onReview={() => goView("review")} />
+            </section>}
           {view === "stories" && <StoriesWorkspace project={state.projects.find((item) => item.id === storiesProjectId)} state={state} request={request} pending={pending} onBack={() => goView("library")} onOpen={openProject} onNotice={setNotice} />}
         </main>
         {editing && <Studio key={project.id} project={project} state={state} request={request} pending={pending} activity={activity} onBack={goHome} onOpen={openProject} onNotice={setNotice} onCommands={setProjectCommands} onBrand={openBrand} onInstagram={() => setIgOpen(true)} />}
@@ -324,8 +332,9 @@ export default function App() {
                   <button aria-current={view === "library" ? "page" : undefined} onClick={() => goView("library")}>
                     <Layers size={16} /> Conteúdos
                   </button>
-                  <button aria-current={view === "pilot" ? "page" : undefined} onClick={() => goView("pilot")}>
-                    <Bot size={16} /> Piloto automático<span className={`pilot-nav-dot ${state.autopilot?.config?.enabled ? "active" : ""}`} aria-hidden="true" />
+                  <button aria-current={radarOpen ? "page" : undefined} onClick={() => pendingReviews ? goView("review") : discoverAction("radar")}>
+                    <Radar size={16} aria-hidden="true" /> Radar
+                    {pendingReviews > 0 && <span className="radar-count" aria-label={`${pendingReviews} para revisar`}>{pendingReviews}</span>}
                   </button>
                   <button aria-current={view === "brand" ? "page" : undefined} onClick={() => setView("brand")}>
                     <Palette size={16} /> Marca

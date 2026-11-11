@@ -65,3 +65,8 @@ Pedido do usuário: implementar o painel do anexo mantendo a estrutura visual at
 ## 03/11/2026 — Hierarquia do piloto aprovada
 
 HTML aprovado aplicado ao app: Telegram destacado, blocos separados e configuração em diálogos. Mantidas ações e regras de aprovação. Ver [[38 - Hierarquia do piloto automatico]].
+
+
+## 11/11/2026 — Radar na navegação
+
+Radar é a entrada principal para Ideias, Para revisar e Piloto automático. O contador e o atalho do Início representam só prévias prontas do perfil atual. Ver [[54 - Radar na navegacao]].

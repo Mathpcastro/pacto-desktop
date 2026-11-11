@@ -9,11 +9,6 @@
   line-height:1.25;
   margin:0;
   letter-spacing:-.025em}
-.pilot-page-intro {
-  margin-bottom:0;
-  gap:0}
-.pilot-page-intro .page-sub {
-  margin-top:8px}
 .pilot-connection,.pilot-panel {
   background:var(--surface);
   border:1px solid var(--line);
@@ -205,6 +200,41 @@
   flex-wrap:wrap}
 .pilot-layout .pending-item .chip {
   white-space:normal}
+.pilot-job-info { display: grid; gap: 5px; min-width: 0; }
+.pilot-job-info b { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.pilot-job-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.pilot-layout--review .pilot-columns, .pilot-layout--routine .pilot-columns { display: block; }
+.radar-review .pilot-section-top { flex-wrap: wrap; }
+.radar-review .pilot-job-list { display: grid; gap: 12px; }
+.radar-review .radar-review-job {
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.radar-job-cover { display: grid; place-items: center; aspect-ratio: 4 / 5; border-radius: 7px; overflow: hidden; background: var(--sunk); color: var(--muted); }
+.radar-job-cover img { width: 100%; height: 100%; object-fit: contain; }
+.radar-review-job > .row { grid-column: 2 / -1; justify-content: flex-end; }
+.radar-review-job:has(.pilot-approve) > .pilot-job-actions { grid-column: 2 / -1; }
+.radar-other-jobs { margin-top: 25px; }
+.radar-other-jobs h3 { font-size: var(--t-md); }
+.pilot-layout--routine { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; gap: 20px; }
+.pilot-layout--routine > * { grid-column: 1 / -1; }
+.pilot-layout--routine .pilot-columns { grid-column: 1; grid-row: 1; }
+.pilot-layout--routine .pilot-connection { grid-column: 2; grid-row: 1; flex-direction: column; align-items: flex-start; padding: 23px; gap: 12px; }
+.pilot-layout--routine .pilot-connection-actions { width: 100%; min-width: 0; }
+@media(max-width: 890px) {
+  .radar-review .radar-review-job { grid-template-columns: 68px minmax(0, 1fr); }
+  .radar-review-job > .pilot-job-actions, .radar-review-job > .row { grid-column: 2 / -1; }
+  .pilot-layout--routine { grid-template-columns: minmax(0, 1fr); }
+  .pilot-layout--routine .pilot-connection, .pilot-layout--routine .pilot-columns { grid-column: 1; grid-row: auto; }
+}
+@media(max-width: 520px) {
+  .radar-review-job > .pilot-job-actions, .radar-review-job:has(.pilot-approve) > .pilot-job-actions { grid-column: 1 / -1; }
+}
 .pilot-error {
   color:var(--danger);
   overflow-wrap:anywhere}

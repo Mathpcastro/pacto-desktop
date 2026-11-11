@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarClock, ExternalLink, Pause, Play, RefreshCw, Monitor, Check, MessageCircle, Plus, X } from "lucide-react";
+import { ArrowRight, CalendarClock, ExternalLink, Pause, Play, RefreshCw, Monitor, Check, MessageCircle, Plus, X, Layers } from "lucide-react";
 import { STYLES } from "../../core/templates.mjs";
 import { Spinner } from "../ui.jsx";
 import Dialog from "./Dialog.jsx";
@@ -55,7 +55,8 @@ export default function Autopilot(props) {
   return <AutopilotPanel key={props.state.profileId || "default"} {...props} />;
 }
 
-function AutopilotPanel({ state, request, onNotice, heading = "Piloto automático" }) {
+function AutopilotPanel({ state, request, onNotice, heading = "Piloto automático", pane = "all", onPilot, onReview }) {
+  const showRoutine = pane !== "review";
   const pilot = state.autopilot || {};
   const saved = pilot.config || {};
   const accounts = (state.composio?.accounts || []).filter((account) => account.status === "ACTIVE");
@@ -72,6 +73,7 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
   const [error, setError] = useState("");
   // Aprovação pelo app: { id, mode: "post" | "schedule", at }.
   const [approving, setApproving] = useState(null);
+  useEffect(() => { setApproving(null); }, [pane]);
   const [now, setNow] = useState(Date.now());
   const savedKey = JSON.stringify(editable(saved));
   useEffect(() => {
@@ -145,41 +147,55 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
   const changeSlot = (index, values) => change({ slots: draft.slots.map((slot, i) => i === index ? { ...slot, ...values } : slot) });
   const connectionStatus = pilot.connectionError ? "Conexão precisa de atenção" : connected ? "Conectado" : pilot.hasToken ? "Falta vincular a conversa" : "Não conectado";
   const activeJobs = jobs.filter((job) => !["published", "complete", "discarded", "cancelled", "scheduled"].includes(job.status));
+  const readyJobs = activeJobs.filter(job => job.status === "ready");
+  const otherJobs = activeJobs.filter(job => job.status !== "ready");
   const previewProject = (state.projects || []).find((project) => project.id === previewId);
-  const renderJobs = (list) => list.map((job) => <div className="pending-item" key={job.id}>
-    <div className="row"><b style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{job.title || "Preparação de carrossel"}</b><span className={`chip ${job.status === "published" || job.status === "complete" ? "good" : ""}`} role="status">{JOB_LABEL[job.status] || "Em andamento"}</span></div>
-    {job.projectId && <button className="ghost-btn pilot-preview-link" onClick={() => { setPreviewId(job.projectId); setDialog("preview"); }}>Ver prévia</button>}
-    {job.createdAt && <span className="hint">{when(job.createdAt)}</span>}
-    {job.error && <p className="hint pilot-error">{job.error}</p>}
-    {job.status === "ready" && <p className="hint">Veja a prévia e aprove aqui ou pelo Telegram.</p>}
-    {job.status === "ready" && (approving?.id === job.id ? <div className="pilot-approve" role="group" aria-label={`Aprovar ${job.title || "carrossel"}`}>
-      {approving.mode === "schedule" && <label className="fld"><span>Data e hora no computador</span><input type="datetime-local" aria-label="Data e hora do agendamento" value={approving.at} onChange={(event) => setApproving({ ...approving, at: event.target.value })} /></label>}
-      <p className="hint" style={{ margin: 0 }}>{approving.mode === "post" ? "O carrossel vai para o Instagram agora, nas contas da rotina." : "O carrossel fica agendado nas contas da rotina."}</p>
-      <div className="row">
-        <button className="btn small primary" disabled={Boolean(pending) || (approving.mode === "schedule" && !approving.at)} onClick={async () => { if (await act("approveAutopilot", { id: job.id, ...(approving.mode === "schedule" ? { at: approving.at } : {}) }, approving.mode === "post" ? "Aprovado. Publicando agora." : "Aprovado. O post foi para os agendados.")) setApproving(null); }}>{approving.mode === "post" ? "Confirmar e publicar" : "Confirmar agendamento"}</button>
-        <button className="ghost-btn" disabled={Boolean(pending)} onClick={() => setApproving(null)}>Voltar</button>
+  const approvalRule = <p className="pilot-approval-rule"><Check size={16} aria-hidden="true" />{summary.approval === "auto" ? "A rotina publica sem revisão. Pedidos pelo Telegram continuam esperando você." : "Você revisa antes de publicar, aqui ou no Telegram."}</p>;
+  const renderJobs = (list, featured = false) => list.map((job) => {
+    const project = featured ? (state.projects || []).find(item => item.id === job.projectId) : null;
+    const cover = project?.slides?.[0]?.image;
+    const metadata = [job.origin === "conversation" ? "Pedido pelo Telegram" : job.origin === "routine" ? "Rotina" : "", project?.slides?.length ? `${project.slides.length} cards` : "", when(job.createdAt)].filter(Boolean).join(" · ");
+    return <article className={`pending-item${featured ? " radar-review-job" : ""}`} key={job.id}>
+      {featured && <div className="radar-job-cover">{cover ? <img src={cover} alt="" /> : <Layers size={23} aria-hidden="true" />}</div>}
+      <div className="pilot-job-info">
+        <div className="row"><b>{job.title || "Preparação de carrossel"}</b>{!featured && <span className={`chip ${job.status === "published" || job.status === "complete" ? "good" : ""}`} role="status">{JOB_LABEL[job.status] || "Em andamento"}</span>}</div>
+        {metadata && <span className="hint">{metadata}</span>}
+        {job.error && <p className="hint pilot-error">{job.error}</p>}
       </div>
-    </div> : <div className="row">
-      <button className="btn small primary" disabled={Boolean(pending) || !connected} onClick={() => setApproving({ id: job.id, mode: "post" })}>Publicar agora</button>
-      <button className="btn small" disabled={Boolean(pending) || !connected} onClick={() => setApproving({ id: job.id, mode: "schedule", at: tomorrowAt18() })}><CalendarClock size={14} /> Agendar</button>
-    </div>)}
-    {job.status === "uncertain" && <p className="hint">Confira no Instagram se o post saiu antes de qualquer nova tentativa. A publicação não será repetida automaticamente.</p>}
-    {DISCARDABLE.has(job.status) && <div className="row">
-      {job.status === "error" && <button className="btn small" disabled={Boolean(pending) || !connected || !state.account?.connected || full} onClick={() => act("retryAutopilot", { id: job.id }, "Pedido retomado.")}><RefreshCw size={14} /> Retomar</button>}
-      <button className="ghost-btn" disabled={Boolean(pending)} aria-label={`Descartar pedido: ${job.title || "carrossel"}`} onClick={() => act("discardAutopilot", { id: job.id }, "Pedido descartado.")}>Descartar pedido</button>
-    </div>}
-  </div>);
+      <div className="pilot-job-actions">
+        {job.projectId && <button className={featured ? "btn small pilot-preview-link" : "ghost-btn pilot-preview-link"} onClick={() => { setPreviewId(job.projectId); setDialog("preview"); }}>Ver prévia</button>}
+        {job.status === "ready" && (approving?.id === job.id ? <div className="pilot-approve" role="group" aria-label={`Aprovar ${job.title || "carrossel"}`}>
+          {approving.mode === "schedule" && <label className="fld"><span>Data e hora no computador</span><input type="datetime-local" aria-label="Data e hora do agendamento" value={approving.at} onChange={(event) => setApproving({ ...approving, at: event.target.value })} /></label>}
+          <p className="hint" style={{ margin: 0 }}>{approving.mode === "post" ? "O carrossel vai para o Instagram agora, nas contas da rotina." : "O carrossel fica agendado nas contas da rotina."}</p>
+          <div className="row">
+            <button className="btn small primary" disabled={Boolean(pending) || (approving.mode === "schedule" && !approving.at)} onClick={async () => { if (await act("approveAutopilot", { id: job.id, ...(approving.mode === "schedule" ? { at: approving.at } : {}) }, approving.mode === "post" ? "Aprovado. Publicando agora." : "Aprovado. O post foi para os agendados.")) setApproving(null); }}>{approving.mode === "post" ? "Confirmar e publicar" : "Confirmar agendamento"}</button>
+            <button className="ghost-btn" disabled={Boolean(pending)} onClick={() => setApproving(null)}>Voltar</button>
+          </div>
+        </div> : <div className="row">
+          <button className="btn small" disabled={Boolean(pending) || !connected} onClick={() => setApproving({ id: job.id, mode: "schedule", at: tomorrowAt18() })}><CalendarClock size={14} /> Agendar</button>
+          <button className="btn small primary" disabled={Boolean(pending) || !connected} onClick={() => setApproving({ id: job.id, mode: "post" })}>Publicar agora</button>
+        </div>)}
+      </div>
+      {job.status === "uncertain" && <p className="hint">Confira no Instagram se o post saiu antes de qualquer nova tentativa. A publicação não será repetida automaticamente.</p>}
+      {DISCARDABLE.has(job.status) && <div className="row">
+        {job.status === "error" && <button className="btn small" disabled={Boolean(pending) || !connected || !state.account?.connected || full} onClick={() => act("retryAutopilot", { id: job.id }, "Pedido retomado.")}><RefreshCw size={14} /> Retomar</button>}
+        <button className="ghost-btn" disabled={Boolean(pending)} aria-label={`Descartar pedido: ${job.title || "carrossel"}`} onClick={() => act("discardAutopilot", { id: job.id }, "Pedido descartado.")}>Descartar pedido</button>
+      </div>}
+    </article>;
+  });
 
-  return (
-    <section className="pilot-layout" aria-label="Piloto automático">
-      {heading === "Piloto automático" && <header className="pilot-legacy-heading"><h2>{heading}</h2><p>Crie por rotina ou peça pelo Telegram.</p></header>}
-      <section className="pilot-connection" aria-labelledby="pilot-telegram-title">
+  const telegramPanel = <section className="pilot-connection" aria-labelledby="pilot-telegram-title">
         <img className="pilot-telegram-logo" src={telegramLogo} alt="Telegram" />
         <div className="pilot-connection-copy"><span className="pilot-eyebrow">TELEGRAM</span><h2 id="pilot-telegram-title">Seu Carrossell, no Telegram</h2><p>{connected ? `${pilot.bot?.username ? `@${pilot.bot.username.replace(/^@/, "")} · ` : ""}Sua conversa está vinculada.` : "Peça conteúdos e receba as prévias em uma conversa."}</p></div>
         <div className="pilot-connection-actions"><span className={`pilot-connection-status ${connected ? "connected" : ""}`} role="status">{connectionStatus}</span><button className="btn primary" disabled={Boolean(pending)} onClick={() => connected ? act("openTelegramPair") : setDialog("connection")}>{connected ? "Abrir Telegram" : "Conectar Telegram"}<ExternalLink size={15} /></button><button className="ghost-btn" onClick={() => setDialog("connection")}>{pilot.hasToken ? "Gerenciar conexão" : "Como conectar"}</button></div>
-      </section>
+      </section>;
+
+  return (
+    <section className={`pilot-layout pilot-layout--${pane}`} aria-label={pane === "review" ? "Fila do piloto" : "Piloto automático"}>
+      {heading === "Piloto automático" && <header className="pilot-legacy-heading"><h2>{heading}</h2><p>Crie por rotina ou peça pelo Telegram.</p></header>}
+      {pane === "all" && telegramPanel}
       <div className="pilot-columns">
-        <section className="pilot-panel pilot-routine" aria-labelledby="pilot-routine-title">
+        {showRoutine && <section className="pilot-panel pilot-routine" aria-labelledby="pilot-routine-title">
           <div className="pilot-section-top"><h2 id="pilot-routine-title">Sua rotina</h2><span className={`chip ${saved.enabled ? "good" : ""}`} role="status">{saved.enabled ? "Ativa" : "Pausada"}</span></div>
           <p className="pilot-schedule">{daySummary}, às {joinPt(summary.slots.map((slot) => hourLabel(slot.time)))}</p>
           <p className="pilot-routine-meta">{perDay === 1 ? "1 carrossel por dia" : `${perDay} carrosséis por dia`} <span aria-hidden="true">·</span> {summary.approval === "auto" ? "publica sem revisão" : "com revisão antes de publicar"}</p>
@@ -188,7 +204,8 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
       <div className="pilot-routine-actions">
         <div className="row">
           <button className="btn" disabled={Boolean(pending) || (!saved.enabled && (!connected || !savedValid || !state.account?.connected))} onClick={toggleRoutine}>{saved.enabled ? <Pause size={15} /> : <Play size={15} />}{saved.enabled ? "Pausar rotina" : "Ativar rotina"}</button>
-          <button className="btn" disabled={Boolean(pending) || !connected || !state.account?.connected || !savedValid || dirty || full || Boolean(state.working)} onClick={() => act("runAutopilot", saved.nextAt ? { at: saved.nextAt } : {}, "Preparação iniciada. Acompanhe o pedido abaixo.")}><CalendarClock size={15} />{pending === "runAutopilot" ? "Iniciando…" : "Gerar agora"}</button>
+          <button className="btn" disabled={Boolean(pending) || !connected || !state.account?.connected || !savedValid || dirty || full || Boolean(state.working)} onClick={() => act("runAutopilot", saved.nextAt ? { at: saved.nextAt } : {}, onReview ? "Preparação iniciada. Acompanhe em Para revisar." : "Preparação iniciada. Acompanhe o pedido abaixo.")}><CalendarClock size={15} />{pending === "runAutopilot" ? "Iniciando…" : "Gerar agora"}</button>
+          {onReview && activeJobs.length > 0 && <button className="ghost-btn" onClick={onReview}>Ver pedidos <ArrowRight size={15} /></button>}
         </div>
         {dirty && <p className="hint" style={{ margin: 0 }}>Salve as alterações antes de gerar. Ativar ou pausar usa a rotina já salva e mantém o que você está editando.</p>}
         {!connected && <p className="hint" style={{ margin: 0 }}>Conecte o bot e vincule sua conversa para ativar ou gerar.</p>}
@@ -205,20 +222,34 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
         </li>)}</ul>
       </div>}
 
-        </section>
-        <section className="pilot-panel pilot-review" aria-labelledby="pilot-review-title"><div className="pilot-section-top"><h2 id="pilot-review-title">Para revisar</h2>{activeJobs.length > 0 && <span className="chip">{activeJobs.length} pedido{activeJobs.length > 1 ? "s" : ""}</span>}</div>
+          {pane === "routine" && approvalRule}
+        </section>}
+        {pane === "all" && <section className="pilot-panel pilot-review" aria-labelledby="pilot-review-title"><div className="pilot-section-top"><h2 id="pilot-review-title">Para revisar</h2>{activeJobs.length > 0 && <span className="chip">{activeJobs.length} pedido{activeJobs.length > 1 ? "s" : ""}</span>}</div>
           {activeJobs.length ? <div className="pilot-job-list">{renderJobs(activeJobs)}</div> : <div className="pilot-review-empty"><MessageCircle size={27} aria-hidden="true" /><div><strong>As próximas ideias chegam aqui.</strong><p>{connected ? "Peça um conteúdo pelo Telegram ou use sua rotina." : "Conecte o Telegram para pedir seu primeiro conteúdo."}</p></div></div>}
-          <p className="pilot-approval-rule"><Check size={16} aria-hidden="true" />{summary.approval === "auto" ? "A rotina publica sem revisão. Pedidos pelo Telegram continuam esperando você." : "Você revisa antes de publicar, aqui ou no Telegram."}</p>
+          {approvalRule}
           {jobs.length > 0 && <button className="ghost-btn" onClick={() => setDialog("history")}>Ver últimos pedidos</button>}
-        </section>
+        </section>}
+        {pane === "review" && <section className="radar-review" aria-labelledby="radar-review-title">
+          <div className="pilot-section-top">
+            <h2 id="radar-review-title">Aguardando sua aprovação</h2>
+            <button className="ghost-btn" onClick={onPilot}>Abrir piloto <ArrowRight size={15} /></button>
+          </div>
+          {readyJobs.length ? <div className="pilot-job-list">{renderJobs(readyJobs, true)}</div> : <div className="pilot-panel pilot-review-empty">
+            <Check size={25} aria-hidden="true" /><div><strong>Nenhum carrossel para revisar</strong><p>As prévias que esperam sua aprovação aparecem aqui.</p></div>
+          </div>}
+          {otherJobs.length > 0 && <section className="radar-other-jobs" aria-label="Outros pedidos">
+            <h3>Outros pedidos</h3><div className="pilot-job-list">{renderJobs(otherJobs)}</div>
+          </section>}
+        </section>}
       </div>
-      <section className="pilot-panel pilot-scheduled" aria-labelledby="pilot-scheduled-title">
-        <div className="pilot-section-top"><h2 id="pilot-scheduled-title">Agendados</h2></div>
+      {pane === "routine" && telegramPanel}
+      {showRoutine && <><section className="pilot-panel pilot-scheduled" aria-labelledby="pilot-scheduled-title">
+        <div className="pilot-section-top"><h2 id="pilot-scheduled-title">Agendados</h2>{pane === "routine" && jobs.length > 0 && <button className="ghost-btn" onClick={() => setDialog("history")}>Ver últimos pedidos</button>}</div>
         <ScheduledPosts projects={state.projects} request={request} onNotice={onNotice} title="" empty="Nenhum post agendado. Quando você agendar uma prévia pelo Telegram ou pelo app, ela aparece aqui para trocar a data ou cancelar." />
         <p className="hint" style={{ margin: 0 }}>No Telegram, envie /agendados para ver, trocar a data ou cancelar.</p>
       </section>
       <section className="pilot-conversation" aria-labelledby="pilot-conversation-title"><h2 id="pilot-conversation-title">Peça pelo Telegram</h2><p>Uma mensagem é o ponto de partida. Experimente um pedido:</p><div className="pilot-examples"><blockquote>Crie um carrossel sobre [tema]. Me mostre o texto primeiro.</blockquote><blockquote>Como foram os últimos 7 dias no Instagram da minha marca?</blockquote></div><details className="pilot-commands"><summary>Ver exemplos e comandos</summary><div><p><code>/ajuda</code> O que você pode pedir · <code>/marcas</code> Escolher a marca · <code>/projetos</code> Escolher o projeto · <code>/status</code> Acompanhar · <code>/cancelar</code> Parar o pedido</p><p>Os stories ficam prontos para postagem manual. Claude e Gemini usam o modo separado de agentes e CLI. Publicar e agendar dependem da sua aprovação na prévia.</p></div></details></section>
-      <footer className="pilot-requirement"><Monitor size={18} aria-hidden="true" /><span>Requer computador ligado e conta ChatGPT conectada. Você pode fechar a janela; escolher Sair encerra o piloto.</span></footer>
+      <footer className="pilot-requirement"><Monitor size={18} aria-hidden="true" /><span>Requer computador ligado e conta ChatGPT conectada. Você pode fechar a janela; escolher Sair encerra o piloto.</span></footer></>}
       {pending && <div className="row hint" role="status"><Spinner /> Aguarde…</div>}
       {error && !dialog && <p role="alert" className="pilot-error">{error}</p>}
       {dialog === "connection" && <Dialog title="Conexão do Telegram" onClose={closeDialog} className="pilot-dialog"><div className="pilot-dialog-body">
@@ -329,10 +360,10 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
         {error && <p role="alert" className="pilot-error">{error}</p>}
       </div></Dialog>}
       {dialog === "preview" && <Dialog title="Prévia do carrossel" onClose={closeDialog} className="pilot-dialog" wide><div className="pilot-dialog-body">
-        <p className="hint">{previewProject?.title || "Projeto indisponível"} · A aprovação para publicar acontece pelo Telegram.</p>
+        <p className="hint">{previewProject?.title || "Projeto indisponível"}</p>
         {previewProject?.slides?.some((slide) => slide.image) ? <div className="pilot-preview-images">{previewProject.slides.map((slide, index) => slide.image ? <figure key={slide.id || index}><img src={slide.image} alt={`Card ${index + 1} do carrossel`} /><figcaption>Card {index + 1}</figcaption></figure> : <p className="hint" key={slide.id || index}>Card {index + 1}: imagem ainda não disponível.</p>)}</div> : <p className="hint">{previewProject ? "As imagens deste projeto ainda não estão disponíveis." : "Este projeto não está mais disponível neste perfil."}</p>}
       </div></Dialog>}
-      {dialog === "history" && <Dialog title="Últimos pedidos do piloto" onClose={closeDialog} className="pilot-dialog"><div className="pilot-dialog-body"><p className="hint">Até 8 pedidos mais recentes. As aprovações acontecem pelo Telegram.</p>{renderJobs(jobs)}{error && <p role="alert" className="pilot-error">{error}</p>}</div></Dialog>}
+      {dialog === "history" && <Dialog title="Últimos pedidos do piloto" onClose={closeDialog} className="pilot-dialog"><div className="pilot-dialog-body"><p className="hint">Até 8 pedidos mais recentes deste perfil.</p>{renderJobs(jobs)}{error && <p role="alert" className="pilot-error">{error}</p>}</div></Dialog>}
     </section>
   );
 }

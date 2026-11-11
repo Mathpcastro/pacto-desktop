@@ -15,7 +15,7 @@ import {
   Trophy,
   X,
   ArrowRight,
-  Bot,
+  CheckSquare,
   Compass,
   SlidersHorizontal,
 } from "lucide-react";
@@ -109,7 +109,7 @@ function Measure({ project, request, onDone }) {
   );
 }
 
-export default function Home({ view, state, request, isPending, onOpen, onNotice, onShowHome, composerRef, connected, onAgents, onDiscover, onView, onPilot, onStories, onInstagram, target }) {
+export default function Home({ view, state, request, isPending, onOpen, onNotice, onShowHome, composerRef, connected, onAgents, onDiscover, onView, pendingReviews, onStories, onInstagram, target }) {
   const pop = usePopover();
   const [text, setText] = useState("");
   const [format, setFormat] = useState("carrossel");
@@ -263,11 +263,11 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
     );
   }
   return (
-    <div className={`page home-page ${view === "home" ? "calm-home" : ""}`} ref={pop.ref}>
-      <div className="home-intro">
-        <div>{view === "home" && <span className="eyebrow">SEU ESTÚDIO DE CONTEÚDO</span>}<h1 className="page-title">{({ home: "O que vamos criar hoje?", library: "Seus conteúdos", ideas: "Encontre sua próxima pauta", rhythm: "Resultados e próximos conteúdos", calendar: "Publicações agendadas" })[view] || "O que vamos criar hoje?"}</h1></div>
+    <div className={`page home-page ${view === "home" ? "calm-home" : view === "ideas" ? "radar-content" : ""}`} ref={pop.ref}>
+      {view !== "ideas" && <div className="home-intro">
+        <div>{view === "home" && <span className="eyebrow">SEU ESTÚDIO DE CONTEÚDO</span>}<h1 className="page-title">{({ home: "O que vamos criar hoje?", library: "Seus conteúdos", rhythm: "Resultados e próximos conteúdos", calendar: "Publicações agendadas" })[view] || "O que vamos criar hoje?"}</h1></div>
         {view === "home" ? <button className="ghost-btn discovery-entry" onClick={onDiscover}><Compass size={17} />O que posso fazer no Carrossell?</button> : <button className="ghost-btn" onClick={onShowHome}>Voltar ao início<ArrowRight size={16} /></button>}
-      </div>
+      </div>}
       <section className="composer" aria-label="Criar" hidden={view !== "home"}>
         <label className="composer-label" htmlFor="home-topic">Sobre o que é seu próximo conteúdo?</label>
         <Grow
@@ -357,7 +357,11 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
           )}
         </div>
       </section>
-      {view === "home" && <section className="home-pilot-row" aria-label="Resumo do piloto automático"><span className="home-pilot-icon"><Bot size={21} /></span><div><h2>Piloto automático</h2><p>{state.autopilot?.jobs?.some((job) => job.status === "ready") ? "Há conteúdo esperando sua aprovação pelo Telegram." : state.autopilot?.config?.enabled ? "Rotina ativa · revisão pelo Telegram antes de publicar." : "Crie uma rotina e revise o conteúdo pelo Telegram."}</p></div>{state.autopilot?.config?.enabled && state.autopilot.config.nextAt && <span className="hint home-pilot-next">Próxima preparação<br /><b>{new Date(state.autopilot.config.nextAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</b></span>}<button className="ghost-btn" onClick={onPilot}>Abrir piloto<ArrowRight size={16} /></button></section>}
+      {view === "home" && pendingReviews > 0 && <button className="home-review-link" type="button" onClick={() => onView("review")}>
+        <CheckSquare size={16} aria-hidden="true" />
+        <span>{pendingReviews} {pendingReviews === 1 ? "carrossel" : "carrosséis"} para revisar</span>
+        <ArrowRight size={16} aria-hidden="true" />
+      </button>}
       {view === "calendar" && <><InstagramSummary state={state} request={request} onNotice={onNotice} onOpen={onInstagram} /><section className="section" aria-label="Conteúdos agendados">{state.projects.filter((project) => project.schedule).map((project) => <button className="btn scheduled-project" key={project.id} onClick={() => onOpen(project.id)}><span>{project.title}<small>{new Date(project.schedule.at).toLocaleString("pt-BR")} · {({ scheduled: "Agendado", late: "Atrasado", failed: "Não saiu", partial: "Publicado em parte", published: "Publicado" })[project.schedule.status] || project.schedule.status}</small></span><ArrowRight size={16} /></button>)}{!state.projects.some((project) => project.schedule) && <p className="hint">Nenhum conteúdo agendado neste perfil. Abra um carrossel pronto para escolher a data e as contas.</p>}</section></>}
       <div className="home-grid goal-workspace" hidden={!["ideas", "rhythm"].includes(view)}>
         <section className="section" aria-label="Ideias" hidden={view !== "ideas"}>

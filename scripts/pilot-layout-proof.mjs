@@ -16,10 +16,16 @@ try {
  await page.getByRole('region',{name:'Configuração do projeto'}).waitFor();
  await page.evaluate(()=>window.pacto.request('saveProfile',{profile:{brand:'Prova local',product:'Interface',audience:'Teste',brandContext:'Fixture local para validar o layout. Sem contas ou geração.',designKit:'Preto e branco.'}}));
  await page.reload(); await page.getByRole('heading',{name:'O que vamos criar hoje?'}).waitFor();
- await page.getByRole('button',{name:'Piloto automático',exact:true}).first().click();
+ await page.getByRole('navigation',{name:'Navegação principal'}).getByRole('button',{name:/^Radar/}).click();
+ const pilot=page.getByRole('tab',{name:'Piloto automático',exact:true});
+ await pilot.click();
  await expect(page.getByRole('heading',{name:'Seu Carrossell, no Telegram'})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Sua rotina',exact:true})).toBeVisible();
- await expect(page.getByRole('heading',{name:'Para revisar',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Aguardando sua aprovação',exact:true})).toHaveCount(0);
+ await page.getByRole('tab',{name:'Para revisar',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Aguardando sua aprovação',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Configurar rotina',exact:true})).toHaveCount(0);
+ await pilot.click();
  await expect(page.getByLabel('Token do bot do Telegram',{exact:true})).toHaveCount(0);
  checks.push('separação e token fora da página');
  for(const [name,width,height,theme] of [['desktop',1440,1000,'dark'],['compact',1093,580,'dark'],['light',1440,1000,'light'],['compact-125',1093,580,'dark'],['mobile',390,844,'dark']]) {
@@ -34,12 +40,12 @@ try {
  const monday=page.getByRole('button',{name:'Segunda',exact:true});
  await monday.focus(); await page.keyboard.press('Space'); await expect(monday).toHaveAttribute('aria-pressed','false');
  await page.keyboard.press('Space'); await expect(monday).toHaveAttribute('aria-pressed','true');
- await page.getByLabel('Horário da rotina',{exact:true}).fill('18:35');
+ await page.getByLabel('Horário 1 da rotina',{exact:true}).fill('18:35');
  await page.screenshot({path:join(out,'routine-dialog.png')});
  await page.keyboard.press('Escape');
  await expect(page.getByRole('button',{name:'Configurar rotina',exact:true})).toBeFocused();
  await page.getByRole('button',{name:'Configurar rotina',exact:true}).click();
- await expect(page.getByLabel('Horário da rotina',{exact:true})).toHaveValue('18:35');
+ await expect(page.getByLabel('Horário 1 da rotina',{exact:true})).toHaveValue('18:35');
  await page.keyboard.press('Escape');
  await page.getByRole('button',{name:'Conectar Telegram',exact:true}).click();
  await expect(page.getByLabel('Token do bot do Telegram',{exact:true})).toHaveAttribute('type','password');
@@ -83,7 +89,7 @@ try {
   const container=document.createElement('div');container.id='layout-preview-fixture';container.style.cssText='position:fixed;inset:0;overflow:auto;padding:24px;background:var(--paper);z-index:9999';document.body.append(container);document.querySelector('#root').style.display='none';
   const root=createRoot(container);
   const state={profileId:'layout-fixture',projects,composio:{accounts:[]},account:{connected:false},autopilot:{config:{enabled:false},jobs:[{id:'preview-job',projectId:projects[0].id,status:'ready',title:'Fixture local · imagem persistida'}]}};
-  return {render(projects){root.render(React.createElement(Autopilot,{state:{...state,projects},request:()=>{throw Error('No fixture effects allowed');}}));},dispose(){root.unmount();container.remove();document.querySelector('#root').style.display='';}};
+  return {render(projects){root.render(React.createElement(Autopilot,{pane:'review',state:{...state,projects},request:()=>{throw Error('No fixture effects allowed');}}));},dispose(){root.unmount();container.remove();document.querySelector('#root').style.display='';}};
  },{reactUrl,clientUrl,projects:persisted});
  await fixture.evaluate((view,projects)=>view.render(projects),persisted);
  await page.getByRole('button',{name:'Ver prévia',exact:true}).click();

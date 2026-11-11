@@ -333,3 +333,8 @@ Implementação isolada em pacto-app-visual-refs, branch feat/brand-visual-refer
 ## 07/11/2026 — Release 0.10.1 publicada
 
 [[53 - Release Carrossell 0.10.1]]: imagem do card tenta até 3 vezes (ERR_FAILED do cliente Fabio); pedido que falha tenta de novo em 2 minutos; um erro não pausa mais a rotina. 229 testes, build e prova Electron passaram. Latest, feed, downloads e SHA-512 verificados. Aviso importante v0-10-1 publicado.
+
+
+## 11/11/2026 — Radar na navegação
+
+[[54 - Radar na navegacao]] implementado sobre a 0.10.1, com executável Windows testado em perfil isolado. A alteração está na branch local `codex/radar-navegacao`.

@@ -48,7 +48,9 @@ try{
   queue.push({update_id:1,message:{message_id:1,text:`/start ${code}`,chat:{id:42,type:'private'},from:{id:7}}});
   await page.waitForFunction(async()=>(await window.pacto.request('telegramStatus')).autopilot.paired,null,{timeout:15000});
   ok('Telegram falso vinculado');
-  await page.reload();await page.getByRole('button',{name:'Piloto automático',exact:true}).first().click();
+  await page.reload();
+  await page.getByRole('navigation',{name:'Navegação principal'}).getByRole('button',{name:/^Radar/}).click();
+  await page.getByRole('tab',{name:'Piloto automático',exact:true}).click();
   await page.setViewportSize({width:1280,height:900});
   await page.getByRole('button',{name:'Configurar rotina',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Configurar rotina',exact:true});

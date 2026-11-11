@@ -20,7 +20,8 @@ try{
   await page.waitForFunction(()=>window.pacto);
   await page.evaluate(()=>window.pacto.request('saveProfile',{profile:{brand:'Aprovação · prova',product:'Teste',audience:'Teste',brandContext:'Contexto local de teste. '.repeat(10),designKit:'Preto e branco. '.repeat(10)}}));
   await page.reload();await page.setViewportSize({width:1280,height:900});
-  await page.getByRole('button',{name:'Piloto automático',exact:true}).first().click();
+  await page.getByRole('navigation',{name:'Navegação principal'}).getByRole('button',{name:/^Radar/}).click();
+  await page.getByRole('tab',{name:'Piloto automático',exact:true}).click();
   await expect(page.locator('.pilot-routine-meta')).toContainText('com revisão antes de publicar');ok('rotina nova começa com revisão');
   await page.getByRole('button',{name:'Configurar rotina',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Configurar rotina',exact:true});
@@ -42,7 +43,7 @@ try{
     const box=document.createElement('div');box.style.cssText='position:fixed;inset:0;overflow:auto;padding:24px;background:var(--paper);z-index:9999';document.body.append(box);document.querySelector('#root').style.display='none';
     window.__calls=[];
     const state={profileId:'fixture',projects:[],composio:{accounts:[]},account:{connected:true},autopilot:{hasToken:true,paired:true,config:{enabled:true,approval:'review',slots:[{time:'09:00',style:'texto',cardCount:6,architectureId:''}],days:[1,2,3,4,5],accounts:[]},upcoming:[],jobs:[{id:'job-ready',projectId:'p1',status:'ready',title:'Como pedir o primeiro pagamento',createdAt:new Date().toISOString()}]}};
-    createRoot(box).render(React.createElement(Autopilot,{state,request:async(action,args)=>{window.__calls.push({action,args});return state;},onNotice:()=>{}}));
+    createRoot(box).render(React.createElement(Autopilot,{pane:'review',state,request:async(action,args)=>{window.__calls.push({action,args});return state;},onNotice:()=>{}}));
   },{reactUrl,clientUrl});
   await page.getByRole('button',{name:'Publicar agora',exact:true}).click();
   await expect(page.getByText('O carrossel vai para o Instagram agora')).toBeVisible();
