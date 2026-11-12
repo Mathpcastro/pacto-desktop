@@ -21,7 +21,8 @@ import { rhythm } from "../core/rhythm.mjs";
 import { Spinner, usePopover } from "./ui.jsx";
 import { setLocale, useDomLocale } from "./i18n.js";
 import brandMark from "./assets/brand-mark.svg";
-import { PRIVACY_URL, TERMS_URL, TERMS_VERSION, parseLicenseStatus, warningMessageKind } from "../core/license.mjs";
+import { parseLicenseStatus, warningMessageKind } from "../core/license.mjs";
+import LicenseDialog from "./components/LicenseDialog.jsx";
 
 const DEFAULT_PREFERENCES = { theme: "light", palette: "carrossell", scale: 100, language: "pt-BR" };
 const PALETTES = [
@@ -52,8 +53,6 @@ export default function App() {
   const [preferences, setPreferences] = useState(readPreferences);
   const [licenseStatus, setLicenseStatus] = useState(null);
   const [licenseOpen, setLicenseOpen] = useState(false);
-  const [licenseEmail, setLicenseEmail] = useState("");
-  const [licenseAccepted, setLicenseAccepted] = useState(false);
   const [licenseBusy, setLicenseBusy] = useState(false);
   const [view, setView] = useState("home");
   const [projectId, setProjectId] = useState(null);
@@ -132,23 +131,6 @@ export default function App() {
   }, []);
   const openLicenseLink = (which) => {
     window.pacto?.request("openLicenseLink", { which }).catch(() => {});
-  };
-  const submitLicense = async (event) => {
-    event.preventDefault();
-    if (!licenseAccepted || !licenseEmail.trim() || licenseBusy) return;
-    setLicenseBusy(true);
-    try {
-      const value = await window.pacto.request("activateLicense", {
-        email: licenseEmail, accepted: true, termsVersion: TERMS_VERSION, acceptedAt: new Date().toISOString(),
-      });
-      const parsed = parseLicenseStatus(value);
-      setLicenseStatus(parsed);
-      if (parsed.activated && !warningMessageKind(parsed)) setLicenseOpen(false);
-    } catch {
-      setLicenseStatus(parseLicenseStatus({ activated: false, code: "offline" }));
-    } finally {
-      setLicenseBusy(false);
-    }
   };
   const retryLicense = async () => {
     if (!licenseStatus?.activated) { setLicenseOpen(true); return; }
@@ -471,33 +453,7 @@ export default function App() {
             <div />
           )}
           {body}
-          {licenseOpen && (
-            <Dialog title="Ativar licença" onClose={() => setLicenseOpen(false)}>
-              <form className="dialog-fields" onSubmit={submitLicense}>
-                <p>Informe o e-mail usado na compra. A primeira ativação precisa de internet.</p>
-                <label>
-                  <span>E-mail da compra</span>
-                  <input type="email" autoComplete="email" value={licenseEmail} onChange={(event) => setLicenseEmail(event.target.value)} required />
-                </label>
-                <label className="check">
-                  <input type="checkbox" checked={licenseAccepted} onChange={(event) => setLicenseAccepted(event.target.checked)} required />
-                  <span>Li e aceito os Termos de Uso e o Aviso de Privacidade</span>
-                </label>
-                <p className="hint">
-                  <a href={TERMS_URL} onClick={(event) => { event.preventDefault(); openLicenseLink("termos"); }}>Termos de Uso</a>
-                  {" · "}
-                  <a href={PRIVACY_URL} onClick={(event) => { event.preventDefault(); openLicenseLink("privacidade"); }}>Aviso de Privacidade</a>
-                </p>
-                {licenseKind && <p role="status">{licenseMessages[licenseKind]}</p>}
-                <div className="dialog-footer">
-                  <button type="button" className="btn" onClick={() => setLicenseOpen(false)}>Fechar</button>
-                  <button type="submit" className="btn primary" disabled={!licenseAccepted || !licenseEmail.trim() || licenseBusy}>
-                    {licenseBusy ? "Ativando…" : "Ativar"}
-                  </button>
-                </div>
-              </form>
-            </Dialog>
-          )}
+          {licenseOpen && <LicenseDialog onClose={() => setLicenseOpen(false)} onStatus={setLicenseStatus} openLink={openLicenseLink} />}
         </div>
         {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
         {capabilities && <Capabilities initialGoal={capabilityGoal} onClose={() => setCapabilities(false)} onAction={discoverAction} onAgents={openAgents} onNotice={setNotice} />}
