@@ -349,3 +349,8 @@ Implementação isolada em pacto-app-visual-refs, branch feat/brand-visual-refer
 [[56 - Release Carrossell 1.11.0]]: espanhol no menu da conta, com pt-BR de padrão.
 Latest, feed, SHA-512 e os cinco jobs do workflow 43147136017 conferidos.
 O aviso público não foi gravado: a escrita no pacto-releases respondeu 403.
+
+
+## 12/11/2026 — Release 1.11.1 publicada
+
+[[57 - Release Carrossell 1.11.1]]: no Mac, abrir o app com o piloto rodando em segundo plano agora mostra a janela; build do Mac com assinatura ad-hoc válida. 234 testes, build e prova em Macs do GitHub Actions (macOS 15 e 26). Latest, feed, downloads e SHA-512 verificados. Aviso v1-11-1 publicado.
