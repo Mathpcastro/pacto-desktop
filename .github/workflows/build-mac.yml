@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: release
-        name: Prepare a hidden release
+        name: Prepare release
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         shell: bash
@@ -44,13 +44,8 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-          draft=$(gh release view "$tag" --repo "$RELEASE_REPO" --json isDraft --jq '.isDraft' 2>/dev/null || true)
-          if [[ -n "$draft" ]]; then
-            if [[ "$draft" != "true" ]]; then
-              echo "::error::Release $tag is already public; refusing to replace it."
-              exit 1
-            fi
-            echo "Continuing existing draft $tag."
+          if gh release view "$tag" --repo "$RELEASE_REPO" >/dev/null 2>&1; then
+            echo "Using existing release $tag."
           else
             base_tag=$(gh release view --repo "$RELEASE_REPO" --json tagName --jq '.tagName')
             if [[ -z "$base_tag" ]]; then
@@ -64,6 +59,12 @@ jobs:
               --notes "Carrossell $version para Windows, Mac e Linux." \
               --draft \
               --target "$target"
+          fi
+
+          assets=$(gh release view "$tag" --repo "$RELEASE_REPO" --json assets --jq '.assets[].name')
+          stale_windows_feed="latest-1.13.0-windows.yml"
+          if grep -Fxq "$stale_windows_feed" <<<"$assets"; then
+            gh release delete-asset "$tag" "$stale_windows_feed" --repo "$RELEASE_REPO" --yes
           fi
 
   mac:
@@ -83,7 +84,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
       - run: npm ci
       - name: Ensure the Mac Electron binary is installed
         run: test -d node_modules/electron/dist/Electron.app || node node_modules/electron/install.js
@@ -114,7 +114,7 @@ jobs:
           npx electron-builder --mac --${{ matrix.arch }} --publish never "${sign[@]}"
       - name: Smoke test the packaged app
         run: node scripts/mac-smoke.mjs
-      - name: Upload Mac installers directly to the draft release
+      - name: Upload Mac installers and updater feed to the release
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
           RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
@@ -124,7 +124,11 @@ jobs:
         run: |
           set -euo pipefail
           dmg="release/Carrossell-${VERSION}-mac-${ARCH}.dmg"
+          feed="release/latest-mac.yml"
+          arch_feed="release/latest-mac-${ARCH}.yml"
           test -f "$dmg"
+          test -f "$feed"
+          cp "$feed" "$arch_feed"
           if [[ "$ARCH" == "arm64" ]]; then
             alias_one="release/Carrossell-Mac-AppleSilicon.dmg"
             alias_two="release/PACTO-Mac-AppleSilicon.dmg"
@@ -134,10 +138,16 @@ jobs:
           fi
           cp "$dmg" "$alias_one"
           cp "$dmg" "$alias_two"
+          upload_files=("$dmg" "$alias_one" "$alias_two" "$arch_feed")
+          zip="release/Carrossell-${VERSION}-mac-${ARCH}.zip"
+          if grep -Fq "$(basename "$zip")" "$arch_feed"; then
+            test -f "$zip"
+            upload_files+=("$zip")
+          fi
           gh release upload "$RELEASE_TAG" \
             --repo "$RELEASE_REPO" \
             --clobber \
-            "$dmg" "$alias_one" "$alias_two"
+            "${upload_files[@]}"
 
   windows:
     needs: prepare-release
@@ -148,7 +158,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
       - run: npm ci
       - name: Ensure the Windows Electron binary is installed
         shell: pwsh
@@ -172,7 +181,7 @@ jobs:
           if (-not (Test-Path -LiteralPath $blockmap)) { throw "Missing $blockmap" }
           $feed = Get-Content -Raw -LiteralPath "release/latest.yml"
           if ($feed -notmatch [regex]::Escape("Carrossell-Setup-$env:VERSION.exe")) { throw "latest.yml does not point to version $env:VERSION" }
-      - name: Upload Windows installer and updater feed directly to the draft release
+      - name: Upload Windows installer and updater feed to the release
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
           RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
@@ -201,7 +210,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
       - run: npm ci
       - name: Ensure the Linux Electron binary is installed
         run: test -x node_modules/electron/dist/electron || node node_modules/electron/install.js
@@ -225,7 +233,7 @@ jobs:
             echo "::error::latest-linux.yml version is not $VERSION"
             exit 1
           fi
-      - name: Upload Linux installer and updater feed directly to the draft release
+      - name: Upload Linux installer and updater feed to the release
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
           RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
@@ -245,7 +253,39 @@ jobs:
     needs: [prepare-release, mac, windows, linux]
     runs-on: ubuntu-latest
     steps:
-      - name: Verify all platform assets before publishing
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Download Mac feeds from the release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          gh release download "$RELEASE_TAG" \
+            --repo "$RELEASE_REPO" \
+            --pattern "latest-mac-arm64.yml" \
+            --dir release
+          gh release download "$RELEASE_TAG" \
+            --repo "$RELEASE_REPO" \
+            --pattern "latest-mac-x64.yml" \
+            --dir release
+      - name: Merge and upload the Mac updater feed
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          node scripts/merge-mac-feed.mjs release/latest-mac-arm64.yml release/latest-mac-x64.yml > release/latest-mac.yml
+          test -s release/latest-mac.yml
+          grep -Eq "^version: " release/latest-mac.yml
+          gh release upload "$RELEASE_TAG" \
+            --repo "$RELEASE_REPO" \
+            --clobber \
+            release/latest-mac.yml
+      - name: Verify assets and clean temporary release files
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
           RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
@@ -269,6 +309,7 @@ jobs:
             "Carrossell-${VERSION}-linux.deb"
             "Carrossell-Linux.deb"
             "latest-linux.yml"
+            "latest-mac.yml"
           )
           for asset in "${required[@]}"; do
             if ! grep -Fxq "$asset" <<<"$assets"; then
@@ -276,15 +317,13 @@ jobs:
               exit 1
             fi
           done
-
-      - name: Publish the complete release as Latest
-        env:
-          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-          RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
-        run: gh release edit "$RELEASE_TAG" --repo "$RELEASE_REPO" --draft=false --latest
-
-      - name: Verify published release
-        env:
-          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-          RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
-        run: gh release view "$RELEASE_TAG" --repo "$RELEASE_REPO" --json name,url,isDraft,assets --jq '{name,url,isDraft,assets:[.assets[].name]}'
+          for stale_asset in \
+            "latest-1.13.0-windows.yml" \
+            "latest-mac-arm64.yml" \
+            "latest-mac-x64.yml"; do
+            if grep -Fxq "$stale_asset" <<<"$assets"; then
+              gh release delete-asset "$RELEASE_TAG" "$stale_asset" --repo "$RELEASE_REPO" --yes
+            fi
+          done
+          gh release edit "$RELEASE_TAG" --repo "$RELEASE_REPO" --draft=false
+          gh release view "$RELEASE_TAG" --repo "$RELEASE_REPO" --json name,url,isDraft,assets --jq '{name,url,isDraft,assets:[.assets[].name]}'
