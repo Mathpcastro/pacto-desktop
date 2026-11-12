@@ -17,6 +17,9 @@ const executable = join(appPath, "Contents", "MacOS", "Carrossell");
 const codexTarget = process.arch === "arm64" ? "aarch64-apple-darwin" : "x86_64-apple-darwin";
 const codex = join(appPath, "Contents", "Resources", "app.asar.unpacked", "node_modules", "@openai", `codex-darwin-${process.arch}`, "vendor", codexTarget, "bin", "codex");
 if (!existsSync(codex)) throw new Error(`Codex do Mac ausente no pacote: ${codex}`);
+// A assinatura do pacote inteiro precisa ser válida (Apple ou ad-hoc); assinatura quebrada faz o Mac recusar abrir.
+try { execFileSync("codesign", ["--verify", "--deep", "--strict", appPath], { stdio: ["ignore", "pipe", "pipe"] }); }
+catch (error) { throw new Error(`Assinatura do Carrossell.app inválida: ${String(error.stderr || error.message).trim()}`); }
 let signature = "sem assinatura";
 try { signature = execFileSync("codesign", ["-dv", appPath], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); } catch (error) { signature = String(error.stderr || error.message); }
 const app = await _electron.launch({ executablePath: executable, env: { ...process.env, PACTO_USER_DATA: await mkdtemp(join(tmpdir(), "pacto-mac-smoke-")) } });

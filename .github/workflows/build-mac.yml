@@ -107,8 +107,11 @@ jobs:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
         run: |
           for name in CSC_LINK CSC_KEY_PASSWORD APPLE_API_KEY_ID APPLE_API_ISSUER; do [ -z "${!name}" ] && unset "$name"; done
-          if [ -z "${CSC_LINK:-}" ]; then export CSC_IDENTITY_AUTO_DISCOVERY=false; echo "Sem certificado: o app sai sem assinatura da Apple."; fi
-          npx electron-builder --mac --${{ matrix.arch }} --publish never
+          # Sem certificado, o app sai com assinatura ad-hoc completa. Sem ela, o pacote fica com a
+          # assinatura do Electron quebrada pelas mudanças do empacotamento e o macOS pode recusar abrir.
+          sign=()
+          if [ -z "${CSC_LINK:-}" ]; then export CSC_IDENTITY_AUTO_DISCOVERY=false; sign=(-c.mac.identity=-); echo "Sem certificado: o app sai com assinatura ad-hoc, sem a da Apple."; fi
+          npx electron-builder --mac --${{ matrix.arch }} --publish never "${sign[@]}"
       - name: Smoke test the packaged app
         run: node scripts/mac-smoke.mjs
       - name: Upload Mac installers directly to the draft release

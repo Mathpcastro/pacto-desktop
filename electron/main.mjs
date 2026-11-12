@@ -87,6 +87,9 @@ function appMenu(){
   const mac=process.platform==='darwin'?[{label:'Carrossell',submenu:[{role:'about',label:ui('Sobre o Carrossell')},{type:'separator'},{role:'hide',label:ui('Ocultar')},{role:'quit',label:ui('Sair')}]}]:[];
   return Menu.buildFromTemplate([...mac,edit,view,{label:ui('Janela'),submenu:[{label:ui('Minimizar'),role:'minimize'},{label:ui('Fechar'),role:'close'},{type:'separator'},{label:ui('Sair'),role:'quit'}]}]);
 }
+// Mac: abrir o app (Finder, Dock, Launchpad) com ele já rodando em segundo plano pelo piloto não cria
+// uma segunda instância; o sistema só reativa o processo. Sem isto, nenhuma janela aparecia.
+app.on('activate',()=>{if(!windowOpen())void showUI?.();});
 app.on('second-instance',(_event,argv)=>{if(argv.includes(PILOT_FLAG))void runtime?.autopilot?.step();else if(argv.includes(SCHEDULE_FLAG))void publishDue?.();else if(!argv.includes(BACKGROUND))void showUI?.();});
 // Link de conexão do Instagram: só https do Composio, Instagram ou Facebook abre no navegador.
 // Só em desenvolvimento: PACTO_COMPOSIO_URL aponta para um Composio falso local (provas de interface) e o link não abre o navegador.
