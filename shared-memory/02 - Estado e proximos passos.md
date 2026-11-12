@@ -343,3 +343,9 @@ Implementação isolada em pacto-app-visual-refs, branch feat/brand-visual-refer
 ## 11/11/2026 — Release 1.10.2 publicada
 
 [[55 - Release Carrossell 1.10.2]] registra o Radar no menu principal e a publicação para Windows, Mac Apple Silicon e Mac Intel. Links, feed, SHA-512, zero artefatos de Actions e aviso público conferidos.
+
+## 12/11/2026 — Release 1.11.0 publicada
+
+[[56 - Release Carrossell 1.11.0]]: espanhol no menu da conta, com pt-BR de padrão.
+Latest, feed, SHA-512 e os cinco jobs do workflow 43147136017 conferidos.
+O aviso público não foi gravado: a escrita no pacto-releases respondeu 403.
