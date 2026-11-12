@@ -1,6 +1,7 @@
 // Modelos de card e de página montados pelo próprio app (sem gerar imagem com IA).
 // As mesmas funções servem à prévia no editor e à renderização em PNG/PDF no
 // processo principal, para que o arquivo exportado seja idêntico ao que a pessoa viu.
+import { templateCopy } from './i18n.mjs';
 
 export const STYLES = ["ia", "tweet", "texto", "textopreto", "fototexto", "fundo", "recorte"];
 export const TEMPLATE_STYLES = STYLES.filter((s) => s !== "ia");
@@ -87,21 +88,21 @@ function fontFaces(fonts = {}) {
 }
 const DISPLAY = `"Archivo Studio","Arial Black","Segoe UI",Arial,sans-serif`;
 const SYSTEM = `"Segoe UI Variable Text","Segoe UI",-apple-system,"SF Pro Text","Helvetica Neue",Arial,sans-serif`;
-function documentShell({ width, height, css, body, fonts, title = "Carrossell", page }) {
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(title)}</title><style>${fontFaces(fonts)}
+function documentShell({ width, height, css, body, fonts, title = "Carrossell", page, lang = "pt-BR" }) {
+  return `<!doctype html><html lang="${esc(lang)}"><head><meta charset="utf-8"><title>${esc(title)}</title><style>${fontFaces(fonts)}
 *{box-sizing:border-box;margin:0;padding:0}html,body{width:${width}px;${page ? "" : `height:${height}px;`}background:#fff;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
 ${page ? `@page{size:${width}px ${height}px;margin:0}` : ""}
 mark{background:none;color:inherit}${css}</style></head><body>${body}</body></html>`;
 }
-const VERIFIED = `<svg viewBox="0 0 24 24" width="1em" height="1em" aria-label="verificado"><path fill="#1d9bf0" d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.66-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91C2.63 9.33 1.75 10.57 1.75 12s.88 2.67 2.19 3.34c-.46 1.39-.2 2.9.81 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.68-.88 3.34-2.19c1.39.46 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34z"/><path fill="#fff" d="m10.54 16.2-3.74-3.75 1.42-1.41 2.32 2.33 5.29-5.3 1.42 1.42z"/></svg>`;
+const VERIFIED = (label) => `<svg viewBox="0 0 24 24" width="1em" height="1em" aria-label="${esc(label)}"><path fill="#1d9bf0" d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.66-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91C2.63 9.33 1.75 10.57 1.75 12s.88 2.67 2.19 3.34c-.46 1.39-.2 2.9.81 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.68-.88 3.34-2.19c1.39.46 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34z"/><path fill="#fff" d="m10.54 16.2-3.74-3.75 1.42-1.41 2.32 2.33 5.29-5.3 1.42 1.42z"/></svg>`;
 function avatar(brand, size) {
   const initial = esc((brand.name || "?").trim().charAt(0).toUpperCase());
   return brand.avatar
     ? `<img class="avatar" src="${esc(brand.avatar)}" alt="" style="width:${size}px;height:${size}px">`
     : `<span class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.45)}px">${initial}</span>`;
 }
-function who(brand, size, nameColor, handleColor) {
-  return `<div class="who">${avatar(brand, size)}<div><b style="color:${nameColor}">${esc(brand.name || "Sua marca")}${brand.verified ? VERIFIED : ""}</b><small style="color:${handleColor}">@${esc((brand.handle || "seuperfil").replace(/^@/, ""))}</small></div></div>`;
+function who(brand, size, nameColor, handleColor, labels) {
+  return `<div class="who">${avatar(brand, size)}<div><b style="color:${nameColor}">${esc(brand.name || labels.brand)}${brand.verified ? VERIFIED(labels.verified) : ""}</b><small style="color:${handleColor}">@${esc((brand.handle || labels.handle).replace(/^@/, ""))}</small></div></div>`;
 }
 function photoTag(src, label) {
   return src
@@ -134,7 +135,8 @@ p.body{line-height:1.38;white-space:pre-line;text-wrap:pretty}
 .media.contain{object-fit:contain;background:#ffffff;padding:36px}`;
 
 // Um card 1080×1350. variant muda o esquema de cor ou a composição (opções de capa).
-export function slideHtml({ style, slide, index = 0, total = 1, brand = {}, media = {}, variant = 0, fonts }) {
+export function slideHtml({ style, slide, index = 0, total = 1, brand = {}, media = {}, variant = 0, fonts, locale }) {
+  const labels = templateCopy(locale);
   const p = brand.palette || FALLBACK;
   const cover = index === 0;
   const title = slide.title || "";
@@ -152,7 +154,7 @@ export function slideHtml({ style, slide, index = 0, total = 1, brand = {}, medi
     ][variant % 3];
     const text = body ? `${title}\n\n${body}` : title;
     css = `.card{background:${scheme.bg};color:${scheme.fg};justify-content:center;padding:0 96px;gap:${asset ? 36 : 44}px}.tw{font-size:${asset ? fit(text, 52, 34, 60, 320) : fit(text, 68, 44, 60, 320)}px;line-height:1.36;white-space:pre-line;font-weight:400}.media{border:2px solid ${scheme.sub}40}`;
-    html = `${who(brand, 104, scheme.fg, scheme.sub)}<p class="tw">${esc(text)}</p>${mediaTag(560)}`;
+    html = `${who(brand, 104, scheme.fg, scheme.sub, labels)}<p class="tw">${esc(text)}</p>${mediaTag(560)}`;
   } else if (style === "texto" || style === "textopreto") {
     const order = style === "texto" ? [0, 1, 2] : [1, 0, 2];
     const scheme = [
@@ -175,7 +177,7 @@ mark{${variant % 3 === 2 ? `background:${p.ink};color:${p.paper};padding:0 .12em
 .txt{flex:1;display:flex;flex-direction:column;justify-content:center;gap:30px;padding:90px 96px 60px}
 h1{font-size:${fit(title, 82, 54, 28, 130)}px}mark{color:${p.accent}}p.body{font-size:36px;opacity:.85}
 .ph{height:46%;flex:none}${asset && slide.assetKind === "logo" ? ".ph .photo{object-fit:contain;background:#fff;padding:60px}" : ""}`;
-    html = `<div class="txt"><h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}</div><div class="ph">${photoTag(photo, "Cena aprovada")}</div>`;
+    html = `<div class="txt"><h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}</div><div class="ph">${photoTag(photo, labels.scene)}</div>`;
   } else if (style === "fundo") {
     const face = (media.faces || []).find((f) => f.id === slide.photo) || (media.faces || [])[index % Math.max(1, (media.faces || []).length)];
     const align = ["center", "flex-end", "flex-start"][variant % 3];
@@ -185,9 +187,9 @@ h1{font-size:${fit(title, 82, 54, 28, 130)}px}mark{color:${p.accent}}p.body{font
 .ov.left{align-items:flex-start;text-align:left}
 h1{font-size:${fit(title, 96, 60, 24, 120)}px;text-shadow:0 4px 30px #0008}mark{color:${luminance(p.accent) > 0.15 ? p.accent : "#7fd9ff"}}
 p.body{font-size:38px;text-shadow:0 2px 18px #000a}.spacer{flex:1}`;
-    const pills = `<span class="pill" style="font-size:30px;padding:12px 30px">@${esc((brand.handle || "seuperfil").replace(/^@/, ""))}</span>`;
-    const end = cover ? `<span class="pill">arrasta pro lado ›</span>` : "";
-    html = `<div class="bg">${photoTag(asset || face?.dataUrl, "Sua foto")}</div><div class="shade"></div><div class="ov ${variant % 3 === 2 ? "left" : ""}">${pills}${variant % 3 === 1 ? '<div class="spacer"></div>' : ""}<h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}${variant % 3 === 1 ? "" : '<div class="spacer"></div>'}${end}</div>`;
+    const pills = `<span class="pill" style="font-size:30px;padding:12px 30px">@${esc((brand.handle || labels.handle).replace(/^@/, ""))}</span>`;
+    const end = cover ? `<span class="pill">${esc(labels.swipe)}</span>` : "";
+    html = `<div class="bg">${photoTag(asset || face?.dataUrl, labels.photo)}</div><div class="shade"></div><div class="ov ${variant % 3 === 2 ? "left" : ""}">${pills}${variant % 3 === 1 ? '<div class="spacer"></div>' : ""}<h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}${variant % 3 === 1 ? "" : '<div class="spacer"></div>'}${end}</div>`;
   } else if (style === "recorte") {
     const face = (media.faces || []).find((f) => f.id === slide.photo) || (media.faces || [])[0];
     const scheme = [
@@ -201,12 +203,12 @@ p.body{font-size:38px;text-shadow:0 2px 18px #000a}.spacer{flex:1}`;
 .who{position:relative;z-index:2}h1{position:relative;z-index:2;margin-top:auto;font-size:${fit(title, cover ? 130 : 96, 64, 18, 110)}px;line-height:.95;letter-spacing:-0.04em;text-shadow:0 6px 30px #0003}
 mark{background:${scheme.hl};color:${scheme.bg};padding:0 .1em;border-radius:.08em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 p.body{position:relative;z-index:2;margin-top:28px;font-size:36px;max-width:780px}.pill{position:relative;z-index:2;margin-top:44px;align-self:flex-start}`;
-    html = `${who(brand, 92, scheme.fg, scheme.fg + "b3")}${src ? `<div class="person">${photoTag(src, "")}</div>` : ""}<h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}${cover ? `<span class="pill">→ Deslize para aprender</span>` : ""}`;
+    html = `${who(brand, 92, scheme.fg, scheme.fg + "b3", labels)}${src ? `<div class="person">${photoTag(src, "")}</div>` : ""}<h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}${cover ? `<span class="pill">${esc(labels.learn)}</span>` : ""}`;
   } else {
     css = `.card{background:${p.paper};color:${p.ink};padding:110px 96px;gap:36px}h1{font-size:84px}mark{color:${p.accent}}p.body{font-size:38px}`;
     html = `<h1>${titleHtml}</h1>${body ? `<p class="body">${esc(body)}</p>` : ""}`;
   }
-  return documentShell({ ...SIZES.carrossel, fonts, css: SLIDE_CSS(p) + css, body: `<main class="card" data-index="${index + 1}" data-total="${total}">${html}</main>` });
+  return documentShell({ ...SIZES.carrossel, fonts, lang: labels.lang, css: SLIDE_CSS(p) + css, body: `<main class="card" data-index="${index + 1}" data-total="${total}">${html}</main>` });
 }
 
 // Páginas de documento (material gratuito A4 e apresentação 16:9).
@@ -255,23 +257,24 @@ function pageBody(page, i, total, wide, brand, coverVariant) {
     return `<section class="page cta">${eb}${h(wide ? 60 : 48)}<p class="body">${esc(page.body)}</p>${foot}</section>`;
   return `<section class="page">${eb}${h(wide ? 52 : 40)}<p class="body">${esc(page.body)}</p>${foot}</section>`;
 }
-export function documentHtml({ format, pages, brand = {}, coverVariant = 0, fonts, only = null }) {
+export function documentHtml({ format, pages, brand = {}, coverVariant = 0, fonts, only = null, locale }) {
+  const labels = templateCopy(locale);
   const wide = format === "apresentacao";
   const p = brand.palette || FALLBACK;
   const list = only === null ? pages : [pages[only]];
   const body = list.map((page) => pageBody(page, pages.indexOf(page), pages.length, wide, brand, coverVariant)).join("");
-  return documentShell({ ...SIZES[format], fonts, css: PAGE_CSS(p, wide), body, page: only === null, title: pages[0]?.title });
+  return documentShell({ ...SIZES[format], fonts, lang: labels.lang, css: PAGE_CSS(p, wide), body, page: only === null, title: pages[0]?.title });
 }
 // Story 1080×1920 só de texto. O texto fica fora das faixas que o Instagram cobre (topo e rodapé);
 // com sticker (enquete ou caixa de perguntas), sobe e deixa a metade de baixo livre para colar o sticker.
-export function storyHtml({ story, theme = "preto", fonts }) {
+export function storyHtml({ story, theme = "preto", fonts, locale }) {
   const t = STORY_THEMES[theme] || STORY_THEMES.preto;
   const text = String(story?.text || "").trim();
   const sticker = Boolean(String(story?.sticker || "").trim());
   const css = `body{font-family:${SYSTEM};overflow:hidden}
 .story{width:1080px;height:1920px;background:${t.bg};color:${t.fg};display:flex;flex-direction:column;justify-content:${sticker ? "flex-start" : "center"};padding:${sticker ? 360 : 300}px 112px ${sticker ? 960 : 420}px}
 p{font-size:${fit(text, 84, 54, 40, 220)}px;line-height:1.24;font-weight:700;letter-spacing:-0.01em;white-space:pre-line;text-wrap:pretty}`;
-  return documentShell({ ...SIZES.story, fonts, css, body: `<div class="story"><p>${esc(text)}</p></div>`, title: "Story" });
+  return documentShell({ ...SIZES.story, fonts, lang: templateCopy(locale).lang, css, body: `<div class="story"><p>${esc(text)}</p></div>`, title: "Story" });
 }
 // O carrossel pronto como PDF de várias páginas (LinkedIn aceita PDF como carrossel).
 export function imagesPdfHtml(images, title = "Carrossel") {

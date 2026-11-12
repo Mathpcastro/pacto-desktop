@@ -2,9 +2,10 @@ import { useEffect, useId, useState } from "react";
 import { CalendarClock, Check, ExternalLink, KeyRound, Plus, RefreshCw, Send, Trash2, X } from "lucide-react";
 import Dialog from "./Dialog.jsx";
 import { Spinner } from "../ui.jsx";
+import { formatLocale } from "../i18n.js";
 
 // Instagram pelo Composio: botão do topo e modal (contas), postar e agendar (estúdio) e métricas (Resultado).
-const when = (iso) => new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const when = (iso) => new Date(iso).toLocaleString(formatLocale(), { dateStyle: "short", timeStyle: "short" });
 const SCHEDULE_LABEL = { scheduled: "Agendado", late: "Atrasado", failed: "Não saiu", partial: "Saiu em parte", published: "Publicado" };
 const usable = (composio) => (composio?.accounts || []).filter((a) => a.status === "ACTIVE");
 // Valor inicial do campo de agendamento: amanhã às 18h, no horário local.
@@ -192,7 +193,7 @@ export function InstagramModal({ state, request, isPending, onNotice, onClose })
                 <InstagramLogo size={20} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <b>@{a.username || "conta sem nome"}</b>
-                  <small>{a.status === "ACTIVE" ? (a.followers !== null ? `${a.followers.toLocaleString("pt-BR")} seguidores` : "Conta Profissional") : a.error}</small>
+                  <small>{a.status === "ACTIVE" ? (a.followers !== null ? `${a.followers.toLocaleString(formatLocale())} seguidores` : "Conta Profissional") : a.error}</small>
                 </div>
                 {a.status === "ACTIVE" && (
                   <label className="toggle">
@@ -444,7 +445,7 @@ export function InstagramMetrics({ project, request, isPending, onNotice }) {
             <div className="ig-metrics">
               {METRICS.filter(([k]) => p.metrics[k] !== null && p.metrics[k] !== undefined).map(([k, label]) => (
                 <div key={k}>
-                  <b>{p.metrics[k].toLocaleString("pt-BR")}</b>
+                  <b>{p.metrics[k].toLocaleString(formatLocale())}</b>
                   <small>{label}</small>
                 </div>
               ))}

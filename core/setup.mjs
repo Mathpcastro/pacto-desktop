@@ -3,6 +3,7 @@
 // pessoa (e colar a resposta de volta) ou responder à entrevista completa.
 
 import { BRAND_STRATEGY_RULES } from './brand-strategy.mjs';
+import { isSpanish } from './i18n.mjs';
 
 // Aceita "https://...", "http://..." e domínios digitados sem protocolo ("meusaas.com.br/oferta").
 export function asUrl(input) {
@@ -24,7 +25,7 @@ export const SECTIONS = { name: "NOME DA MARCA", brand: "CONTEXTO DA MARCA", des
 
 // Prompt para a IA pessoal da pessoa: o que ela vende vai no começo e prende a resposta
 // àquele produto; a memória e as conversas da IA dela completam o resto.
-export function setupPrompt(input, { brandPrompt = "", designPrompt = "" } = {}) {
+export function setupPrompt(input, { brandPrompt = "", designPrompt = "", locale = "pt-BR" } = {}) {
   const what = String(input || "").trim();
   if (!what) throw new Error("Escreva o link ou uma frase sobre o que você vende.");
   if (what.length > 2000) throw new Error("Use até 2.000 caracteres.");
@@ -37,7 +38,7 @@ COMO RESPONDER
 1. Use o que você já sabe sobre mim e sobre esse negócio: memória, projetos e conversas anteriores.${link ? `\n2. Se você consegue navegar, abra o link e leia a página: promessa, para quem é, preço, oferta, diferenciais e perguntas frequentes.` : ""}
 ${link ? "3" : "2"}. Se faltar algo essencial que você não saiba, me faça no máximo 3 perguntas curtas antes. Depois entregue tudo de uma vez.
 ${link ? "4" : "3"}. Não invente números, depoimentos, resultados, clientes ou preços. Fato que você não souber, escreva com a palavra HIPÓTESE para eu conferir.
-${link ? "5" : "4"}. Responda em português do Brasil.
+${link ? "5" : "4"}. ${isSpanish(locale) ? "Responde en español latinoamericano neutro. Los títulos === de las secciones se quedan como están; el texto que la persona va a leer sale en español." : "Responda em português do Brasil."}
 
 PARTE 1 — CONTEXTO DA MARCA (siga este roteiro, mas sem me entrevistar rodada por rodada: responda você mesmo com o que sabe)
 ${brandPrompt.trim()}

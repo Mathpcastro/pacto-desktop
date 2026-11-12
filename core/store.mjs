@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { zipSync, strToU8, unzlibSync } from 'fflate';
 import { STYLES, FORMATS, LAYOUTS } from './templates.mjs';
+import { normalizeLocale } from './i18n.mjs';
 
 export function text(value, max=30000) {
   if (typeof value!=='string'||value.length>max) throw new Error('Campo deve ser texto dentro do limite permitido.');
@@ -61,7 +62,7 @@ const SCENE_STATUS=['pending','approved','rejected'];
 function imageUrl(value){if(!value)return '';return validateReference({name:'imagem',dataUrl:value}).dataUrl;}
 export const CARD_COUNTS=Array.from({length:11},(_,index)=>index);
 function cardCount(value){const n=Number(value||0);if(!Number.isInteger(n)||!CARD_COUNTS.includes(n))throw new Error('Quantidade de cards inválida.');return n;}
-const defaultSettings=()=>({weeklyGoal:5,driveFolder:'',firstCompletedAt:'',lastReminderAt:''});
+const defaultSettings=()=>({weeklyGoal:5,driveFolder:'',firstCompletedAt:'',lastReminderAt:'',language:'pt-BR'});
 // Feedback da pessoa para a ferramenta: entra em todas as gerações seguintes da área marcada.
 export const FEEDBACK_AREAS=['texto','visual','geral'];
 // Contas do Instagram padrão deste perfil (a chave e a lista de contas do Composio ficam fora da biblioteca).
@@ -135,6 +136,7 @@ export class Store {
       if(key==='weeklyGoal'){const n=Number(patch[key]);if(!Number.isInteger(n)||n<1||n>50)throw new Error('Meta semanal inválida.');next.weeklyGoal=n;}
       else if(key==='driveFolder')next.driveFolder=text(patch[key],1000);
       else if(key==='firstCompletedAt'||key==='lastReminderAt')next[key]=text(patch[key],40);
+      else if(key==='language'){if(patch[key]!=='pt-BR'&&patch[key]!=='es')throw new Error('Idioma inválido.');next.language=patch[key];}
       else throw new Error('Configuração não permitida.');
     }
     this.data.settings=next;await this.persist();return this.state();
@@ -142,7 +144,7 @@ export class Store {
   async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId='',attachments=[],madeBy=''}, {reservedId}={}){
     const id=reservedId?validId(reservedId):randomUUID();
     if(this.data.projects.some(p=>p.id===id))return this.get(id);
-    const now=new Date().toISOString();const f=format(kind);const p={id,format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||'Novo carrossel',brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',madeBy:text(String(madeBy||''),40),stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
+    const now=new Date().toISOString();const f=format(kind);const p={id,format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||(normalizeLocale(this.data.settings.language)==='es'?'Nuevo carrusel':'Novo carrossel'),brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',madeBy:text(String(madeBy||''),40),stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
     this.data.projects.unshift(p);await this.persist();return this.get(p.id);
   }
   async saveProject(args){

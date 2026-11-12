@@ -8,6 +8,13 @@ import { validId } from './store.mjs';
 import { emptyConversation } from './autopilot-store.mjs';
 import { TelegramConversation } from './telegram-conversation.mjs';
 import { TelegramSchedule, SCHEDULE_COMMAND } from './telegram-schedule.mjs';
+import { translateUi, intlLocale } from './i18n.mjs';
+
+function localizeMarkup(locale, extra){
+  const rows=extra?.reply_markup?.inline_keyboard;
+  if(!rows)return extra;
+  return {...extra,reply_markup:{...extra.reply_markup,inline_keyboard:rows.map(row=>row.map(button=>button?.text?{...button,text:translateUi(locale,button.text)}:button))}};
+}
 
 const TERMINAL=new Set(['published','scheduled','discarded','error','uncertain']);
 const decisionStates=new Set(['ready','scheduleDate','scheduleConfirm']);
@@ -25,7 +32,7 @@ export class Autopilot {
   constructor({runtime,state,secrets,scheduler=null,clientFactory=token=>new TelegramClient({token}),now=()=>Date.now()}){
     Object.assign(this,{rt:runtime,state,secrets,scheduler,clientFactory,now});this.client=null;this.processing=null;this.controller=null;this.connectionError='';this.schedules=new TelegramSchedule(this);this.conversation=new TelegramConversation(this);
   }
-  clientForToken(){const token=this.secrets.getTelegramToken?.();if(!token)throw new Error('Conecte o bot do Telegram.');return this.client??=this.clientFactory(token);}
+  clientForToken(){const token=this.secrets.getTelegramToken?.();if(!token)throw new Error('Conecte o bot do Telegram.');const client=this.client??=this.clientFactory(token);if(!client.localized){const sendText=client.sendText.bind(client),answer=client.answerCallbackQuery.bind(client),locale=()=>this.rt.locale();client.sendText=(chat,text,extra)=>sendText(chat,translateUi(locale(),text),localizeMarkup(locale(),extra));client.answerCallbackQuery=(id,text)=>answer(id,translateUi(locale(),text));client.localized=true;}return client;}
   bindingActive(){const binding=this.state.snapshot().binding;return !!binding&&(!binding.expiresAt||new Date(binding.expiresAt)>this.now());}
   status(profileId){
     const data=this.state.snapshot();return {hasToken:Boolean(this.secrets.getTelegramToken?.()),bot:data.bot,paired:Boolean(data.binding),pairing:data.pairing&&new Date(data.pairing.expiresAt)>this.now()?{...data.pairing,url:`https://t.me/${data.bot.username}?start=${data.pairing.code}`}:null,connectionError:data.configs[profileId]?.scheduleError||data.configs[profileId]?.runError||this.connectionError,
@@ -192,7 +199,7 @@ export class Autopilot {
         try{
           const at=parseWhen(message.text,new Date(this.now())).toISOString();
           const title=await this.rt.inProfile(job.profileId,()=>this.rt.store.state().profile?.brand||'Sua marca');
-          const messages=await client.sendText(message.chat.id,`${title} · ${job.title}\nAgendar para ${new Date(at).toLocaleString('pt-BR')} (horário do computador)?\nContas: ${job.accounts.join(', ')}`,{reply_markup:{inline_keyboard:[[{text:'Confirmar agendamento',callback_data:`p:${job.reviewId}:confirm`}],[{text:'Cancelar',callback_data:`p:${job.reviewId}:cancel`}]]}});
+          const messages=await client.sendText(message.chat.id,`${title} · ${job.title}\nAgendar para ${new Date(at).toLocaleString(intlLocale(this.rt.locale()))} (horário do computador)?\nContas: ${job.accounts.join(', ')}`,{reply_markup:{inline_keyboard:[[{text:'Confirmar agendamento',callback_data:`p:${job.reviewId}:confirm`}],[{text:'Cancelar',callback_data:`p:${job.reviewId}:cancel`}]]}});
           await this.patch(job.id,{status:'scheduleConfirm',at,messageId:messages.at(-1).message_id});
         }catch(error){await client.sendText(message.chat.id,`${messageError(error)}\nEnvie a data como 2026-11-03 18:00, no horário do computador.`);}return;
       }
@@ -245,7 +252,7 @@ export class Autopilot {
     if(binding){
       const client=this.clientForToken();
       if(job.messageId)await client.editMessageReplyMarkup(binding.chatId,job.messageId).catch(()=>{});
-      await client.sendText(binding.chatId,`${job.title}: aprovado no app. ${when?`Agendando para ${new Date(when).toLocaleString('pt-BR')}.`:'Publicando agora.'}`).catch(()=>{});
+      await client.sendText(binding.chatId,`${job.title}: aprovado no app. ${when?`Agendando para ${new Date(when).toLocaleString(intlLocale(this.rt.locale()))}.`:'Publicando agora.'}`).catch(()=>{});
     }
     return this.state.snapshot().jobs.find(j=>j.id===id);
   }

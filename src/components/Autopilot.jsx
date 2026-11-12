@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, CalendarClock, ExternalLink, Pause, Play, RefreshCw, Monitor, Check, MessageCircle, Plus, X, Layers } from "lucide-react";
 import { STYLES } from "../../core/templates.mjs";
 import { Spinner } from "../ui.jsx";
+import { formatLocale } from "../i18n.js";
 import Dialog from "./Dialog.jsx";
 import { ScheduledPosts } from "./Instagram.jsx";
 import telegramLogo from "../assets/telegram.svg";
@@ -29,7 +30,7 @@ const runLabel = (iso) => {
 };
 const when = (value) => {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleString(formatLocale(), { dateStyle: "short", timeStyle: "short" });
 };
 // Cada horário tem o seu tipo de carrossel: arquitetura, estilo e quantidade de cards.
 const slotOf = (slot = {}, config = {}) => ({ time: slot.time || "09:00", architectureId: slot.architectureId || "", style: slot.style || config.style || "texto", cardCount: slot.cardCount ?? config.cardCount ?? 6 });

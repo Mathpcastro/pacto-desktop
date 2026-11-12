@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, BarChart3, Bookmark, ExternalLink, RefreshCw, Users } from 'lucide-react';
 import { Spinner } from '../ui.jsx';
 
-const number = value => value === null || value === undefined ? '—' : Number(value).toLocaleString('pt-BR');
-const date = value => new Date(value.length === 10 ? `${value}T12:00:00Z` : value).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
+import { formatLocale } from "../i18n.js";
+const number = value => value === null || value === undefined ? '—' : Number(value).toLocaleString(formatLocale());
+const date = value => new Date(value.length === 10 ? `${value}T12:00:00Z` : value).toLocaleDateString(formatLocale(), { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
 const RANK = { saves: 'Salvamentos', shares: 'Compartilhamentos', reach: 'Alcance' };
 const errorText = error => String(error?.message || 'Não foi possível atualizar. Tente de novo.').replace(/^Error invoking remote method '[^']+': (?:\w*Error: )?/, '');
 
@@ -82,7 +83,7 @@ export default function Analytics({ state, request, onInstagram, onNotice }) {
       {error && <div className="analytics-error" role="alert"><p>{error}</p><button className="btn small" disabled={loading} onClick={() => load(true)}>Tentar novamente</button></div>}
       {loading && !data && <div className="card-box analytics-empty" role="status"><Spinner /><p>Buscando os números de @{selected?.username}…</p></div>}
       {data && <>
-        <div className="analytics-stamp"><span>@{data.username} · {date(new Date(data.since * 1000).toISOString())} a {date(new Date(data.until * 1000).toISOString())} · inclui hoje (UTC)</span><span>Coleta: {new Date(data.updatedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span></div>
+        <div className="analytics-stamp"><span>@{data.username} · {date(new Date(data.since * 1000).toISOString())} a {date(new Date(data.until * 1000).toISOString())} · inclui hoje (UTC)</span><span>Coleta: {new Date(data.updatedAt).toLocaleString(formatLocale(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span></div>
         <div className="analytics-stats">{[['Alcance', data.metrics.reach, 'Contas únicas no período'], ['Visitas ao perfil', data.metrics.profileViews, 'No período selecionado'], ['Contas engajadas', data.metrics.engaged, 'Contas únicas no período'], ['Seguidores', data.followers, 'Total na última coleta']].map(([label, value, hint]) => <div className="card-box" key={label}><span>{label}</span><strong>{number(value)}</strong><small>{value === null ? 'Não disponibilizado' : hint}</small></div>)}</div>
         {data.warnings.length > 0 && <details className="analytics-data"><summary>Disponibilidade dos dados</summary>{data.warnings.map(w => <p className="hint" key={w}>{w}</p>)}</details>}
         <Followers history={data.history} />

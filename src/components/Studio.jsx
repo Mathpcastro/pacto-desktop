@@ -313,10 +313,11 @@ export default function Studio({ project, state, request, pending, activity, onB
     setSel(null);
     setView(next);
   };
+  const locale = state.settings?.language === "es" ? "es" : "pt-BR";
   const renderSlide = (s, i, variant = project.styleVariant || 0) =>
-    slideHtml({ style: project.style, slide: withAsset(s), index: i, total: drafts.length, brand, media, variant, fonts: TEMPLATE_FONTS });
+    slideHtml({ style: project.style, slide: withAsset(s), index: i, total: drafts.length, brand, media, variant, fonts: TEMPLATE_FONTS, locale });
   const pageHtml = (i, variant = project.styleVariant || 0) =>
-    documentHtml({ format, pages: drafts, brand, coverVariant: variant, fonts: TEMPLATE_FONTS, only: i });
+    documentHtml({ format, pages: drafts, brand, coverVariant: variant, fonts: TEMPLATE_FONTS, only: i, locale });
   // Envia uma imagem nova para este carrossel e a coloca no card aberto.
   const attachToCard = async (slideId) => {
     if (dirty) await save();
@@ -471,8 +472,8 @@ export default function Studio({ project, state, request, pending, activity, onB
     return (
       <div className="text-card">
         <span>{i === 0 ? "Capa" : `Card ${i + 1}`} · arte ainda não gerada</span>
-        <b>{d.title}</b>
-        {d.body && <span>{d.body}</span>}
+        <b data-user-text>{d.title}</b>
+        {d.body && <span data-user-text>{d.body}</span>}
       </div>
     );
   };

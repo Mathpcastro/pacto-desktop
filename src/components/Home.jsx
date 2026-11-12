@@ -22,6 +22,7 @@ import {
 import { rhythm } from "../../core/rhythm.mjs";
 import Dialog from "./Dialog.jsx";
 import { FORMAT_LABEL, Grow, STYLE_LIST, Spinner, firstLine, statusLabels, usePopover } from "../ui.jsx";
+import { formatLocale } from "../i18n.js";
 import { InstagramSummary } from "./Instagram.jsx";
 import { replaceReferenceAttachment } from "../referenceLibrary.js";
 
@@ -362,7 +363,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
         <span>{pendingReviews} {pendingReviews === 1 ? "carrossel" : "carrosséis"} para revisar</span>
         <ArrowRight size={16} aria-hidden="true" />
       </button>}
-      {view === "calendar" && <><InstagramSummary state={state} request={request} onNotice={onNotice} onOpen={onInstagram} /><section className="section" aria-label="Conteúdos agendados">{state.projects.filter((project) => project.schedule).map((project) => <button className="btn scheduled-project" key={project.id} onClick={() => onOpen(project.id)}><span>{project.title}<small>{new Date(project.schedule.at).toLocaleString("pt-BR")} · {({ scheduled: "Agendado", late: "Atrasado", failed: "Não saiu", partial: "Publicado em parte", published: "Publicado" })[project.schedule.status] || project.schedule.status}</small></span><ArrowRight size={16} /></button>)}{!state.projects.some((project) => project.schedule) && <p className="hint">Nenhum conteúdo agendado neste perfil. Abra um carrossel pronto para escolher a data e as contas.</p>}</section></>}
+      {view === "calendar" && <><InstagramSummary state={state} request={request} onNotice={onNotice} onOpen={onInstagram} /><section className="section" aria-label="Conteúdos agendados">{state.projects.filter((project) => project.schedule).map((project) => <button className="btn scheduled-project" key={project.id} onClick={() => onOpen(project.id)}><span>{project.title}<small>{new Date(project.schedule.at).toLocaleString(formatLocale())} · {({ scheduled: "Agendado", late: "Atrasado", failed: "Não saiu", partial: "Publicado em parte", published: "Publicado" })[project.schedule.status] || project.schedule.status}</small></span><ArrowRight size={16} /></button>)}{!state.projects.some((project) => project.schedule) && <p className="hint">Nenhum conteúdo agendado neste perfil. Abra um carrossel pronto para escolher a data e as contas.</p>}</section></>}
       <div className="home-grid goal-workspace" hidden={!["ideas", "rhythm"].includes(view)}>
         <section className="section" aria-label="Ideias" hidden={view !== "ideas"}>
           <div className="section-head">
@@ -620,7 +621,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
               return (
                 <article className="lib-item" key={p.id}>
                   <button className="lib-open" aria-label={`Abrir ${p.title}`} onClick={() => onOpen(p.id)}>
-                    <div className={`lib-cover ${p.format && p.format !== "carrossel" ? "doc" : ""}`}>{cover ? <img src={cover} alt="" /> : <span className="ph">{p.title}</span>}</div>
+                    <div className={`lib-cover ${p.format && p.format !== "carrossel" ? "doc" : ""}`}>{cover ? <img src={cover} alt="" /> : <span className="ph" data-user-text>{p.title}</span>}</div>
                     <b>{p.title}</b>
                     <small>
                       {p.format !== "carrossel" && <span className="chip">{FORMAT_LABEL[p.format]}</span>}

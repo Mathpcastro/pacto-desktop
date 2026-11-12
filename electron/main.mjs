@@ -27,6 +27,7 @@ import { createRenderer } from './render.mjs';
 import { readPage } from './page.mjs';
 import { startControl } from '../core/control.mjs';
 import { cliInfo, installCli } from './cli-install.mjs';
+import { translateUi } from '../core/i18n.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 // 0.2.1 identifies itself as pacto-desktop, including the packaged Windows app.
 // Pin that historical directory before changing the commercial display name.
@@ -58,8 +59,8 @@ async function createWindow(){
   window.webContents.on('context-menu',(_event,params)=>{
     const f=params.editFlags||{};
     const items=params.isEditable
-      ?[{label:'Desfazer',role:'undo',enabled:f.canUndo!==false},{label:'Refazer',role:'redo',enabled:f.canRedo!==false},{type:'separator'},{label:'Recortar',role:'cut',enabled:f.canCut!==false},{label:'Copiar',role:'copy',enabled:f.canCopy!==false},{label:'Colar',role:'paste',enabled:f.canPaste!==false},{label:'Selecionar tudo',role:'selectAll'}]
-      :params.selectionText?.trim()?[{label:'Copiar',role:'copy'},{label:'Selecionar tudo',role:'selectAll'}]:[];
+      ?[{label:ui('Desfazer'),role:'undo',enabled:f.canUndo!==false},{label:ui('Refazer'),role:'redo',enabled:f.canRedo!==false},{type:'separator'},{label:ui('Recortar'),role:'cut',enabled:f.canCut!==false},{label:ui('Copiar'),role:'copy',enabled:f.canCopy!==false},{label:ui('Colar'),role:'paste',enabled:f.canPaste!==false},{label:ui('Selecionar tudo'),role:'selectAll'}]
+      :params.selectionText?.trim()?[{label:ui('Copiar'),role:'copy'},{label:ui('Selecionar tudo'),role:'selectAll'}]:[];
     if(items.length)Menu.buildFromTemplate(items).popup({window});
   });window.webContents.on('will-navigate',event=>event.preventDefault());
   // Lessons play in-app through the privacy-enhanced YouTube embed: only that
@@ -79,11 +80,12 @@ async function createWindow(){
 }
 if(process.platform==='win32')app.setAppUserModelId('com.matheuscastro.pacto');
 // Menu Editar explícito: Ctrl/Cmd+C, V, X, A e Z funcionam em qualquer sistema, inclusive no Mac.
+const ui=s=>translateUi(runtime?.locale?.()||'pt-BR',s);
 function appMenu(){
-  const edit={label:'Editar',submenu:[{label:'Desfazer',role:'undo'},{label:'Refazer',role:'redo'},{type:'separator'},{label:'Recortar',role:'cut'},{label:'Copiar',role:'copy'},{label:'Colar',role:'paste'},{label:'Colar sem formatação',role:'pasteAndMatchStyle'},{label:'Selecionar tudo',role:'selectAll'}]};
-  const view={label:'Exibir',submenu:[{label:'Aumentar',role:'zoomIn'},{label:'Diminuir',role:'zoomOut'},{label:'Tamanho original',role:'resetZoom'},{type:'separator'},{label:'Tela cheia',role:'togglefullscreen'}]};
-  const mac=process.platform==='darwin'?[{label:'Carrossell',submenu:[{role:'about',label:'Sobre o Carrossell'},{type:'separator'},{role:'hide',label:'Ocultar'},{role:'quit',label:'Sair'}]}]:[];
-  return Menu.buildFromTemplate([...mac,edit,view,{label:'Janela',submenu:[{label:'Minimizar',role:'minimize'},{label:'Fechar',role:'close'},{type:'separator'},{label:'Sair',role:'quit'}]}]);
+  const edit={label:ui('Editar'),submenu:[{label:ui('Desfazer'),role:'undo'},{label:ui('Refazer'),role:'redo'},{type:'separator'},{label:ui('Recortar'),role:'cut'},{label:ui('Copiar'),role:'copy'},{label:ui('Colar'),role:'paste'},{label:ui('Colar sem formatação'),role:'pasteAndMatchStyle'},{label:ui('Selecionar tudo'),role:'selectAll'}]};
+  const view={label:ui('Exibir'),submenu:[{label:ui('Aumentar'),role:'zoomIn'},{label:ui('Diminuir'),role:'zoomOut'},{label:ui('Tamanho original'),role:'resetZoom'},{type:'separator'},{label:ui('Tela cheia'),role:'togglefullscreen'}]};
+  const mac=process.platform==='darwin'?[{label:'Carrossell',submenu:[{role:'about',label:ui('Sobre o Carrossell')},{type:'separator'},{role:'hide',label:ui('Ocultar')},{role:'quit',label:ui('Sair')}]}]:[];
+  return Menu.buildFromTemplate([...mac,edit,view,{label:ui('Janela'),submenu:[{label:ui('Minimizar'),role:'minimize'},{label:ui('Fechar'),role:'close'},{type:'separator'},{label:ui('Sair'),role:'quit'}]}]);
 }
 app.on('second-instance',(_event,argv)=>{if(argv.includes(PILOT_FLAG))void runtime?.autopilot?.step();else if(argv.includes(SCHEDULE_FLAG))void publishDue?.();else if(!argv.includes(BACKGROUND))void showUI?.();});
 // Link de conexão do Instagram: só https do Composio, Instagram ou Facebook abre no navegador.
@@ -96,7 +98,7 @@ app.whenReady().then(async()=>{
   if(headless)app.dock?.hide();
   Menu.setApplicationMenu(appMenu());
   const profiles=await new Profiles(join(app.getPath('userData'),'library')).init();const store=await profiles.store();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
-  codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
+  codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message:translateUi(runtime?.locale?.()||'pt-BR',message)}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
   const render=createRenderer({folder:join(app.getPath('userData'),'render'),fontsDir:join(root,'node_modules','@fontsource','archivo','files'),failFirst:!app.isPackaged?Number(process.env.PACTO_RENDER_FAIL_FIRST||0):0});
   // Só em desenvolvimento: a prova de renderização cria renderizadores próprios com falhas forçadas.
   if(!app.isPackaged&&process.env.PACTO_PROOF_RENDER==='1')globalThis.__pactoCreateRenderer=createRenderer;
@@ -105,12 +107,12 @@ app.whenReady().then(async()=>{
   const scheduler=new OsScheduler(schedulerOptions);
   const pilotScheduler=!app.isPackaged&&process.env.PACTO_AUTOPILOT_NO_TASKS==='1'?{add:async()=>{},remove:async()=>{}}:new PilotScheduler(schedulerOptions);
   runtime=new Runtime({store,profiles,codex,knowledge,emit,instagram:{composio:options=>new Composio({...options,base:fakeComposio?`${fakeComposio}/api/v3.1`:COMPOSIO_BASE})},dialogs:{login,render,readPage,openTelegram:async raw=>{const url=new URL(raw);if(url.protocol!=='https:'||url.hostname!=='t.me')throw new Error('Link do Telegram inválido.');return shell.openExternal(url.href);},openNotice:async raw=>{const u=new URL(raw);if(u.protocol!=='https:')throw new Error('Link do aviso inválido.');return shell.openExternal(u.href);},cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),secrets:createSecrets(app.getPath('userData')),scheduler,openAuth,toJpeg:pngs=>jpegCards(pngs,nativeImage),
-    async savePdf(project,bytes){const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'documento';const result=await dialog.showSaveDialog(window,{title:'Salvar PDF',defaultPath:`${suggested}.pdf`,filters:[{name:'PDF',extensions:['pdf']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,bytes);return {path:result.filePath};},
-    async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:'Exportar carrossel',defaultPath:`${suggested}.zip`,filters:[{name:'Carrossel ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
+    async savePdf(project,bytes){const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'documento';const result=await dialog.showSaveDialog(window,{title:ui('Salvar PDF'),defaultPath:`${suggested}.pdf`,filters:[{name:'PDF',extensions:['pdf']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,bytes);return {path:result.filePath};},
+    async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:ui('Exportar carrossel'),defaultPath:`${suggested}.zip`,filters:[{name:ui('Carrossel ZIP'),extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
     async normalizeFiles(files){return normalizeFiles(files,nativeImage);},
-    async chooseFolder(){const result=await dialog.showOpenDialog(window,{title:'Escolha a pasta sincronizada (ex.: Meu Drive)',properties:['openDirectory','createDirectory']});return result.canceled?null:result.filePaths[0]||null;},
+    async chooseFolder(){const result=await dialog.showOpenDialog(window,{title:ui('Escolha a pasta sincronizada (ex.: Meu Drive)'),properties:['openDirectory','createDirectory']});return result.canceled?null:result.filePaths[0]||null;},
     async openCourse(url){const u=new URL(url);if(u.protocol!=='https:'||u.hostname!=='www.youtube.com')throw new Error('Link do curso inválido.');await shell.openExternal(u.href);},
-    async importReference(){const result=await dialog.showOpenDialog(window,{title:'Importar referência visual',properties:['openFile'],filters:[{name:'Imagens',extensions:['png','jpg','jpeg','webp']}]});if(result.canceled||!result.filePaths[0])return {cancelled:true};const file=result.filePaths[0];if((await stat(file)).size>20*1024*1024)throw new Error('Use uma referência de até 20 MB.');const bytes=await readFile(file);if(nativeImage.createFromBuffer(bytes).isEmpty())throw new Error('Não foi possível ler a imagem.');const extension=extname(file).toLowerCase();const mime=extension==='.png'?'png':extension==='.webp'?'webp':'jpeg';const ref=validateReference({name:file.split(/[\\/]/).at(-1),dataUrl:`data:image/${mime};base64,${bytes.toString('base64')}`});return ref;}
+    async importReference(){const result=await dialog.showOpenDialog(window,{title:ui('Importar referência visual'),properties:['openFile'],filters:[{name:ui('Imagens'),extensions:['png','jpg','jpeg','webp']}]});if(result.canceled||!result.filePaths[0])return {cancelled:true};const file=result.filePaths[0];if((await stat(file)).size>20*1024*1024)throw new Error('Use uma referência de até 20 MB.');const bytes=await readFile(file);if(nativeImage.createFromBuffer(bytes).isEmpty())throw new Error('Não foi possível ler a imagem.');const extension=extname(file).toLowerCase();const mime=extension==='.png'?'png':extension==='.webp'?'webp':'jpeg';const ref=validateReference({name:file.split(/[\\/]/).at(-1),dataUrl:`data:image/${mime};base64,${bytes.toString('base64')}`});return ref;}
   }});
   const telegramBase=!app.isPackaged&&/^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.PACTO_TELEGRAM_URL||'')?process.env.PACTO_TELEGRAM_URL:undefined;
   runtime.autopilot=new Autopilot({runtime,state:await new AutopilotStore(app.getPath('userData')).init(),secrets:runtime.dialogs.secrets,scheduler:pilotScheduler,clientFactory:token=>new TelegramClient({token,...(telegramBase?{base:telegramBase}:{})})});
@@ -131,13 +133,13 @@ app.whenReady().then(async()=>{
     if(action==='installUpdate'){updates?.install();return {ok:true};}
     // Cores dos botões de janela acompanham o tema e a paleta escolhidos no app.
     if(action==='titleBar'){const color=String(args?.color||''),symbol=String(args?.symbol||'');if(process.platform!=='darwin'&&/^#[0-9a-f]{6}$/i.test(color)&&/^#[0-9a-f]{6}$/i.test(symbol))window.setTitleBarOverlay({color,symbolColor:symbol,height:55});return {ok:true};}
-    try{return await runtime.request(action,args);}catch(error){throw safeError(error);}
+    try{const result=await runtime.request(action,args);if(action==='saveSettings'&&(args?.language==='es'||args?.language==='pt-BR')){Menu.setApplicationMenu(appMenu());tray?.setLocale?.(args.language);}return result;}catch(error){throw safeError(error);}
   });
   try{control=await startControl({userData:app.getPath('userData'),runtime,allowed:ACTIONS,version:app.getVersion(),headless,info:()=>({window:windowOpen()&&window.isVisible()}),onActivity:()=>{lastActivity=Date.now();}});}
   catch(error){console.error(`Controle local indisponível: ${safeError(error).message}`);}
   // Posts agendados vencidos (tarefa do sistema ou computador que estava desligado) e métricas do Instagram.
   publishDue=async()=>{
-    try{const r=await runtime.request('publishDue');if(r.published.length)notify('Carrossell · post publicado',r.published.length>1?`${r.published.length} carrosséis agendados foram publicados no Instagram.`:'O carrossel agendado foi publicado no Instagram.');for(const f of r.failed)notify('Carrossell · o post agendado não saiu',f.error);if(r.late.length)notify('Carrossell · post agendado atrasado','O computador estava desligado na hora marcada. Abra o Carrossell para postar agora ou cancelar.');}
+    try{const r=await runtime.request('publishDue');if(r.published.length)notify(ui('Carrossell · post publicado'),r.published.length>1?ui(`${r.published.length} carrosséis agendados foram publicados no Instagram.`):ui('O carrossel agendado foi publicado no Instagram.'));for(const f of r.failed)notify(ui('Carrossell · o post agendado não saiu'),ui(f.error));if(r.late.length)notify(ui('Carrossell · post agendado atrasado'),ui('O computador estava desligado na hora marcada. Abra o Carrossell para postar agora ou cancelar.'));}
     catch(error){console.error(`Agendados: ${safeError(error).message}`);}
     if(headless&&process.argv.includes(SCHEDULE_FLAG)&&!windowOpen()&&!control?.clients()&&!runtime.job&&!runtime.autopilot?.keepAlive())app.quit();
   };
@@ -154,17 +156,18 @@ app.whenReady().then(async()=>{
     updates=startUpdates({app,emit,notify:(body,title='Carrossell · atualização pronta')=>{if(Notification.isSupported())new Notification({title,icon:join(root,'resources','branding','icon-256.png'),body}).show();},open:url=>{const u=new URL(url);if(u.protocol==='https:'&&u.hostname==='github.com'||u.protocol==='http:'&&u.hostname==='127.0.0.1')return shell.openExternal(u.href);}});
     // Lembrete diário em qualquer perfil com resultado pendente; o primeiro encontrado avisa.
     let remind='',remindStore=store,remindProfile=profiles.active;for(const p of profiles.list()){const s=await profiles.store(p.id).catch(()=>null);const r=s&&reminder(s.state().projects,s.state().settings);if(r){remind=profiles.list().length>1?`${p.name}: ${r}`:r;remindStore=s;remindProfile=p.id;break;}}
-    if(remind&&Notification.isSupported()){const note=new Notification({title:'Carrossell · hora de medir',icon:join(root,'resources','branding','icon-256.png'),body:remind});note.on('click',async()=>{window?.show();window?.focus();if(remindProfile!==profiles.active)await runtime.request('switchProfile',{id:remindProfile}).then(state=>emit({type:'state',state})).catch(()=>{});emit({type:'navigate',view:'rhythm'});});note.show();await remindStore.saveSettings({lastReminderAt:new Date().toISOString()});}
+    if(remind&&Notification.isSupported()){const note=new Notification({title:ui('Carrossell · hora de medir'),icon:join(root,'resources','branding','icon-256.png'),body:translateUi(remindStore.state().settings?.language,remind)});note.on('click',async()=>{window?.show();window?.focus();if(remindProfile!==profiles.active)await runtime.request('switchProfile',{id:remindProfile}).then(state=>emit({type:'state',state})).catch(()=>{});emit({type:'navigate',view:'rhythm'});});note.show();await remindStore.saveSettings({lastReminderAt:new Date().toISOString()});}
   };
   // Windows: com o piloto ligado o app segue rodando sem janela; a bandeja abre, procura atualização e sai.
-  if(process.platform==='win32')tray=createTray({icon:join(root,'resources','branding',process.platform==='win32'?'carrossell.ico':'icon-32.png'),show:()=>void showUI?.(),checkUpdates:()=>updates?updates.check():notify('Carrossell · atualização','Abra o Carrossell para procurar atualização.'),quit:()=>app.quit()});
+  if(process.platform==='win32')tray=createTray({icon:join(root,'resources','branding',process.platform==='win32'?'carrossell.ico':'icon-32.png'),locale:runtime.locale(),show:()=>void showUI?.(),checkUpdates:()=>updates?updates.check():notify(ui('Carrossell · atualização'),ui('Abra o Carrossell para procurar atualização.')),quit:()=>app.quit()});
+  Menu.setApplicationMenu(appMenu());
   if(!headless)await showUI();
   void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
 }).catch(error=>{dialog.showErrorBox('Não foi possível abrir o Carrossell',safeError(error).message);app.quit();});
 // Fechar a janela com a CLI conectada ou trabalho rodando deixa o app em segundo plano até terminar.
 app.on('window-all-closed',()=>{
   if(control?.clients()||runtime?.job||runtime?.autopilot?.keepAlive()){
-    if(!warnedBackground&&tray){warnedBackground=true;notify('Carrossell continua aberto','O piloto automático segue funcionando. Para sair, clique com o botão direito no ícone do Carrossell perto do relógio e escolha Sair.');}
+    if(!warnedBackground&&tray){warnedBackground=true;notify(ui('Carrossell continua aberto'),ui('O piloto automático segue funcionando. Para sair, clique com o botão direito no ícone do Carrossell perto do relógio e escolha Sair.'));}
     return;
   }
   app.quit();

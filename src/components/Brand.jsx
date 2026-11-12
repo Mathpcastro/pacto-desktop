@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bot, Camera, Check, FileText, GraduationCap, Image as ImageIcon, ImagePlus, Palette as PaletteIcon, Plus, RefreshCw, Scissors, Sparkles, Square, Trash2, UserRound, X } from "lucide-react";
 import { palette, slideHtml } from "../../core/templates.mjs";
+import { translateUi } from "../../core/i18n.mjs";
 import { Grow, Markdown, Spinner, TEMPLATE_FONTS, TemplateFrame } from "../ui.jsx";
 import AgentSetup from "./AgentSetup.jsx";
 import { InstagramLogo, InstagramSummary } from "./Instagram.jsx";
@@ -176,9 +177,10 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
   const pendingScenes = media.scenes.filter((s) => s.status === "pending").length;
   const tweet = slideHtml({
     style: "tweet",
-    slide: { title: "Assim o seu perfil aparece no estilo Tweet." },
+    slide: { title: translateUi(state.settings?.language, "Assim o seu perfil aparece no estilo Tweet.") },
     brand: { ...brand, name: name || brand.name, handle: handle || brand.handle, verified: media.verified !== false },
     fonts: TEMPLATE_FONTS,
+    locale: state.settings?.language === "es" ? "es" : "pt-BR",
   });
   const busyMedia = ["scenes", "scene", "cutout"].includes(working);
   const [tab, setTabState] = useState(() => {

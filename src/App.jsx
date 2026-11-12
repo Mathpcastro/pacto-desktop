@@ -19,9 +19,10 @@ import StoriesWorkspace from "./components/StoriesWorkspace.jsx";
 import { CourseContext, LessonPlayer, formatMoment } from "./course.jsx";
 import { rhythm } from "../core/rhythm.mjs";
 import { Spinner, usePopover } from "./ui.jsx";
+import { setLocale, useDomLocale } from "./i18n.js";
 import brandMark from "./assets/brand-mark.svg";
 
-const DEFAULT_PREFERENCES = { theme: "light", palette: "carrossell", scale: 100 };
+const DEFAULT_PREFERENCES = { theme: "light", palette: "carrossell", scale: 100, language: "pt-BR" };
 const PALETTES = [
   ["carrossell", "Carrossell", "#ff5a36"],
   ["ocean", "Oceano", "#28769c"],
@@ -37,6 +38,7 @@ function readPreferences() {
       theme: ["light", "dark"].includes(saved.theme) ? saved.theme : legacyTheme === "dark" ? "dark" : DEFAULT_PREFERENCES.theme,
       palette: PALETTES.some(([id]) => id === saved.palette) ? saved.palette : DEFAULT_PREFERENCES.palette,
       scale: [100, 105, 110, 115, 120, 125].includes(saved.scale) ? saved.scale : DEFAULT_PREFERENCES.scale,
+      language: saved.language === "es" ? "es" : "pt-BR",
     };
   } catch {
     return { ...DEFAULT_PREFERENCES };
@@ -162,7 +164,19 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [hasProfile, available]);
-  const set = (patch) => setPreferences((current) => ({ ...current, ...patch }));
+  const set = (patch) => setPreferences((current) => {
+    const next = { ...current, ...patch };
+    if (patch.language) setLocale(next.language);
+    return next;
+  });
+  setLocale(preferences.language);
+  useDomLocale(preferences.language);
+  useEffect(() => {
+    if (!available || loading || !state.settings) return undefined;
+    if ((state.settings.language === "es" ? "es" : "pt-BR") === preferences.language) return undefined;
+    request("saveSettings", { language: preferences.language }).catch(() => {});
+    return undefined;
+  }, [available, loading, preferences.language, state.settings?.language, state.profileId]);
   const commands = useMemo(
     () => [
       ...projectCommands.map((c) => (editing ? c : { ...c, hidden: true })),
@@ -221,6 +235,17 @@ export default function App() {
             {PALETTES.map(([id, label, color]) => (
               <button key={id} aria-pressed={preferences.palette === id} aria-label={label} title={label} onClick={() => set({ palette: id })}>
                 <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 99, background: color, verticalAlign: "-1px" }} />
+              </button>
+            ))}
+          </div>
+          <div className="head">Idioma</div>
+          <div className="seg">
+            {[
+              ["pt-BR", "Português"],
+              ["es", "Español"],
+            ].map(([id, label]) => (
+              <button key={id} aria-pressed={preferences.language === id} onClick={() => set({ language: id })}>
+                {label}
               </button>
             ))}
           </div>
