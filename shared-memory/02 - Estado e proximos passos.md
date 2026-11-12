@@ -354,3 +354,9 @@ O aviso público não foi gravado: a escrita no pacto-releases respondeu 403.
 ## 12/11/2026 — Release 1.11.1 publicada
 
 [[57 - Release Carrossell 1.11.1]]: no Mac, abrir o app com o piloto rodando em segundo plano agora mostra a janela; build do Mac com assinatura ad-hoc válida. 234 testes, build e prova em Macs do GitHub Actions (macOS 15 e 26). Latest, feed, downloads e SHA-512 verificados. Aviso v1-11-1 publicado.
+
+## 12/11/2026 — Release 1.12.0 publicada
+
+[[58 - Release Carrossell 1.12.0]]: instalador .deb para Ubuntu, sem mudança na interface de Windows e Mac.
+Latest com 14 arquivos, feed Linux, SHA-512 e os seis jobs do workflow 43256976349 conferidos.
+O aviso não foi publicado: quem já usa Windows ou Mac não vê diferença.
