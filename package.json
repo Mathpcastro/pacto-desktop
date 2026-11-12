@@ -71,6 +71,13 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist"
     },
+    "linux": {
+      "target": "deb",
+      "icon": "resources/branding/icon-512.png",
+      "category": "Office",
+      "maintainer": "Matheus Castro",
+      "artifactName": "Carrossell-${version}-linux.${ext}"
+    },
     "dmg": {
       "title": "Carrossell ${version}"
     },

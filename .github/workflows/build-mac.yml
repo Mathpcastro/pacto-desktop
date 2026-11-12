@@ -61,7 +61,7 @@ jobs:
             gh release create "$tag" \
               --repo "$RELEASE_REPO" \
               --title "Carrossell $version" \
-              --notes "Carrossell $version para Windows e Mac." \
+              --notes "Carrossell $version para Windows, Mac e Linux." \
               --draft \
               --target "$target"
           fi
@@ -192,8 +192,57 @@ jobs:
             "release/PACTO-Windows.exe"
           if ($LASTEXITCODE -ne 0) { throw "Could not upload Windows release files." }
 
+  linux:
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Ensure the Linux Electron binary is installed
+        run: test -x node_modules/electron/dist/electron || node node_modules/electron/install.js
+      - run: npm test
+      - run: npm run build
+      - name: Package
+        run: npx electron-builder --linux deb --x64 --publish never
+      - name: Verify Linux updater files
+        env:
+          VERSION: ${{ needs.prepare-release.outputs.version }}
+        run: |
+          set -euo pipefail
+          deb="release/Carrossell-${VERSION}-linux.deb"
+          test -f "$deb"
+          feed=$(cat release/latest-linux.yml)
+          if ! grep -q "Carrossell-${VERSION}-linux.deb" <<<"$feed"; then
+            echo "::error::latest-linux.yml does not point to version $VERSION"
+            exit 1
+          fi
+          if ! grep -Eq "^version: ${VERSION}([[:space:]]|$)" <<<"$feed"; then
+            echo "::error::latest-linux.yml version is not $VERSION"
+            exit 1
+          fi
+      - name: Upload Linux installer and updater feed directly to the draft release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
+          VERSION: ${{ needs.prepare-release.outputs.version }}
+        run: |
+          set -euo pipefail
+          deb="release/Carrossell-${VERSION}-linux.deb"
+          cp "$deb" "release/Carrossell-Linux.deb"
+          gh release upload "$RELEASE_TAG" \
+            --repo "$RELEASE_REPO" \
+            --clobber \
+            "$deb" \
+            "release/latest-linux.yml" \
+            "release/Carrossell-Linux.deb"
+
   publish:
-    needs: [prepare-release, mac, windows]
+    needs: [prepare-release, mac, windows, linux]
     runs-on: ubuntu-latest
     steps:
       - name: Verify all platform assets before publishing
@@ -217,6 +266,9 @@ jobs:
             "Carrossell-Mac-Intel.dmg"
             "PACTO-Mac-AppleSilicon.dmg"
             "PACTO-Mac-Intel.dmg"
+            "Carrossell-${VERSION}-linux.deb"
+            "Carrossell-Linux.deb"
+            "latest-linux.yml"
           )
           for asset in "${required[@]}"; do
             if ! grep -Fxq "$asset" <<<"$assets"; then
