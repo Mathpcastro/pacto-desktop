@@ -21,6 +21,7 @@ import { rhythm } from "../core/rhythm.mjs";
 import { Spinner, usePopover } from "./ui.jsx";
 import { setLocale, useDomLocale } from "./i18n.js";
 import brandMark from "./assets/brand-mark.svg";
+import { PRIVACY_URL, TERMS_URL, TERMS_VERSION, parseLicenseStatus, warningMessageKind } from "../core/license.mjs";
 
 const DEFAULT_PREFERENCES = { theme: "light", palette: "carrossell", scale: 100, language: "pt-BR" };
 const PALETTES = [
@@ -49,6 +50,11 @@ export default function App() {
   const runtime = usePacto();
   const { state, request, loading, error, clearError, activity, update, available, pending, isPending, bootstrapFailed } = runtime;
   const [preferences, setPreferences] = useState(readPreferences);
+  const [licenseStatus, setLicenseStatus] = useState(null);
+  const [licenseOpen, setLicenseOpen] = useState(false);
+  const [licenseEmail, setLicenseEmail] = useState("");
+  const [licenseAccepted, setLicenseAccepted] = useState(false);
+  const [licenseBusy, setLicenseBusy] = useState(false);
   const [view, setView] = useState("home");
   const [projectId, setProjectId] = useState(null);
   const [setup, setSetup] = useState(null);
@@ -89,6 +95,17 @@ export default function App() {
   const hasProfile = Boolean(state.profile);
   const pendingResults = rhythm(state.projects, state.settings).pending.length;
   const pendingReviews = (state.autopilot?.jobs || []).filter(job => job.status === "ready").length;
+  const licenseKind = licenseStatus ? warningMessageKind(licenseStatus) : null;
+  const licenseMessages = {
+    migration: "A migração para o novo sistema de licenças vai até 11/01/2027. Ative sua compra quando puder; o app continua disponível.",
+    not_activated: "Ative sua licença com o e-mail da compra. O Carrossell continua funcionando enquanto isso.",
+    offline: "Não foi possível conectar à licença. Se esta for a primeira ativação, conecte-se à internet; o app continua utilizável.",
+    device_limit: "Esta licença já está ativa em 3 dispositivos. Fale com o suporte para trocar um dispositivo.",
+    rate_limited: "Muitas tentativas. Aguarde um pouco e tente novamente.",
+    grace: "Não foi possível revalidar. Você está no período de graça e o app continua funcionando.",
+    revalidation_required: "A licença precisa de nova validação. Conecte-se à internet quando puder; o app continua funcionando.",
+    revalidation_failed: "Não foi possível revalidar agora. Tente novamente com a internet disponível; o app continua funcionando.",
+  };
   const radarOpen = ["ideas", "review", "pilot"].includes(view);
   const editing = view === "studio" && project;
   const goHome = () => {
@@ -99,6 +116,51 @@ export default function App() {
   const openProject = (id) => {
     setProjectId(id);
     setView("studio");
+  };
+  useEffect(() => {
+    let active = true;
+    if (!window.pacto?.request) return undefined;
+    window.pacto.request("licenseStatus").then((value) => {
+      if (!active) return;
+      const parsed = parseLicenseStatus(value);
+      setLicenseStatus(parsed);
+      if (warningMessageKind(parsed)) setLicenseOpen(true);
+    }).catch(() => {
+      if (active) setLicenseStatus(parseLicenseStatus({ activated: false, code: "offline" }));
+    });
+    return () => { active = false; };
+  }, []);
+  const openLicenseLink = (which) => {
+    window.pacto?.request("openLicenseLink", { which }).catch(() => {});
+  };
+  const submitLicense = async (event) => {
+    event.preventDefault();
+    if (!licenseAccepted || !licenseEmail.trim() || licenseBusy) return;
+    setLicenseBusy(true);
+    try {
+      const value = await window.pacto.request("activateLicense", {
+        email: licenseEmail, accepted: true, termsVersion: TERMS_VERSION, acceptedAt: new Date().toISOString(),
+      });
+      const parsed = parseLicenseStatus(value);
+      setLicenseStatus(parsed);
+      if (parsed.activated && !warningMessageKind(parsed)) setLicenseOpen(false);
+    } catch {
+      setLicenseStatus(parseLicenseStatus({ activated: false, code: "offline" }));
+    } finally {
+      setLicenseBusy(false);
+    }
+  };
+  const retryLicense = async () => {
+    if (!licenseStatus?.activated) { setLicenseOpen(true); return; }
+    setLicenseBusy(true);
+    try {
+      const value = await window.pacto.request("revalidateLicense");
+      setLicenseStatus(parseLicenseStatus(value));
+    } catch {
+      setLicenseStatus((current) => parseLicenseStatus({ ...current, code: "offline" }));
+    } finally {
+      setLicenseBusy(false);
+    }
   };
   useEffect(() => {
     const go = (event) => {
@@ -380,6 +442,15 @@ export default function App() {
             </header>
           )}
           {!editing && hasProfile && available && !setup && <NoticeBanner notices={state.notices} request={request} onGo={goNotice} />}
+          {licenseKind && (
+            <div className="notice-strip info" role="status">
+              <AlertCircle size={16} />
+              <span>{licenseMessages[licenseKind]}</span>
+              <button className="btn small" onClick={() => licenseStatus?.activated ? retryLicense() : setLicenseOpen(true)} disabled={licenseBusy}>
+                {licenseStatus?.activated ? "Tentar novamente" : "Abrir ativação"}
+              </button>
+            </div>
+          )}
           {editing ? null : update?.status === "manual" ? (
             <div className="notice-strip info" role="status">
               <RefreshCw size={16} />
@@ -400,8 +471,34 @@ export default function App() {
             <div />
           )}
           {body}
-        </div>
-        {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+          {licenseOpen && (
+            <Dialog title="Ativar licença" onClose={() => setLicenseOpen(false)}>
+              <form className="dialog-fields" onSubmit={submitLicense}>
+                <p>Informe o e-mail usado na compra. A primeira ativação precisa de internet.</p>
+                <label>
+                  <span>E-mail da compra</span>
+                  <input type="email" autoComplete="email" value={licenseEmail} onChange={(event) => setLicenseEmail(event.target.value)} required />
+                </label>
+                <label className="check">
+                  <input type="checkbox" checked={licenseAccepted} onChange={(event) => setLicenseAccepted(event.target.checked)} required />
+                  <span>Li e aceito os Termos de Uso e o Aviso de Privacidade</span>
+                </label>
+                <p className="hint">
+                  <a href={TERMS_URL} onClick={(event) => { event.preventDefault(); openLicenseLink("termos"); }}>Termos de Uso</a>
+                  {" · "}
+                  <a href={PRIVACY_URL} onClick={(event) => { event.preventDefault(); openLicenseLink("privacidade"); }}>Aviso de Privacidade</a>
+                </p>
+                {licenseKind && <p role="status">{licenseMessages[licenseKind]}</p>}
+                <div className="dialog-footer">
+                  <button type="button" className="btn" onClick={() => setLicenseOpen(false)}>Fechar</button>
+                  <button type="submit" className="btn primary" disabled={!licenseAccepted || !licenseEmail.trim() || licenseBusy}>
+                    {licenseBusy ? "Ativando…" : "Ativar"}
+                  </button>
+                </div>
+              </form>
+            </Dialog>
+          )}
+                  {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
         {capabilities && <Capabilities initialGoal={capabilityGoal} onClose={() => setCapabilities(false)} onAction={discoverAction} onAgents={openAgents} onNotice={setNotice} />}
         {agentsOpen && <AgentModal key={agentProvider} initialAgent={agentProvider} request={request} isPending={isPending} onNotice={setNotice} onClose={() => setAgentsOpen(false)} />}
         {projectPicker && <Dialog title={projectPicker === "stories" ? "De qual carrossel vamos preparar os stories?" : projectPicker === "publish" ? "Qual carrossel você quer revisar e publicar?" : "Qual conteúdo você quer baixar?"} onClose={() => setProjectPicker(null)} wide>

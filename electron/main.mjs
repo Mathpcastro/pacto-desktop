@@ -28,6 +28,8 @@ import { readPage } from './page.mjs';
 import { startControl } from '../core/control.mjs';
 import { cliInfo, installCli } from './cli-install.mjs';
 import { translateUi } from '../core/i18n.mjs';
+import { PRIVACY_URL, TERMS_URL } from '../core/license.mjs';
+import { LicenseService } from './license.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 // 0.2.1 identifies itself as pacto-desktop, including the packaged Windows app.
 // Pin that historical directory before changing the commercial display name.
@@ -40,7 +42,7 @@ const headless=process.argv.includes(BACKGROUND);
 const primary=app.requestSingleInstanceLock();
 if(!primary)app.quit();
 const IDLE_MS=Number(process.env.PACTO_IDLE_MS)||10*60*1000;
-let window,runtime,codex,updates,control,showUI,publishDue,tray,warnedBackground=false,awaitingLogin=false,lastActivity=Date.now();
+let window,runtime,codex,updates,control,licenseService,showUI,publishDue,tray,warnedBackground=false,awaitingLogin=false,lastActivity=Date.now();
 function emit(event){lastActivity=Date.now();if(window&&!window.isDestroyed())window.webContents.send('pacto:event',event);control?.broadcast(event);}
 const windowOpen=()=>Boolean(window&&!window.isDestroyed());
 function authUrlAllowed(raw){try{const u=new URL(raw);return u.protocol==='https:'&&['auth.openai.com','auth0.openai.com','chatgpt.com','auth.chatgpt.com'].includes(u.hostname);}catch{return false;}}
@@ -100,7 +102,9 @@ app.whenReady().then(async()=>{
   if(!primary)return;
   if(headless)app.dock?.hide();
   Menu.setApplicationMenu(appMenu());
-  const profiles=await new Profiles(join(app.getPath('userData'),'library')).init();const store=await profiles.store();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
+  const userData=app.getPath('userData');const secrets=createSecrets(userData);licenseService=new LicenseService({store:secrets,userData,appVersion:app.getVersion()});
+  setInterval(()=>{void licenseService?.status().catch(()=>{});},60*60*1000).unref?.();
+  const profiles=await new Profiles(join(userData,'library')).init();const store=await profiles.store();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
   codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message:translateUi(runtime?.locale?.()||'pt-BR',message)}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
   const render=createRenderer({folder:join(app.getPath('userData'),'render'),fontsDir:join(root,'node_modules','@fontsource','archivo','files'),failFirst:!app.isPackaged?Number(process.env.PACTO_RENDER_FAIL_FIRST||0):0});
   // Só em desenvolvimento: a prova de renderização cria renderizadores próprios com falhas forçadas.
@@ -109,7 +113,7 @@ app.whenReady().then(async()=>{
   const schedulerOptions={exe:process.execPath,args:app.isPackaged?[BACKGROUND]:[root,BACKGROUND],run:(cmd,args)=>run(cmd,args,{windowsHide:true}),writeFile:async(file,data)=>{await mkdir(dirname(file),{recursive:true});await writeFile(file,data);},rm:file=>rm(file,{force:true}),tempDir:app.getPath('temp'),agentsDir:join(homedir(),'Library','LaunchAgents'),uid:process.getuid?.()??0};
   const scheduler=new OsScheduler(schedulerOptions);
   const pilotScheduler=!app.isPackaged&&process.env.PACTO_AUTOPILOT_NO_TASKS==='1'?{add:async()=>{},remove:async()=>{}}:new PilotScheduler(schedulerOptions);
-  runtime=new Runtime({store,profiles,codex,knowledge,emit,instagram:{composio:options=>new Composio({...options,base:fakeComposio?`${fakeComposio}/api/v3.1`:COMPOSIO_BASE})},dialogs:{login,render,readPage,openTelegram:async raw=>{const url=new URL(raw);if(url.protocol!=='https:'||url.hostname!=='t.me')throw new Error('Link do Telegram inválido.');return shell.openExternal(url.href);},openNotice:async raw=>{const u=new URL(raw);if(u.protocol!=='https:')throw new Error('Link do aviso inválido.');return shell.openExternal(u.href);},cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),secrets:createSecrets(app.getPath('userData')),scheduler,openAuth,toJpeg:pngs=>jpegCards(pngs,nativeImage),
+  runtime=new Runtime({store,profiles,codex,knowledge,emit,instagram:{composio:options=>new Composio({...options,base:fakeComposio?`${fakeComposio}/api/v3.1`:COMPOSIO_BASE})},dialogs:{login,render,readPage,openTelegram:async raw=>{const url=new URL(raw);if(url.protocol!=='https:'||url.hostname!=='t.me')throw new Error('Link do Telegram inválido.');return shell.openExternal(url.href);},openNotice:async raw=>{const u=new URL(raw);if(u.protocol!=='https:')throw new Error('Link do aviso inválido.');return shell.openExternal(u.href);},cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),secrets,scheduler,openAuth,toJpeg:pngs=>jpegCards(pngs,nativeImage),
     async savePdf(project,bytes){const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'documento';const result=await dialog.showSaveDialog(window,{title:ui('Salvar PDF'),defaultPath:`${suggested}.pdf`,filters:[{name:'PDF',extensions:['pdf']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,bytes);return {path:result.filePath};},
     async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:ui('Exportar carrossel'),defaultPath:`${suggested}.zip`,filters:[{name:ui('Carrossel ZIP'),extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
     async normalizeFiles(files){return normalizeFiles(files,nativeImage);},
@@ -132,10 +136,15 @@ app.whenReady().then(async()=>{
   };
   setTimeout(()=>void noticeTick(),process.env.PACTO_NOTICES_URL?1500:20000).unref?.();setInterval(()=>void noticeTick(),60*60*1000).unref?.();
   ipcMain.handle('pacto:request',async(event,action,args)=>{
-    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'||action==='titleBar'))throw new Error('Solicitação não permitida.');
+    const licenseActions=['licenseStatus','activateLicense','revalidateLicense','openLicenseLink'];
+    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'||action==='titleBar'||licenseActions.includes(action)))throw new Error('Solicitação não permitida.');
     if(action==='installUpdate'){updates?.install();return {ok:true};}
     // Cores dos botões de janela acompanham o tema e a paleta escolhidos no app.
     if(action==='titleBar'){const color=String(args?.color||''),symbol=String(args?.symbol||'');if(process.platform!=='darwin'&&/^#[0-9a-f]{6}$/i.test(color)&&/^#[0-9a-f]{6}$/i.test(symbol))window.setTitleBarOverlay({color,symbolColor:symbol,height:55});return {ok:true};}
+    if(action==='licenseStatus')return licenseService.status();
+    if(action==='activateLicense')return licenseService.activateLicense(args);
+    if(action==='revalidateLicense')return licenseService.revalidateLicense();
+    if(action==='openLicenseLink'){const url=args?.which==='termos'?TERMS_URL:args?.which==='privacidade'?PRIVACY_URL:null;if(!url)throw new Error('Link da licença inválido.');await shell.openExternal(url);return {ok:true};}
     try{const result=await runtime.request(action,args);if(action==='saveSettings'&&(args?.language==='es'||args?.language==='pt-BR')){Menu.setApplicationMenu(appMenu());tray?.setLocale?.(args.language);}return result;}catch(error){throw safeError(error);}
   });
   try{control=await startControl({userData:app.getPath('userData'),runtime,allowed:ACTIONS,version:app.getVersion(),headless,info:()=>({window:windowOpen()&&window.isVisible()}),onActivity:()=>{lastActivity=Date.now();}});}
