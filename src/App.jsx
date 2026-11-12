@@ -498,7 +498,8 @@ export default function App() {
               </form>
             </Dialog>
           )}
-                  {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+        </div>
+        {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
         {capabilities && <Capabilities initialGoal={capabilityGoal} onClose={() => setCapabilities(false)} onAction={discoverAction} onAgents={openAgents} onNotice={setNotice} />}
         {agentsOpen && <AgentModal key={agentProvider} initialAgent={agentProvider} request={request} isPending={isPending} onNotice={setNotice} onClose={() => setAgentsOpen(false)} />}
         {projectPicker && <Dialog title={projectPicker === "stories" ? "De qual carrossel vamos preparar os stories?" : projectPicker === "publish" ? "Qual carrossel você quer revisar e publicar?" : "Qual conteúdo você quer baixar?"} onClose={() => setProjectPicker(null)} wide>
