@@ -360,3 +360,7 @@ O aviso público não foi gravado: a escrita no pacto-releases respondeu 403.
 [[58 - Release Carrossell 1.12.0]]: instalador .deb para Ubuntu, sem mudança na interface de Windows e Mac.
 Latest com 14 arquivos, feed Linux, SHA-512 e os seis jobs do workflow 43256976349 conferidos.
 O aviso não foi publicado: quem já usa Windows ou Mac não vê diferença.
+
+## 12/11/2026 — Releases 1.13.0 e 1.13.1
+
+[[59 - Release Carrossell 1.13.1]]: a 1.13.0 (Cursor agent) trouxe a ativação da licença por e-mail e a release com 17 arquivos. A 1.13.1 corrige a ativação, que agora sempre mostra o resultado (aceite faltando, e-mail sem compra, ativada), e refaz a janela no visual do app. 246 testes, build e prova Electron passaram. Latest, feeds e SHA-512 verificados. Aviso v1-13-1 publicado. Não testado com o e-mail de um comprador real.
