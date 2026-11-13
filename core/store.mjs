@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { zipSync, strToU8, unzlibSync } from 'fflate';
 import { STYLES, FORMATS, LAYOUTS } from './templates.mjs';
-import { normalizeLocale } from './i18n.mjs';
+import { normalizeLocale, normalizeContentLanguage, CONTENT_LANGUAGES } from './i18n.mjs';
 
 export function text(value, max=30000) {
   if (typeof value!=='string'||value.length>max) throw new Error('Campo deve ser texto dentro do limite permitido.');
@@ -137,14 +137,19 @@ export class Store {
       else if(key==='driveFolder')next.driveFolder=text(patch[key],1000);
       else if(key==='firstCompletedAt'||key==='lastReminderAt')next[key]=text(patch[key],40);
       else if(key==='language'){if(patch[key]!=='pt-BR'&&patch[key]!=='es')throw new Error('Idioma inválido.');next.language=patch[key];}
+      // Idioma padrão dos carrosséis deste perfil (rotina, Telegram e o próximo carrossel criado).
+      else if(key==='contentLanguage'){if(!CONTENT_LANGUAGES.includes(patch[key]))throw new Error('Idioma do carrossel inválido.');next.contentLanguage=patch[key];}
       else throw new Error('Configuração não permitida.');
     }
     this.data.settings=next;await this.persist();return this.state();
   }
-  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId='',attachments=[],madeBy=''}, {reservedId}={}){
+  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId='',attachments=[],madeBy='',language=''}, {reservedId}={}){
+    if(language&&!CONTENT_LANGUAGES.includes(language))throw new Error('Idioma do carrossel inválido.');
+    // Sem escolha, vale o padrão do perfil; sem padrão, o idioma da tela (como antes).
+    const contentLanguage=normalizeContentLanguage(language||this.data.settings.contentLanguage,this.data.settings.language);
     const id=reservedId?validId(reservedId):randomUUID();
     if(this.data.projects.some(p=>p.id===id))return this.get(id);
-    const now=new Date().toISOString();const f=format(kind);const p={id,format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||(normalizeLocale(this.data.settings.language)==='es'?'Nuevo carrusel':'Novo carrossel'),brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',madeBy:text(String(madeBy||''),40),stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
+    const now=new Date().toISOString();const f=format(kind);const p={id,language:contentLanguage,format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||(normalizeLocale(this.data.settings.language)==='es'?'Nuevo carrusel':'Novo carrossel'),brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',madeBy:text(String(madeBy||''),40),stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
     this.data.projects.unshift(p);await this.persist();return this.get(p.id);
   }
   async saveProject(args){

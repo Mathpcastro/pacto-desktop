@@ -110,6 +110,8 @@ function Measure({ project, request, onDone }) {
   );
 }
 
+import { CONTENT_LANGUAGE_OPTIONS, contentLanguageLabel, defaultContentLanguage } from "../contentLanguages.js";
+
 export default function Home({ view, state, request, isPending, onOpen, onNotice, onShowHome, composerRef, connected, onAgents, onDiscover, onView, pendingReviews, onStories, onInstagram, target }) {
   const pop = usePopover();
   const [text, setText] = useState("");
@@ -123,6 +125,9 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
   const [editorialLine, setEditorialLine] = useState("");
   const [visualConcept, setVisualConcept] = useState("");
   const [creating, setCreating] = useState(false);
+  // Idioma do carrossel: começa no padrão do perfil e a última escolha vira o novo padrão.
+  const [pickedLanguage, setPickedLanguage] = useState(null);
+  const language = pickedLanguage || defaultContentLanguage(state);
   const [source, setSource] = useState("radar");
   const [allIdeas, setAllIdeas] = useState(false);
   const [openIdea, setOpenIdea] = useState(null);
@@ -191,7 +196,9 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
         editorialLine: more ? editorialLine.trim() : "",
         visualConcept: more ? visualConcept.trim() : "",
         attachments: format === "carrossel" ? attachments : [],
+        language,
       });
+      setPickedLanguage(null);
       if (connected) await request("generatePlan", { id: project.id }).catch(() => {});
       setText("");
       setAttachments([]);
@@ -288,9 +295,10 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
             <button role="tab" aria-selected="false" onClick={onStories}>Stories</button>
             <button role="tab" aria-selected={format === "material"} onClick={() => { setFormat("material"); if (size === 1) setSize(0); }}>Material gratuito</button>
           </div>
-          <button className="ghost-btn" aria-expanded={adjustments} aria-controls="composer-adjustments" onClick={() => { setAdjustments(!adjustments); pop.setOpen(null); }}><SlidersHorizontal size={16} />Ajustes</button>
+          <button className="ghost-btn" aria-expanded={adjustments} aria-controls="composer-adjustments" onClick={() => { setAdjustments(!adjustments); pop.setOpen(null); }}><SlidersHorizontal size={16} />Ajustes{language !== (state.settings?.language === "es" ? "es" : "pt-BR") && <span className="composer-language"> · {contentLanguageLabel(language)}</span>}</button>
         </div>
         <div className="row composer-adjustments" id="composer-adjustments" hidden={!adjustments}>
+          {menu("language", "Idioma", contentLanguageLabel(language), CONTENT_LANGUAGE_OPTIONS, setPickedLanguage)}
           {menu("format", "Formato", FORMAT_LABEL[format], FORMATS, (next) => {
             setFormat(next);
             if (next !== "carrossel" && size === 1) setSize(0);

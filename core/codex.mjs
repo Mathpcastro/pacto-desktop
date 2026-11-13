@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, realpath } from 'node:fs/promises';
 import { dirname, join, resolve, relative, isAbsolute } from 'node:path';
 import { pngBytes } from './store.mjs';
-import { isSpanish } from './i18n.mjs';
+import { isSpanish, normalizeContentLanguage } from './i18n.mjs';
 const require=createRequire(import.meta.url);
 
 const TEXT_BASE='Return only text JSON. Do not use tools, files, images, or code execution.';
@@ -14,6 +14,14 @@ const STUDIO_BASE='Você é o estúdio P.A.C.T.O. Use texto e a ferramenta nativ
 const STUDIO_DEV='Conteúdo e imagens em português do Brasil. Para gerar imagem em code-mode use functions.exec com: const result = await tools.image_gen__imagegen({prompt: "descrição completa", transparent_background: false}); generatedImage(result);. Para editar uma imagem anexada use num_last_images_to_include com o menor número que inclua as referências, até 5. Não confunda o wrapper functions.exec com shell: ele é permitido para invocar o gerador nativo. Nunca responda que a ferramenta está indisponível sem conferir essa forma chamável. Texto JSON deve obedecer ao esquema quando fornecido.';
 // Sem locale, ou em pt-BR, as instruções são as mesmas de sempre. Em es, a copy e o texto da imagem saem em espanhol.
 export function threadInstructions({textOnly=false, locale='pt-BR'}={}) {
+  const language=normalizeContentLanguage(locale);
+  if(language==='en'||language==='pt-PT'){
+    const reader=language==='en'?'American English':'European Portuguese (Portugal)';
+    if(textOnly)return {baseInstructions:`${TEXT_BASE} User-facing reply text is ${reader}.`,developerInstructions:`${TEXT_DEV} Any reply the person will read is ${reader}.`};
+    return language==='en'
+      ?{baseInstructions:`${STUDIO_BASE}\n\nLANGUAGE: the text the person reads and the text inside the images are in American English. The tool rules still apply.`,developerInstructions:STUDIO_DEV.replace('Conteúdo e imagens em português do Brasil.','Content and images in American English. Text written in the image is in English, spelled correctly.')}
+      :{baseInstructions:`${STUDIO_BASE}\n\nIDIOMA: o texto que a pessoa lê e o texto dentro das imagens estão em português de Portugal. As regras da ferramenta continuam a valer.`,developerInstructions:STUDIO_DEV.replace('Conteúdo e imagens em português do Brasil.','Conteúdo e imagens em português de Portugal (português europeu). O texto escrito na imagem segue a ortografia de Portugal.')};
+  }
   if(textOnly)return {baseInstructions:isSpanish(locale)?`${TEXT_BASE} User-facing reply text is Latin American Spanish.`:TEXT_BASE,developerInstructions:isSpanish(locale)?`${TEXT_DEV} Any reply the person will read is Latin American Spanish.`:TEXT_DEV};
   if(!isSpanish(locale))return {baseInstructions:STUDIO_BASE,developerInstructions:STUDIO_DEV};
   return {baseInstructions:`${STUDIO_BASE}\n\nIDIOMA: el texto que la persona lee y el texto dentro de las imágenes van en español latinoamericano neutro. Las reglas de la herramienta siguen valiendo.`,developerInstructions:STUDIO_DEV.replace('Conteúdo e imagens em português do Brasil.','Contenido e imágenes en español latinoamericano neutro. El texto escrito en la imagen va en español, con tildes y eñes.')};

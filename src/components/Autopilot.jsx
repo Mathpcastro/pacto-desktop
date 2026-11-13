@@ -6,6 +6,7 @@ import { formatLocale } from "../i18n.js";
 import Dialog from "./Dialog.jsx";
 import { ScheduledPosts } from "./Instagram.jsx";
 import telegramLogo from "../assets/telegram.svg";
+import { contentLanguageLabel, defaultContentLanguage } from "../contentLanguages.js";
 
 const STYLE_LABEL = { ia: "Arte com IA", tweet: "Tweet", texto: "Texto em fundo claro", textopreto: "Texto em fundo preto", fototexto: "Texto + foto", fundo: "Foto de fundo", recorte: "Capa com sua foto" };
 const DAYS = [[1, "Segunda", "Seg"], [2, "Terça", "Ter"], [3, "Quarta", "Qua"], [4, "Quinta", "Qui"], [5, "Sexta", "Sex"], [6, "Sábado", "Sáb"], [0, "Domingo", "Dom"]];
@@ -208,7 +209,7 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
           <div className="pilot-section-top"><h2 id="pilot-routine-title">Sua rotina</h2><span className={`chip ${saved.enabled ? "good" : ""}`} role="status">{saved.enabled ? "Ativa" : "Pausada"}</span></div>
           <p className="pilot-schedule">{daySummary}, às {joinPt(summary.slots.map((slot) => hourLabel(slot.time)))}</p>
           {pilot.routineError && <p className="pilot-error" role="alert">{pilot.routineError}</p>}
-          <p className="pilot-routine-meta">{perDay === 1 ? "1 carrossel por dia" : `${perDay} carrosséis por dia`} <span aria-hidden="true">·</span> {summary.approval === "auto" ? "publica sem revisão" : "com revisão antes de publicar"}</p>
+          <p className="pilot-routine-meta">{perDay === 1 ? "1 carrossel por dia" : `${perDay} carrosséis por dia`} <span aria-hidden="true">·</span> {summary.approval === "auto" ? "publica sem revisão" : "com revisão antes de publicar"} <span aria-hidden="true">·</span> {contentLanguageLabel(defaultContentLanguage(state))}</p>
           <ul className="pilot-slot-summary" aria-label="Tipo de carrossel de cada horário">{summary.slots.map((slot) => <li key={slot.time}><b>{hourLabel(slot.time)}</b><span>{typeLabel(slot)}</span></li>)}</ul>
           <div className="pilot-routine-footer"><div className="pilot-account-note"><strong>{summary.accounts.length ? summary.accounts.map((id) => { const account = accounts.find((a) => a.id === id); return account ? `@${(account.username || "conta sem nome").replace(/^@/, "")}` : "Conta indisponível"; }).join(", ") : "Nenhuma conta selecionada"}</strong><span>{summary.accounts.length ? "Contas para publicação" : "Defina na configuração"}</span></div><button className="btn" onClick={() => setDialog("routine")}>Configurar rotina</button></div>
       <div className="pilot-routine-actions">

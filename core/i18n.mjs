@@ -153,6 +153,14 @@ export function translateUi(locale, text) {
 }
 
 export function templateCopy(locale) {
+  // Rótulos desenhados nas artes seguem o idioma do carrossel (pt-BR, pt-PT, es ou en).
+  const language = normalizeContentLanguage(locale);
+  if (language === 'en') {
+    return { lang: 'en', brand: 'Your brand', handle: 'yourprofile', verified: 'verified', scene: 'Approved scene', photo: 'Your photo', swipe: 'swipe ›', learn: '→ Swipe to learn' };
+  }
+  if (language === 'pt-PT') {
+    return { lang: 'pt-PT', brand: 'A tua marca', handle: 'oteuperfil', verified: 'verificado', scene: 'Cena aprovada', photo: 'A tua foto', swipe: 'desliza para o lado ›', learn: '→ Desliza para aprender' };
+  }
   if (!isSpanish(locale)) {
     return {
       lang: 'pt-BR',
@@ -206,11 +214,82 @@ const PROMPT_REPLACEMENTS = [
 
 // pt-BR devolve o pedido igual, sem acrescentar nada. es troca as ordens de idioma e acrescenta o contrato.
 export function localizePrompt(prompt, locale) {
-  if (!isSpanish(locale)) return prompt;
+  const language = normalizeContentLanguage(locale);
+  if (language === 'pt-BR') return prompt;
+  const { replacements, contract, marker } = OUTPUTS[language];
   let text = String(prompt ?? '');
-  for (const [from, to] of PROMPT_REPLACEMENTS) text = text.split(from).join(to);
-  if (!text.includes('IDIOMA DE SALIDA')) text = `${text}\n\n${SPANISH_OUTPUT}`;
+  for (const [from, to] of replacements) text = text.split(from).join(to);
+  if (!text.includes(marker)) text = `${text}\n\n${contract}`;
   return text;
 }
 
 export const SPANISH_OUTPUT_CONTRACT = SPANISH_OUTPUT;
+
+// Idioma do carrossel, separado do idioma da tela: o usuário escolhe em que língua o conteúdo sai.
+// pt-BR é o padrão e não muda nenhum pedido. Valores desconhecidos caem no idioma reserva.
+export const CONTENT_LANGUAGES = ['pt-BR', 'pt-PT', 'es', 'en'];
+export function normalizeContentLanguage(value, fallback = 'pt-BR') {
+  const v = String(value ?? '').trim().toLowerCase().replaceAll('_', '-');
+  if (v === 'pt-pt') return 'pt-PT';
+  if (v === 'en' || v.startsWith('en-')) return 'en';
+  if (v === 'es' || v.startsWith('es-')) return 'es';
+  if (v === 'pt-br' || v === 'pt') return 'pt-BR';
+  return fallback === null || fallback === undefined || String(fallback).trim().toLowerCase() === v ? 'pt-BR' : normalizeContentLanguage(fallback, null);
+}
+
+const EUROPEAN_OUTPUT = `IDIOMA DE SAÍDA (obrigatório; substitui qualquer pedido de escrever em português do Brasil que tenha ficado nos materiais do curso):
+Escreve em português europeu (de Portugal) tudo o que uma pessoa vai ler neste carrossel: títulos, textos dos cards, legenda, CTAs, stories, mensagens diretas, respostas e o texto desenhado nas imagens. O método P.A.C.T.O. não muda: mesmas arquiteturas, mesma progressão, mesmos limites e a mesma qualidade.
+- Ortografia do Acordo Ortográfico de 1990 como se usa em Portugal (facto, contacto, receção, ação) e vocabulário de Portugal (ecrã, telemóvel, equipa, utilizador, registo, autocarro, pequeno-almoço).
+- Gramática de Portugal: "estou a fazer", nunca "estou fazendo"; pronome depois do verbo ("diz-me", "envio-te"). Trata o leitor por "tu", de forma próxima.
+- Não alteres o nome da marca, os preços, os dados do negócio nem as chaves do JSON.
+- Se o campo architecture tiver de coincidir com o método, usa exatamente um destes nomes: Lista Útil, Tutorial, Framework, Estudo de Caso, História → Método → Oferta.
+- Os marcadores === NOME DA MARCA ===, === CONTEXTO DA MARCA === e === DESIGN KIT === ficam iguais, porque a app os lê.
+- Voz: como a marca falaria com um cliente numa mensagem de voz. Frases curtas (a maioria até 15 palavras), ordem direta, verbos concretos, palavras do dia a dia. Se for preciso ler a frase duas vezes, reescreve-a.
+- Proibido: o travessão (—); o contraste encenado ("não é X, é Y", "não se trata de X, trata-se de Y", "não só X, mas Y"); a pergunta que tu próprio respondes ("O resultado? ..."); a revelação com dois pontos ("A verdade: ...", "Spoiler: ..."); a lista de negações ("sem X, sem Y, sem Z"); aberturas feitas ("No mundo de hoje", "Imagina...", "Vamos lá", "A verdade é que"); fechos de efeito ("E isso muda tudo", "Pensa nisso"); palavras de palestra (jornada, desbloquear, potenciar, alavancar, próximo nível, transformador, poderoso, incrível); pontos de exclamação em série.
+- Persuasão: clareza antes de engenho; benefício antes de funcionalidade; fala com "tu"; a capa abre uma curiosidade que só fecha no fim; o último pedido é um só, com verbo e o que a pessoa ganha ("Comenta GUIA e eu envio-te").
+- CTA curto de capa: "Desliza para o lado". Nunca uma segunda ideia.
+- Não inventes provas, números, clientes nem preços. Sem prova, usa exemplo, passo ou demonstração.`;
+
+const ENGLISH_OUTPUT = `OUTPUT LANGUAGE (mandatory; overrides any request to write in Portuguese left in the course materials):
+Write in natural American English everything a person will read in this carousel: titles, card text, caption, CTAs, stories, direct messages, replies and the text drawn inside the images. The P.A.C.T.O. method does not change: same architectures, same progression, same limits and the same quality.
+- Do not translate the brand name, prices, business data or the JSON keys.
+- If the architecture field must match the method, use exactly one of these names: Lista Útil, Tutorial, Framework, Estudo de Caso, História → Método → Oferta.
+- The markers === NOME DA MARCA ===, === CONTEXTO DA MARCA === and === DESIGN KIT === stay as they are, because the app reads them.
+- Voice: how the brand would talk to a client in a voice note. Short sentences (most up to 15 words), direct order, concrete verbs, everyday words ("use", not "utilize"; "help", not "facilitate"). If a sentence needs a second read, rewrite it.
+- Forbidden: the em dash (—); staged contrast ("it's not X, it's Y", "it's not about X, it's about Y", "not just X, but Y"); the question you answer yourself ("The result? ..."); the colon reveal ("The truth: ...", "Spoiler: ..."); the list of negations ("no X, no Y, no Z"); stock openers ("In today's world", "Imagine...", "Let's dive in", "Here's the thing"); punchline closers ("And that changes everything", "Think about it"); conference words (journey, unlock, empower, leverage, next level, game-changer, powerful, amazing); strings of exclamation marks.
+- Persuasion: clarity over cleverness; benefit over feature; talk to "you"; the cover opens a loop that only closes at the end; the final ask is a single one, with a verb and what the person gets ("Comment GUIDE and I'll send it to you").
+- Short cover CTA: "Swipe". Never "Arrasta para o lado" or a second idea.
+- Do not invent proof, numbers, clients or prices. Without proof, use an example, a step or a demonstration.
+- American spelling and punctuation; headlines in sentence case.`;
+
+const EUROPEAN_REPLACEMENTS = [
+  ['Responda em português do Brasil e retorne JSON conforme o esquema.', 'Responde em português de Portugal e devolve JSON conforme o esquema.'],
+  ['Responda em português do Brasil, em JSON conforme o esquema.', 'Responde em português de Portugal, em JSON conforme o esquema.'],
+  ['Responda em português do Brasil.', 'Responde em português de Portugal.'],
+  ['Responda em português brasileiro.', 'Responde em português de Portugal.'],
+  ['Português do Brasil, linguagem curta e natural.', 'Português de Portugal, linguagem curta e natural.'],
+  ['Português do Brasil, linguagem humana.', 'Português de Portugal, linguagem humana.'],
+  ['Português do Brasil. JSON conforme o esquema.', 'Português de Portugal. JSON conforme o esquema.'],
+  ['Português do Brasil.', 'Português de Portugal.'],
+  ['como "Arrasta para o lado"', 'como "Desliza para o lado"'],
+  ['("Comenta CHECKLIST que eu te mando")', '("Comenta CHECKLIST e eu envio-te")'],
+  ['revisando letra por letra a ortografia e os acentos em português', 'revendo letra a letra a ortografia e os acentos em português de Portugal'],
+];
+const ENGLISH_REPLACEMENTS = [
+  ['Responda em português do Brasil e retorne JSON conforme o esquema.', 'Answer in American English and return JSON matching the schema.'],
+  ['Responda em português do Brasil, em JSON conforme o esquema.', 'Answer in American English, in JSON matching the schema.'],
+  ['Responda em português do Brasil.', 'Answer in American English.'],
+  ['Responda em português brasileiro.', 'Answer in American English.'],
+  ['Português do Brasil, linguagem curta e natural.', 'American English, short and natural language.'],
+  ['Português do Brasil, linguagem humana.', 'American English, human language.'],
+  ['Português do Brasil. JSON conforme o esquema.', 'American English. JSON matching the schema.'],
+  ['Português do Brasil.', 'American English.'],
+  ['como "Arrasta para o lado"', 'como "Swipe"'],
+  ['("Comenta CHECKLIST que eu te mando")', '("Comment CHECKLIST and I\'ll send it to you")'],
+  ['revisando letra por letra a ortografia e os acentos em português', 'checking the English spelling letter by letter'],
+];
+const OUTPUTS = {
+  es: { replacements: PROMPT_REPLACEMENTS, contract: SPANISH_OUTPUT, marker: 'IDIOMA DE SALIDA' },
+  'pt-PT': { replacements: EUROPEAN_REPLACEMENTS, contract: EUROPEAN_OUTPUT, marker: 'IDIOMA DE SAÍDA' },
+  en: { replacements: ENGLISH_REPLACEMENTS, contract: ENGLISH_OUTPUT, marker: 'OUTPUT LANGUAGE' },
+};

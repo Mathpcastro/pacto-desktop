@@ -11,7 +11,7 @@ import { Social } from './social.mjs';
 import { TEMPLATE_STYLES, FACE_STYLES, SIZES, LAYOUTS, STORY_THEMES, palette, slideHtml, documentHtml, imagesPdfHtml, storyHtml } from './templates.mjs';
 import { VOICE_RULES, PERSUASION_RULES, flowRules, tellsIn } from './copy.mjs';
 import { BRAND_STRATEGY_RULES, BRAND_IMPROVE_RULES } from './brand-strategy.mjs';
-import { localizePrompt, normalizeLocale, translateUi } from './i18n.mjs';
+import { localizePrompt, normalizeLocale, translateUi, normalizeContentLanguage, CONTENT_LANGUAGES } from './i18n.mjs';
 export const ACTIONS=['pilotDiagnostics','telegramStatus','saveTelegramToken','disconnectTelegram','pairTelegram','openTelegramPair','saveAutopilot','skipAutopilotRun','runAutopilot','retryAutopilot','discardAutopilot','approveAutopilot','bootstrap','saveProfile','saveVisualReferences','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','resizeCarousel','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','storyTheme','saveStory','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','improveBrandStrategy','setupPrompt','readNotice','readAllNotices','openNoticeLink','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli','instagramStatus','saveComposioKey','removeComposioKey','syncInstagram','connectInstagram','checkInstagram','setInstagramDefaults','disconnectInstagram','publishInstagram','schedulePost','reschedulePost','cancelSchedule','publishDue','refreshMetrics','instagramPosts','instagramAnalytics','importInstagramPost','replicateInstagram','openPermalink','openComposio'];
 export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma oferta'];
 // Problemas da Correção Visual Rápida (Aula 05), oferecidos como botões no editor.
@@ -44,7 +44,11 @@ export class Runtime {
   constructor({store,profiles=null,instagram={},codex,knowledge,emit=()=>{},dialogs={},share=()=>new ShareServer(),drive={find:findDriveFolders,write:writeCarouselFolder}}){this.scope=new AsyncLocalStorage();this.profiles=profiles;this.social=new Social(this,instagram);this.store=store;this.codex=codex;this.knowledge=knowledge;this.emit=event=>emit({...event,profileId:this.profileId(),...(event?.type==='activity'?{message:translateUi(this.locale(),event.message)}:{})});this.dialogs=dialogs;this.shareFactory=share;this.drive=drive;this.job=null;this.resizing=null;this.sharing=null;}
   locale(){return normalizeLocale(this.store.state().settings?.language);}
   // Mesmo pedido da conta ChatGPT. Em pt-BR o texto não muda; em es a copy sai em espanhol.
-  model(options){const locale=this.locale();return this.codex.run({...options,prompt:localizePrompt(options.prompt,locale),locale});}
+  // language: idioma do conteúdo daquele pedido (o do carrossel). Sem ele, vale o idioma da tela.
+  model({language,...options}){const locale=language||this.locale();return this.codex.run({...options,prompt:localizePrompt(options.prompt,locale),locale});}
+  // Idioma do carrossel. Projetos de antes da escolha seguem o idioma da tela, como sempre foi.
+  contentLanguage(p){return p?.language?normalizeContentLanguage(p.language,this.locale()):this.locale();}
+  defaultContentLanguage(){return normalizeContentLanguage(this.store.state().settings?.contentLanguage,this.locale());}
   say(text){return translateUi(this.locale(),text);}
   // Cópias normalizadas (1080×1350) para celular e Drive; o ZIP usa a mesma lista.
   async exportedFiles(id){const files=this.store.exportFiles(id);return this.dialogs.normalizeFiles?await this.dialogs.normalizeFiles(files):files;}
@@ -57,7 +61,7 @@ export class Runtime {
     const p=this.store.get(id);if(!p.slides.length)throw new Error('Crie o texto do carrossel antes dos stories.');
     this.ensureIdle(id);
     return this.exclusive(id,'stories','Escrevendo os stories a partir do carrossel…',async token=>{
-      const result=await this.model({prompt:this.storiesPrompt(p),outputSchema:STORIES_SCHEMA});
+      const result=await this.model({prompt:this.storiesPrompt(p),outputSchema:STORIES_SCHEMA,language:this.contentLanguage(p)});
       if(token.cancelled)return;
       const answer=parse(result,'Os stories não vieram no formato esperado. Tente novamente.');
       await this.store.saveStories(id,(answer.stories||[]).map(s=>({...s,id:randomUUID()})));
@@ -69,7 +73,7 @@ export class Runtime {
   // que o app manda para a conta ChatGPT; a resposta passa pelas mesmas validações ao ser gravada.
   agentTask(id,kind){
     const p=this.store.get(id),next=what=>`carrossell ${what} ${id} --arquivo <resposta.json>`;
-    const out=task=>({...task,prompt:localizePrompt(task.prompt,this.locale())});
+    const out=task=>({...task,prompt:localizePrompt(task.prompt,this.contentLanguage(p))});
     if(p.format!=='carrossel')throw new Error('O modo agente escreve carrosséis. Material e apresentação usam a conta ChatGPT.');
     if(kind==='texto')return out({kind,prompt:this.planPrompt(id),schema:PLAN_SCHEMA,next:next('texto')});
     if(!p.slides.length)throw new Error(`Grave o texto antes: carrossell tarefa ${id} texto.`);
@@ -124,7 +128,7 @@ export class Runtime {
     for(const s of p.stories||[]){
       if(only&&s.id!==only)continue;
       if(s.image&&s.art!=='simples')continue;
-      await this.store.addStoryImage(id,s.id,await this.renderer().png(storyHtml({story:s,theme,fonts:this.renderer().fonts,locale:this.locale()}),SIZES.story),{art:'simples'});
+      await this.store.addStoryImage(id,s.id,await this.renderer().png(storyHtml({story:s,theme,fonts:this.renderer().fonts,locale:this.contentLanguage(this.store.get(id))}),SIZES.story),{art:'simples'});
     }
     return this.publish(this.store.get(id));
   }
@@ -132,7 +136,7 @@ export class Runtime {
     const p=this.store.get(token.id),story=p.stories.find(s=>s.id===storyId);
     const {references,legend}=this.imageRefs(p,null,p.slides[0]?.image?[{image:p.slides[0].image,label:'capa aprovada: identidade visual a manter'}]:[]);
     this.emit({type:'activity',message:'Gerando a arte do story…'});
-    const result=await this.model({prompt:`Gere UMA imagem final com a ferramenta nativa image_gen.imagegen (tools.image_gen__imagegen via functions.exec é permitido). PNG VERTICAL para Stories do Instagram, proporção 9:16 (ou a mais alta disponível, 1024x1536), composição completa, sem telefone, sem mockup, sem interface do Instagram.\n${this.imageContext(token.id)}\n${legend}\nSTORY (${story.type}):\n${this.typography({title:story.text,body:story.cta,emphasis:'',role:story.type})}\n${story.sticker?'Deixe uma área livre e limpa no terço inferior para a pessoa colocar o sticker de caixa de perguntas no Instagram. NÃO desenhe o sticker.\n':''}Cena: ${story.visual}\n${references.length?'Siga a legenda dos anexos: a capa aprovada ancora a identidade; as referências da marca inspiram elementos e composição.':''}\nUse APENAS a ferramenta nativa image_gen.imagegen; invoque-a por functions.exec e devolva generatedImage(result). Não desenhe com código, SVG ou HTML.`,references});
+    const result=await this.model({language:this.contentLanguage(p),prompt:`Gere UMA imagem final com a ferramenta nativa image_gen.imagegen (tools.image_gen__imagegen via functions.exec é permitido). PNG VERTICAL para Stories do Instagram, proporção 9:16 (ou a mais alta disponível, 1024x1536), composição completa, sem telefone, sem mockup, sem interface do Instagram.\n${this.imageContext(token.id)}\n${legend}\nSTORY (${story.type}):\n${this.typography({title:story.text,body:story.cta,emphasis:'',role:story.type})}\n${story.sticker?'Deixe uma área livre e limpa no terço inferior para a pessoa colocar o sticker de caixa de perguntas no Instagram. NÃO desenhe o sticker.\n':''}Cena: ${story.visual}\n${references.length?'Siga a legenda dos anexos: a capa aprovada ancora a identidade; as referências da marca inspiram elementos e composição.':''}\nUse APENAS a ferramenta nativa image_gen.imagegen; invoque-a por functions.exec e devolva generatedImage(result). Não desenhe com código, SVG ou HTML.`,references});
     if(token.cancelled)return;
     if(!result.images.length)throw new Error('A geração nativa de imagens não está disponível nesta sessão da conta. Nenhuma arte foi criada.');
     this.publish(await this.store.addStoryImage(token.id,storyId,result.images.at(-1)));
@@ -162,8 +166,8 @@ export class Runtime {
     const kept=list.slice(0,6);
     return {references:kept.map(x=>x.image),legend:kept.length?`IMAGENS ANEXADAS, NA ORDEM:\n${kept.map((x,i)=>`${i+1}. ${x.label}`).join('\n')}\n`:''};
   }
-  slideMarkup(p,slide,index,variant){const own=this.asset(p,slide);return slideHtml({style:p.style,slide:own?{...slide,assetImage:own.dataUrl,assetKind:own.kind}:slide,index,total:p.slides.length,brand:this.brand(),media:this.store.media(),variant,fonts:this.renderer().fonts,locale:this.locale()});}
-  pageMarkup(p,{only=null,variant=p.styleVariant||0}={}){return documentHtml({format:p.format,pages:p.slides,brand:this.brand(),coverVariant:variant,fonts:this.renderer().fonts,only,locale:this.locale()});}
+  slideMarkup(p,slide,index,variant){const own=this.asset(p,slide);return slideHtml({style:p.style,slide:own?{...slide,assetImage:own.dataUrl,assetKind:own.kind}:slide,index,total:p.slides.length,brand:this.brand(),media:this.store.media(),variant,fonts:this.renderer().fonts,locale:this.contentLanguage(p)});}
+  pageMarkup(p,{only=null,variant=p.styleVariant||0}={}){return documentHtml({format:p.format,pages:p.slides,brand:this.brand(),coverVariant:variant,fonts:this.renderer().fonts,only,locale:this.contentLanguage(p)});}
   checkFaces(p){if(FACE_STYLES.includes(p.style)&&!this.store.media().faces.length)throw new Error('Envie ao menos uma foto com o seu rosto em Marca › Perfil e fotos para usar este estilo.');}
   // Opções de capa sem IA: o mesmo texto em três esquemas do modelo escolhido.
   async renderCovers(id,token=null){
@@ -432,7 +436,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     const p=this.store.get(id);if(!p.slides.length)throw new Error('Crie o texto do carrossel antes da estratégia de CTA.');
     this.ensureIdle(id);
     return this.exclusive(id,'cta','Montando CTA, DM e oferta…',async token=>{
-      const result=await this.model({prompt:this.ctaPrompt(p),outputSchema:CTA_SCHEMA});
+      const result=await this.model({prompt:this.ctaPrompt(p),outputSchema:CTA_SCHEMA,language:this.contentLanguage(p)});
       if(token.cancelled)return;
       const k=parse(result,'A estratégia de CTA não veio no formato esperado. Tente novamente.');
       await this.update(id,{ctaKit:this.ctaFrom(k)});
@@ -524,7 +528,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       case 'saveProfile':await this.store.saveProfile(args.profile);return this.state();
       case 'connect':await this.codex.connect(this.dialogs.login);return this.state();
       case 'disconnect':if(this.job)await this.request('cancelWork',{});await this.codex.disconnect();return this.state();
-      case 'createProject':if(args.sourceId)this.store.get(args.sourceId);if(args.architectureId&&!(this.knowledge.data?.architectures||[]).some(a=>a.id===args.architectureId))throw new Error('Arquitetura não encontrada.');if(args.goal&&!GOALS.includes(args.goal))throw new Error('Objetivo inválido.');return this.publish(await this.store.createProject(args));
+      case 'createProject':if(args.language!==undefined&&args.language!==''){if(!CONTENT_LANGUAGES.includes(args.language))throw new Error('Idioma do carrossel inválido.');if(args.language!==this.store.state().settings?.contentLanguage)await this.store.saveSettings({contentLanguage:args.language});}if(args.sourceId){const source=this.store.get(args.sourceId);if(!args.language&&source.language)args={...args,language:source.language};}if(args.architectureId&&!(this.knowledge.data?.architectures||[]).some(a=>a.id===args.architectureId))throw new Error('Arquitetura não encontrada.');if(args.goal&&!GOALS.includes(args.goal))throw new Error('Objetivo inválido.');return this.publish(await this.store.createProject(args));
       case 'interview':{const preset=args.preset?text(args.preset,100):'';if(preset&&!DESIGN_PRESETS.some(p=>p.id===preset))throw new Error('Preset inválido.');if(args.references!==undefined&&(!Array.isArray(args.references)||args.references.length>6))throw new Error('Use até seis referências.');const references=(args.references||[]).map(r=>validateReference(r).dataUrl);return this.interview(args.kind,args.finish?FINISH_INTERVIEW:args.text===undefined?'':text(args.text,12000).trim(),preset,references);}
       case 'saveInterview':await this.store.saveInterview(args.kind,{document:args.document});return this.state();
       case 'resetInterview':if(this.job?.id==='onboarding')throw new Error('Aguarde a entrevista terminar.');await this.store.resetInterview(args.kind);return this.state();
@@ -677,26 +681,27 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
         this.emit({type:'activity',message:token.kind==='plan'?'Escrevendo o texto do carrossel com o Copy Engine…':'Revisando seu carrossel…'});
         const prompt=this.planPrompt(token.id,token.kind==='plan'?'':options.message);
         const seen=(this.store.get(token.id).attachments||[]).map(a=>a.dataUrl).slice(0,4);
-        let result=await this.model({prompt,outputSchema:PLAN_SCHEMA,...(seen.length?{references:seen}:{})});
+        const language=this.contentLanguage(this.store.get(token.id));
+        let result=await this.model({prompt,language,outputSchema:PLAN_SCHEMA,...(seen.length?{references:seen}:{})});
         if(token.cancelled)return;
         let plan=parse(result,'A resposta do assistente não continha um texto válido. Tente novamente.');
         // The course demands final copy on every card; one corrective pass if the model wrote briefing notes instead.
         if(Array.isArray(plan.slides)&&plan.slides.some(s=>INSTRUCTION_BODY.test(String(s?.body||'')))){
           this.emit({type:'activity',message:'Reescrevendo cards que vieram como instrução…'});
-          result=await this.model({...(seen.length?{references:seen}:{}),prompt:`${prompt}\n\nCORREÇÃO OBRIGATÓRIA: a versão abaixo trouxe instruções no lugar da copy em body. Reescreva cada body como o texto final que o leitor vai ler, mantendo role, title e a estrutura.\n${JSON.stringify(plan)}`,outputSchema:PLAN_SCHEMA});
+          result=await this.model({language,...(seen.length?{references:seen}:{}),prompt:`${prompt}\n\nCORREÇÃO OBRIGATÓRIA: a versão abaixo trouxe instruções no lugar da copy em body. Reescreva cada body como o texto final que o leitor vai ler, mantendo role, title e a estrutura.\n${JSON.stringify(plan)}`,outputSchema:PLAN_SCHEMA});
           if(token.cancelled)return;
           plan=parse(result,'A resposta do assistente não continha um texto válido. Tente novamente.');
         }
         if(token.kind==='plan'&&Array.isArray(plan.slides)&&plan.slides.length>=2){
           this.emit({type:'activity',message:'Revisando a copy como editor-chefe…'});
-          const edited=await this.model({...(seen.length?{references:seen}:{}),prompt:`${prompt}\n\n${this.editorPass(this.store.get(token.id).architectureId)}\nTEXTO A REVISAR:\n${JSON.stringify(plan)}`,outputSchema:PLAN_SCHEMA});
+          const edited=await this.model({language,...(seen.length?{references:seen}:{}),prompt:`${prompt}\n\n${this.editorPass(this.store.get(token.id).architectureId)}\nTEXTO A REVISAR:\n${JSON.stringify(plan)}`,outputSchema:PLAN_SCHEMA});
           if(token.cancelled)return;
           try{const next=JSON.parse(String(edited.text||'').replace(/^```(?:json)?\s*|\s*```$/g,''));if(Array.isArray(next.slides)&&next.slides.length>=2&&!next.slides.some(s=>INSTRUCTION_BODY.test(String(s?.body||''))))plan=next;}catch{}
           // Sinais de IA que sobraram (travessão, "não é X, é Y"…): uma correção só desses trechos.
           const tells=this.planTells(plan);
           if(tells.length){
             this.emit({type:'activity',message:'Tirando a cara de texto de IA…'});
-            const fixed=await this.model({...(seen.length?{references:seen}:{}),prompt:`${prompt}\n\nCORREÇÃO DE VOZ: reescreva SÓ as frases com estes sinais de texto de IA, mantendo o sentido, os ids, role e todo o resto igual. Sem travessão em nenhum lugar.\n${tells.map(t=>`- ${t.where}: ${t.label} em "${t.match}"`).join('\n')}\n${VOICE_RULES}\nTEXTO:\n${JSON.stringify(plan)}`,outputSchema:PLAN_SCHEMA});
+            const fixed=await this.model({language,...(seen.length?{references:seen}:{}),prompt:`${prompt}\n\nCORREÇÃO DE VOZ: reescreva SÓ as frases com estes sinais de texto de IA, mantendo o sentido, os ids, role e todo o resto igual. Sem travessão em nenhum lugar.\n${tells.map(t=>`- ${t.where}: ${t.label} em "${t.match}"`).join('\n')}\n${VOICE_RULES}\nTEXTO:\n${JSON.stringify(plan)}`,outputSchema:PLAN_SCHEMA});
             if(token.cancelled)return;
             try{const next=JSON.parse(String(fixed.text||'').replace(/^```(?:json)?\s*|\s*```$/g,''));if(Array.isArray(next.slides)&&next.slides.length===plan.slides.length&&this.planTells(next).length<tells.length)plan=next;}catch{}
           }
@@ -766,7 +771,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     const size=p.cardCount?`exatamente ${p.cardCount} páginas`:material?'de 4 a 6 páginas':'de 5 a 8 slides';
     const task=token.kind==='plan'?`Crie o roteiro completo (${size}).`:`MENSAGEM DO USUÁRIO: ${options.message}`;
     const prompt=`${this.knowledge.method}\n${this.brandContext()}\n${material?`AULA 07 — COMENTÁRIO → DM → OFERTA:\n${this.page('offer')}\n`:''}${source?`CARROSSEL QUE PEDE ESTE MATERIAL:\n${JSON.stringify({title:source.title,slides:source.slides.map(({role,title,body})=>({role,title,body})),cta:source.ctaKit})}\n`:''}DOCUMENTO: ${material?'MATERIAL GRATUITO em PDF A4, entregue por DM a quem comentar a palavra-chave. Precisa entregar valor prático imediato (checklist, modelo, passo a passo) e terminar com um próximo passo que conecta à oferta do Contexto Oficial da Marca, sem pressão.':'APRESENTAÇÃO em PDF 16:9 da marca ou da oferta, para mandar por e-mail ou WhatsApp ou apresentar numa reunião: problema, solução, como funciona, para quem é e próximo passo.'}\nPROJETO:\n${JSON.stringify({title:p.title,brief:p.brief,pages:p.slides.map(({id,layout,role,title,body,emphasis})=>({id,layout,role,title,body,emphasis})),messages:p.messages.slice(-8)})}\nTAREFA: ${task}\nREGRAS DE SAÍDA: pages é a lista de páginas. layout: cover (só a primeira), text, checklist (body com um item por linha), quote (modelo de mensagem ou citação para copiar), steps (body com até 3 passos, um por linha, no formato "Título — descrição"), cta (último: próximo passo). role: rótulo curto da página (ex.: "Checklist", "Modelo pronto"). title: título curto e específico. body: o texto final que o leitor lê, sem instruções. emphasis: palavras inteiras do título para destacar. caption: mensagem curta para enviar junto com o PDF. reply: em poucas linhas, o que conferir antes de aprovar. Nunca invente provas, números, depoimentos ou resultados. Português do Brasil, linguagem humana. Em revisão, preserve os ids e o que não foi pedido para mudar. JSON conforme o esquema.`;
-    const result=await this.model({prompt,outputSchema:DOC_SCHEMA});
+    const result=await this.model({prompt,outputSchema:DOC_SCHEMA,language:this.contentLanguage(p)});
     if(token.cancelled)return;
     const plan=parse(result,'A resposta do assistente não continha um roteiro válido. Tente novamente.');
     const pages=(Array.isArray(plan.pages)?plan.pages:[]).map((x,i)=>({id:/^[a-zA-Z0-9_-]{1,100}$/.test(String(x.id||''))?x.id:randomUUID(),layout:LAYOUTS.includes(x.layout)?x.layout:i===0?'cover':'text',role:x.role,title:x.title,body:x.body,emphasis:x.emphasis,visual:'',prompt:''}));
@@ -788,7 +793,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     for(let index=1;index<=total;index++){
       if(token.cancelled)return;
       this.emit({type:'activity',message:`Gerando opção de capa ${index} de ${total}…`});
-      const result=await this.model({prompt:this.imagePrompt(token,slide,{references,legend,variant:{index,total}}),references});
+      const result=await this.model({prompt:this.imagePrompt(token,slide,{references,legend,variant:{index,total}}),references,language:this.contentLanguage(p)});
       if(token.cancelled)return;
       if(!result.images.length)throw new Error('A geração nativa de imagens não está disponível nesta sessão da conta. Nenhuma capa foi criada.');
       this.publish(await this.store.addCoverOption(token.id,result.images.at(-1)));
@@ -807,7 +812,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
       const anchor=p.slides[0]?.id!==slide.id?p.slides[0]?.image:p.slides.find(s=>s.image&&s.id!==slide.id)?.image;
       const {references,legend}=this.imageRefs(p,slide,[...(slide.image?[{image:slide.image,label:'card atual'}]:[]),...(anchor?[{image:anchor,label:'capa aprovada: identidade visual a manter'}]:[])]);
       if(token.cancelled)return;
-      const result=await this.model({prompt:this.imagePrompt(token,slide,{references,legend,fix}),references});
+      const result=await this.model({prompt:this.imagePrompt(token,slide,{references,legend,fix}),references,language:this.contentLanguage(p)});
       if(token.cancelled)return;
       if(!result.images.length)throw new Error('A geração nativa de imagens não está disponível nesta sessão da conta. Nenhuma imagem foi criada. Conecte novamente e tente gerar este slide.');
       this.publish(await this.store.addImage(token.id,slide.id,result.images.at(-1)));
