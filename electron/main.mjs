@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification, screen, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification, screen, Menu, powerMonitor, clipboard } from 'electron';
+import { PilotLog } from '../core/pilot-log.mjs';
 import { reminder } from '../core/rhythm.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join, extname, resolve } from 'node:path';
@@ -92,7 +93,7 @@ function appMenu(){
 // Mac: abrir o app (Finder, Dock, Launchpad) com ele já rodando em segundo plano pelo piloto não cria
 // uma segunda instância; o sistema só reativa o processo. Sem isto, nenhuma janela aparecia.
 app.on('activate',()=>{if(!windowOpen())void showUI?.();});
-app.on('second-instance',(_event,argv)=>{if(argv.includes(PILOT_FLAG))void runtime?.autopilot?.step();else if(argv.includes(SCHEDULE_FLAG))void publishDue?.();else if(!argv.includes(BACKGROUND))void showUI?.();});
+app.on('second-instance',(_event,argv)=>{if(argv.includes(PILOT_FLAG)){void runtime?.autopilot?.log.write('tarefa-do-sistema',{app_ja_aberto:true});void runtime?.autopilot?.step();}else if(argv.includes(SCHEDULE_FLAG))void publishDue?.();else if(!argv.includes(BACKGROUND))void showUI?.();});
 // Link de conexão do Instagram: só https do Composio, Instagram ou Facebook abre no navegador.
 // Só em desenvolvimento: PACTO_COMPOSIO_URL aponta para um Composio falso local (provas de interface) e o link não abre o navegador.
 const fakeComposio=!app.isPackaged&&/^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.PACTO_COMPOSIO_URL||'')?process.env.PACTO_COMPOSIO_URL:'';
@@ -122,7 +123,16 @@ app.whenReady().then(async()=>{
     async importReference(){const result=await dialog.showOpenDialog(window,{title:ui('Importar referência visual'),properties:['openFile'],filters:[{name:ui('Imagens'),extensions:['png','jpg','jpeg','webp']}]});if(result.canceled||!result.filePaths[0])return {cancelled:true};const file=result.filePaths[0];if((await stat(file)).size>20*1024*1024)throw new Error('Use uma referência de até 20 MB.');const bytes=await readFile(file);if(nativeImage.createFromBuffer(bytes).isEmpty())throw new Error('Não foi possível ler a imagem.');const extension=extname(file).toLowerCase();const mime=extension==='.png'?'png':extension==='.webp'?'webp':'jpeg';const ref=validateReference({name:file.split(/[\\/]/).at(-1),dataUrl:`data:image/${mime};base64,${bytes.toString('base64')}`});return ref;}
   }});
   const telegramBase=!app.isPackaged&&/^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.PACTO_TELEGRAM_URL||'')?process.env.PACTO_TELEGRAM_URL:undefined;
-  runtime.autopilot=new Autopilot({runtime,state:await new AutopilotStore(app.getPath('userData')).init(),secrets:runtime.dialogs.secrets,scheduler:pilotScheduler,clientFactory:token=>new TelegramClient({token,...(telegramBase?{base:telegramBase}:{})})});
+  // Diário do piloto (pilot.log na pasta de dados): mostra se o app estava aberto, se o PC dormiu e o
+  // que aconteceu em cada horário. Sai do computador só pelo botão "Copiar diagnóstico".
+  const pilotLog=new PilotLog(join(app.getPath('userData'),'pilot.log'));
+  void pilotLog.write('app-aberto',{versao:app.getVersion(),sistema:`${process.platform} ${process.arch}`,modo:headless?'segundo plano':'janela',pela_tarefa:process.argv.includes(PILOT_FLAG)});
+  powerMonitor.on('suspend',()=>void pilotLog.write('pc-suspenso'));
+  powerMonitor.on('resume',()=>{void pilotLog.write('pc-acordou');void runtime.autopilot?.step();});
+  app.on('before-quit',()=>void pilotLog.write('app-fechando'));
+  runtime.dialogs.appInfo=()=>({version:app.getVersion(),platform:`${process.platform} ${process.arch}`});
+  runtime.dialogs.copyText=text=>clipboard.writeText(String(text));
+  runtime.autopilot=new Autopilot({runtime,log:pilotLog,state:await new AutopilotStore(app.getPath('userData')).init(),secrets:runtime.dialogs.secrets,scheduler:pilotScheduler,clientFactory:token=>new TelegramClient({token,...(telegramBase?{base:telegramBase}:{})})});
   try{await runtime.autopilot.rearm();}catch{runtime.autopilot.connectionError='Não foi possível registrar a rotina no sistema. Abra o piloto e salve a configuração novamente.';}
   runtime.autopilot.start();void runtime.autopilot.step();
   // Avisos do dono do app: lê o arquivo público ao abrir e a cada hora, e avisa no sistema o que é novo.

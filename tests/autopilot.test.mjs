@@ -440,3 +440,25 @@ test('a bot polled by another computer is reported as such',async t=>{
   f.client.getUpdates=async()=>{calls++;setTimeout(()=>controller.abort(),20);const e=new Error('Solicitação recusada pelo Telegram (409).');e.code=409;throw e;};
   await f.pilot.poll(controller.signal);assert.equal(calls,1);assert.match(f.pilot.connectionError,/outro computador/);
 });
+
+const memoryLog=()=>{const lines=[];return {lines,write:async(event,data={})=>{lines.push({event,...data});},tail:async()=>lines.map(l=>JSON.stringify(l))};};
+test('the pilot diary records each routine time, why it failed and a periodic pulse',async t=>{
+  const f=await pilotFixture(t),log=memoryLog();f.pilot.log=log;
+  f.runtime.social.pick=ids=>ids.map(()=>{throw new Error('Conta do Instagram não encontrada.');});
+  await dueRoutine(f);await f.pilot.step();
+  const events=log.lines.map(l=>l.event);
+  assert.ok(events.includes('pulso'));assert.ok(events.includes('horario'));
+  const failed=log.lines.find(l=>l.event==='horario-falhou');assert.match(failed.motivo,/Conta do Instagram/);
+  await f.pilot.step();assert.equal(log.lines.filter(l=>l.event==='pulso').length,1);// pulso só a cada 30 minutos
+  f.runtime.job={id:'manual'};await f.pilot.step();await f.pilot.step();
+  assert.equal(log.lines.filter(l=>l.event==='adiado').length,1);// o mesmo motivo não repete a cada 5 s
+});
+test('the support diagnostic summarizes the pilot and its diary without the bot token',async t=>{
+  const f=await pilotFixture(t),log=memoryLog();f.pilot.log=log;
+  await f.pilot.enqueue('principal');await f.pilot.step();
+  const text=await f.pilot.diagnostics({version:'1.13.3',platform:'win32 x64'});
+  assert.match(text,/Versão: 1\.13\.3 · Sistema: win32 x64/);assert.match(text,/bot conectado · conversa vinculada/);
+  assert.match(text,/Rotinas:\n- .*: pausada · 09:00 · seg,ter,qua,qui,sex · com revisão/);
+  assert.match(text,/Trabalhos recentes:\n- .* · ready · /);assert.match(text,/"event":"trabalho"/);
+  assert.doesNotMatch(text,/synthetic_test_token_for_pilot/);
+});

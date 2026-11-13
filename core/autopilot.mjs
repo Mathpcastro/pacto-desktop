@@ -9,6 +9,7 @@ import { emptyConversation } from './autopilot-store.mjs';
 import { TelegramConversation } from './telegram-conversation.mjs';
 import { TelegramSchedule, SCHEDULE_COMMAND } from './telegram-schedule.mjs';
 import { translateUi, intlLocale } from './i18n.mjs';
+import { silentLog, redact } from './pilot-log.mjs';
 
 function localizeMarkup(locale, extra){
   const rows=extra?.reply_markup?.inline_keyboard;
@@ -35,8 +36,8 @@ const identities=accounts=>Object.fromEntries((accounts||[]).map(a=>[a.id,{igUse
 // Coordena somente efeitos explicitamente habilitados no app. Uma decisão durável
 // sempre precede publicar; uma resposta incerta nunca vira tentativa automática.
 export class Autopilot {
-  constructor({runtime,state,secrets,scheduler=null,clientFactory=token=>new TelegramClient({token}),now=()=>Date.now()}){
-    Object.assign(this,{rt:runtime,state,secrets,scheduler,clientFactory,now});this.client=null;this.processing=null;this.controller=null;this.connectionError='';this.schedules=new TelegramSchedule(this);this.conversation=new TelegramConversation(this);
+  constructor({runtime,state,secrets,scheduler=null,clientFactory=token=>new TelegramClient({token}),now=()=>Date.now(),log=silentLog}){
+    Object.assign(this,{rt:runtime,state,secrets,scheduler,clientFactory,now,log});this.lastNote={};this.lastBeat=0;this.client=null;this.processing=null;this.controller=null;this.connectionError='';this.schedules=new TelegramSchedule(this);this.conversation=new TelegramConversation(this);
   }
   clientForToken(){const token=this.secrets.getTelegramToken?.();if(!token)throw new Error('Conecte o bot do Telegram.');const client=this.client??=this.clientFactory(token);if(!client.localized){const sendText=client.sendText.bind(client),answer=client.answerCallbackQuery.bind(client),locale=()=>this.rt.locale();client.sendText=(chat,text,extra)=>sendText(chat,translateUi(locale(),text),localizeMarkup(locale(),extra));client.answerCallbackQuery=(id,text)=>answer(id,translateUi(locale(),text));client.localized=true;}return client;}
   bindingActive(){const binding=this.state.snapshot().binding;return !!binding&&(!binding.expiresAt||new Date(binding.expiresAt)>this.now());}
@@ -51,11 +52,20 @@ export class Autopilot {
   }
   upcoming(config){if(!config)return [];try{return upcomingRuns(validateConfig(config),new Date(this.now()),8);}catch{return [];}}
   keepAlive(){const data=this.state.snapshot();return Boolean(this.secrets.getTelegramToken?.()&&(data.pairing&&new Date(data.pairing.expiresAt)>this.now()||data.binding&&(!data.binding.expiresAt||new Date(data.binding.expiresAt)>this.now())));}
+  // Registra só quando muda, para o diário não encher com a mesma linha a cada 5 segundos.
+  noteOnce(channel,key,event,data={}){if(this.lastNote[channel]===key)return;this.lastNote[channel]=key;void this.log.write(event,data);}
+  // A cada 30 minutos, uma foto do piloto: prova que o app estava acordado e o que ele via.
+  heartbeat(busy){
+    if(this.now()-this.lastBeat<30*60000)return;this.lastBeat=this.now();const data=this.state.snapshot();
+    void this.log.write('pulso',{ocupado:busy||'não',chatgpt:Boolean(this.rt.codex?.status?.account?.connected),telegram:this.bindingActive(),
+      rotinas:Object.entries(data.configs).map(([perfil,c])=>({perfil,ativa:Boolean(c.enabled),proximo:c.nextAt||'',erro:c.scheduleError||c.runError||''})),
+      abertos:data.jobs.filter(j=>!TERMINAL.has(j.status)).map(j=>({trabalho:j.id.slice(0,8),status:j.status}))});
+  }
   async changed(profileId){
     if(profileId&&!this.rt.profileList().some(p=>p.id===profileId))profileId=undefined;
     await this.rt.inProfile(profileId,()=>this.rt.emit({type:'state',state:this.rt.state()}));
   }
-  async patch(id,patch){await this.state.change(data=>{const job=data.jobs.find(j=>j.id===id);if(!job)throw new Error('Trabalho do piloto não encontrado.');Object.assign(job,patch);});const job=this.state.snapshot().jobs.find(j=>j.id===id);await this.changed(job.profileId);return job;}
+  async patch(id,patch){if(patch.status)void this.log.write('trabalho',{trabalho:id.slice(0,8),status:patch.status,erro:patch.error||undefined,titulo:patch.title||undefined});await this.state.change(data=>{const job=data.jobs.find(j=>j.id===id);if(!job)throw new Error('Trabalho do piloto não encontrado.');Object.assign(job,patch);});const job=this.state.snapshot().jobs.find(j=>j.id===id);await this.changed(job.profileId);return job;}
   async connect(token){
     if(this.processing)throw new Error('Aguarde o trabalho do piloto terminar.');
     if(typeof token!=='string'||!/^\d{5,}:[A-Za-z0-9_-]{20,}$/.test(token.trim())||token.length>300)throw new Error('Copie o token completo do BotFather.');
@@ -65,13 +75,13 @@ export class Autopilot {
     this.controller?.abort();this.controller=null;
     await this.secrets.setTelegramToken(token.trim());this.client=client;this.connectionError='';
     await this.state.change(data=>{data.bot={username:bot.username};data.binding=null;data.pairing=null;data.offset=0;data.conversation=emptyConversation();for(const config of Object.values(data.configs))config.enabled=false;for(const job of data.jobs)if(!TERMINAL.has(job.status))job.status='discarded';});
-    await this.rearm();await this.changed();if(this.started)this.start();return this.status(this.rt.profileId());
+    void this.log.write('bot-conectado',{nota:'Rotinas pausadas: ative de novo no app.'});await this.rearm();await this.changed();if(this.started)this.start();return this.status(this.rt.profileId());
   }
   async disconnect(){
     if(this.processing)throw new Error('Aguarde o trabalho do piloto terminar.');
     this.controller?.abort();this.controller=null;await this.secrets.clearTelegramToken();this.client=null;
     await this.state.change(data=>{data.bot=null;data.binding=null;data.pairing=null;data.offset=0;data.conversation=emptyConversation();for(const config of Object.values(data.configs))config.enabled=false;for(const job of data.jobs)if(!TERMINAL.has(job.status))job.status='discarded';});
-    this.connectionError='';await this.rearm();await this.changed();if(this.started)this.start();
+    void this.log.write('bot-desconectado',{nota:'Rotinas pausadas.'});this.connectionError='';await this.rearm();await this.changed();if(this.started)this.start();
   }
   async pair(){
     this.clientForToken();if(this.state.snapshot().binding)throw new Error('Este bot já está vinculado. Desconecte antes de trocar a conversa.');
@@ -93,6 +103,7 @@ export class Autopilot {
     await this.state.change(data=>{data.configs[profileId]=next;});
     try{if(this.scheduler){if(config.enabled)await this.scheduler.add(profileId,new Date(next.nextAt));else await this.scheduler.remove(profileId).catch(()=>{});}}
     catch(error){await this.state.change(data=>{data.configs[profileId].enabled=false;data.configs[profileId].nextAt=null;});await this.changed(profileId);throw new Error(`Não foi possível ativar a rotina no sistema: ${messageError(error)}`);}
+    void this.log.write('rotina-salva',{perfil:profileId,ativa:next.enabled,horarios:next.times,dias:next.days,aprovacao:next.approval,contas:next.accounts.length,proximo:next.nextAt||''});
     await this.changed(profileId);return next;
   }
   // Pula (ou volta a preparar) uma ocorrência da rotina sem mudar os horários.
@@ -112,8 +123,8 @@ export class Autopilot {
   }
   async arm(profileId,nextAt){
     if(!this.scheduler)return;
-    try{await this.scheduler.add(profileId,new Date(nextAt));await this.state.change(d=>{const c=d.configs[profileId];if(c){c.scheduleError='';c.rearmAt=null;}});}
-    catch{await this.state.change(d=>{const c=d.configs[profileId];if(c){c.scheduleError='A próxima rotina não foi registrada no sistema. O app tentará novamente; mantenha-o aberto ou salve a rotina de novo.';c.rearmAt=new Date(this.now()+60000).toISOString();}});}
+    try{await this.scheduler.add(profileId,new Date(nextAt));void this.log.write('tarefa-registrada',{perfil:profileId,proximo:nextAt});await this.state.change(d=>{const c=d.configs[profileId];if(c){c.scheduleError='';c.rearmAt=null;}});}
+    catch(error){void this.log.write('tarefa-falhou',{perfil:profileId,proximo:nextAt,motivo:messageError(error)});await this.state.change(d=>{const c=d.configs[profileId];if(c){c.scheduleError='A próxima rotina não foi registrada no sistema. O app tentará novamente; mantenha-o aberto ou salve a rotina de novo.';c.rearmAt=new Date(this.now()+60000).toISOString();}});}
     await this.changed(profileId);
   }
   // "at" é a ocorrência da rotina (ou o horário escolhido): define o tipo de carrossel daquele horário.
@@ -122,7 +133,7 @@ export class Autopilot {
     const raw=this.state.snapshot().configs[profileId],saved=validateConfig(raw||DEFAULT_CONFIG);
     const healed=this.healAccounts(saved.accounts,raw?.accountUsers);
     if(healed){
-      saved.accounts=healed.ids;await this.state.change(d=>{const c=d.configs[profileId];if(c){c.accounts=healed.ids;c.accountUsers=identities(healed.accounts);}});
+      void this.log.write('conta-reencontrada',{perfil:profileId,contas:healed.accounts.map(a=>'@'+a.username)});saved.accounts=healed.ids;await this.state.change(d=>{const c=d.configs[profileId];if(c){c.accounts=healed.ids;c.accountUsers=identities(healed.accounts);}});
       await this.notifyRoutine(profileId,`A conta ${healed.accounts.map(a=>`@${a.username}`).join(', ')} foi conectada de novo no Composio. A rotina passou a usar a conexão nova.`);
     }
     const slot=slotFor(saved,at||saved.nextAt||this.state.snapshot().configs[profileId]?.nextAt);
@@ -214,6 +225,28 @@ export class Autopilot {
     const brand=await this.rt.inProfile(profileId,()=>this.rt.store.state().profile?.brand||'Sua marca').catch(()=>'Sua marca');
     await this.clientForToken().sendText(binding.chatId,`${brand} · ${text}`).catch(()=>{});
   }
+  // Texto para o suporte (botão "Copiar diagnóstico"): versão, estado do piloto e as últimas linhas do
+  // diário. Não leva token, legenda nem e-mail.
+  async diagnostics(info={}){
+    const data=this.state.snapshot(),fmt=at=>{if(!at)return '—';const d=new Date(at);return Number.isNaN(d.getTime())?'—':d.toLocaleString('pt-BR');};
+    const names=new Map((this.rt.profileList?.()||[]).map(p=>[p.id,p.name]));
+    const usernames=new Map((this.rt.social?.registry?.()||[]).map(a=>[a.id,a.username?'@'+String(a.username).replace(/^@/,''):'conta sem nome']));
+    const week=['dom','seg','ter','qua','qui','sex','sáb'],busy=this.processing?'piloto trabalhando':this.rt.job?'app ocupado com outra geração':'não';
+    const lines=[
+      'Carrossell · diagnóstico do piloto automático',
+      `Gerado em: ${fmt(this.now())} (fuso ${Intl.DateTimeFormat().resolvedOptions().timeZone})`,
+      `Versão: ${info.version||'?'} · Sistema: ${info.platform||'?'}`,
+      `Telegram: ${this.secrets.getTelegramToken?.()?'bot conectado':'sem bot'} · ${data.binding?'conversa vinculada':'conversa não vinculada'}${this.connectionError?` · erro: ${this.connectionError}`:''}`,
+      `ChatGPT: ${this.rt.codex?.status?.account?.connected?'conectado':'desconectado'} · App ocupado: ${busy}`,
+      '','Rotinas:',
+      ...Object.entries(data.configs).map(([id,c])=>`- ${names.get(id)||id}: ${c.enabled?'ativa':'pausada'} · ${(c.times||[c.time]).join(', ')} · ${(c.days||[]).map(d=>week[d]).join(',')} · ${c.approval==='auto'?'sem revisão':'com revisão'} · contas ${(c.accounts||[]).map(a=>usernames.get(a)||'indisponível').join(', ')||'nenhuma'} · próximo ${fmt(c.nextAt)}${c.scheduleError||c.runError?` · erro: ${c.scheduleError||c.runError}`:''}`),
+      '','Trabalhos recentes:',
+      ...data.jobs.slice(-10).reverse().map(j=>`- ${fmt(j.createdAt)} · ${j.status} · ${j.title||''}${j.retries?` · tentativas ${j.retries}`:''}${j.error?` · ${j.error}`:''}`),
+      '','Diário (mais recente no fim):',
+      ...await this.log.tail(200),
+    ];
+    return redact(lines.join('\n'));
+  }
   async reviewProject(profileId,projectId,accounts){
     validId(profileId);validId(projectId);if(!this.state.snapshot().binding)throw new Error('Vincule sua conversa do Telegram.');
     return this.rt.inProfile(profileId,async()=>{
@@ -268,6 +301,7 @@ export class Autopilot {
     let accepted=false;
     await this.state.change(next=>{const saved=next.jobs.find(j=>j.id===job.id);if(status==='scheduleDate'&&next.jobs.some(j=>j.id!==job.id&&['scheduleDate','scheduleConfirm'].includes(j.status)))return;if(saved?.status===job.status&&saved.messageId===job.messageId){saved.status=status;accepted=true;}});
     await this.ack(query.id,accepted?'Recebido. O Carrossell vai processar sua escolha.':'Conclua a escolha pendente antes de iniciar outra.');
+    void this.log.write('decisao',{trabalho:job.id.slice(0,8),acao:status,aceita:accepted,origem:'telegram'});
     if(!accepted)return;await this.changed(job.profileId);await client.editMessageReplyMarkup(data.binding.chatId,job.messageId).catch(()=>{});
     if(status==='scheduleDate'){
       const messages=await client.sendText(data.binding.chatId,`Envie a data e hora para “${job.title}”, como 2026-11-03 18:00. Use o horário do computador. A próxima mensagem pedirá confirmação.`,{reply_markup:{inline_keyboard:[[{text:'Cancelar',callback_data:`p:${job.reviewId}:cancel`}]]}});
@@ -289,6 +323,7 @@ export class Autopilot {
     let when=null;if(at!==null&&at!==undefined&&at!==''){when=parseWhen(String(at),new Date(this.now())).toISOString();}
     let accepted=false;
     await this.state.change(data=>{const saved=data.jobs.find(j=>j.id===id);if(saved?.status==='ready'&&saved.messageId===job.messageId){Object.assign(saved,when?{status:'approvedSchedule',at:when}:{status:'approved'});saved.approvedIn='app';accepted=true;}});
+    void this.log.write('decisao',{trabalho:id.slice(0,8),acao:when?'approvedSchedule':'approved',aceita:accepted,origem:'app'});
     if(!accepted)throw new Error('Esta prévia acabou de ser respondida no Telegram.');
     await this.changed(job.profileId);
     const binding=this.state.snapshot().binding;
@@ -311,7 +346,10 @@ export class Autopilot {
     await this.state.change(data=>{for(const job of data.jobs)if(job.profileId===profileId&&job.projectId===projectId&&!TERMINAL.has(job.status))job.status='discarded';if(data.conversation.profileId===profileId&&data.conversation.projectId===projectId)data.conversation.projectId=null;});
   }
   async step(){
-    if(this.processing||this.rt.job||this.rt.resizing||!this.secrets.getTelegramToken?.())return;
+    const busy=this.processing?'piloto trabalhando':this.rt.job?'app ocupado com outra geração':this.rt.resizing?'app redimensionando':!this.secrets.getTelegramToken?.()?'sem bot do Telegram':'';
+    this.heartbeat(busy);
+    if(busy){if(!this.processing)this.noteOnce('step',busy,'adiado',{motivo:busy});return;}
+    if(this.lastNote.step)this.noteOnce('step','','livre');
     this.processing=this.work();try{await this.processing;}finally{this.processing=null;}
   }
   async work(){
@@ -326,6 +364,7 @@ export class Autopilot {
       // No cold start o login persistido é carregado assincronamente. Não gastar
       // a ocorrência antes de a sessão estar disponível ou um trabalho ser criado.
       if(!this.rt.codex.status.account.connected){
+        this.noteOnce('chatgpt-'+profileId,'esperando','esperando-chatgpt',{perfil:profileId,horario:config.nextAt});
         if(config.runError!==WAIT_CHATGPT){await this.state.change(d=>{d.configs[profileId].runError=WAIT_CHATGPT;});await this.changed(profileId);}
         // Ao abrir pela tarefa do sistema a sessão leva alguns segundos para carregar: só avisa no
         // Telegram se a espera passar de 3 minutos, uma vez por espera.
@@ -333,16 +372,17 @@ export class Autopilot {
         if(!wait.notified&&this.now()-wait.since>=CHATGPT_GRACE_MS){wait.notified=true;await this.notifyRoutine(profileId,`A rotina das ${hourOf(config.nextAt)} está esperando a conta ChatGPT. Abra o Carrossell no computador e confira a conexão com o ChatGPT. O carrossel é preparado assim que ela voltar.`);}
         continue;
       }
-      delete this.waitingChatgpt?.[profileId];
-      const dueAt=config.nextAt,nextAt=nextRun(validateConfig(config),new Date(this.now()));await this.state.change(d=>{const c=d.configs[profileId];c.nextAt=nextAt;c.skips=liveSkips(c.skips||[],new Date(this.now()));});
-      try{await this.enqueue(profileId,dueAt);await this.state.change(d=>{d.configs[profileId].runError='';});}
+      delete this.waitingChatgpt?.[profileId];this.lastNote['chatgpt-'+profileId]='';
+      const dueAt=config.nextAt,nextAt=nextRun(validateConfig(config),new Date(this.now()));void this.log.write('horario',{perfil:profileId,horario:dueAt,atraso_min:Math.round((this.now()-new Date(dueAt))/60000),proximo:nextAt});await this.state.change(d=>{const c=d.configs[profileId];c.nextAt=nextAt;c.skips=liveSkips(c.skips||[],new Date(this.now()));});
+      try{const created=await this.enqueue(profileId,dueAt);void this.log.write('horario-criou',{perfil:profileId,trabalho:created.id.slice(0,8)});await this.state.change(d=>{d.configs[profileId].runError='';});}
       catch(error){
-        const reason=messageError(error);await this.state.change(d=>{d.configs[profileId].runError=reason;});await this.changed(profileId);
+        const reason=messageError(error);void this.log.write('horario-falhou',{perfil:profileId,horario:dueAt,motivo:reason});await this.state.change(d=>{d.configs[profileId].runError=reason;});await this.changed(profileId);
         await this.notifyRoutine(profileId,`O carrossel das ${hourOf(dueAt)} não foi preparado. ${reason}\nA rotina continua ativa nos próximos horários.`);
       }
       await this.arm(profileId,nextAt);
     }
     const jobs=this.state.snapshot().jobs,due=j=>!j.retryAt||new Date(j.retryAt)<=this.now(),job=jobs.find(j=>['approved','approvedSchedule'].includes(j.status))||jobs.find(j=>['queued','redo','resend'].includes(j.status)&&due(j));if(!job){await this.conversation.step();return;}
+    void this.log.write('etapa',{trabalho:job.id.slice(0,8),status:job.status});
     try{
       await this.rt.inProfile(job.profileId,async()=>{
         if(!this.bindingActive())throw new Error('O vínculo do Telegram expirou. Reconecte e envie uma nova prévia.');
@@ -399,10 +439,10 @@ export class Autopilot {
         const updates=await this.clientForToken().getUpdates(this.state.snapshot().offset,{signal});
         if(signal.aborted)break;
         for(const update of updates){if(signal.aborted)break;await this.handleUpdate(update);await this.state.change(data=>{data.offset=Math.max(data.offset,update.update_id+1);});}
-        failures=0;if(this.connectionError){this.connectionError='';await this.changed();}
+        failures=0;this.noteOnce('telegram','ok','telegram-ok');if(this.connectionError){this.connectionError='';await this.changed();}
         if(!updates.length)await sleep(250,signal);
       }catch(error){
-        if(signal.aborted)break;this.connectionError=error.code===409?BOT_ELSEWHERE:messageError(error);await this.changed();failures++;
+        if(signal.aborted)break;this.connectionError=error.code===409?BOT_ELSEWHERE:messageError(error);this.noteOnce('telegram',this.connectionError,'telegram-erro',{motivo:this.connectionError});await this.changed();failures++;
         await sleep(Math.max((error.retryAfter||0)*1000,Math.min(60000,1000*2**Math.min(failures,6))),signal);
       }
     }

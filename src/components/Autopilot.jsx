@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CalendarClock, ExternalLink, Pause, Play, RefreshCw, Monitor, Check, MessageCircle, Plus, X, Layers } from "lucide-react";
+import { ArrowRight, CalendarClock, ExternalLink, Pause, Play, RefreshCw, Monitor, Check, MessageCircle, Plus, X, Layers, ClipboardCopy } from "lucide-react";
 import { STYLES } from "../../core/templates.mjs";
 import { Spinner } from "../ui.jsx";
 import { formatLocale } from "../i18n.js";
@@ -132,6 +132,14 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
       setDraft(editable(result.autopilot?.config || { ...draft, enabled: saved.enabled }));
     }
   };
+  // Junta versão, estado da rotina e o diário do piloto para o usuário colar na conversa com o suporte.
+  const copyDiagnostics = async () => {
+    const result = await act("pilotDiagnostics", { copy: true });
+    if (!result?.text) return;
+    if (result.copied) { onNotice?.("Diagnóstico copiado. Cole na conversa com o suporte."); return; }
+    try { await navigator.clipboard.writeText(result.text); onNotice?.("Diagnóstico copiado. Cole na conversa com o suporte."); }
+    catch { setError("Não foi possível copiar o diagnóstico. Tente de novo."); }
+  };
   const toggleRoutine = async () => {
     await act("saveAutopilot", { config: { ...editable(saved), enabled: !saved.enabled } }, saved.enabled ? "Rotina pausada. Seus ajustes foram mantidos." : "Rotina ativada.");
   };
@@ -251,7 +259,7 @@ function AutopilotPanel({ state, request, onNotice, heading = "Piloto automátic
         <p className="hint" style={{ margin: 0 }}>No Telegram, envie /agendados para ver, trocar a data ou cancelar.</p>
       </section>
       <section className="pilot-conversation" aria-labelledby="pilot-conversation-title"><h2 id="pilot-conversation-title">Peça pelo Telegram</h2><p>Uma mensagem é o ponto de partida. Experimente um pedido:</p><div className="pilot-examples"><blockquote>Crie um carrossel sobre [tema]. Me mostre o texto primeiro.</blockquote><blockquote>Como foram os últimos 7 dias no Instagram da minha marca?</blockquote></div><details className="pilot-commands"><summary>Ver exemplos e comandos</summary><div><p><code>/ajuda</code> O que você pode pedir · <code>/marcas</code> Escolher a marca · <code>/projetos</code> Escolher o projeto · <code>/status</code> Acompanhar · <code>/cancelar</code> Parar o pedido</p><p>Os stories ficam prontos para postagem manual. Claude e Gemini usam o modo separado de agentes e CLI. Publicar e agendar dependem da sua aprovação na prévia.</p></div></details></section>
-      <footer className="pilot-requirement"><Monitor size={18} aria-hidden="true" /><span>Requer computador ligado e conta ChatGPT conectada. Você pode fechar a janela; escolher Sair encerra o piloto.</span></footer></>}
+      <footer className="pilot-requirement"><Monitor size={18} aria-hidden="true" /><span>Requer computador ligado e conta ChatGPT conectada. Você pode fechar a janela; escolher Sair encerra o piloto.</span><button type="button" className="btn small pilot-diagnostics" disabled={Boolean(pending)} onClick={copyDiagnostics}><ClipboardCopy size={15} aria-hidden="true" />{pending === "pilotDiagnostics" ? "Copiando…" : "Copiar diagnóstico"}</button></footer></>}
       {pending && <div className="row hint" role="status"><Spinner /> Aguarde…</div>}
       {error && !dialog && <p role="alert" className="pilot-error">{error}</p>}
       {dialog === "connection" && <Dialog title="Conexão do Telegram" onClose={closeDialog} className="pilot-dialog"><div className="pilot-dialog-body">
