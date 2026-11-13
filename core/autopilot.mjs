@@ -159,9 +159,9 @@ export class Autopilot {
     await client.sendText(binding.chatId,`${name} · ${p.title}\nPrévia do carrossel. Confira os cards e a legenda antes de aprovar.`);
     const files=await this.rt.exportedFiles(p.id),photos=Object.entries(files).filter(([name])=>/^\d+\.png$/.test(name)).map(([name,bytes])=>({name,bytes}));
     if(photos.length!==p.slides.length)throw new Error('Não foi possível preparar todos os cards.');
-    await client.sendPhotos(binding.chatId,photos);await client.sendText(binding.chatId,`Legenda:\n${p.caption||'(sem legenda)'}`);
+    await client.sendPhotos(binding.chatId,await this.telegramPhotos(photos));await client.sendText(binding.chatId,`Legenda:\n${p.caption||'(sem legenda)'}`);
     const stories=Object.entries(files).filter(([name])=>name.startsWith('stories/')&&name.endsWith('.png')).map(([name,bytes])=>({name,bytes}));
-    if(stories.length){await client.sendText(binding.chatId,'Stories de apoio · para postar manualmente:');await client.sendPhotos(binding.chatId,stories);}
+    if(stories.length){await client.sendText(binding.chatId,'Stories de apoio · para postar manualmente:');await client.sendPhotos(binding.chatId,await this.telegramPhotos(stories));}
     const accounts=this.rt.social.pick(job.accounts).map(a=>`@${a.username}`).join(', ');
     // Rotina sem revisão: a prévia fica no Telegram como registro e o carrossel segue direto para publicar.
     if(job.config?.approval==='auto'&&job.origin!=='conversation'){
@@ -170,6 +170,13 @@ export class Autopilot {
     }
     const messages=await client.sendText(binding.chatId,`Marca: ${name}\nContas: ${accounts}\nO que fazer com este carrossel? Você também pode aprovar no app.`,{reply_markup:{inline_keyboard:[[{text:'Postar agora',callback_data:`p:${reviewId}:post`},{text:'Agendar',callback_data:`p:${reviewId}:schedule`}],[{text:'Refazer',callback_data:`p:${reviewId}:redo`},{text:'Descartar',callback_data:`p:${reviewId}:discard`}]]}});
     await this.patch(id,{status:'ready',messageId:messages.at(-1).message_id,title:p.title,error:''});
+  }
+  // Fotos para o Telegram em JPEG. O Telegram recomprime as fotos de todo jeito, e o PNG de cada card
+  // (cerca de 1,4 MB) fazia o álbum da prévia passar do tempo de envio em conexões lentas.
+  async telegramPhotos(photos){
+    const toJpeg=this.rt.dialogs?.toPreviewJpeg;if(!toJpeg||!photos.length)return photos;
+    const jpegs=await toJpeg(photos.map(photo=>photo.bytes));
+    return photos.map((photo,index)=>({name:photo.name.replace(/\.png$/i,'.jpg'),bytes:jpegs[index]}));
   }
   async reviewProject(profileId,projectId,accounts){
     validId(profileId);validId(projectId);if(!this.state.snapshot().binding)throw new Error('Vincule sua conversa do Telegram.');

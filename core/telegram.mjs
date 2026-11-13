@@ -9,6 +9,9 @@ class TelegramError extends Error {
   }
 }
 
+// 50 KB/s (cerca de 0,4 Mbps de upload) é o pior caso tolerado; 10 minutos é o teto de um envio.
+const UPLOAD_BYTES_PER_MS = 50, UPLOAD_MAX_MS = 10 * 60000;
+
 export function splitText(text, max = 4000) {
   if (!Number.isInteger(max) || max < 1) throw new TelegramError('Limite de texto inválido.', 'EINVAL');
   const chunks = [];
@@ -39,7 +42,13 @@ export class TelegramClient {
     this.#timeoutMs = timeoutMs;
   }
 
-  async call(method, params = {}, { signal } = {}) {
+  // Envios de arquivo ganham tempo proporcional ao tamanho: com 40 s fixos, um álbum de cards
+  // estourava o limite em upload lento, mesmo chegando inteiro ao Telegram.
+  uploadTimeout(bytes) {
+    return Math.min(UPLOAD_MAX_MS, this.#timeoutMs + Math.ceil(Math.max(0, bytes) / UPLOAD_BYTES_PER_MS));
+  }
+
+  async call(method, params = {}, { signal, timeoutMs = this.#timeoutMs } = {}) {
     if (!/^[A-Za-z][A-Za-z0-9]*$/.test(method)) throw new TelegramError('Método do Telegram inválido.', 'EINVAL');
     if (signal?.aborted) throw new TelegramError('Solicitação do Telegram cancelada.', 'ABORT_ERR');
     const controller = new AbortController();
@@ -51,7 +60,7 @@ export class TelegramClient {
       controller.signal.addEventListener('abort', onAbort, { once: true });
     });
     signal?.addEventListener('abort', cancel, { once: true });
-    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, this.#timeoutMs);
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
     try {
       const request = async () => {
         const multipart = params instanceof FormData;
@@ -113,7 +122,7 @@ export class TelegramClient {
     const pdf=name.endsWith('.pdf');
     if(pdf?!bytes.subarray(0,5).equals(Buffer.from('%PDF-')):!(bytes[0]===0x50&&bytes[1]===0x4b&&[0x03,0x05,0x07].includes(bytes[2])))throw new TelegramError('Conteúdo do documento inválido.','EINVAL');
     const form=new FormData();form.set('chat_id',String(chatId));form.set('document',new Blob([bytes],{type:pdf?'application/pdf':'application/zip'}),name);
-    return this.call('sendDocument',form);
+    return this.call('sendDocument',form,{timeoutMs:this.uploadTimeout(bytes.length)});
   }
 
   // fileId comes only from an authenticated incoming update. getFile supplies
@@ -153,12 +162,13 @@ export class TelegramClient {
     const messages = [];
     for (let start = 0; start < photos.length; start += 10) {
       const group = photos.slice(start, start + 10), form = new FormData();
+      const upload = { timeoutMs: this.uploadTimeout(group.reduce((total, photo) => total + photo.bytes.length, 0)) };
       form.set('chat_id', String(chatId));
       const firstCaption = start === 0 && !longCaption ? caption : '';
       if (group.length === 1) {
         form.set('photo', new Blob([group[0].bytes]), group[0].name);
         if (firstCaption) form.set('caption', firstCaption);
-        messages.push(await this.call('sendPhoto', form));
+        messages.push(await this.call('sendPhoto', form, upload));
       } else {
         const media = group.map((photo, index) => {
           const key = `photo${index}`;
@@ -166,7 +176,7 @@ export class TelegramClient {
           return { type: 'photo', media: `attach://${key}`, ...(index === 0 && firstCaption ? { caption: firstCaption } : {}) };
         });
         form.set('media', JSON.stringify(media));
-        messages.push(...await this.call('sendMediaGroup', form));
+        messages.push(...await this.call('sendMediaGroup', form, upload));
       }
     }
     if (longCaption) messages.push(...await this.sendText(chatId, caption));

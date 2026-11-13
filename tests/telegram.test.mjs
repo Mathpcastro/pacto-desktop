@@ -143,3 +143,17 @@ test('invalid photo batch is rejected before sending any partial batch', async (
   assert.deepEqual(await client.sendPhotos(1, []), []);
   assert.equal(calls, 0);
 });
+
+test('uploads get time proportional to their size while plain calls keep the short limit', async () => {
+  const { TelegramClient } = await module();
+  // Telegram lento: responde só depois de 120 ms. Mensagem comum (limite de 40 ms) estoura;
+  // o álbum de 3 fotos de 5 KB ganha 40 ms + 300 ms e chega.
+  const slow = () => new Promise(resolve => setTimeout(() => resolve(ok([{ message_id: 1 }, { message_id: 2 }, { message_id: 3 }])), 120));
+  const client = new TelegramClient({ token, timeoutMs: 40, fetchImpl: slow });
+  await assert.rejects(client.sendMessage(1, 'oi'), e => e.code === 'ETIMEDOUT');
+  const big = Array.from({ length: 3 }, (_, i) => ({ name: `${i}.jpg`, bytes: Buffer.alloc(5000, i) }));
+  assert.equal((await client.sendPhotos(1, big)).length, 3);
+  assert.equal(client.uploadTimeout(5000 * 3), 40 + 300);
+  assert.equal(new TelegramClient({ token }).uploadTimeout(14 * 1024 * 1024), 40000 + Math.ceil(14 * 1024 * 1024 / 50));
+  assert.equal(new TelegramClient({ token }).uploadTimeout(500 * 1024 * 1024), 10 * 60000);
+});

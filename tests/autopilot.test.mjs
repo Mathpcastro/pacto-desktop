@@ -391,3 +391,13 @@ test('a second render failure marks the job as error, keeps the routine active a
   assert.match(config.runError,/continua ativa/);assert.match(f.sent.at(-1).text,/A rotina continua ativa nos próximos horários/);
   await f.pilot.retry(job.id);assert.equal(f.state.snapshot().jobs[0].status,'queued');
 });
+
+test('the Telegram preview sends cards and stories as JPEG when the app can convert them',async t=>{
+  const f=await pilotFixture(t),albums=[],converted=[];
+  f.runtime.dialogs.toPreviewJpeg=async pngs=>{converted.push(pngs.length);return pngs.map((_,i)=>Buffer.from(`jpeg-${i}`));};
+  f.client.sendPhotos=async(chat,photos)=>{albums.push(photos);return photos.map((_,i)=>({message_id:100+i}));};
+  await f.pilot.enqueue('principal');await f.pilot.step();
+  assert.equal(f.state.snapshot().jobs[0].status,'ready');
+  assert.deepEqual(converted,[2,2]);assert.equal(albums.length,2);
+  for(const album of albums)for(const photo of album){assert.match(photo.name,/\.jpg$/);assert.match(photo.bytes.toString(),/^jpeg-/);}
+});

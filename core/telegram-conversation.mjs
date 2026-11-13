@@ -189,7 +189,7 @@ export class TelegramConversation {
         if(!stories.length||stories.some(story=>!story.image))throw new Error('Gere ou atualize todos os stories antes de pedir esta prévia.');
         photos.push(...stories.map((story,index)=>({name:'story-'+(index+1)+'.png',bytes:pngBytes(Buffer.from(String(story.image).split(',')[1]||'','base64'))})));
       }
-      this.valid(run);await this.pilot.clientForToken().sendPhotos(this.state.snapshot().binding.chatId,photos);
+      const sending=await this.pilot.telegramPhotos(photos);this.valid(run);await this.pilot.clientForToken().sendPhotos(this.state.snapshot().binding.chatId,sending);
       return scope==='stories'?'Stories enviados para você revisar e postar manualmente.':'Prévia de '+get().title+(scope==='all'?' com stories de apoio.':'')+'\nLegenda: '+(get().caption||'(sem legenda)');
     }
     if(action==='export'){
@@ -203,5 +203,5 @@ export class TelegramConversation {
   ideaText(){const batch=this.rt.store.ideaBatches()[0];return batch?`${batch.title}\n${batch.analysis||''}\n${batch.ideas.map((i,n)=>`${n+1}. ${i.theme}\n${i.hook}`).join('\n\n')}`:'Nenhuma pauta foi gerada.';}
   accountArgs(args){const list=this.rt.social.summary?.().accounts||[];if(args.account){validId(args.account);this.rt.social.pick([args.account]);return args;}if(list.length===1)return{...args,account:list[0].id};throw new Error(`Escolha uma conta do Instagram${list.length?': '+list.map(a=>`@${a.username} (${a.id})`).join(', '):' nas conexões do computador'}.`);}
   async attachment(run){if(!run.attachment)throw new Error('Anexe uma imagem PNG, JPEG ou WebP ao pedido.');const bytes=await this.pilot.clientForToken().downloadFile(run.attachment.fileId,{maxBytes:MAX_ATTACHMENT,signal:run.controller.signal});this.valid(run);return validateReference({name:`referencia-${run.id}.${run.attachment.mime.split('/')[1]}`,dataUrl:`data:${run.attachment.mime};base64,${bytes.toString('base64')}`});}
-  async sendCovers(run){const p=this.rt.store.get(run.projectId),photos=[];for(const [index,cover]of p.coverOptions.entries()){const image=pngBytes(Buffer.from(String(cover.image).split(',')[1]||'','base64'));photos.push({name:`capa-${index+1}.png`,bytes:image});}this.valid(run);if(photos.length)await this.pilot.clientForToken().sendPhotos(this.state.snapshot().binding.chatId,photos);}
+  async sendCovers(run){const p=this.rt.store.get(run.projectId),photos=[];for(const [index,cover]of p.coverOptions.entries()){const image=pngBytes(Buffer.from(String(cover.image).split(',')[1]||'','base64'));photos.push({name:`capa-${index+1}.png`,bytes:image});}const sending=await this.pilot.telegramPhotos(photos);this.valid(run);if(sending.length)await this.pilot.clientForToken().sendPhotos(this.state.snapshot().binding.chatId,sending);}
 }
