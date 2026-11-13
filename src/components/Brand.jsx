@@ -105,6 +105,42 @@ function DocSection({ title, value, onSave, hint, extra }) {
 
 // Perfis antigos têm um Contexto que descreve o produto. Este bloco pede uma versão com
 // estratégia de venda (público, territórios, mistura de posts e CTA) e só salva se a pessoa escolher.
+// Arte com IA: estilo das ilustrações e tipografia. "Automático" segue o negócio descrito no Contexto.
+function ArtDirection({ state, request, onNotice }) {
+  const direction = state.artDirection;
+  const styles = state.artStyles;
+  const [saving, setSaving] = useState(false);
+  if (!direction || !styles) return null;
+  const saved = state.settings?.artDirection || {};
+  const label = (list, id) => list.find((item) => item.id === id)?.label || "";
+  const save = async (key, value) => {
+    setSaving(true);
+    try {
+      await request("saveSettings", { artDirection: { ...saved, [key]: value } });
+      onNotice?.("Direção de arte salva. Vale para as próximas artes.");
+    } catch {} finally { setSaving(false); }
+  };
+  const field = (key, title, list) => (
+    <label className="fld art-direction-field">
+      <span>{title}</span>
+      <select value={saved[key] || ""} disabled={saving} onChange={(event) => save(key, event.target.value)}>
+        <option value="">Automático · {label(list, direction.auto[key])}</option>
+        {list.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+      </select>
+    </label>
+  );
+  return (
+    <section className="card-box art-direction" aria-labelledby="art-direction-title">
+      <div className="section-head"><h2 id="art-direction-title">Direção de arte</h2></div>
+      <p className="hint">Usada no estilo Arte com IA. No automático, o Carrossell escolhe pelo seu negócio; troque se quiser outro visual.</p>
+      <div className="art-direction-grid">
+        {field("illustration", "Estilo das ilustrações", styles.illustration)}
+        {field("type", "Tipografia", styles.type)}
+      </div>
+    </section>
+  );
+}
+
 function StrategyImprover({ value, request, connected, working, onSave }) {
   const [proposal, setProposal] = useState(null);
   const [failed, setFailed] = useState("");
@@ -296,6 +332,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
         {tab === "referencias" && <VisualReferences key={state.profileId} profile={profile} request={request} onNotice={onNotice} />}
         {tab === "contexto" && <StrategyImprover value={profile.brandContext} request={request} connected={connected} working={working} onSave={saveDoc("brandContext")} />}
         {tab === "contexto" && <DocSection title="Contexto da marca" value={profile.brandContext} hint="Aula 02" onSave={saveDoc("brandContext")} />}
+        {tab === "design" && <ArtDirection state={state} request={request} onNotice={onNotice} />}
         {tab === "design" && (
         <DocSection
           title="Design Kit"

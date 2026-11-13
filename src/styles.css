@@ -3490,3 +3490,9 @@
 .license-dialog .dialog-footer .btn.primary { display: inline-flex; align-items: center; gap: 8px; }
 .license-success { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 4px 30px 34px; color: var(--sage, var(--accent)); }
 .license-success p { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.7; }
+
+/* Direção de arte (Marca › Design Kit) */
+.art-direction { display:grid; gap:10px; }
+.art-direction .hint { margin:0; }
+.art-direction-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+.art-direction-field select { width:100%; }

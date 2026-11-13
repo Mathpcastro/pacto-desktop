@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { zipSync, strToU8, unzlibSync } from 'fflate';
 import { STYLES, FORMATS, LAYOUTS } from './templates.mjs';
 import { normalizeLocale, normalizeContentLanguage, CONTENT_LANGUAGES } from './i18n.mjs';
+import { validArtDirection } from './art-direction.mjs';
 
 export function text(value, max=30000) {
   if (typeof value!=='string'||value.length>max) throw new Error('Campo deve ser texto dentro do limite permitido.');
@@ -138,6 +139,8 @@ export class Store {
       else if(key==='firstCompletedAt'||key==='lastReminderAt')next[key]=text(patch[key],40);
       else if(key==='language'){if(patch[key]!=='pt-BR'&&patch[key]!=='es')throw new Error('Idioma inválido.');next.language=patch[key];}
       // Idioma padrão dos carrosséis deste perfil (rotina, Telegram e o próximo carrossel criado).
+      // Estilo de ilustração e tipografia fixados pelo usuário para a Arte com IA (vazio = automático).
+      else if(key==='artDirection')next.artDirection=validArtDirection(patch[key])||{};
       else if(key==='contentLanguage'){if(!CONTENT_LANGUAGES.includes(patch[key]))throw new Error('Idioma do carrossel inválido.');next.contentLanguage=patch[key];}
       else throw new Error('Configuração não permitida.');
     }
