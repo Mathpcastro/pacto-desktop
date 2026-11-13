@@ -370,3 +370,9 @@ O aviso não foi publicado: quem já usa Windows ou Mac não vê diferença.
 [[60 - Release Carrossell 1.13.2]]: prévia do piloto em JPEG, com tempo de envio proporcional (corrige "Tempo de espera do Telegram esgotado"). Horários que não começam avisam no Telegram, a rotina reencontra a conta reconectada no Composio e o erro da rotina aparece em "Sua rotina".
 253 testes, build e duas provas Electron passaram. Latest, feeds e SHA-512 verificados. Aviso v1-13-2 publicado.
 Não testado com bot real nem no computador da cliente.
+
+## 13/11/2026 — Release 1.13.3 publicada
+
+[[61 - Release Carrossell 1.13.3]]: diário do piloto (`pilot.log`) e botão "Copiar diagnóstico"; idioma do carrossel (pt-BR, pt-PT, espanhol, inglês); Arte com IA com estilo de ilustração, fonte e layout escolhidos pelo negócio.
+265 testes, build e quatro provas Electron passaram. Latest, feeds e SHA-512 verificados. Aviso v1-13-3 publicado.
+Não verificado: carrossel inteiro com a nova direção de arte e geração real em inglês ou pt-PT. O estilo 3D suave não foi seguido no teste do SaaS.
