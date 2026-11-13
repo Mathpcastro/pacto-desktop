@@ -364,3 +364,9 @@ O aviso não foi publicado: quem já usa Windows ou Mac não vê diferença.
 ## 12/11/2026 — Releases 1.13.0 e 1.13.1
 
 [[59 - Release Carrossell 1.13.1]]: a 1.13.0 (Cursor agent) trouxe a ativação da licença por e-mail e a release com 17 arquivos. A 1.13.1 corrige a ativação, que agora sempre mostra o resultado (aceite faltando, e-mail sem compra, ativada), e refaz a janela no visual do app. 246 testes, build e prova Electron passaram. Latest, feeds e SHA-512 verificados. Aviso v1-13-1 publicado. Não testado com o e-mail de um comprador real.
+
+## 12/11/2026 — Release 1.13.2 publicada
+
+[[60 - Release Carrossell 1.13.2]]: prévia do piloto em JPEG, com tempo de envio proporcional (corrige "Tempo de espera do Telegram esgotado"). Horários que não começam avisam no Telegram, a rotina reencontra a conta reconectada no Composio e o erro da rotina aparece em "Sua rotina".
+253 testes, build e duas provas Electron passaram. Latest, feeds e SHA-512 verificados. Aviso v1-13-2 publicado.
+Não testado com bot real nem no computador da cliente.
