@@ -135,7 +135,7 @@ test('only one Telegram date conversation is active and its prompt offers cancel
 test('failed recurrence registration remains visible and is retried without another generation',async t=>{
   const f=await pilotFixture(t);let attempts=0;f.pilot.scheduler={add:async()=>{if(++attempts===1)throw new Error('Sistema indisponível');}};
   await f.state.change(d=>{d.configs.principal={...d.configs.principal,enabled:true,nextAt:new Date(0).toISOString()};});
-  await f.pilot.step();assert.equal(f.state.snapshot().jobs.length,1);assert.match(f.pilot.status('principal').connectionError,/rotina/i);
+  await f.pilot.step();assert.equal(f.state.snapshot().jobs.length,1);assert.match(f.pilot.status('principal').routineError,/rotina/i);
   f.pilot.now=()=>new Date(2026,10,2,12,2).getTime();await f.pilot.step();
   assert.equal(attempts,2);assert.equal(f.state.snapshot().jobs.length,1);assert.equal(f.pilot.status('principal').config.scheduleError,'');
 });
@@ -145,7 +145,7 @@ test('cold start retains a due generation until the saved ChatGPT session become
   await f.state.change(d=>{d.configs.principal={...d.configs.principal,enabled:true,nextAt:at};});
   f.runtime.codex.status.account.connected=false;await f.pilot.step();
   assert.equal(f.state.snapshot().configs.principal.nextAt,at);assert.equal(f.state.snapshot().jobs.length,0);
-  assert.match(f.pilot.status('principal').connectionError,/ChatGPT/);
+  assert.match(f.pilot.status('principal').routineError,/ChatGPT/);
   f.runtime.codex.status.account.connected=true;await f.pilot.step();assert.equal(f.state.snapshot().jobs.length,1);assert.equal(f.state.snapshot().jobs[0].status,'ready');
 });
 
@@ -400,4 +400,43 @@ test('the Telegram preview sends cards and stories as JPEG when the app can conv
   assert.equal(f.state.snapshot().jobs[0].status,'ready');
   assert.deepEqual(converted,[2,2]);assert.equal(albums.length,2);
   for(const album of albums)for(const photo of album){assert.match(photo.name,/\.jpg$/);assert.match(photo.bytes.toString(),/^jpeg-/);}
+});
+
+const dueRoutine=async(f,patch={})=>{const now=f.pilot.now();await f.state.change(d=>{Object.assign(d.configs.principal,{enabled:true,approval:'review',nextAt:new Date(now-60000).toISOString(),...patch});});};
+test('a routine time that cannot start always explains why in Telegram',async t=>{
+  const f=await pilotFixture(t);f.runtime.social.pick=ids=>ids.map(id=>{throw new Error('Conta do Instagram não encontrada. Atualize a lista em Conectar Instagram.');});
+  await dueRoutine(f);const before=f.sent.length;await f.pilot.step();
+  assert.equal(f.state.snapshot().jobs.length,0);assert.equal(f.sent.length,before+1);
+  assert.match(f.sent.at(-1).text,/^Marca · O carrossel das \d\d:\d\d não foi preparado\. Conta do Instagram não encontrada/);assert.match(f.sent.at(-1).text,/continua ativa/);
+  const status=f.pilot.status('principal');assert.match(status.routineError,/Conta do Instagram/);assert.equal(status.connectionError,'');
+});
+test('an unanswered preview that blocks the next routine time is named in Telegram',async t=>{
+  const f=await pilotFixture(t);await f.pilot.enqueue('principal');await f.pilot.step();
+  const ready=f.state.snapshot().jobs[0];assert.equal(ready.status,'ready');
+  await dueRoutine(f);await f.pilot.step();
+  assert.equal(f.state.snapshot().jobs.length,1);assert.match(f.sent.at(-1).text,new RegExp(`aguardando: “${ready.title}”.*Para revisar`));
+});
+test('the routine follows an Instagram account reconnected in Composio with a new id',async t=>{
+  const f=await pilotFixture(t);let registry=[{id:'ig1',username:'marca',igUserId:'178'},{id:'ig9',username:'outra',igUserId:'999'}];
+  f.runtime.social.usable=()=>registry;f.runtime.social.pick=ids=>ids.map(id=>{const a=registry.find(x=>x.id===id);if(!a)throw new Error('Conta do Instagram não encontrada.');return a;});
+  await f.pilot.saveConfig('principal',{enabled:true,time:'09:00',days:[1,2,3,4,5],style:'texto',cardCount:2,accounts:['ig1']});
+  assert.deepEqual(f.state.snapshot().configs.principal.accountUsers,{ig1:{igUserId:'178',username:'marca'}});
+  registry=[{id:'ig2',username:'marca',igUserId:'178'},{id:'ig9',username:'outra',igUserId:'999'}];// reconectada: id novo, mesma conta
+  await dueRoutine(f);await f.pilot.step();
+  const config=f.state.snapshot().configs.principal,job=f.state.snapshot().jobs[0];
+  assert.deepEqual(config.accounts,['ig2']);assert.deepEqual(job.accounts,['ig2']);assert.equal(config.runError,'');
+  assert.ok(f.sent.some(m=>/@marca foi conectada de novo no Composio/.test(m.text||'')));
+  registry=[{id:'ig3',username:'nova',igUserId:'555'},{id:'ig9',username:'outra',igUserId:'999'}];// conta trocada: não adivinha
+  assert.equal(f.pilot.healAccounts(['ig2'],config.accountUsers),null);
+});
+test('waiting for ChatGPT warns in Telegram only after a cold-start grace period',async t=>{
+  const f=await pilotFixture(t);let now=f.pilot.now();f.pilot.now=()=>now;f.runtime.codex.status.account.connected=false;
+  await dueRoutine(f);const before=f.sent.length;await f.pilot.step();assert.equal(f.sent.length,before);
+  assert.match(f.pilot.status('principal').routineError,/ChatGPT/);
+  now+=4*60000;await f.pilot.step();await f.pilot.step();assert.equal(f.sent.length,before+1);assert.match(f.sent.at(-1).text,/esperando a conta ChatGPT/);
+});
+test('a bot polled by another computer is reported as such',async t=>{
+  const f=await pilotFixture(t);let calls=0;const controller=new AbortController();
+  f.client.getUpdates=async()=>{calls++;setTimeout(()=>controller.abort(),20);const e=new Error('Solicitação recusada pelo Telegram (409).');e.code=409;throw e;};
+  await f.pilot.poll(controller.signal);assert.equal(calls,1);assert.match(f.pilot.connectionError,/outro computador/);
 });

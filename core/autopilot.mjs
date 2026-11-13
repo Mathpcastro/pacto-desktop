@@ -23,8 +23,14 @@ const RETRIES=1,RETRY_MS=2*60000;
 // Com vários horários por dia, cabem tantos carrosséis esperando aprovação quanto horários.
 const pendingLimit=config=>Math.max(1,(config?.times||[]).length);
 const waiting=n=>n===1?'um carrossel aguardando':`${n} carrosséis aguardando`;
+const CHATGPT_GRACE_MS=3*60000;
+const WAIT_CHATGPT='Aguardando a conexão da conta ChatGPT para gerar. Abra o app se precisar conectar novamente.';
+const BOT_ELSEWHERE='Este bot do Telegram está sendo usado em outro computador ou programa. Deixe o bot só neste Carrossell (desconecte no outro) para receber as prévias e os botões aqui.';
+const hourOf=at=>{const d=new Date(at);return Number.isNaN(d.getTime())?'':`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
 const messageError=error=>String(error?.message||'Não foi possível concluir a operação.').replace(/https?:\/\/\S+/g,'[endereço omitido]').replace(/\b\d{5,}:[A-Za-z0-9_-]+/g,'[token omitido]').slice(0,600);
 const sleep=(ms,signal)=>new Promise(resolve=>{if(signal?.aborted)return resolve();const done=()=>{clearTimeout(timer);signal?.removeEventListener('abort',done);resolve();};const timer=setTimeout(done,ms);timer.unref?.();signal?.addEventListener('abort',done,{once:true});});
+
+const identities=accounts=>Object.fromEntries((accounts||[]).map(a=>[a.id,{igUserId:a.igUserId||'',username:a.username||''}]));
 
 // Coordena somente efeitos explicitamente habilitados no app. Uma decisão durável
 // sempre precede publicar; uma resposta incerta nunca vira tentativa automática.
@@ -35,7 +41,7 @@ export class Autopilot {
   clientForToken(){const token=this.secrets.getTelegramToken?.();if(!token)throw new Error('Conecte o bot do Telegram.');const client=this.client??=this.clientFactory(token);if(!client.localized){const sendText=client.sendText.bind(client),answer=client.answerCallbackQuery.bind(client),locale=()=>this.rt.locale();client.sendText=(chat,text,extra)=>sendText(chat,translateUi(locale(),text),localizeMarkup(locale(),extra));client.answerCallbackQuery=(id,text)=>answer(id,translateUi(locale(),text));client.localized=true;}return client;}
   bindingActive(){const binding=this.state.snapshot().binding;return !!binding&&(!binding.expiresAt||new Date(binding.expiresAt)>this.now());}
   status(profileId){
-    const data=this.state.snapshot();return {hasToken:Boolean(this.secrets.getTelegramToken?.()),bot:data.bot,paired:Boolean(data.binding),pairing:data.pairing&&new Date(data.pairing.expiresAt)>this.now()?{...data.pairing,url:`https://t.me/${data.bot.username}?start=${data.pairing.code}`}:null,connectionError:data.configs[profileId]?.scheduleError||data.configs[profileId]?.runError||this.connectionError,
+    const data=this.state.snapshot();return {hasToken:Boolean(this.secrets.getTelegramToken?.()),bot:data.bot,paired:Boolean(data.binding),pairing:data.pairing&&new Date(data.pairing.expiresAt)>this.now()?{...data.pairing,url:`https://t.me/${data.bot.username}?start=${data.pairing.code}`}:null,connectionError:this.connectionError,routineError:data.configs[profileId]?.scheduleError||data.configs[profileId]?.runError||'',
       config:this.shownConfig(data.configs[profileId]),upcoming:this.upcoming(data.configs[profileId]),jobs:data.jobs.filter(j=>j.profileId===profileId).slice(-12).reverse().map(({id,projectId,status,title,error,createdAt})=>({id,projectId,status,title,error,createdAt}))};
   }
   shownConfig(saved){
@@ -78,8 +84,11 @@ export class Autopilot {
     const before=this.state.snapshot().configs[profileId];
     const config=validateConfig(input&&typeof input==='object'&&input.skips===undefined?{...input,skips:before?.skips||[]}:input);
     config.skips=liveSkips(config.skips,new Date(this.now()));
-    if(config.enabled){if(!this.state.snapshot().binding)throw new Error('Vincule sua conversa do Telegram primeiro.');this.clientForToken();await this.rt.inProfile(profileId,()=>this.rt.social.pick(config.accounts));}
-    const next={...config,nextAt:config.enabled?nextRun(config,new Date(this.now())):null};
+    let accountUsers=before?.accountUsers||{};
+    if(config.enabled){if(!this.state.snapshot().binding)throw new Error('Vincule sua conversa do Telegram primeiro.');this.clientForToken();}
+    // Guarda quem é cada conta no Instagram para reencontrá-la se a conexão do Composio for refeita.
+    try{accountUsers=identities(await this.rt.inProfile(profileId,()=>this.rt.social.pick(config.accounts)));}catch(error){if(config.enabled)throw error;}
+    const next={...config,accountUsers,nextAt:config.enabled?nextRun(config,new Date(this.now())):null};
     // Configuração persistida antes do registro no SO; uma tarefa órfã não gera se disabled.
     await this.state.change(data=>{data.configs[profileId]=next;});
     try{if(this.scheduler){if(config.enabled)await this.scheduler.add(profileId,new Date(next.nextAt));else await this.scheduler.remove(profileId).catch(()=>{});}}
@@ -110,12 +119,18 @@ export class Autopilot {
   // "at" é a ocorrência da rotina (ou o horário escolhido): define o tipo de carrossel daquele horário.
   async enqueue(profileId,at=null){
     validId(profileId);this.clientForToken();if(!this.state.snapshot().binding)throw new Error('Vincule sua conversa do Telegram.');
-    const saved=validateConfig(this.state.snapshot().configs[profileId]||DEFAULT_CONFIG),slot=slotFor(saved,at||saved.nextAt||this.state.snapshot().configs[profileId]?.nextAt);
+    const raw=this.state.snapshot().configs[profileId],saved=validateConfig(raw||DEFAULT_CONFIG);
+    const healed=this.healAccounts(saved.accounts,raw?.accountUsers);
+    if(healed){
+      saved.accounts=healed.ids;await this.state.change(d=>{const c=d.configs[profileId];if(c){c.accounts=healed.ids;c.accountUsers=identities(healed.accounts);}});
+      await this.notifyRoutine(profileId,`A conta ${healed.accounts.map(a=>`@${a.username}`).join(', ')} foi conectada de novo no Composio. A rotina passou a usar a conexão nova.`);
+    }
+    const slot=slotFor(saved,at||saved.nextAt||this.state.snapshot().configs[profileId]?.nextAt);
     const config={...saved,style:slot.style,cardCount:slot.cardCount,architectureId:slot.architectureId||'',slot:slot.time};
     if(!config.accounts.length)throw new Error('Escolha as contas do Instagram e salve a rotina.');
     await this.rt.inProfile(profileId,()=>{this.rt.ensureConnected();this.rt.social.pick(config.accounts);if(!this.rt.store.state().profile?.brandContext?.trim())throw new Error('Conclua o Contexto da Marca antes de gerar.');});
     const job={id:randomUUID(),profileId,config,accounts:config.accounts,status:'queued',createdAt:new Date(this.now()).toISOString(),error:'',title:'Próxima pauta do Radar'};
-    await this.state.change(data=>{const open=data.jobs.filter(j=>j.profileId===profileId&&!TERMINAL.has(j.status)).length;if(open>=pendingLimit(config))throw new Error(`Este perfil já tem ${waiting(open)}. Aprove ou descarte no Telegram antes de criar outro.`);data.jobs.push(job);});await this.changed(profileId);return job;
+    await this.state.change(data=>{const open=data.jobs.filter(j=>j.profileId===profileId&&!TERMINAL.has(j.status));if(open.length>=pendingLimit(config))throw new Error(`Este perfil já tem ${waiting(open.length)}: ${open.map(j=>`“${j.title}”`).join(', ')}. Aprove ou descarte no Telegram ou no app (Piloto automático › Para revisar) para a rotina voltar a preparar.`);data.jobs.push(job);});await this.changed(profileId);return job;
   }
   async call(action,args={}){
     const result=await this.rt.request(action,args),token=this.rt.job;if(token?.done)await token.done;
@@ -177,6 +192,27 @@ export class Autopilot {
     const toJpeg=this.rt.dialogs?.toPreviewJpeg;if(!toJpeg||!photos.length)return photos;
     const jpegs=await toJpeg(photos.map(photo=>photo.bytes));
     return photos.map((photo,index)=>({name:photo.name.replace(/\.png$/i,'.jpg'),bytes:jpegs[index]}));
+  }
+  // Reconectar a conta no Composio cria outra conexão, com outro id, e a rotina guardava o antigo:
+  // todo horário falhava com "Conta do Instagram não encontrada". Reencontra a mesma conta pelo id
+  // do Instagram, pelo @ ou, se só há uma conta conectada, por ela. Devolve null se nada mudou.
+  healAccounts(ids,known={}){
+    const usable=this.rt.social.usable?.()||[];if(!usable.length||!ids.length)return null;
+    const accounts=[];let changed=false;
+    for(const id of ids){
+      const same=usable.find(a=>a.id===id);if(same){accounts.push(same);continue;}
+      const was=known?.[id]||{};
+      const match=usable.find(a=>was.igUserId&&a.igUserId===was.igUserId)||usable.find(a=>was.username&&a.username===was.username)||(usable.length===1&&ids.length===1?usable[0]:null);
+      if(!match)return null;accounts.push(match);changed=true;
+    }
+    const unique=[...new Map(accounts.map(a=>[a.id,a])).values()];
+    return changed?{ids:unique.map(a=>a.id),accounts:unique}:null;
+  }
+  // Um horário da rotina que não começa sempre avisa no Telegram; antes o motivo ficava só no app.
+  async notifyRoutine(profileId,text){
+    const binding=this.state.snapshot().binding;if(!binding)return;
+    const brand=await this.rt.inProfile(profileId,()=>this.rt.store.state().profile?.brand||'Sua marca').catch(()=>'Sua marca');
+    await this.clientForToken().sendText(binding.chatId,`${brand} · ${text}`).catch(()=>{});
   }
   async reviewProject(profileId,projectId,accounts){
     validId(profileId);validId(projectId);if(!this.state.snapshot().binding)throw new Error('Vincule sua conversa do Telegram.');
@@ -290,11 +326,20 @@ export class Autopilot {
       // No cold start o login persistido é carregado assincronamente. Não gastar
       // a ocorrência antes de a sessão estar disponível ou um trabalho ser criado.
       if(!this.rt.codex.status.account.connected){
-        if(!config.runError){await this.state.change(d=>{d.configs[profileId].runError='Aguardando a conexão da conta ChatGPT para gerar. Abra o app se precisar conectar novamente.';});await this.changed(profileId);}continue;
+        if(config.runError!==WAIT_CHATGPT){await this.state.change(d=>{d.configs[profileId].runError=WAIT_CHATGPT;});await this.changed(profileId);}
+        // Ao abrir pela tarefa do sistema a sessão leva alguns segundos para carregar: só avisa no
+        // Telegram se a espera passar de 3 minutos, uma vez por espera.
+        const wait=(this.waitingChatgpt??={})[profileId]??={since:this.now(),notified:false};
+        if(!wait.notified&&this.now()-wait.since>=CHATGPT_GRACE_MS){wait.notified=true;await this.notifyRoutine(profileId,`A rotina das ${hourOf(config.nextAt)} está esperando a conta ChatGPT. Abra o Carrossell no computador e confira a conexão com o ChatGPT. O carrossel é preparado assim que ela voltar.`);}
+        continue;
       }
+      delete this.waitingChatgpt?.[profileId];
       const dueAt=config.nextAt,nextAt=nextRun(validateConfig(config),new Date(this.now()));await this.state.change(d=>{const c=d.configs[profileId];c.nextAt=nextAt;c.skips=liveSkips(c.skips||[],new Date(this.now()));});
       try{await this.enqueue(profileId,dueAt);await this.state.change(d=>{d.configs[profileId].runError='';});}
-      catch(error){await this.state.change(d=>{d.configs[profileId].runError=messageError(error);});await this.changed(profileId);}
+      catch(error){
+        const reason=messageError(error);await this.state.change(d=>{d.configs[profileId].runError=reason;});await this.changed(profileId);
+        await this.notifyRoutine(profileId,`O carrossel das ${hourOf(dueAt)} não foi preparado. ${reason}\nA rotina continua ativa nos próximos horários.`);
+      }
       await this.arm(profileId,nextAt);
     }
     const jobs=this.state.snapshot().jobs,due=j=>!j.retryAt||new Date(j.retryAt)<=this.now(),job=jobs.find(j=>['approved','approvedSchedule'].includes(j.status))||jobs.find(j=>['queued','redo','resend'].includes(j.status)&&due(j));if(!job){await this.conversation.step();return;}
@@ -357,7 +402,7 @@ export class Autopilot {
         failures=0;if(this.connectionError){this.connectionError='';await this.changed();}
         if(!updates.length)await sleep(250,signal);
       }catch(error){
-        if(signal.aborted)break;this.connectionError=messageError(error);await this.changed();failures++;
+        if(signal.aborted)break;this.connectionError=error.code===409?BOT_ELSEWHERE:messageError(error);await this.changed();failures++;
         await sleep(Math.max((error.retryAfter||0)*1000,Math.min(60000,1000*2**Math.min(failures,6))),signal);
       }
     }
