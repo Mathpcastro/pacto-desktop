@@ -576,11 +576,12 @@
   .hooks button { text-align: left; border: 1px dashed var(--line); background: var(--paper); border-radius: var(--radius-sm); padding: 8px 10px; font: var(--t-sm) var(--ui); color: var(--ink); }
   .hooks button:hover { border-color: var(--accent); }
   .chat { display: grid; gap: 8px; }
-  .bubble { padding: 10px 12px; border-radius: 12px; font-size: var(--t-sm); line-height: 1.5; white-space: pre-line; max-width: 100%; }
+  .chat-history { display: grid; gap: 8px; max-height: min(180px, calc(23vh / var(--app-zoom, 1))); overflow-y: auto; }
+  .bubble { padding: 10px 12px; border-radius: 12px; font-size: var(--t-sm); line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; max-width: 100%; }
   .bubble.assistant { background: var(--sunk); }
   .bubble.user { background: var(--ink); color: var(--paper); justify-self: end; }
   .ask { display: flex; gap: 6px; align-items: flex-end; border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 6px 6px 12px; background: var(--input); }
-  .ask textarea { flex: 1; border: 0; background: none; resize: none; outline: none; padding: 6px 0; font: var(--t-md) / 1.4 var(--ui); color: var(--ink); min-height: 22px; overflow: hidden; }
+  .ask textarea { flex: 1; border: 0; background: none; resize: none; outline: none; padding: 6px 0; font: var(--t-md) / 1.4 var(--ui); color: var(--ink); min-height: 22px; max-height: 4lh; overflow-y: auto; }
   .sugg { display: flex; flex-wrap: wrap; gap: 6px; }
   .sugg button { border: 1px solid var(--line); background: var(--panel); border-radius: 99px; padding: 5px 11px; font: var(--t-xs) var(--ui); color: var(--muted); }
   .sugg button:hover:not(:disabled) { color: var(--ink); border-color: var(--muted); }

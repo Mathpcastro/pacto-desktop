@@ -382,3 +382,8 @@ Não verificado: carrossel inteiro com a nova direção de arte e geração real
 [[62 - Release Carrossell 1.13.4]]: imagens fora do `state.json`, em `blobs/`, com migração automática. Corrige o "Invalid string length" que travava as gravações de quem tinha muitos carrosséis de Arte com IA.
 269 testes, build e uma prova Electron sobre a cópia da biblioteca real passaram. Latest, feeds e SHA-512 verificados. Aviso importante v1-13-4 publicado.
 Não testado na biblioteca da cliente, que deve ter cerca de 500 MB.
+
+
+## 14/11/2026 — Revisão do Estúdio com conversa longa
+
+[[63 - Revisao do Estudio com conversa longa]] reproduz e corrige o checklist encoberto pelo histórico na 1.13.4. Prova Electron aprova o texto e gera capas para um roteiro já revisado. Correção em build local.

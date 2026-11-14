@@ -125,8 +125,13 @@ function Marked({ text, emphasis }) {
 function Chat({ project, request, busy, connected, placeholder }) {
   const [text, setText] = useState("");
   const [all, setAll] = useState(false);
+  const history = useRef(null);
   const messages = project.messages || [];
   const shown = all ? messages : messages.slice(-2);
+  const lastMessageId = messages.at(-1)?.id;
+  useEffect(() => {
+    if (history.current) history.current.scrollTop = all ? 0 : history.current.scrollHeight;
+  }, [all, lastMessageId]);
   return (
     <div className="chat">
       {messages.length > 2 && (
@@ -134,11 +139,15 @@ function Chat({ project, request, busy, connected, placeholder }) {
           {all ? "Mostrar só as últimas" : `Ver conversa inteira (${messages.length})`}
         </button>
       )}
-      {shown.map((m) => (
-        <p key={m.id} className={`bubble ${m.role}`}>
-          {m.text}
-        </p>
-      ))}
+      {shown.length > 0 && (
+        <div className="chat-history" ref={history} role="region" aria-label="Histórico da conversa" tabIndex={0}>
+          {shown.map((m) => (
+            <p key={m.id} className={`bubble ${m.role}`}>
+              {m.text}
+            </p>
+          ))}
+        </div>
+      )}
       <form
         className="ask"
         onSubmit={async (e) => {
