@@ -1,6 +1,6 @@
 {
   "name": "pacto-desktop",
-  "version": "1.13.3",
+  "version": "1.13.4",
   "description": "Carrossell — carrosséis com estratégia de venda e o método P.A.C.T.O.",
   "type": "module",
   "main": "electron/main.mjs",
