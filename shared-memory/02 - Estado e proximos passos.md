@@ -387,3 +387,8 @@ Não testado na biblioteca da cliente, que deve ter cerca de 500 MB.
 ## 14/11/2026 — Revisão do Estúdio com conversa longa
 
 [[63 - Revisao do Estudio com conversa longa]] reproduz e corrige o checklist encoberto pelo histórico na 1.13.4. Prova Electron aprova o texto e gera capas para um roteiro já revisado. Correção em build local.
+
+
+## 14/11/2026 — Release 1.13.5 publicada
+
+[[64 - Release Carrossell 1.13.5]] corrige o checklist que ficava encoberto pelo histórico do Estúdio. Windows, Mac e Linux com links, feeds e SHA-512 conferidos, zero artefatos de Actions e aviso publicado.

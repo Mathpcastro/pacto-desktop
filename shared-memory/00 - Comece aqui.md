@@ -97,3 +97,8 @@ Nome do app: **Carrossell**, direção visual 02. O método continua P.A.C.T.O. 
 ## 11/11/2026 — Release 1.10.2 publicada
 
 [[55 - Release Carrossell 1.10.2]] registra o Radar no menu principal e a publicação para Windows, Mac Apple Silicon e Mac Intel. Links, feed, SHA-512, zero artefatos de Actions e aviso público conferidos.
+
+
+## 14/11/2026 — Release 1.13.5 publicada
+
+[[64 - Release Carrossell 1.13.5]] corrige o checklist que ficava encoberto pelo histórico do Estúdio. Windows, Mac e Linux com links, feeds e SHA-512 conferidos, zero artefatos de Actions e aviso publicado.
