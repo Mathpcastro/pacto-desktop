@@ -376,3 +376,9 @@ Não testado com bot real nem no computador da cliente.
 [[61 - Release Carrossell 1.13.3]]: diário do piloto (`pilot.log`) e botão "Copiar diagnóstico"; idioma do carrossel (pt-BR, pt-PT, espanhol, inglês); Arte com IA com estilo de ilustração, fonte e layout escolhidos pelo negócio.
 265 testes, build e quatro provas Electron passaram. Latest, feeds e SHA-512 verificados. Aviso v1-13-3 publicado.
 Não verificado: carrossel inteiro com a nova direção de arte e geração real em inglês ou pt-PT. O estilo 3D suave não foi seguido no teste do SaaS.
+
+## 14/11/2026 — Release 1.13.4 publicada
+
+[[62 - Release Carrossell 1.13.4]]: imagens fora do `state.json`, em `blobs/`, com migração automática. Corrige o "Invalid string length" que travava as gravações de quem tinha muitos carrosséis de Arte com IA.
+269 testes, build e uma prova Electron sobre a cópia da biblioteca real passaram. Latest, feeds e SHA-512 verificados. Aviso importante v1-13-4 publicado.
+Não testado na biblioteca da cliente, que deve ter cerca de 500 MB.
