@@ -1,6 +1,23 @@
-import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, readdir, unlink, access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
+
+// Imagens fora do state.json. Antes cada arte ia em base64 dentro dele, e a biblioteca de quem usa a
+// rotina passava de 512 milhões de caracteres: toda gravação falhava com "Invalid string length".
+// Agora o state.json guarda só carrossell-imagem://<sha1>.<ext>, e a imagem fica em blobs/. Ao abrir,
+// as referências voltam a ser data URLs, então o resto do app não muda. Bibliotecas antigas, com
+// base64 dentro, são lidas normalmente e convertidas na próxima gravação.
+const BLOB_DIR='blobs';
+const BLOB_REF=/^carrossell-imagem:\/\/([a-f0-9]{40}\.(?:png|jpg|webp))$/;
+const BLOB_MIME={png:'image/png',jpg:'image/jpeg',webp:'image/webp'};
+const DATA_IMAGE=/^data:image\/(png|jpeg|webp);base64,/;
+const exists=file=>access(file).then(()=>true,()=>false);
+function mapStrings(value,fn){
+  if(typeof value==='string')return fn(value);
+  if(Array.isArray(value)){for(let i=0;i<value.length;i++)value[i]=mapStrings(value[i],fn);return value;}
+  if(value&&typeof value==='object'){for(const key of Object.keys(value))value[key]=mapStrings(value[key],fn);return value;}
+  return value;
+}
 import { zipSync, strToU8, unzlibSync } from 'fflate';
 import { STYLES, FORMATS, LAYOUTS } from './templates.mjs';
 import { normalizeLocale, normalizeContentLanguage, CONTENT_LANGUAGES } from './i18n.mjs';
@@ -69,11 +86,12 @@ export const FEEDBACK_AREAS=['texto','visual','geral'];
 // Contas do Instagram padrão deste perfil (a chave e a lista de contas do Composio ficam fora da biblioteca).
 const emptyInstagram=()=>({defaults:[]});
 export class Store {
-  constructor(root){this.root=resolve(root);this.data={profile:null,projects:[],ideas:[],media:emptyMedia(),feedback:[],instagram:emptyInstagram(),settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
+  constructor(root){this.root=resolve(root);this.blobs=new Map();this.data={profile:null,projects:[],ideas:[],media:emptyMedia(),feedback:[],instagram:emptyInstagram(),settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
   async init(){
-    await mkdir(join(this.root,'images'),{recursive:true});
+    await mkdir(join(this.root,'images'),{recursive:true});await mkdir(join(this.root,BLOB_DIR),{recursive:true});
     try{this.data=JSON.parse(await readFile(join(this.root,'state.json'),'utf8'));if(!Array.isArray(this.data.projects))throw Error();}
     catch(error){if(error.code!=='ENOENT')throw new Error('A biblioteca local não pôde ser lida. Seus arquivos foram preservados.');}
+    await this.loadBlobs();
     this.data.onboarding={brand:emptyInterview(),design:emptyInterview(),...this.data.onboarding};
     if(!Array.isArray(this.data.ideas))this.data.ideas=[];
     if(!Array.isArray(this.data.feedback))this.data.feedback=[];
@@ -107,9 +125,38 @@ export class Store {
     this.data.analytics=data;await this.persist();return structuredClone(existing||source);
   }
   get(id){validId(id);const p=this.data.projects.find(p=>p.id===id);if(!p)throw new Error('Projeto não encontrado.');return structuredClone(p);}
+  // Troca cada referência pela imagem e apaga de blobs/ o que nenhum campo usa mais.
+  async loadBlobs(){
+    const loaded=new Map();
+    const refs=[];mapStrings(this.data,value=>{const m=BLOB_REF.exec(value);if(m)refs.push(m[1]);return value;});
+    for(const name of new Set(refs)){
+      const bytes=await readFile(join(this.root,BLOB_DIR,name)).catch(()=>null);
+      loaded.set(name,bytes?.length?`data:${BLOB_MIME[name.split('.').pop()]};base64,${bytes.toString('base64')}`:'');
+    }
+    // Uma imagem que sumiu do disco vira campo vazio: o projeto abre e a arte pode ser gerada de novo.
+    mapStrings(this.data,value=>{const m=BLOB_REF.exec(value);return m?loaded.get(m[1]):value;});
+    for(const [name,dataUrl] of loaded)if(dataUrl)this.blobs.set(dataUrl,name);
+    for(const file of await readdir(join(this.root,BLOB_DIR)).catch(()=>[]))
+      if(/^[a-f0-9]{40}\.(?:png|jpg|webp)$/.test(file)&&!loaded.get(file))await unlink(join(this.root,BLOB_DIR,file)).catch(()=>{});
+  }
   persist(){
-    const body=JSON.stringify(this.data,null,2);
-    const job=this.queue.then(async()=>{const temp=join(this.root,`state-${randomUUID()}.tmp`);await writeFile(temp,body,'utf8');await rename(temp,join(this.root,'state.json'));});
+    // Cada imagem vira referência; só as novas são gravadas em blobs/, antes do state.json que as cita.
+    const known=this.blobs,next=new Map(),fresh=[];
+    const body=JSON.stringify(this.data,(_key,value)=>{
+      if(typeof value!=='string'||value.length<1024)return value;
+      let name=known.get(value)||next.get(value);
+      if(!name){const m=DATA_IMAGE.exec(value);if(!m)return value;name=`${createHash('sha1').update(value).digest('hex')}.${m[1]==='jpeg'?'jpg':m[1]}`;fresh.push([name,value.slice(m[0].length)]);}
+      next.set(value,name);return `carrossell-imagem://${name}`;
+    },2);
+    this.blobs=next;
+    const job=this.queue.then(async()=>{
+      for(const [name,base64] of fresh){const file=join(this.root,BLOB_DIR,name);if(!await exists(file))await writeFile(file,Buffer.from(base64,'base64'));}
+      const temp=join(this.root,`state-${randomUUID()}.tmp`);await writeFile(temp,body,'utf8');await rename(temp,join(this.root,'state.json'));
+    }).catch(error=>{
+      // Sem a imagem no disco, a próxima gravação precisa tentar de novo.
+      const failed=new Set(fresh.map(([name])=>name));for(const [value,name] of this.blobs)if(failed.has(name))this.blobs.delete(value);
+      throw error;
+    });
     this.queue=job.catch(()=>{});return job;
   }
   async saveProfile(profile){
