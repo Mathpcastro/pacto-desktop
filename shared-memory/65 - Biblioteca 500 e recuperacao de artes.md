@@ -21,3 +21,7 @@
 - 273 testes passaram, 1 pulado. Build aprovado. A prova de navegação do Radar, as 9 regressões do renderer, as 46 verificações de interface e as 16 verificações da biblioteca original passaram.
 - `scripts/swipe-library-proof.mjs` passou no Electron de desenvolvimento e no Windows empacotado. Com o ZIP real, a importação até aparecer na tela levou 5,6 s no empacotado nesta máquina. Catálogo com 335.944 bytes de metadados, sem imagens em base64. A prova encontrou a última referência, abriu card de detalhe, voltou ao compositor, avançou página, abriu as 36 referências nativas, trocou etapas mantendo duas artes e reabriu o app com o índice de teste corrompido, recuperando as artes e a coleção.
 - Executável local: `C:/Users/Admin2/Documents/pacto-app-biblioteca/release/biblioteca/win-unpacked/Carrossell.exe`.
+
+## Teste aprovado e atendimento pendente
+
+Em 16/11/2026, o usuário confirmou que o Swipe File foi feito e que o build de teste funcionou, autorizando a release. O caso da Amanda segue pendente. O EVTX enviado era do canal Segurança e não trouxe eventos do Carrossell. A limpeza reversível de cache foi orientada, mas não há confirmação de que resolveu na máquina dela.
