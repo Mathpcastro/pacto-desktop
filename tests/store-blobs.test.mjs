@@ -38,7 +38,7 @@ test('an old library with base64 inside state.json opens and is converted on the
   assert.equal((await readdir(join(root,'blobs'))).length,1);
 });
 
-test('a missing image file leaves an empty field instead of breaking the library, and orphan files are removed',async t=>{
+test('a missing blob is restored from the saved image version when available',async t=>{
   const root=await library(t),store=await new Store(root).init(),png=noisePng();
   const p=await store.createProject({title:'x',brief:'b'});await store.saveProject({id:p.id,slides});await store.addImage(p.id,'a',png);
   const [kept]=await readdir(join(root,'blobs'));
@@ -46,7 +46,35 @@ test('a missing image file leaves an empty field instead of breaking the library
   let reopened=await new Store(root).init();
   assert.deepEqual(await readdir(join(root,'blobs')),[kept]);assert.equal(reopened.get(p.id).slides[0].image,dataUrl(png));
   await rm(join(root,'blobs',kept));
-  reopened=await new Store(root).init();assert.equal(reopened.get(p.id).slides[0].image,'');assert.equal(reopened.get(p.id).title,'x');
+  reopened=await new Store(root).init();assert.equal(reopened.get(p.id).slides[0].image,dataUrl(png));assert.equal(reopened.get(p.id).title,'x');
+  const [version]=await readdir(join(root,'images'));
+  await rm(join(root,'blobs',kept));await rm(join(root,'images',version));
+  reopened=await new Store(root).init();assert.equal(reopened.get(p.id).slides[0].image,'');
+});
+
+test('concurrent image writes preserve both cards',async t=>{
+  const root=await library(t),store=await new Store(root).init();
+  const {id}=await store.createProject({title:'Teste',brief:'Teste'});
+  await store.saveProject({id,slides});
+  const first=noisePng(),second=noisePng();
+  await Promise.all([store.addImage(id,'a',first),store.addImage(id,'b',second)]);
+  const actual=(await new Store(root).init()).get(id);
+  assert.ok(actual.slides[0].image===dataUrl(first),'a gravação do segundo card perdeu o primeiro');
+  assert.ok(actual.slides[1].image===dataUrl(second));
+});
+
+test('opening restores the last saved library from backup and preserves the damaged file',async t=>{
+  const root=await library(t),store=await new Store(root).init(),png=noisePng();
+  const {id}=await store.createProject({title:'Roteiro salvo',brief:'Teste'});
+  await store.saveProject({id,slides});
+  await store.addImage(id,'a',png);
+  await writeFile(join(root,'state.json'),'{"projects":[');
+  const reopened=await new Store(root).init();
+  assert.equal(reopened.get(id).title,'Roteiro salvo');
+  assert.equal(reopened.get(id).slides[0].image,dataUrl(png));
+  const damaged=(await readdir(root)).find(name=>name.startsWith('state-damaged-'));
+  assert.ok(damaged);
+  assert.equal(await readFile(join(root,damaged),'utf8'),'{"projects":[');
 });
 
 test('a library bigger than the JavaScript string limit still saves (the "Invalid string length" bug)',async t=>{

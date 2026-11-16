@@ -38,6 +38,7 @@ try {
     window.pacto = {
       onEvent(fn) { receive = fn; return () => {}; },
       async request(action, args) {
+        if (action === 'licenseStatus') return { activated: true, expiresAt: new Date(Date.now() + 90 * 86400000).toISOString() };
         if (action === 'bootstrap') return structuredClone(state);
         if (action === 'approveAutopilot') {
           window.testCalls.push(args);
@@ -59,7 +60,8 @@ try {
   const ideas = tabs.getByRole('tab', { name: 'Ideias', exact: true });
   const pilot = tabs.getByRole('tab', { name: 'Piloto automático', exact: true });
   await expect(radar).toBeVisible({ timeout: 2500 });
-  await expect(nav.getByRole('button')).toHaveCount(4);
+  await expect(nav.getByRole('button')).toHaveCount(5);
+  await expect(nav.getByRole('button', { name: 'Biblioteca', exact: true })).toBeVisible();
   await expect(radar).toContainText('2');
   await expect(queueLink).toHaveText(/2 carrosséis para revisar/);
   await page.getByLabel('Tema ou ideia').fill('Rascunho que deve sobreviver ao Radar');

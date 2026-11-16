@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, rename, readdir, unlink, access } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, readdir, unlink, copyFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 
@@ -11,7 +11,19 @@ const BLOB_DIR='blobs';
 const BLOB_REF=/^carrossell-imagem:\/\/([a-f0-9]{40}\.(?:png|jpg|webp))$/;
 const BLOB_MIME={png:'image/png',jpg:'image/jpeg',webp:'image/webp'};
 const DATA_IMAGE=/^data:image\/(png|jpeg|webp);base64,/;
-const exists=file=>access(file).then(()=>true,()=>false);
+const STATE_BACKUP='state-backup.json';
+const readOptional=file=>readFile(file).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
+const digest=value=>createHash('sha1').update(value).digest('hex');
+function parseState(raw){
+  const data=JSON.parse(raw.toString('utf8'));
+  if(!Array.isArray(data?.projects)||data.projects.some(p=>!Array.isArray(p?.slides)))throw new Error('Estado inválido.');
+  return data;
+}
+async function writeAtomic(file, bytes){
+  const temp=`${file}-${randomUUID()}.tmp`;
+  try{await writeFile(temp,bytes);await rename(temp,file);}
+  finally{await unlink(temp).catch(()=>{});}
+}
 function mapStrings(value,fn){
   if(typeof value==='string')return fn(value);
   if(Array.isArray(value)){for(let i=0;i<value.length;i++)value[i]=mapStrings(value[i],fn);return value;}
@@ -89,8 +101,20 @@ export class Store {
   constructor(root){this.root=resolve(root);this.blobs=new Map();this.data={profile:null,projects:[],ideas:[],media:emptyMedia(),feedback:[],instagram:emptyInstagram(),settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
   async init(){
     await mkdir(join(this.root,'images'),{recursive:true});await mkdir(join(this.root,BLOB_DIR),{recursive:true});
-    try{this.data=JSON.parse(await readFile(join(this.root,'state.json'),'utf8'));if(!Array.isArray(this.data.projects))throw Error();}
-    catch(error){if(error.code!=='ENOENT')throw new Error('A biblioteca local não pôde ser lida. Seus arquivos foram preservados.');}
+    const file=join(this.root,'state.json');
+    try{
+      const raw=await readOptional(file);
+      if(!raw){
+        const backup=await readOptional(join(this.root,STATE_BACKUP));
+        if(backup)this.data=parseState(backup);
+      }else{
+        try{this.data=parseState(raw);}
+        catch{
+          this.data=parseState(await readFile(join(this.root,STATE_BACKUP)));
+          await copyFile(file,join(this.root,`state-damaged-${randomUUID()}.json`));
+        }
+      }
+    }catch(cause){throw new Error('A biblioteca local não pôde ser lida. Seus arquivos foram preservados.',{cause});}
     await this.loadBlobs();
     this.data.onboarding={brand:emptyInterview(),design:emptyInterview(),...this.data.onboarding};
     if(!Array.isArray(this.data.ideas))this.data.ideas=[];
@@ -105,7 +129,14 @@ export class Store {
     // Projetos anteriores ao fluxo texto → capa → restante: arte existente vale como texto aprovado.
     for(const p of this.data.projects){if(p.textApproved===undefined)p.textApproved=p.slides.some(s=>s.image);if(!Array.isArray(p.coverOptions))p.coverOptions=[];if(!p.format)p.format='carrossel';if(!p.style)p.style='ia';if(p.styleVariant===undefined)p.styleVariant=0;if(p.sourceId===undefined)p.sourceId='';if(!Array.isArray(p.attachments))p.attachments=[];}
     for(const p of this.data.projects)if(['planning','generating'].includes(p.status)){p.status='draft';p.slides=p.slides.map(s=>s.state==='generating'?{...s,state:s.previousState||(s.image?'complete':'draft')}:s);p.error='A operação foi interrompida. Você pode continuar deste rascunho.';}
-    await this.persist();return this;
+    await this.persist();
+    // Só limpe órfãos se as duas cópias do índice já apontarem para os blobs atuais.
+    if(this.backupCurrent){
+      const retained=new Set(this.blobs.values());
+      for(const file of await readdir(join(this.root,BLOB_DIR)).catch(()=>[]))
+        if(/^[a-f0-9]{40}\.(?:png|jpg|webp)$/.test(file)&&!retained.has(file))await unlink(join(this.root,BLOB_DIR,file)).catch(()=>{});
+    }
+    return this;
   }
   state(){return structuredClone(this.data);}
   analytics(){return structuredClone(this.data.analytics||{reports:{},snapshots:{},sources:[]});}
@@ -125,37 +156,45 @@ export class Store {
     this.data.analytics=data;await this.persist();return structuredClone(existing||source);
   }
   get(id){validId(id);const p=this.data.projects.find(p=>p.id===id);if(!p)throw new Error('Projeto não encontrado.');return structuredClone(p);}
-  // Troca cada referência pela imagem e apaga de blobs/ o que nenhum campo usa mais.
+  // Uma versão da arte que já foi salva em images/ também pode recuperar um blob ausente.
   async loadBlobs(){
     const loaded=new Map();
+    const versionFiles=new Map();
+    for(const p of this.data.projects){
+      for(const art of [...p.slides,...(p.coverOptions||[]),...(p.stories||[])]){
+        const key=BLOB_REF.exec(art.image)?.[1],file=art.file||art.versions?.at(-1)?.file;
+        if(key&&/^[a-f0-9-]{36}\.png$/.test(file))versionFiles.set(key,file);
+      }
+    }
     const refs=[];mapStrings(this.data,value=>{const m=BLOB_REF.exec(value);if(m)refs.push(m[1]);return value;});
     for(const name of new Set(refs)){
-      const bytes=await readFile(join(this.root,BLOB_DIR,name)).catch(()=>null);
-      loaded.set(name,bytes?.length?`data:${BLOB_MIME[name.split('.').pop()]};base64,${bytes.toString('base64')}`:'');
+      const mime=BLOB_MIME[name.split('.').pop()];
+      const bytes=await readOptional(join(this.root,BLOB_DIR,name));
+      const url=bytes?.length?`data:${mime};base64,${bytes.toString('base64')}`:'';
+      if(url&&digest(url)===name.split('.')[0]){loaded.set(name,url);this.blobs.set(url,name);continue;}
+      const fallback=versionFiles.get(name);
+      const saved=fallback?await readOptional(join(this.root,'images',fallback)):null;
+      const recovered=saved?.length?`data:${mime};base64,${saved.toString('base64')}`:'';
+      loaded.set(name,recovered&&digest(recovered)===name.split('.')[0]?recovered:'');
     }
     // Uma imagem que sumiu do disco vira campo vazio: o projeto abre e a arte pode ser gerada de novo.
     mapStrings(this.data,value=>{const m=BLOB_REF.exec(value);return m?loaded.get(m[1]):value;});
-    for(const [name,dataUrl] of loaded)if(dataUrl)this.blobs.set(dataUrl,name);
-    for(const file of await readdir(join(this.root,BLOB_DIR)).catch(()=>[]))
-      if(/^[a-f0-9]{40}\.(?:png|jpg|webp)$/.test(file)&&!loaded.get(file))await unlink(join(this.root,BLOB_DIR,file)).catch(()=>{});
   }
   persist(){
     // Cada imagem vira referência; só as novas são gravadas em blobs/, antes do state.json que as cita.
-    const known=this.blobs,next=new Map(),fresh=[];
+    const next=new Map();
     const body=JSON.stringify(this.data,(_key,value)=>{
       if(typeof value!=='string'||value.length<1024)return value;
-      let name=known.get(value)||next.get(value);
-      if(!name){const m=DATA_IMAGE.exec(value);if(!m)return value;name=`${createHash('sha1').update(value).digest('hex')}.${m[1]==='jpeg'?'jpg':m[1]}`;fresh.push([name,value.slice(m[0].length)]);}
+      let name=this.blobs.get(value)||next.get(value);
+      if(!name){const m=DATA_IMAGE.exec(value);if(!m)return value;name=`${digest(value)}.${m[1]==='jpeg'?'jpg':m[1]}`;}
       next.set(value,name);return `carrossell-imagem://${name}`;
     },2);
-    this.blobs=next;
     const job=this.queue.then(async()=>{
-      for(const [name,base64] of fresh){const file=join(this.root,BLOB_DIR,name);if(!await exists(file))await writeFile(file,Buffer.from(base64,'base64'));}
-      const temp=join(this.root,`state-${randomUUID()}.tmp`);await writeFile(temp,body,'utf8');await rename(temp,join(this.root,'state.json'));
-    }).catch(error=>{
-      // Sem a imagem no disco, a próxima gravação precisa tentar de novo.
-      const failed=new Set(fresh.map(([name])=>name));for(const [value,name] of this.blobs)if(failed.has(name))this.blobs.delete(value);
-      throw error;
+      for(const [url,name] of next)if(!this.blobs.has(url))
+        await writeAtomic(join(this.root,BLOB_DIR,name),Buffer.from(url.slice(url.indexOf(',')+1),'base64'));
+      await writeAtomic(join(this.root,'state.json'),body);
+      this.blobs=next;
+      this.backupCurrent=await writeAtomic(join(this.root,STATE_BACKUP),body).then(()=>true,()=>false);
     });
     this.queue=job.catch(()=>{});return job;
   }
@@ -281,8 +320,10 @@ export class Store {
   async saveIdeaBatch(batch){this.data.ideas=[batch,...this.data.ideas].slice(0,40);await this.persist();return batch;}
   async deleteIdeaBatch(id){validId(id);this.data.ideas=this.data.ideas.filter(b=>b.id!==id);await this.persist();}
   async addImage(id,slideId,input){
-    const bytes=pngBytes(input),p=this.get(id),slide=p.slides.find(s=>s.id===validId(slideId));if(!slide)throw new Error('Slide não encontrado.');
+    const bytes=pngBytes(input);validId(slideId);this.get(id);
     const file=`${randomUUID()}.png`;await writeFile(join(this.root,'images',file),bytes);
+    const p=this.get(id),slide=p.slides.find(s=>s.id===slideId);
+    if(!slide){await unlink(join(this.root,'images',file)).catch(()=>{});throw new Error('Slide não encontrado.');}
     const image=`data:image/png;base64,${bytes.toString('base64')}`;
     slide.versions=[...(slide.versions||[]),{file,createdAt:new Date().toISOString()}];slide.image=image;slide.state='complete';
     return this.update(id,{slides:p.slides});

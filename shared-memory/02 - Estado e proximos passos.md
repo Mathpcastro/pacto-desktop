@@ -392,3 +392,8 @@ Não testado na biblioteca da cliente, que deve ter cerca de 500 MB.
 ## 14/11/2026 — Release 1.13.5 publicada
 
 [[64 - Release Carrossell 1.13.5]] corrige o checklist que ficava encoberto pelo histórico do Estúdio. Windows, Mac e Linux com links, feeds e SHA-512 conferidos, zero artefatos de Actions e aviso publicado.
+
+
+## 16/11/2026 — Biblioteca de 500 referências e recuperação de artes
+
+[[65 - Biblioteca 500 e recuperacao de artes]] documenta a proteção das artes e o Swipe File do Kimi com 500 referências importáveis. Build Windows local validado. Causa exata nos computadores dos clientes ainda sem log.

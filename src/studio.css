@@ -729,6 +729,12 @@
   .reference-reason b { color: var(--ink); font-size: var(--t-sm); }
   .reference-use { width: 100%; margin-top: auto; }
   .reference-empty { margin-top: 8px; }
+  .reference-import { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; border: 1px dashed var(--line); border-radius: var(--radius); padding: 12px 16px; }
+  .reference-import .btn { margin-left: auto; }
+  .reference-pagination { justify-content: center; }
+  .reference-detail { display: grid; gap: 12px; padding: 18px; overflow: auto; }
+  .reference-detail img { display: block; width: auto; max-width: 100%; max-height: 50vh; margin: auto; object-fit: contain; }
+  .reference-caption { white-space: pre-wrap; overflow-wrap: anywhere; }
   @media (max-width: 700px) {
     .reference-page { padding: 24px 18px 48px; }
     .reference-count { margin-left: 0; }

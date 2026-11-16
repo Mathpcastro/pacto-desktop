@@ -1,7 +1,7 @@
 export function filterReferences(items, query = '', niche = 'all', goal = 'all') {
   const q = query.trim().toLocaleLowerCase('pt-BR');
   return items.filter(item => {
-    const haystack = [item.theme, item.hook, item.deliverable, item.reason, item.niche, item.author]
+    const haystack = [item.sourceId, item.theme, item.hook, item.deliverable, item.reason, item.niche, item.author, item.platform]
       .join(' ')
       .toLocaleLowerCase('pt-BR');
     return (!q || haystack.includes(q))

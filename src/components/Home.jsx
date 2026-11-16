@@ -112,7 +112,7 @@ function Measure({ project, request, onDone }) {
 
 import { CONTENT_LANGUAGE_OPTIONS, contentLanguageLabel, defaultContentLanguage } from "../contentLanguages.js";
 
-export default function Home({ view, state, request, isPending, onOpen, onNotice, onShowHome, composerRef, connected, onAgents, onDiscover, onView, pendingReviews, onStories, onInstagram, target }) {
+export default function Home({ view, state, request, isPending, onOpen, onNotice, onShowHome, composerRef, connected, onAgents, onDiscover, onView, pendingReviews, onStories, onInstagram, target, onImportReferences, referenceImporting, referenceRevision }) {
   const pop = usePopover();
   const [text, setText] = useState("");
   const [format, setFormat] = useState("carrossel");
@@ -266,7 +266,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
   if (view === "references") {
     return (
       <Suspense fallback={<div className="page"><p className="page-sub" role="status">Abrindo referências…</p></div>}>
-        <References onUse={useReference} />
+        <References onUse={useReference} request={request} onImport={onImportReferences} importing={referenceImporting} revision={referenceRevision} />
       </Suspense>
     );
   }

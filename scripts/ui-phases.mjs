@@ -166,9 +166,9 @@ try {
   await page.getByRole("heading", { name: "O que vamos criar hoje?" }).waitFor();
   await check("a barra única tem poucos controles", async () => {
     const a = await audit(page);
-    // Navigation now exposes Contents and Pilot; discovery replaces the old
-    // references-only entry while preserving account and profile controls.
-    assert.ok(a.barControls <= 9, `controles na barra: ${a.barControls}`);
+    const nav = page.getByRole("navigation", { name: "Navegação principal" });
+    await expect(nav.getByRole("button")).toHaveText(["Início", "Conteúdos", /Radar/, "Biblioteca", "Marca"]);
+    assert.ok(a.barControls <= 10, `controles na barra: ${a.barControls}`);
   });
   await page.getByRole("button", { name: "Marca", exact: true }).click();
   await page.getByRole("heading", { name: "Agendei", level: 1 }).waitFor();

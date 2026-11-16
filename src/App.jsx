@@ -153,6 +153,28 @@ export default function App() {
     return () => window.removeEventListener("pacto:navigate", go);
   }, []);
   const goView = (next) => { setView(next); setProjectId(null); setSetup(null); };
+  const [referenceImporting, setReferenceImporting] = useState(false);
+  const [referenceRevision, setReferenceRevision] = useState(0);
+  const importingReference = useRef(false);
+  const importReferencePack = async (file) => {
+    if (importingReference.current) return;
+    importingReference.current = true;
+    setReferenceImporting(true);
+    try {
+      const result = file
+        ? await window.pacto.importReferencePack(file)
+        : await window.pacto.request("importReferencePack");
+      if (result?.installed) {
+        setReferenceRevision(revision => revision + 1);
+        setNotice(result.duplicate ? "Este Swipe File já está na Biblioteca." : "Swipe File disponível na Biblioteca.");
+      }
+    } catch (problem) {
+      setNotice(problem.message.replace(/^Error invoking remote method '[^']+': (?:\w*Error: )?/, ""));
+    } finally {
+      importingReference.current = false;
+      setReferenceImporting(false);
+    }
+  };
   const discoverAction = (action) => {
     setCapabilities(false);
     if (["carousel", "material", "presentation"].includes(action)) {
@@ -370,7 +392,8 @@ export default function App() {
             {radarOpen && <RadarNavigation view={view} pendingReviews={pendingReviews} onView={goView} />}
             <div hidden={view === "brand" || view === "pilot" || view === "review" || view === "stories"}
               {...(view === "ideas" ? { id: "radar-workspace", role: "tabpanel", "aria-labelledby": "radar-tab-ideas", tabIndex: 0 } : {})}>
-              <Home key={state.profileId} view={view} state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} onShowHome={goHome} composerRef={composerRef} connected={connected} onAgents={openAgents} onDiscover={openCapabilities} onView={goView} pendingReviews={pendingReviews} onStories={() => setProjectPicker("stories")} onInstagram={() => setIgOpen(true)} target={homeTarget} />
+              <Home key={state.profileId} view={view} state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} onShowHome={goHome} composerRef={composerRef} connected={connected} onAgents={openAgents} onDiscover={openCapabilities} onView={goView} pendingReviews={pendingReviews} onStories={() => setProjectPicker("stories")} onInstagram={() => setIgOpen(true)} target={homeTarget}
+                onImportReferences={importReferencePack} referenceImporting={referenceImporting} referenceRevision={referenceRevision} />
           </div>
           {view === "brand" && <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} onAgents={openAgents} target={brandTarget} />}
             {(view === "review" || view === "pilot") && <section className="page radar-content" id="radar-workspace" role="tabpanel" aria-labelledby={`radar-tab-${view}`} tabIndex={0}>
@@ -385,7 +408,17 @@ export default function App() {
   return (
     <RuntimeErrorContext.Provider value={error}>
       <CourseContext.Provider value={{ moments: state.courseMoments || [], play: available ? setVideo : null }}>
-        <div className="shell">
+        <div className="shell" onDragOver={event => {
+          if (available && event.dataTransfer.types.includes("Files")) event.preventDefault();
+        }} onDrop={event => {
+          if (!available || event.defaultPrevented || !event.dataTransfer.files.length) return;
+          const packs = Array.from(event.dataTransfer.files).filter(file => /\.(zip|carrossellrefs)$/i.test(file.name));
+          if (!packs.length) return;
+          event.preventDefault();
+          if (packs.length !== 1) { setNotice("Arraste um Swipe File por vez."); return; }
+          if (hasProfile && !editing && !setup) goView("references");
+          void importReferencePack(packs[0]);
+        }}>
           {editing ? null : (
             <header className="topbar" ref={menu.ref}>
               <button className="brandmark" aria-label="Carrossell, início" onClick={goHome}>
@@ -404,6 +437,9 @@ export default function App() {
                   <button aria-current={radarOpen ? "page" : undefined} onClick={() => pendingReviews ? goView("review") : discoverAction("radar")}>
                     <Radar size={16} aria-hidden="true" /> Radar
                     {pendingReviews > 0 && <span className="radar-count" aria-label={`${pendingReviews} para revisar`}>{pendingReviews}</span>}
+                  </button>
+                  <button aria-current={view === "references" ? "page" : undefined} onClick={() => goView("references")}>
+                    <LayoutTemplate size={16} aria-hidden="true" /> Biblioteca
                   </button>
                   <button aria-current={view === "brand" ? "page" : undefined} onClick={() => setView("brand")}>
                     <Palette size={16} /> Marca

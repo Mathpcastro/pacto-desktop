@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification, screen, Menu, powerMonitor, clipboard } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification, screen, Menu, powerMonitor, clipboard, protocol } from 'electron';
 import { PilotLog } from '../core/pilot-log.mjs';
 import { reminder } from '../core/rhythm.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -31,10 +31,14 @@ import { cliInfo, installCli } from './cli-install.mjs';
 import { translateUi } from '../core/i18n.mjs';
 import { PRIVACY_URL, TERMS_URL } from '../core/license.mjs';
 import { LicenseService } from './license.mjs';
+import { ReferenceLibrary } from './reference-library.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+protocol.registerSchemesAsPrivileged([{scheme:'carrossell-ref',privileges:{standard:true,secure:true}}]);
 // 0.2.1 identifies itself as pacto-desktop, including the packaged Windows app.
 // Pin that historical directory before changing the commercial display name.
 configureIdentity(app,process.env.PACTO_USER_DATA);
+const startupLog = new PilotLog(join(app.getPath('userData'), 'startup.log'));
+let startupStage = 'preparação';
 // --segundo-plano: sem janela, só o controle local para a CLI (agentes). Não usar --headless: o Chromium
 // entende essa opção como o modo sem tela dele e nenhuma janela aparece depois. Uma instância por usuário:
 // abrir o app com o segundo plano rodando mostra a janela nesse mesmo processo.
@@ -101,11 +105,17 @@ function openAuth(raw){if(fakeComposio)return console.log(`Link de conexão (tes
 const notify=(title,body)=>{if(Notification.isSupported())new Notification({title,icon:join(root,'resources','branding','icon-256.png'),body}).show();};
 app.whenReady().then(async()=>{
   if(!primary)return;
+  void startupLog.write('abrindo', { versao: app.getVersion(), sistema: process.platform });
   if(headless)app.dock?.hide();
   Menu.setApplicationMenu(appMenu());
   const userData=app.getPath('userData');const secrets=createSecrets(userData);licenseService=new LicenseService({store:secrets,userData,appVersion:app.getVersion()});
   setInterval(()=>{void licenseService?.status().catch(()=>{});},60*60*1000).unref?.();
-  const profiles=await new Profiles(join(userData,'library')).init();const store=await profiles.store();const knowledge=await loadKnowledge(join(root,'resources','pacto'));
+  startupStage = 'biblioteca local';
+  const profiles=await new Profiles(join(userData,'library')).init();const store=await profiles.store();
+  startupStage = 'recursos do app';
+  const knowledge=await loadKnowledge(join(root,'resources','pacto'));
+  const references=new ReferenceLibrary(join(userData,'reference-packs'));
+  protocol.handle('carrossell-ref',request=>references.image(request));
   codex=new CodexClient({home:join(app.getPath('userData'),'codex'),workspace:join(app.getPath('userData'),'generation'),onActivity:message=>emit({type:'activity',message:translateUi(runtime?.locale?.()||'pt-BR',message)}),onStatus:()=>{if(runtime)emit({type:'state',state:runtime.state()});if(codex?.status.account.connected)returnFromLogin();}});
   const render=createRenderer({folder:join(app.getPath('userData'),'render'),fontsDir:join(root,'node_modules','@fontsource','archivo','files'),failFirst:!app.isPackaged?Number(process.env.PACTO_RENDER_FAIL_FIRST||0):0});
   // Só em desenvolvimento: a prova de renderização cria renderizadores próprios com falhas forçadas.
@@ -147,7 +157,32 @@ app.whenReady().then(async()=>{
   setTimeout(()=>void noticeTick(),process.env.PACTO_NOTICES_URL?1500:20000).unref?.();setInterval(()=>void noticeTick(),60*60*1000).unref?.();
   ipcMain.handle('pacto:request',async(event,action,args)=>{
     const licenseActions=['licenseStatus','activateLicense','revalidateLicense','openLicenseLink'];
-    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'||action==='titleBar'||licenseActions.includes(action)))throw new Error('Solicitação não permitida.');
+    const referenceActions=['referenceCatalog','referenceDetails','referenceAttachment','referenceOpenOriginal','importReferencePack'];
+    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'||action==='titleBar'||licenseActions.includes(action)||referenceActions.includes(action)))throw new Error('Solicitação não permitida.');
+    if(referenceActions.includes(action)){
+      try{
+        if(action==='referenceCatalog')return await references.catalog();
+        if(action==='referenceDetails')return await references.item(args?.id);
+        if(action==='referenceAttachment')return await references.attachment(args?.id);
+        if(action==='referenceOpenOriginal'){
+          const {url}=await references.item(args?.id);
+          const source=new URL(url);
+          if(source.protocol!=='https:')throw new Error('Link inválido.');
+          await shell.openExternal(source.href);
+          return {ok:true};
+        }
+        let file=args?.file;
+        if(file===undefined){
+          const chosen=await dialog.showOpenDialog(window,{title:ui('Importar Swipe File'),properties:['openFile'],filters:[{name:'Swipe File',extensions:['zip','carrossellrefs']}]});
+          if(chosen.canceled)return {cancelled:true};
+          file=chosen.filePaths[0];
+        }
+        return await references.install(file,async({title,count,bytes})=>{
+          const result=await dialog.showMessageBox(window,{type:'question',message:title,detail:`${count} · ${(bytes/1024/1024).toFixed(1)} MB`,buttons:[ui('Importar Swipe File'),ui('Cancelar')],defaultId:0,cancelId:1,noLink:true});
+          return result.response===0;
+        });
+      }catch(error){throw safeError(error);}
+    }
     if(action==='installUpdate'){updates?.install();return {ok:true};}
     // Cores dos botões de janela acompanham o tema e a paleta escolhidos no app.
     if(action==='titleBar'){const color=String(args?.color||''),symbol=String(args?.symbol||'');if(process.platform!=='darwin'&&/^#[0-9a-f]{6}$/i.test(color)&&/^#[0-9a-f]{6}$/i.test(symbol))window.setTitleBarOverlay({color,symbolColor:symbol,height:55});return {ok:true};}
@@ -183,9 +218,19 @@ app.whenReady().then(async()=>{
   // Windows: com o piloto ligado o app segue rodando sem janela; a bandeja abre, procura atualização e sai.
   if(process.platform==='win32')tray=createTray({icon:join(root,'resources','branding',process.platform==='win32'?'carrossell.ico':'icon-32.png'),locale:runtime.locale(),show:()=>void showUI?.(),checkUpdates:()=>updates?updates.check():notify(ui('Carrossell · atualização'),ui('Abra o Carrossell para procurar atualização.')),quit:()=>app.quit()});
   Menu.setApplicationMenu(appMenu());
+  startupStage = 'janela principal';
   if(!headless)await showUI();
+  void startupLog.write('aberto',{modo:headless?'segundo plano':'janela'});
   void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
-}).catch(error=>{dialog.showErrorBox('Não foi possível abrir o Carrossell',safeError(error).message);app.quit();});
+}).catch(async error=>{
+  await startupLog.write('falha-ao-abrir',{etapa:startupStage,erro:error?.name,codigo:error?.cause?.code||error?.code});
+  const message=safeError(error).message;
+  dialog.showErrorBox(
+    'Não foi possível abrir o Carrossell',
+    `${message}\n\nEnvie o arquivo startup.log ao suporte.\n${startupLog.file}`,
+  );
+  app.quit();
+});
 // Fechar a janela com a CLI conectada ou trabalho rodando deixa o app em segundo plano até terminar.
 app.on('window-all-closed',()=>{
   if(control?.clients()||runtime?.job||runtime?.autopilot?.keepAlive()){
