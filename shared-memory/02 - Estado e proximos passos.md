@@ -397,3 +397,8 @@ Não testado na biblioteca da cliente, que deve ter cerca de 500 MB.
 ## 16/11/2026 — Biblioteca de 500 referências e recuperação de artes
 
 [[65 - Biblioteca 500 e recuperacao de artes]] documenta a proteção das artes e o Swipe File do Kimi com 500 referências importáveis. Build Windows local validado. Causa exata nos computadores dos clientes ainda sem log.
+
+
+## 16/11/2026 — Release 1.14.0 publicada
+
+[[66 - Release Carrossell 1.14.0]] publica a Biblioteca no menu, o importador do Swipe File validado com 500 referências e as correções de armazenamento. O caso da Amanda continua pendente.

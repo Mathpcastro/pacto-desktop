@@ -102,3 +102,8 @@ Nome do app: **Carrossell**, direção visual 02. O método continua P.A.C.T.O. 
 ## 14/11/2026 — Release 1.13.5 publicada
 
 [[64 - Release Carrossell 1.13.5]] corrige o checklist que ficava encoberto pelo histórico do Estúdio. Windows, Mac e Linux com links, feeds e SHA-512 conferidos, zero artefatos de Actions e aviso publicado.
+
+
+## 16/11/2026 — Release 1.14.0 publicada
+
+[[66 - Release Carrossell 1.14.0]] publica a Biblioteca no menu, o importador do Swipe File validado com 500 referências e as correções de armazenamento. O caso da Amanda continua pendente.
