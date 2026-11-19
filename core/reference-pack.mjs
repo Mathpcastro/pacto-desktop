@@ -4,8 +4,14 @@ import { join } from 'node:path';
 import { unzipSync } from 'fflate';
 
 const MB = 1024 * 1024;
-const ID = /^CAR-[0-9]{4,6}$/;
-const assetName = /^CAR-[0-9]{4,6}-(?:thumb|proof|[0-9]{3})\.webp$/;
+// CAR-: Swipe File do Instagram (500 referências). TT-: slideshows virais do TikTok (pacote do plano Completo).
+const ID = /^(?:CAR-[0-9]{4,6}|TT-[0-9]{6,24})$/;
+const assetName = /^(?:CAR-[0-9]{4,6}|TT-[0-9]{6,24})-(?:thumb|proof|[0-9]{3})\.webp$/;
+// Pacotes aceitos e quantas referências cada um pode ter. Cada pacote instala ao lado dos outros.
+export const PACKS = {
+  'kimi-500': count => count === 500,
+  'tiktok-slideshows': count => count >= 1 && count <= 1000,
+};
 const jsonFiles = ['manifest.json', 'references.json', 'checksums.json'];
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const invalid = () => new Error('O ZIP não é um Swipe File do Carrossell válido.');
@@ -14,6 +20,8 @@ function text(value, max) {
   if (typeof value !== 'string' || value.length > max) throw invalid();
   return value;
 }
+
+const count = value => Number.isSafeInteger(value) && value >= 0 ? value : null;
 
 function validateWebp(bytes) {
   const image = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.length);
@@ -78,8 +86,9 @@ export async function unpackReferencePack(file, target) {
   }
   if (manifest?.format !== 'carrossell-swipe-file') throw invalid();
   if (manifest.schema !== 1) throw new Error('Este Swipe File precisa de uma versão compatível do Carrossell.');
-  if (manifest.id !== 'kimi-500' || manifest.count !== 500 || !Number.isSafeInteger(manifest.version) || manifest.version < 1 ||
-      !Array.isArray(rows) || rows.length !== 500 || !checksums || Object.keys(checksums).length !== entries.size - 1) throw invalid();
+  if (!Object.hasOwn(PACKS, manifest.id) || !Number.isSafeInteger(manifest.count) || !PACKS[manifest.id](manifest.count) ||
+      !Number.isSafeInteger(manifest.version) || manifest.version < 1 ||
+      !Array.isArray(rows) || rows.length !== manifest.count || !checksums || Object.keys(checksums).length !== entries.size - 1) throw invalid();
   const title = text(manifest.title, 120);
   for (const [name, size] of entries) {
     if (files[name]?.length !== size) throw invalid();
@@ -112,8 +121,7 @@ export async function unpackReferencePack(file, target) {
       id: `pack-${id}`, sourceId: id, author: text(row.author, 320), hook: text(row.hook, 1000),
       niche: text(row.niche, 60), language: text(row.language, 20), platform: text(row.platform, 40),
       caption: text(row.caption, 12000), metricText: text(row.metricText, 1200), url,
-      likes: Number.isSafeInteger(row.likes) && row.likes >= 0 ? row.likes : null,
-      comments: Number.isSafeInteger(row.comments) && row.comments >= 0 ? row.comments : null,
+      likes: count(row.likes), comments: count(row.comments), views: count(row.views), saves: count(row.saves), shares: count(row.shares),
       coverage: row.coverage, evidence: row.evidence, slides,
       thumbnail: hasAsset(`${id}-thumb.webp`) ? `${id}-thumb.webp` : slides[0] || '',
       proof: hasAsset(`${id}-proof.webp`) ? `${id}-proof.webp` : '',

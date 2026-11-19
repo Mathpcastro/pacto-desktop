@@ -12,6 +12,19 @@ const NICHES = [
   ["marketing_digital", "Marketing digital"],
   ["direct_response", "Direct response"],
 ];
+// Nichos dos slideshows do TikTok (pacote do plano Completo).
+const NICHE_LABELS = {
+  apps: "Apps em geral", estudos: "Estudos", produtividade: "Produtividade", financas: "Finanças",
+  fitness: "Fitness", bem_estar: "Bem-estar", beleza: "Beleza", negocios: "Negócios",
+};
+const PLATFORM_LABELS = { tiktok: "TikTok", instagram: "Instagram", linkedin: "LinkedIn" };
+// Os nichos da coleção escolhida: os do Instagram de sempre ou os que existem no pacote.
+const nichesFor = items => {
+  const known = new Set(items.map(item => item.niche));
+  const fixed = NICHES.filter(([value]) => value === "all" || known.has(value));
+  const extra = [...known].filter(value => value && !NICHES.some(([v]) => v === value)).map(value => [value, NICHE_LABELS[value] || value]);
+  return [...fixed, ...extra];
+};
 const GOALS = [
   ["all", "Todos"],
   ["Alcance", "Alcance"],
@@ -25,6 +38,8 @@ const PAGE_SIZE = 24;
 const coverageLabel = item => item.coverage === "full_slides" ? "Sequência multipágina" : "Referência parcial";
 const evidenceLabel = item => ({ platform_screenshot: "Print da plataforma", search_result_screenshot: "Print da busca", metrics_text_only: "Métrica textual" })[item.evidence];
 const metrics = item => [
+  item.views == null ? "" : `${compactNumber.format(item.views)} views`,
+  item.saves == null ? "" : `${compactNumber.format(item.saves)} salvos`,
   item.likes == null ? "" : `${compactNumber.format(item.likes)} curtidas`,
   item.comments == null ? "" : `${compactNumber.format(item.comments)} comentários`,
 ].filter(Boolean).join(" · ") || item.metricText;
@@ -62,7 +77,7 @@ function ReferenceCard({ item, onUse, onDetails }) {
         </div>
         <div className="reference-tags" aria-label="Classificação editorial">
           <span className="chip">{imported ? coverageLabel(item) : item.architecture}</span>
-          <span className="chip accent">{imported ? item.platform : item.goal}</span>
+          <span className="chip accent">{imported ? PLATFORM_LABELS[item.platform] || item.platform : item.goal}</span>
         </div>
         {metrics(item) && <p className="reference-metrics">{metrics(item)}</p>}
         {!imported && <div className="reference-reason">
@@ -93,13 +108,17 @@ export default function References({ onUse, request, onImport, importing, revisi
     request("referenceCatalog").then(value => {
       if (current && Array.isArray(value?.items)) {
         setPack(value);
-        if (revision) setSource("imported");
+        if (revision) setSource(value.packs?.at(-1)?.id || "imported");
       }
     }).catch(() => {});
     return () => { current = false; };
   }, [revision, request]);
-  const imported = Boolean(pack && source === "imported");
-  const catalog = imported ? pack.items : REFERENCES;
+  // Cada pacote instalado (Instagram, TikTok) é uma coleção; "builtin" são as 36 que vêm no app.
+  const collections = pack ? (pack.packs || [{ id: "kimi-500", title: pack.title, items: pack.items }]) : [];
+  const chosen = collections.find(item => item.id === source) || collections[0];
+  const imported = Boolean(chosen && source !== "builtin");
+  const catalog = imported ? chosen.items : REFERENCES;
+  const niches = imported ? nichesFor(catalog) : NICHES;
   const filtered = useMemo(() => filterReferences(catalog, query, niche, imported ? "all" : goal), [catalog, query, niche, imported, goal]);
   const pages = imported ? Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)) : 1;
   const shownPage = Math.min(page, pages);
@@ -137,7 +156,9 @@ export default function References({ onUse, request, onImport, importing, revisi
         {importing && <span className="hint" role="status">Validando o Swipe File…</span>}
       </div>
       {pack && <div className="seg" role="group" aria-label="Coleções da Biblioteca">
-        <button type="button" aria-pressed={imported} onClick={() => { setSource("imported"); clearFilters(); }}>{pack.title}</button>
+        {collections.map(item => (
+          <button type="button" key={item.id} aria-pressed={imported && chosen.id === item.id} onClick={() => { setSource(item.id); clearFilters(); }}>{item.title}</button>
+        ))}
         <button type="button" aria-pressed={!imported} onClick={() => { setSource("builtin"); clearFilters(); }}>Referências incluídas</button>
       </div>}
       <section className="reference-toolbar" aria-label="Buscar e filtrar referências">
@@ -154,7 +175,7 @@ export default function References({ onUse, request, onImport, importing, revisi
           <div className="reference-filter">
             <span className="reference-filter-label" id="reference-niche-label">Nicho</span>
             <div className="seg" role="group" aria-labelledby="reference-niche-label">
-              {NICHES.map(([value, label]) => (
+              {niches.map(([value, label]) => (
                 <button type="button" key={value} aria-pressed={niche === value} onClick={() => { setNiche(value); setPage(1); }}>{label}</button>
               ))}
             </div>
