@@ -402,3 +402,9 @@ Não testado na biblioteca da cliente, que deve ter cerca de 500 MB.
 ## 16/11/2026 — Release 1.14.0 publicada
 
 [[66 - Release Carrossell 1.14.0]] publica a Biblioteca no menu, o importador do Swipe File validado com 500 referências e as correções de armazenamento. O caso da Amanda continua pendente.
+
+## 19/11/2026 — Release 1.14.1 publicada
+
+[[68 - Release Carrossell 1.14.1]]: a capa segue o post da Biblioteca, as cenas de fotos ganham fila e a Biblioteca recebe o pacote de slideshows virais do TikTok (154).
+277 testes, build e provas Electron passaram. Latest, feeds e SHA-512 verificados. Aviso v1-14-1 publicado, com o botão corrigido para as cenas de fotos.
+A página /app nova está pronta em ZIP, não publicada. Ela promete 500 slideshows do TikTok; hoje são 154.
