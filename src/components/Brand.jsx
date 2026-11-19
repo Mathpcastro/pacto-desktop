@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bot, Camera, Check, FileText, GraduationCap, Image as ImageIcon, ImagePlus, Palette as PaletteIcon, Plus, RefreshCw, Scissors, Sparkles, Square, Trash2, UserRound, X } from "lucide-react";
 import { palette, slideHtml } from "../../core/templates.mjs";
 import { translateUi } from "../../core/i18n.mjs";
@@ -219,6 +219,22 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
     locale: state.settings?.language === "es" ? "es" : "pt-BR",
   });
   const busyMedia = ["scenes", "scene", "cutout"].includes(working);
+  // Cenas aprovadas esperam a vez: uma foto é gerada por vez, e antes a segunda aprovação falhava calada
+  // enquanto a primeira estava sendo gerada.
+  const sceneQueue = useRef([]);
+  const [queuedScenes, setQueuedScenes] = useState([]);
+  useEffect(() => {
+    if (working || !connected) return;
+    const waiting = (state.media?.scenes || []).filter((s) => s.status === "approved" && !s.image);
+    sceneQueue.current = sceneQueue.current.filter((id) => waiting.some((s) => s.id === id));
+    setQueuedScenes(sceneQueue.current);
+    const next = sceneQueue.current.shift();
+    if (next) request("sceneImage", { id: next }).catch(() => {}).finally(() => setQueuedScenes([...sceneQueue.current]));
+  }, [working, connected, state.media?.scenes, request]);
+  const approveScene = async (scene) => {
+    if (!(await saveMedia({ scene: { id: scene.id, status: "approved" } }))) return;
+    if (!scene.image && !sceneQueue.current.includes(scene.id)) { sceneQueue.current.push(scene.id); setQueuedScenes([...sceneQueue.current]); }
+  };
   const [tab, setTabState] = useState(() => {
     try {
       const saved = localStorage.getItem(TAB_KEY);
@@ -505,11 +521,11 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
                 <Sparkles size={15} /> Sugerir cenas
               </button>
             </div>
-            <p className="hint">O Carrossell sugere cenas pelo seu Contexto da Marca. Só as aprovadas viram fotos nos carrosséis. Cada cena vira uma série de fotos do mesmo ambiente, com ângulos e detalhes diferentes: cada card usa uma foto da série.</p>
+            <p className="hint">As cenas chegam como ideia em texto, a partir do seu Contexto da Marca. Aprove as que combinam: o Carrossell gera a foto de cada uma, uma por vez. Cada cena vira uma série de fotos do mesmo ambiente, e cada card usa uma foto da série.</p>
             <div className="scene-grid">
               {media.scenes.map((s) => (
                 <div className={`scene ${s.status}`} key={s.id}>
-                  <div className="pic">{s.image ? <img src={s.image} alt={s.label} /> : <span>{s.status === "approved" ? "Foto ainda não gerada" : "Prévia depois de aprovar"}</span>}</div>
+                  <div className="pic">{s.image ? <img src={s.image} alt={s.label} /> : s.status === "approved" ? <span>{queuedScenes.includes(s.id) ? "Na fila para gerar a foto" : working === "scene" ? "Gerando fotos…" : "Foto ainda não gerada"}</span> : <span className="scene-idea"><small>Ideia da cena</small>{s.prompt || s.label}<b>Aprove para gerar a foto</b></span>}</div>
                   {s.images?.length > 1 && (
                     <div className="series" aria-label={`${s.images.length} fotos do mesmo ambiente`}>
                       {s.images.map((img, i) => (
@@ -534,10 +550,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
                         <>
                           <button
                             className="btn small primary"
-                            onClick={async () => {
-                              if (!(await saveMedia({ scene: { id: s.id, status: "approved" } }))) return;
-                              if (connected && !s.image) request("sceneImage", { id: s.id }).catch(() => {});
-                            }}
+                            onClick={() => approveScene(s)}
                           >
                             Aprovar
                           </button>

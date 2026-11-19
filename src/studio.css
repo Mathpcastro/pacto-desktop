@@ -474,6 +474,9 @@
   .scene.rejected { opacity: 0.5; }
   .scene .pic { aspect-ratio: 3 / 2; background: var(--sunk); display: grid; place-items: center; color: var(--muted); font-size: var(--t-xs); }
   .scene .pic img { width: 100%; height: 100%; object-fit: cover; }
+  .scene .pic .scene-idea { display: grid; gap: 4px; align-content: center; padding: 10px 12px; text-align: left; line-height: 1.35; overflow: hidden; max-height: 100%; }
+  .scene .pic .scene-idea small { text-transform: uppercase; letter-spacing: .04em; font-size: 10px; }
+  .scene .pic .scene-idea b { color: var(--ink, inherit); font-weight: 600; }
   .scene .body { padding: 10px 12px 12px; display: grid; gap: 8px; }
   .series { display: flex; gap: 4px; padding: 6px 8px 0; overflow: hidden; }
   .series img { width: 34px; height: 34px; object-fit: cover; border-radius: 6px; flex: none; }

@@ -87,7 +87,10 @@ const emptyMedia=()=>({displayName:'',handle:'',verified:true,avatar:'',faces:[]
 export const ASSET_KINDS=['logo','produto','outro'];
 function assetKind(value){const v=String(value||'outro');if(!ASSET_KINDS.includes(v))throw new Error('Tipo de imagem inválido.');return v;}
 // Imagens anexadas ao criar o carrossel: referência ou algo que deve aparecer num card.
-export function validateAttachments(list){if(!Array.isArray(list)||list.length>6)throw new Error('Anexe até seis imagens.');return list.map(a=>({id:a.id?validId(a.id):randomUUID(),...validateReference(a)}));}
+// referenceId marca o post escolhido na Biblioteca ("Usar referência"): ele é o modelo da arte, não um anexo comum.
+export function validateAttachments(list){if(!Array.isArray(list)||list.length>6)throw new Error('Anexe até seis imagens.');return list.map(a=>({id:a.id?validId(a.id):randomUUID(),...validateReference(a),...(typeof a.referenceId==='string'&&/^[A-Za-z0-9_.:-]{1,160}$/.test(a.referenceId)?{referenceId:a.referenceId}:{})}));}
+// Projetos salvos antes da correção perderam o referenceId; o nome que a Biblioteca dá ao anexo ainda o identifica.
+export function isLibraryReference(a){return Boolean(a?.referenceId)||/^Referência \S+ · .+\.webp$/.test(String(a?.name||''));}
 const SCENE_STATUS=['pending','approved','rejected'];
 function imageUrl(value){if(!value)return '';return validateReference({name:'imagem',dataUrl:value}).dataUrl;}
 export const CARD_COUNTS=Array.from({length:11},(_,index)=>index);

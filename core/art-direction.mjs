@@ -97,6 +97,13 @@ const LAYOUTS = {
 };
 
 // Bloco de direção de arte que entra no pedido de cada arte.
+// Com um post da Biblioteca anexado, ele é o modelo: layout, tipo de imagem e tipografia vêm dele.
+export function referenceArtPrompt() {
+  return `DIREÇÃO DE ARTE: a pessoa escolheu um POST DE REFERÊNCIA na Biblioteca (anexado). Ele é o modelo deste carrossel e vale mais que qualquer estilo sugerido:
+- Reproduza a estrutura visual dele: posição e tamanho do texto, hierarquia, tipo de imagem (foto, ilustração ou só tipografia), enquadramento, fundo, paleta e acabamento. Nos cards seguintes, mantenha a mesma linguagem visual da capa.
+- Troque só o conteúdo: o texto é o deste card e a imagem mostra o assunto e o universo desta marca. Use as cores do Design Kit quando a referência não deixar a paleta clara.
+- Nunca copie o texto, o nome, o @, o rosto, a logo ou os números do autor da referência.`;
+}
 export function artDirectionPrompt(direction, { layout }) {
   const illustration = find(ILLUSTRATION_STYLES, direction.illustration) || find(ILLUSTRATION_STYLES, DEFAULT.illustration);
   const type = find(TYPE_STYLES, direction.type) || find(TYPE_STYLES, DEFAULT.type);
