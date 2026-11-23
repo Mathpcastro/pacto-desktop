@@ -13,7 +13,7 @@ const anchor = { purpose: 'personaAnchor' };
 
 test('lê a foto-âncora real por caminho, URI e cópia fora do diretório pessoal', async t => {
   await assert.doesNotReject(access(fixture), `Foto-âncora de regressão ausente ou inacessível: ${fixture}`);
-  const temp = await mkdtemp(join('/tmp', 'carrossell-ancora-'));
+  const temp = await mkdtemp(join(process.platform === 'win32' ? tmpdir() : '/tmp', 'carrossell-ancora-'));
   t.after(() => rm(temp, { recursive: true, force: true }));
   const copy = join(temp, '01-âncora cópia.png');
   await copyFile(fixture, copy);
