@@ -10,10 +10,12 @@ export default function Dialog({
   children,
   wide = false,
   className = "",
+  localError,
 }) {
   const ref = useRef(null);
   const titleId = useId();
-  const error = useContext(RuntimeErrorContext);
+  const runtimeError = useContext(RuntimeErrorContext);
+  const error = localError || runtimeError;
   useEffect(() => {
     const element = ref.current;
     const before = document.activeElement;

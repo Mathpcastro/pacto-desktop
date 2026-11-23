@@ -258,6 +258,13 @@ export class Store {
     this.queue=job.catch(()=>{});return job;
   }
   personas(){return {personas:structuredClone(this.data.personas),activePersonaId:this.data.activePersonaId,avatarPersonaId:this.data.media.avatarPersonaId};}
+  dismissedPersonaWarnings(){return new Set(this.data.dismissedPersonaWarnings||[]);}
+  async dismissPersonaWarning(pair){
+    const dismissed=this.dismissedPersonaWarnings();
+    dismissed.add(pair);
+    this.data.dismissedPersonaWarnings=[...dismissed];
+    await this.persist();
+  }
   personaSignatures(){
     return this.data.personas.map(({id,nome,idade,genero,etnia,cabelo,estilo,cenario,anchor,anchorHash})=>({
       id,nome,idade,genero,etnia,cabelo,estilo,cenario,anchor:Boolean(anchor),anchorHash
@@ -265,13 +272,18 @@ export class Store {
   }
   persona(selector){return structuredClone(findPersona(this.data.personas,selector));}
   async savePersona(input,{use=false,nativeHash}={}){
-    const old=input?.id?this.persona(input.id):null;
-    const fields=validatePersona({...old,...input});
+    const initial=input?.id?findPersona(this.data.personas,input.id):null;
+    const fields=validatePersona({...initial,...input});
+    const photo=initial?.anchor||input?.anchor;
+    const newHash=photo&&!initial?.anchorHash?await photoHash(photo,input.anchorHash,nativeHash):'';
+    // A decodificação pode terminar após outra edição do mesmo avatar.
+    const old=initial?findPersona(this.data.personas,initial.id):null;
     const anchor=input?.anchor??old?.anchor??'';
     if(old?.anchor && anchor!==old.anchor)throw new Error('A foto-âncora original deste avatar já está salva. Crie outro avatar para usar uma nova foto.');
-    const anchorHash=anchor?(anchor===old?.anchor&&old.anchorHash?old.anchorHash:photoHash(anchor,input.anchorHash,nativeHash)):'';
+    const anchorHash=anchor?(old?.anchorHash||newHash):'';
     const now=new Date().toISOString();
-    const persona={...fields,id:old?.id||randomUUID(),anchor,anchorHash,keepBlock:keepBlock(fields),createdAt:old?.createdAt||now,updatedAt:now};
+    const savedFields=old===initial?fields:validatePersona({...old,...input});
+    const persona={...savedFields,id:old?.id||randomUUID(),anchor,anchorHash,keepBlock:keepBlock(savedFields),createdAt:old?.createdAt||now,updatedAt:now};
     this.data.personas=old?this.data.personas.map(p=>p.id===old.id?persona:p):[...this.data.personas,persona];
     if(use)this.data.activePersonaId=persona.id;
     await this.persist();return structuredClone(persona);

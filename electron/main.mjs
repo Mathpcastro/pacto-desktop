@@ -3,12 +3,12 @@ import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification, 
 import { PilotLog } from '../core/pilot-log.mjs';
 import { reminder } from '../core/rhythm.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { dirname, join, extname, resolve } from 'node:path';
-import { readFile, writeFile, stat, mkdir, rm } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
+import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { homedir } from 'node:os';
-import { validateReference } from '../core/store.mjs';
+import { readImportedImage, referenceImportOptions } from './import-reference.mjs';
 import { Profiles } from '../core/profiles.mjs';
 import { CodexClient, safeError } from '../core/codex.mjs';
 import { Runtime, ACTIONS } from '../core/runtime.mjs';
@@ -126,12 +126,19 @@ app.whenReady().then(async()=>{
   const schedulerOptions={exe:process.execPath,args:app.isPackaged?[BACKGROUND]:[root,BACKGROUND],run:(cmd,args)=>run(cmd,args,{windowsHide:true}),writeFile:async(file,data)=>{await mkdir(dirname(file),{recursive:true});await writeFile(file,data);},rm:file=>rm(file,{force:true}),tempDir:app.getPath('temp'),agentsDir:join(homedir(),'Library','LaunchAgents'),uid:process.getuid?.()??0};
   const scheduler=new OsScheduler(schedulerOptions);
   const pilotScheduler=!app.isPackaged&&process.env.PACTO_AUTOPILOT_NO_TASKS==='1'?{add:async()=>{},remove:async()=>{}}:new PilotScheduler(schedulerOptions);
-  function anchorHash(bytes){
+  async function photoPixels(bytes,kind){
     const source=nativeImage.createFromBuffer(bytes);
-    if(source.isEmpty())throw new Error('Não foi possível ler a foto-âncora.');
-    const bitmap=source.resize({width:9,height:8,quality:'best'}).toBitmap();
-    return differenceHash(Array.from({length:72},(_,i)=>luminance(bitmap[i*4+2],bitmap[i*4+1],bitmap[i*4])));
+    if(!source.isEmpty()){
+      const bitmap=source.resize({width:9,height:8,quality:'best'}).toBitmap();
+      return Array.from({length:72},(_,i)=>luminance(bitmap[i*4+2],bitmap[i*4+1],bitmap[i*4]));
+    }
+    if(kind==='webp'){
+      const bitmap=await render.webpPixels(bytes);
+      return Array.from({length:72},(_,i)=>luminance(bitmap[i*4],bitmap[i*4+1],bitmap[i*4+2]));
+    }
+    throw new Error('Não foi possível ler a imagem.');
   }
+  const anchorHash=async(bytes,kind)=>differenceHash(await photoPixels(bytes,kind));
   function normalizeUgcPhoto(bytes){
     const image=nativeImage.createFromBuffer(Buffer.from(bytes));
     if(image.isEmpty())throw new Error('Não foi possível ler a foto gerada.');
@@ -146,7 +153,16 @@ app.whenReady().then(async()=>{
     async normalizeFiles(files){return normalizeFiles(files,nativeImage);},
     async chooseFolder(){const result=await dialog.showOpenDialog(window,{title:ui('Escolha a pasta sincronizada (ex.: Meu Drive)'),properties:['openDirectory','createDirectory']});return result.canceled?null:result.filePaths[0]||null;},
     async openCourse(url){const u=new URL(url);if(u.protocol!=='https:'||u.hostname!=='www.youtube.com')throw new Error('Link do curso inválido.');await shell.openExternal(u.href);},
-    async importReference(){const result=await dialog.showOpenDialog(window,{title:ui('Importar referência visual'),properties:['openFile'],filters:[{name:ui('Imagens'),extensions:['png','jpg','jpeg','webp']}]});if(result.canceled||!result.filePaths[0])return {cancelled:true};const file=result.filePaths[0];if((await stat(file)).size>20*1024*1024)throw new Error('Use uma referência de até 20 MB.');const bytes=await readFile(file);if(nativeImage.createFromBuffer(bytes).isEmpty())throw new Error('Não foi possível ler a imagem.');const extension=extname(file).toLowerCase();const mime=extension==='.png'?'png':extension==='.webp'?'webp':'jpeg';const ref=validateReference({name:file.split(/[\\/]/).at(-1),dataUrl:`data:image/${mime};base64,${bytes.toString('base64')}`});return ref;}
+    async importReference(args){
+      const {title}=referenceImportOptions(args);
+      const result=await dialog.showOpenDialog(window,{
+        title:ui(title),
+        properties:['openFile'],
+        filters:[{name:ui('Imagens'),extensions:['png','jpg','jpeg','webp']}],
+      }).catch(cause=>{throw new Error('Não foi possível abrir o seletor de imagens.',{cause});});
+      if(result?.canceled)return {cancelled:true};
+      return readImportedImage(result?.filePaths?.[0],args,photoPixels);
+    }
   }});
   const telegramBase=!app.isPackaged&&/^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.PACTO_TELEGRAM_URL||'')?process.env.PACTO_TELEGRAM_URL:undefined;
   // Diário do piloto (pilot.log na pasta de dados): mostra se o app estava aberto, se o PC dormiu e o

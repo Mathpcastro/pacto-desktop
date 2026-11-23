@@ -1,22 +1,24 @@
-import { useEffect, useState } from "react";
-import { AlertTriangle, Check, ImagePlus, Plus, Sparkles, UserRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, ImagePlus, Info, Plus, Sparkles, UserRound, X } from "lucide-react";
 import { translateUi } from "../../core/i18n.mjs";
+import { runtimeErrorMessage } from "../usePacto.js";
 import Dialog from "./Dialog.jsx";
+import IconButton from "./IconButton.jsx";
 import { personaSaveLabel, profileFaceButton, savedAvatarNotice } from "./ugc-personas-ui.mjs";
 import "./UgcPersonas.css";
 
 const fields = [
-  ["nome", "Nome", true],
-  ["idade", "Idade", true],
-  ["genero", "Gênero", true],
-  ["etnia", "Etnia (aparência)", true],
+  ["nome", "Nome"],
+  ["idade", "Idade"],
+  ["genero", "Gênero"],
+  ["etnia", "Etnia (aparência)"],
   ["cabelo", "Cabelo"],
   ["olhos", "Olhos"],
   ["marcaFixa", "Marca fixa"],
   ["porte", "Porte"],
-  ["estilo", "Estilo de roupa", true],
-  ["cenario", "Cenário", true],
-  ["nicho", "Nicho", true],
+  ["estilo", "Estilo de roupa"],
+  ["cenario", "Cenário"],
+  ["nicho", "Nicho"],
   ["instagram", "@ do Instagram"],
 ];
 
@@ -31,38 +33,51 @@ function Anchor({ image }) {
 function PersonaEditor({ persona, activePersonaId, request, connected, working, onSave, onClose }) {
   const [draft, setDraft] = useState(persona);
   const [pending, setPending] = useState("");
-  const [anchorHelp, setAnchorHelp] = useState("");
+  const [localError, setLocalError] = useState("");
+  const picking = useRef(false);
+  const ageInput = useRef(null);
   const isActive = Boolean(draft.id && draft.id === activePersonaId);
   const [use, setUse] = useState(isActive);
   const busy = Boolean(pending);
   const saved = Boolean(persona.anchor);
+  const close = () => {
+    if (!picking.current && !busy) onClose();
+  };
 
   const pickAnchor = async () => {
+    if (picking.current || busy) return;
+    picking.current = true;
     setPending("upload");
-    setAnchorHelp("");
+    setLocalError("");
     try {
-      const result = await request("importReference");
-      if (result?.dataUrl) {
-        if (result.dataUrl.length > 4 * Math.ceil(15 * 1024 * 1024 / 3) + 23) {
-          setAnchorHelp("Use uma foto de até 15 MB.");
-          return;
-        }
-        setDraft((current) => ({ ...current, anchor: result.dataUrl }));
-      }
-    } catch {
-      // O erro da ação aparece no diálogo pelo contexto do app.
+      const result = await request("importReference", { purpose: "personaAnchor" });
+      if (result?.cancelled) return;
+      if (!result?.dataUrl) throw new Error("Não foi possível ler a imagem.");
+      setDraft((current) => ({ ...current, anchor: result.dataUrl }));
+    } catch (error) {
+      setLocalError(runtimeErrorMessage(error));
     } finally {
+      picking.current = false;
       setPending("");
     }
   };
 
   const save = async (generate = false) => {
-    if (busy || (generate && (!connected || working || draft.anchor))) return;
+    if (picking.current || busy || (generate && (!connected || working || draft.anchor))) return;
+    if (!draft.nome?.trim()) {
+      setLocalError("Informe o nome.");
+      return;
+    }
+    if (ageInput.current?.validity.badInput) {
+      setLocalError("Informe a idade em anos.");
+      return;
+    }
+    setLocalError("");
     setPending(generate ? "generate" : "save");
     try {
       const fieldsToSave = {
         ...Object.fromEntries(fields.map(([key]) => [key, draft[key] ?? ""])),
-        idade: Number(draft.idade),
+        idade: draft.idade == null || draft.idade === "" ? undefined : Number(draft.idade),
       };
       if (generate) {
         const { anchor } = await request("generatePersonaAnchor", { persona: fieldsToSave });
@@ -86,22 +101,21 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
   };
 
   return (
-    <Dialog title={saved ? "Editar avatar" : draft.id ? "Editar persona" : "Criar persona"} wide className="ugc-persona-dialog" onClose={() => !busy && onClose()}>
-      <form className="ugc-persona-form" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+    <Dialog title={saved ? "Editar avatar" : draft.id ? "Editar persona" : "Criar persona"} wide className="ugc-persona-dialog" localError={localError} onClose={close}>
+      <form className="ugc-persona-form" noValidate onSubmit={(event) => { event.preventDefault(); void save(); }}>
         <div className="dialog-fields">
           <div className="ugc-persona-fields">
-            {fields.map(([key, label, required]) => {
+            {fields.map(([key, label]) => {
               const fieldProps = {
                 value: draft[key] ?? "",
-                required,
                 disabled: busy,
                 onChange: (event) => setDraft((current) => ({ ...current, [key]: event.target.value })),
               };
               return (
                 <label className="fld" key={key}>
                   <span>{label}</span>
-                  {key === "idade" ? <input {...fieldProps} type="number" min={1} max={120} />
-                    : key === "instagram" ? <input {...fieldProps} type="text" maxLength={31} pattern="@[A-Za-z0-9_.]{1,30}" />
+                  {key === "idade" ? <input {...fieldProps} ref={ageInput} type="number" min={1} max={120} />
+                    : key === "instagram" ? <input {...fieldProps} type="text" maxLength={31} />
                     : <textarea {...fieldProps} rows={1} maxLength={300} />}
                 </label>
               );
@@ -120,13 +134,12 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
                 {!draft.anchor && (
                   <button className="btn small" type="button" disabled={busy || !connected || working}
                     aria-describedby={!connected ? "ugc-anchor-connect" : undefined}
-                    onClick={(event) => { if (event.currentTarget.form.reportValidity()) void save(true); }}>
+                    onClick={() => void save(true)}>
                     <Sparkles size={15} /> {pending === "generate" ? "Gerando foto-âncora…" : "Gerar foto-âncora com ChatGPT"}
                   </button>
                 )}
               </div>
               {!draft.anchor && !connected && <span className="hint" id="ugc-anchor-connect">Conecte sua conta ChatGPT para gerar a foto-âncora.</span>}
-              {anchorHelp && <p className="hint" role="alert">{anchorHelp}</p>}
             </div>
           </div>
           {draft.anchor && (
@@ -137,7 +150,7 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
           )}
         </div>
         <footer className="dialog-footer ugc-persona-actions">
-          <button className="ghost-btn" type="button" disabled={busy} onClick={onClose}>Cancelar</button>
+          <button className="ghost-btn" type="button" disabled={busy} onClick={close}>Cancelar</button>
           <button className="btn primary" type="submit" disabled={busy}>{personaSaveLabel(draft)}</button>
         </footer>
       </form>
@@ -163,7 +176,8 @@ export default function UgcPersonas({ state, request, isPending, connected, onNo
   const face = state.media?.avatarPersonaId;
   const warnings = snapshot?.avisos || [];
   const crossProfile = warnings.filter(({ a, b }) => a.profileId !== b.profileId);
-  const busy = ["savePersona", "generatePersonaAnchor", "usePersona", "deletePersona", "setProfileAvatar"].some(isPending);
+  const busy = ["savePersona", "generatePersonaAnchor", "usePersona", "deletePersona", "setProfileAvatar", "dismissPersonaWarning"].some(isPending);
+  const dismissWarning = (a, b) => request("dismissPersonaWarning", { a: a.id, b: b.id }).then(setSnapshot).catch(() => {});
   const activate = (id) => request("usePersona", { id }).then(setSnapshot).catch(() => {});
   const setProfileAvatar = (id) => request("setProfileAvatar", { id }).then((result) => {
     setSnapshot(result);
@@ -192,25 +206,25 @@ export default function UgcPersonas({ state, request, isPending, connected, onNo
         </button>
       </div>
       {crossProfile.length > 0 && (
-        <div className="ugc-persona-warning" role="status">
-          <AlertTriangle size={18} aria-hidden="true" />
-          <div>
-            <ul>
-              {crossProfile.map(({ a, b, motivo }) => {
-                const other = a.profileId === profileId ? b : a;
-                const local = other === a ? b : a;
-                return (
-                  <li key={`${a.id}-${b.id}`}>
-                    <b data-user-text>{local.nome}</b>
-                    {" · "}{warn(other)}{" "}
-                    {motivo.split(/(?<=\.) /).map((part) => translateUi(settings?.language, part)).join(" ")}
-                  </li>
-                );
-              })}
-            </ul>
-            <p>Use traços e fotos-âncora distintos ao criar outro avatar.</p>
-          </div>
-        </div>
+        <ul className="ugc-persona-warnings">
+          {crossProfile.map(({ a, b, motivo }) => {
+            const other = a.profileId === profileId ? b : a;
+            const local = other === a ? b : a;
+            return (
+              <li className="ugc-persona-warning" key={`${a.id}:${b.id}`}>
+                <Info size={18} aria-hidden="true" />
+                <span role="status">
+                  <b data-user-text>{local.nome}</b>
+                  {" · "}{warn(other)}{" "}
+                  {motivo.split(/(?<=\.) /).map((part) => translateUi(settings?.language, part)).join(" ")}
+                </span>
+                <IconButton label="Fechar aviso" disabled={busy} onClick={() => dismissWarning(a, b)}>
+                  <X size={16} />
+                </IconButton>
+              </li>
+            );
+          })}
+        </ul>
       )}
       {personas.length ? (
         <ul className="ugc-persona-list">

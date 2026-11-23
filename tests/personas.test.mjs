@@ -123,9 +123,57 @@ test('avisa sobre clones entre perfis por atributos e por distância do hash',as
 
 test('valida dados da persona em português',async t=>{
   const {request}=await setup(t);
-  for(const [patch,error] of [[{idade:1.5},/anos inteiros/],[{etnia:''},/a aparência/],[{instagram:'lia'},/Use @/],[{anchor:'foto.png'},/imagem PNG/]]) {
+  for(const [patch,error] of [[{idade:1.5},/anos inteiros/],[{idade:0},/entre 1 e 120/],[{instagram:'lia'},/Use @/],[{anchor:'foto.png'},/imagem PNG/]]) {
     await assert.rejects(request('savePersona',{persona:{...fields,...patch}}),error);
   }
+});
+
+test('salva avatar e rascunho só com o nome e aceita idade vazia',async t=>{
+  const {request}=await setup(t);
+  const {persona}=await request('savePersona',{persona:{
+    nome:'Camila',anchor:photo,idade:'  ',genero:'',etnia:'',estilo:'',cenario:'',nicho:''
+  }});
+  assert.equal(persona.anchor,photo);
+  assert.equal(persona.idade,undefined);
+  assert.match(persona.keepBlock,/Camila.*identidade/);
+  assert.match(persona.keepBlock,/MANTER.*traços.*da referência/);
+  assert.doesNotMatch(persona.keepBlock,/não especificado|idade \(|Estilo de roupa/);
+  const {persona:edited}=await request('savePersona',{persona:{id:persona.id,olhos:'castanhos'}});
+  assert.match(edited.keepBlock,/MANTER.*castanhos/);
+  const {persona:draft}=await request('savePersona',{persona:{nome:'Rascunho'}});
+  assert.equal(draft.anchor,'');
+  for(const nome of [undefined,'   ']){
+    await assert.rejects(request('savePersona',{persona:{nome,anchor:photo}}),{message:'Informe o nome.'});
+  }
+});
+
+test('o formulário da persona usa validação própria em português',async ()=>{
+  const source=await readFile(new URL('../src/components/UgcPersonas.jsx',import.meta.url),'utf8');
+  assert.match(source,/<form\b[^>]*\bnoValidate\b/);
+  assert.match(source,/setLocalError\("Informe o nome\."\)/);
+  assert.doesNotMatch(source,/\brequired\b|\breportValidity\s*\(/);
+});
+
+test('dispensa somente o par selecionado e conserva a decisão ao reabrir',async t=>{
+  const {root,profiles,request}=await setup(t);
+  const other=await profiles.create('Outra marca');
+  const {persona:local}=await request('savePersona',{persona:{nome:'Lia',anchor:photo}});
+  const {persona:remote}=await request('savePersona',{profileId:other.id,persona:{nome:'Bia',anchor:photo}});
+  const initial=await request('personas');
+  assert.equal(initial.avisos.length,1);
+  const result=await request('dismissPersonaWarning',{a:remote.id,b:local.id});
+  assert.deepEqual(result.avisos,[]);
+  assert.deepEqual((await request('personas',{profileId:other.id})).avisos,[]);
+
+  const reopened=await new Profiles(root).init();
+  const runtime=new Runtime({profiles:reopened,store:await reopened.store(),codex:{status:{account:{connected:false}}},knowledge:{lessons:[]}});
+  const library=await runtime.request('personas');
+  assert.deepEqual(library.avisos,[]);
+  assert.equal(library.personas[0].id,local.id);
+  assert.equal((await runtime.request('personas',{profileId:other.id})).personas[0].id,remote.id);
+  const {persona:newPersona}=await runtime.request('savePersona',{profileId:other.id,persona:{nome:'Cris',anchor:photo}});
+  const updated=await runtime.request('personas');
+  assert.deepEqual(updated.avisos.map(({a,b})=>[a.id,b.id]),[[local.id,newPersona.id]]);
 });
 
 test('dHash decodifica RGB e RGBA com os filtros PNG 0 a 4',()=>{

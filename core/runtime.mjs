@@ -18,7 +18,7 @@ import { localizePrompt, normalizeLocale, translateUi, normalizeContentLanguage,
 import { ILLUSTRATION_STYLES, TYPE_STYLES, resolveArtDirection, artDirectionPrompt, referenceArtPrompt, cardLayout } from './art-direction.mjs';
 import { generationSkills } from './generation-skills.mjs';
 import { isLibraryReference } from './store.mjs';
-export const ACTIONS=['pilotDiagnostics','telegramStatus','saveTelegramToken','disconnectTelegram','pairTelegram','openTelegramPair','saveAutopilot','skipAutopilotRun','runAutopilot','retryAutopilot','discardAutopilot','approveAutopilot','bootstrap','personas','savePersona','deletePersona','usePersona','setProfileAvatar','generatePersonaAnchor','generateUgcScene','saveProfile','saveVisualReferences','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','resizeCarousel','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','storyTheme','saveStory','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','improveBrandStrategy','setupPrompt','readNotice','readAllNotices','openNoticeLink','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli','instagramStatus','saveComposioKey','removeComposioKey','syncInstagram','connectInstagram','checkInstagram','setInstagramDefaults','disconnectInstagram','publishInstagram','schedulePost','reschedulePost','cancelSchedule','publishDue','refreshMetrics','instagramPosts','instagramAnalytics','importInstagramPost','replicateInstagram','openPermalink','openComposio'];
+export const ACTIONS=['pilotDiagnostics','telegramStatus','saveTelegramToken','disconnectTelegram','pairTelegram','openTelegramPair','saveAutopilot','skipAutopilotRun','runAutopilot','retryAutopilot','discardAutopilot','approveAutopilot','bootstrap','personas','savePersona','deletePersona','dismissPersonaWarning','usePersona','setProfileAvatar','generatePersonaAnchor','generateUgcScene','saveProfile','saveVisualReferences','connect','disconnect','createProject','saveProject','generatePlan','generateSlides','resizeCarousel','sendMessage','cancel','export','duplicate','delete','openCourse','importReference','interview','saveInterview','resetInterview','cancelInterview','approveText','generateCovers','chooseCover','radar','modelReference','replicate','deleteIdeas','ctaKit','cancelWork','markPublished','recordResults','saveSettings','shareToPhone','stopShare','saveToDrive','chooseDriveFolder','stories','generateStoryArt','storyTheme','saveStory','saveMedia','suggestScenes','sceneImage','faceOnColor','exportPdf','quickSetup','improveBrandStrategy','setupPrompt','readNotice','readAllNotices','openNoticeLink','importSetup','addFeedback','removeFeedback','profiles','createProfile','renameProfile','switchProfile','deleteProfile','cliInfo','installCli','instagramStatus','saveComposioKey','removeComposioKey','syncInstagram','connectInstagram','checkInstagram','setInstagramDefaults','disconnectInstagram','publishInstagram','schedulePost','reschedulePost','cancelSchedule','publishDue','refreshMetrics','instagramPosts','instagramAnalytics','importInstagramPost','replicateInstagram','openPermalink','openComposio'];
 export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma oferta'];
 // Problemas da Correção Visual Rápida (Aula 05), oferecidos como botões no editor.
 export const VISUAL_FIXES=['Texto vertical ou empilhado','Título pequeno','Texto excessivo','Hierarquia ruim','Falta CTA','Erro de ortografia','Ilustração não combina','Fora da identidade visual'];
@@ -504,7 +504,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     if(!ACTIONS.includes(action))throw new Error('Ação não permitida.');
     if(!args||typeof args!=='object'||Array.isArray(args)||JSON.stringify(args).length>260000000)throw new Error('Dados inválidos.');
     const {profileId,...rest}=args;
-    const personaAction=['personas','savePersona','deletePersona','usePersona','setProfileAvatar','generatePersonaAnchor','generateUgcScene'].includes(action);
+    const personaAction=['personas','savePersona','deletePersona','dismissPersonaWarning','usePersona','setProfileAvatar','generatePersonaAnchor','generateUgcScene'].includes(action);
     const ugcProject=action==='createProject'&&rest.style==='ugc';
     const target=profileId??(this.profiles&&(personaAction||ugcProject)?this.profileId():undefined);
     return this.inProfile(target,()=>this.handle(action,rest));
@@ -576,15 +576,24 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     if(!productAsset)throw new Error('Não foi possível capturar a página do produto. Confira o link ou envie uma imagem.');
     return store.createProject({...args,persona,productAsset});
   }
-  async personas(){
+  async personas({dismissPair}={}){
     const current=this.store.personas(), profileId=this.profileId();
     const all=this.profiles?await this.profiles.allPersonas():current.personas.map(p=>({...p,profileId,profileName:'Principal'}));
-    return {...current,avisos:similarPersonas(all).filter(({a,b})=>a.profileId===profileId||b.profileId===profileId)};
+    const warnings=similarPersonas(all).filter(({a,b})=>a.profileId===profileId||b.profileId===profileId);
+    const pairKey=({a,b})=>[a.id,b.id].sort().join(':');
+    const library=this.profiles?await this.profiles.store(MAIN_PROFILE):this.store;
+    if(dismissPair && warnings.some(pair=>pair.a.profileId!==pair.b.profileId && pairKey(pair)===dismissPair)){
+      await library.dismissPersonaWarning(dismissPair);
+    }
+    const dismissed=library.dismissedPersonaWarnings();
+    return {...current,avisos:warnings.filter(pair=>!dismissed.has(pairKey(pair)))};
   }
   async handle(action,args){
     switch(action){
       case 'bootstrap':return this.state();
       case 'personas':return this.personas();
+      case 'dismissPersonaWarning':
+        return this.personas({dismissPair:[validId(args.a),validId(args.b)].sort().join(':')});
       case 'generatePersonaAnchor':return this.generatePersonaAnchor(args.personaId,args.persona);
       case 'generateUgcScene':return this.generateUgcScene(args.projectId,args.slideId);
       case 'savePersona':{
@@ -796,7 +805,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
         const url=new URL(course.url);if(moment?.seconds)url.searchParams.set('t',`${count(moment.seconds,0,36000)}s`);
         await this.dialogs.openCourse(url.href);return {ok:true};
       }
-      case 'importReference':return this.dialogs.importReference();
+      case 'importReference':return this.dialogs.importReference(args);
     }
   }
   async discardCliProject(id,keepText){
@@ -929,7 +938,8 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
     const ugc=p.style==='ugc';
     const library=ugc?this.store.personas():null;
     const persona=library?.personas.find(x=>x.id===(p.persona||library.activePersonaId));
-    const identity=persona?`PERSONA UGC (voz em primeira pessoa): ${persona.nome}, ${persona.idade} anos, nicho ${persona.nicho}, cenário habitual ${persona.cenario}.\n`:'';
+    const personaDetails=persona?[persona.nome,persona.idade&&`${persona.idade} anos`,persona.nicho&&`nicho ${persona.nicho}`,persona.cenario&&`cenário habitual ${persona.cenario}`].filter(Boolean):[];
+    const identity=persona?`PERSONA UGC (voz em primeira pessoa): ${personaDetails.join(', ')}.\n`:'';
     return `${this.context(id)}\n${identity}TAREFA: ${task}\n${this.copyRules(p.architectureId,slideshow||ugc,ugc)}\n${ai}Retorne JSON conforme esquema. Se faltarem informações essenciais sobre produto, público, problema ou oferta no perfil, briefing e conversa, faça apenas as 1 a 3 perguntas mais importantes em reply, sem inventar respostas; slides deve ser [], assim como regenerateSlideIds. Se o usuário está conversando, pedindo pautas, perguntando sobre marca ou explorando ideias sem pedir texto novo ou revisão, responda em reply e retorne slides:[]; os demais campos podem ser strings vazias e o texto existente será preservado. Em uma revisão preserve IDs e conteúdo não afetado, inclusive a legenda aprovada quando não houver pedido de alterá-la. Use regenerateSlideIds apenas se o usuário pediu para gerar ou revisar imagens de cards que já têm arte; caso contrário []. Nesta etapa não invoque geração de imagem.${skill?`\n\n${skill}`: ''}`;
   }
   // Grava o texto no projeto (cards, legenda, linha editorial); devolve os cards ou null quando só houve resposta.

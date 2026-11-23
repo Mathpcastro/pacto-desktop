@@ -91,13 +91,16 @@ Ações do runtime disponíveis no preload e no controle local
 | --- | --- | --- |
 | `personas` | `{profileId?}` | `{personas, activePersonaId, avatarPersonaId, avisos}` |
 | `savePersona` | `{profileId?, persona, use?}` | Lista, avisos e `persona` salva |
+| `dismissPersonaWarning` | `{profileId?, a, b}` | Lista e avisos após dispensar o par de IDs entre perfis. A decisão vale para os dois perfis |
 | `usePersona`, `deletePersona` | `{profileId?, id}` | Lista, persona ativa e avisos após a mudança |
 | `setProfileAvatar` | `{profileId?, id}` | Lista e IDs atualizados. Persiste a âncora em `media.avatar` e o vínculo em `media.avatarPersonaId` |
 | `generatePersonaAnchor` | `{profileId?, persona}` | Prévia `{anchor}` no app. Envie a âncora para `savePersona` ao confirmar |
 | `generatePersonaAnchor` | `{profileId?, personaId}` | Lista e avisos após gerar a âncora que falta |
 | `generateUgcScene` | `{profileId?, projectId, slideId}` | Projeto com a foto da cena atualizada |
 
-Uma persona tem `id`, `nome`, `idade`, `genero`, `etnia`, `cabelo`, `olhos`, `marcaFixa`, `porte`, `estilo`, `cenario`, `nicho`, `instagram`, `anchor`, `anchorHash`, `keepBlock`, `createdAt` e `updatedAt`. O store guarda a foto original em blob e preenche o bloco MANTER para registros anteriores à biblioteca. O runtime calcula dHash para PNG RGB/RGBA de 8 bits. Nos demais formatos aceita o hash de 16 dígitos hexadecimais em `anchorHash` ou usa o decodificador do Electron. O aviso por imagem usa distância de Hamming de até 10. O aviso por atributos exige gênero e aparência iguais após normalização, idades com diferença de até quatro anos e soma de similaridade por tokens de cabelo, roupa e cenário de pelo menos 2 em 3. Um aviso contém `a`, `b` e `motivo`, com os IDs, nomes e perfis das duas personas.
+Para salvar uma persona, o único campo obrigatório é `nome`. `idade`, `genero`, `etnia`, `cabelo`, `olhos`, `marcaFixa`, `porte`, `estilo`, `cenario`, `nicho`, `instagram` e `anchor` são opcionais. A persona salva inclui `id`, `anchorHash`, `keepBlock`, `createdAt` e `updatedAt`. O store guarda a foto original em blob e preenche o bloco MANTER para registros anteriores à biblioteca. O runtime calcula dHash para PNG RGB/RGBA de 8 bits. Nos demais formatos aceita o hash de 16 dígitos hexadecimais em `anchorHash` ou usa o decodificador do Electron. O aviso por imagem usa distância de Hamming de até 10. O aviso por atributos exige gênero e aparência preenchidos e iguais após normalização, idades com diferença de até quatro anos e soma de similaridade por tokens de cabelo, roupa e cenário de pelo menos 2 em 3. Um aviso contém `a`, `b` e `motivo`, com os IDs, nomes e perfis das duas personas.
+
+`importReference` aceita `{purpose: "personaAnchor"}` para usar **Escolher foto-âncora** e o limite de 15 MB. O seletor padrão usa **Importar referência visual** e o limite de 20 MB.
 
 Para `createProject` com `style: "ugc"`, passe `persona` para fixar a escolha no carrossel. Sem esse campo, vale a persona ativa do perfil. Informe `productLink` ou `productAsset` (data URL) conforme a origem. `generateSlides` com `slideId` e `regeneratePhoto: true` refaz a foto e remonta apenas o card. `export` com `tiktok: true` adiciona o texto ao ZIP. O controle da CLI também aceita `exportTo` com `tiktok: true`.
 

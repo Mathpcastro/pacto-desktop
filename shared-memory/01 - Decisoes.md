@@ -74,3 +74,5 @@ Radar é a entrada principal para Ideias, Para revisar e Piloto automático. O c
 ## 23/11/2026 — Biblioteca de avatares UGC
 
 Cada perfil guarda os avatares nas personas existentes. A âncora original é preservada junto do bloco MANTER. A cara do perfil define a foto local no Carrossell e ativa o avatar para UGC. Um carrossel com escolha explícita usa seu próprio avatar.
+
+O editor exige só o Nome para salvar um avatar ou rascunho. A pessoa pode dispensar um aviso de semelhança por par. A dispensa vale nos dois perfis e continua valendo quando o app é reaberto.

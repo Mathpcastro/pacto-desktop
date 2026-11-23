@@ -1,12 +1,12 @@
 .ugc-persona-list,
-.ugc-persona-warning ul {
+.ugc-persona-warnings {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
 .ugc-persona-list,
-.ugc-persona-warning ul {
+.ugc-persona-warnings {
   display: grid;
   gap: 12px;
 }
@@ -118,19 +118,21 @@
 .ugc-persona-warning {
   display: flex;
   gap: 10px;
-  align-items: flex-start;
-  padding: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: var(--accent-soft);
+  background: var(--surface);
   font-size: var(--t-sm);
   overflow-wrap: anywhere;
 }
 
-.ugc-persona-warning svg {
+.ugc-persona-warning > svg {
   flex: none;
-  color: var(--accent);
+  color: var(--sage);
 }
 
-.ugc-persona-warning p {
-  margin-top: 8px;
+.ugc-persona-warning > .icon-button {
+  flex: none;
+  margin-left: auto;
 }

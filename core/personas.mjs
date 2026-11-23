@@ -1,13 +1,17 @@
 import { inflateSync } from 'node:zlib';
 import { z } from 'zod';
 
-const field = (name, required = true) => z.string({error: `Informe ${name}.`}).trim()
-  .min(required ? 1 : 0, `Informe ${name}.`).max(300, 'Use até 300 caracteres em cada descrição da persona.');
+const description = z.string({error: 'Informe a descrição em texto.'}).trim()
+  .max(300, 'Use até 300 caracteres em cada descrição da persona.');
+const optionalDescription = description.default('');
+const age = z.number({error:'Informe a idade em anos.'}).int('Informe a idade em anos inteiros.')
+  .min(1,'A idade deve estar entre 1 e 120 anos.').max(120,'A idade deve estar entre 1 e 120 anos.');
 export const PERSONA_FIELDS = {
-  nome: field('o nome'), idade: z.number({error:'Informe a idade em anos.'}).int('Informe a idade em anos inteiros.').min(1,'A idade deve estar entre 1 e 120 anos.').max(120,'A idade deve estar entre 1 e 120 anos.'),
-  genero: field('o gênero'), etnia: field('a aparência'), cabelo: field('o cabelo',false).default(''),
-  olhos: field('os olhos',false).default(''), marcaFixa: field('a marca fixa',false).default(''),
-  porte: field('o porte',false).default(''), estilo: field('o estilo'), cenario: field('o cenário'), nicho: field('o nicho'),
+  nome: description.min(1, 'Informe o nome.').prefault(''),
+  idade: z.preprocess(value => value === null || (typeof value === 'string' && !value.trim()) ? undefined : value, age.optional()),
+  genero: optionalDescription, etnia: optionalDescription, cabelo: optionalDescription,
+  olhos: optionalDescription, marcaFixa: optionalDescription, porte: optionalDescription,
+  estilo: optionalDescription, cenario: optionalDescription, nicho: optionalDescription,
   instagram: z.string({error:'Informe uma conta válida do Instagram.'}).trim().regex(/^(?:@[\w.]{1,30})?$/,'Use @ seguido do nome da conta do Instagram.').default('')
 };
 const personaSchema = z.object(PERSONA_FIELDS);
@@ -106,9 +110,9 @@ export function pngDifferenceHash(bytes) {
   }
   return differenceHash(gray);
 }
-export function photoHash(anchor, supplied, nativeHash) {
+export async function photoHash(anchor, supplied, nativeHash) {
   const {bytes,kind}=unpackPhoto(anchor);
-  const hash=(kind==='png' && pngDifferenceHash(bytes)) || supplied || nativeHash?.(bytes);
+  const hash=(kind==='png' && pngDifferenceHash(bytes)) || supplied || await nativeHash?.(bytes,kind);
   if (!hash) throw new Error('Informe o hash da foto ou abra a imagem no aplicativo Carrossell.');
   const result=hashSchema.safeParse(hash);
   if (!result.success) throw new Error(result.error.issues[0].message);
@@ -133,7 +137,10 @@ export function similarPersonas(personas) {
   for (const [i,a] of personas.entries()) for(const b of personas.slice(i+1)) {
     const motivos=[];
     if (a.anchor && b.anchor && closeHash(a.anchorHash,b.anchorHash)) motivos.push('Foto-âncora com rosto possivelmente igual.');
-    if (Math.abs(a.idade-b.idade)<=4 && ['genero','etnia'].every(key=>normalized(a[key]).join(' ')===normalized(b[key]).join(' '))) {
+    if (Math.abs(a.idade-b.idade)<=4 && ['genero','etnia'].every(key=>{
+      const value=normalized(a[key]).join(' ');
+      return value && value===normalized(b[key]).join(' ');
+    })) {
       const score=['cabelo','estilo','cenario'].reduce((sum,key)=>sum+overlap(a[key],b[key]),0);
       if(score>=2) motivos.push('Gênero, idade, aparência e descrições visuais semelhantes.');
     }

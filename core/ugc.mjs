@@ -21,8 +21,17 @@ export function anchorPrompt(persona){
 }
 const retentionLines=templates[4].split(/\r?\n\r?\n/);
 const sceneLine=retentionLines.find(line=>line.startsWith('ESTA FOTO'));
+const retentionBlock=retentionLines.filter(line=>line!==sceneLine).join('\n\n');
+const optionalRetention=[
+  ['olhos', ', {olhos}'],
+  ['cabelo', ', {cabelo}'],
+  ['marcaFixa', ', {marca_fixa}'],
+  ['idade', ', idade ({idade})'],
+  ['estilo', ' Estilo de roupa: {estilo_roupa}.'],
+];
 export function keepBlock(persona){
-  return fill(retentionLines.filter(line=>line!==sceneLine).join('\n\n'),persona);
+  const template=optionalRetention.reduce((block,[key,clause])=>persona[key]?block:block.replace(clause,''),retentionBlock);
+  return fill(template,persona);
 }
 export function scenePrompt(persona,options){
   const {cena,acao,cenario,luz}=validateScene(options);
