@@ -28,7 +28,8 @@ try {
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
   application = await _electron.launch({ args: ["."], cwd: root, env: { ...process.env, PACTO_USER_DATA: userData, PACTO_DEV_URL: url } });
   const page = await application.firstWindow();
-  await page.getByRole("region", { name: "Configuração do projeto" }).waitFor();
+  // Perfil novo abre na escolha de provedor (1.15.0); antes abria direto na configuração.
+  await page.getByRole("region", { name: /^(Configuração do projeto|Como você quer gerar\?)$/ }).first().waitFor();
   const projectId = await page.evaluate(async () => {
     await window.pacto.request("saveProfile", { profile: { brand: "Regressão técnica", product: "Teste de edição local", audience: "Verificação de software" } });
     const project = await window.pacto.request("createProject", { title: "Regressão renderer · texto manual", brief: "Verificação de sincronização do editor. Não é um resultado de IA." });

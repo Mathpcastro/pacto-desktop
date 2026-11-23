@@ -56,13 +56,16 @@ try {
   });
   const page = await application.firstWindow();
   await page.setViewportSize({ width: 1440, height: 940 }).catch(() => {});
-  await page.getByRole("heading", { name: "Seu projeto, montado com você." }).waitFor();
+  await page.getByRole("heading", { name: /^(Seu projeto, montado com você\.|Como você quer gerar\?)$/ }).first().waitFor();
   await until(page, 
     async () => (await window.pacto.request("bootstrap")).account?.connected,
     null, 120000);
   step("connected");
   await page.screenshot({ path: join(out, "01-inicio.png") });
   const heading = (name) => page.getByRole("heading", { name }).waitFor({ timeout: 30000 });
+  // 1.15.0: primeiro a escolha de provedor; a prova segue pelo ChatGPT.
+  const chatgpt = page.getByRole("button", { name: /ChatGPT — conectar minha conta/ });
+  if (await chatgpt.isVisible().catch(() => false)) await chatgpt.click();
   // The first screen may still be the account step when the login loaded late.
   if (await page.getByRole("button", { name: "Continuar" }).isVisible().catch(() => false))
     await page.getByRole("button", { name: "Continuar" }).click();
