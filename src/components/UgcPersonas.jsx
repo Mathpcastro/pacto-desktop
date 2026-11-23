@@ -4,6 +4,7 @@ import { translateUi } from "../../core/i18n.mjs";
 import { runtimeErrorMessage } from "../usePacto.js";
 import Dialog from "./Dialog.jsx";
 import IconButton from "./IconButton.jsx";
+import { shouldBlockPersonaClose } from "./dialog-close.mjs";
 import { personaSaveLabel, profileFaceButton, savedAvatarNotice } from "./ugc-personas-ui.mjs";
 import "./UgcPersonas.css";
 
@@ -22,6 +23,17 @@ const fields = [
   ["instagram", "@ do Instagram"],
 ];
 
+const anchorReadError = "Não foi possível ler a imagem.";
+const anchorImportErrors = new Set([
+  anchorReadError,
+  "Não foi possível abrir o seletor de imagens.",
+  "Use uma foto de até 15 MB.",
+]);
+
+function logImport(event, data) {
+  void window.pacto?.request?.("importLog", { event, ...data })?.catch(() => {});
+}
+
 function Anchor({ image }) {
   return (
     <div className="ugc-persona-anchor">
@@ -35,13 +47,22 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
   const [pending, setPending] = useState("");
   const [localError, setLocalError] = useState("");
   const picking = useRef(false);
+  const ignoreCloseUntil = useRef(0);
   const ageInput = useRef(null);
   const isActive = Boolean(draft.id && draft.id === activePersonaId);
   const [use, setUse] = useState(isActive);
   const busy = Boolean(pending);
   const saved = Boolean(persona.anchor);
-  const close = () => {
-    if (!picking.current && !busy) onClose();
+  const close = (reason, blockedByDialog = false) => {
+    logImport("dialog-close-attempt", { reason });
+    if (blockedByDialog || shouldBlockPersonaClose({
+      reason, picking: picking.current, busy, ignoreCloseUntil: ignoreCloseUntil.current, now: Date.now(),
+    })) {
+      logImport("dialog-close-blocked", { reason });
+      return;
+    }
+    logImport("dialog-close", { reason });
+    onClose();
   };
 
   const pickAnchor = async () => {
@@ -49,14 +70,25 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
     picking.current = true;
     setPending("upload");
     setLocalError("");
+    logImport("pickAnchor-start");
     try {
       const result = await request("importReference", { purpose: "personaAnchor" });
-      if (result?.cancelled) return;
-      if (!result?.dataUrl) throw new Error("Não foi possível ler a imagem.");
-      setDraft((current) => ({ ...current, anchor: result.dataUrl }));
+      const { dataUrl, name, cancelled } = result ?? {};
+      const hasDataUrl = typeof dataUrl === "string" && dataUrl.length > 0;
+      const dataUrlLength = hasDataUrl ? dataUrl.length : 0;
+      logImport("pickAnchor-ipc-result", { cancelled: cancelled === true, name, hasDataUrl, dataUrlLength });
+      if (cancelled === true) return;
+      if (!hasDataUrl || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUrl)) {
+        throw new Error(anchorReadError);
+      }
+      setDraft((current) => ({ ...current, anchor: dataUrl }));
+      logImport("pickAnchor-setDraft", { hasDataUrl, dataUrlLength });
     } catch (error) {
-      setLocalError(runtimeErrorMessage(error));
+      const message = runtimeErrorMessage(error);
+      logImport("pickAnchor-error", { message });
+      setLocalError(anchorImportErrors.has(message) ? message : anchorReadError);
     } finally {
+      ignoreCloseUntil.current = Date.now() + 800;
       picking.current = false;
       setPending("");
     }
@@ -92,6 +124,8 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
         },
         use: isActive || use,
       });
+      logImport("dialog-close-attempt", { reason: "save-success" });
+      logImport("dialog-close", { reason: "save-success" });
       onSave(snapshot);
     } catch {
       // O diálogo mantém os campos preenchidos para uma nova tentativa.
@@ -101,7 +135,8 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
   };
 
   return (
-    <Dialog title={saved ? "Editar avatar" : draft.id ? "Editar persona" : "Criar persona"} wide className="ugc-persona-dialog" localError={localError} onClose={close}>
+    <Dialog title={saved ? "Editar avatar" : draft.id ? "Editar persona" : "Criar persona"} wide className="ugc-persona-dialog"
+      localError={localError} onClose={close} onCloseBlocked={(reason) => close(reason, true)}>
       <form className="ugc-persona-form" noValidate onSubmit={(event) => { event.preventDefault(); void save(); }}>
         <div className="dialog-fields">
           <div className="ugc-persona-fields">
@@ -150,7 +185,7 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
           )}
         </div>
         <footer className="dialog-footer ugc-persona-actions">
-          <button className="ghost-btn" type="button" disabled={busy} onClick={close}>Cancelar</button>
+          <button className="ghost-btn" type="button" disabled={busy} onClick={() => close("cancel-button")}>Cancelar</button>
           <button className="btn primary" type="submit" disabled={busy}>{personaSaveLabel(draft)}</button>
         </footer>
       </form>

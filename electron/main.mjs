@@ -8,7 +8,7 @@ import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { homedir } from 'node:os';
-import { readImportedImage, referenceImportOptions } from './import-reference.mjs';
+import { createImportLog, readImportedImage, referenceImportOptions } from './import-reference.mjs';
 import { Profiles } from '../core/profiles.mjs';
 import { CodexClient, safeError } from '../core/codex.mjs';
 import { Runtime, ACTIONS } from '../core/runtime.mjs';
@@ -40,6 +40,29 @@ protocol.registerSchemesAsPrivileged([{scheme:'carrossell-ref',privileges:{stand
 // Pin that historical directory before changing the commercial display name.
 configureIdentity(app,process.env.PACTO_USER_DATA);
 const startupLog = new PilotLog(join(app.getPath('userData'), 'startup.log'));
+const importLog = createImportLog(join(app.getPath('userData'), 'import-reference.log'));
+const rendererImportLogFields = new Map([
+  ['pickAnchor-start', []],
+  ['pickAnchor-ipc-result', ['cancelled', 'name', 'hasDataUrl', 'dataUrlLength']],
+  ['pickAnchor-setDraft', ['hasDataUrl', 'dataUrlLength']],
+  ['pickAnchor-error', ['message']],
+  ['dialog-close-attempt', ['reason']],
+  ['dialog-close', ['reason']],
+  ['dialog-close-blocked', ['reason']],
+]);
+
+function logRendererImport(args) {
+  const fields = rendererImportLogFields.get(args?.event);
+  if (!fields) return;
+  const data = {};
+  for (const field of fields) {
+    const value = args[field];
+    if (typeof value === 'string') data[field] = value.slice(0, 300);
+    else if (typeof value === 'boolean' || Number.isFinite(value)) data[field] = value;
+  }
+  return importLog(args.event, data);
+}
+
 let startupStage = 'preparação';
 // --segundo-plano: sem janela, só o controle local para a CLI (agentes). Não usar --headless: o Chromium
 // entende essa opção como o modo sem tela dele e nenhuma janela aparece depois. Uma instância por usuário:
@@ -154,14 +177,16 @@ app.whenReady().then(async()=>{
     async chooseFolder(){const result=await dialog.showOpenDialog(window,{title:ui('Escolha a pasta sincronizada (ex.: Meu Drive)'),properties:['openDirectory','createDirectory']});return result.canceled?null:result.filePaths[0]||null;},
     async openCourse(url){const u=new URL(url);if(u.protocol!=='https:'||u.hostname!=='www.youtube.com')throw new Error('Link do curso inválido.');await shell.openExternal(u.href);},
     async importReference(args){
-      const {title}=referenceImportOptions(args);
+      const title=ui(referenceImportOptions(args).title);
+      void importLog('showOpenDialog-open',{title,args});
       const result=await dialog.showOpenDialog(window,{
-        title:ui(title),
+        title,
         properties:['openFile'],
         filters:[{name:ui('Imagens'),extensions:['png','jpg','jpeg','webp']}],
       }).catch(cause=>{throw new Error('Não foi possível abrir o seletor de imagens.',{cause});});
+      void importLog('showOpenDialog-return',{canceled:result?.canceled,filePaths:result?.filePaths,bookmarks:result?.bookmarks});
       if(result?.canceled)return {cancelled:true};
-      return readImportedImage(result?.filePaths?.[0],args,photoPixels);
+      return readImportedImage(result?.filePaths?.[0],args,photoPixels,importLog);
     }
   }});
   const telegramBase=!app.isPackaged&&/^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.PACTO_TELEGRAM_URL||'')?process.env.PACTO_TELEGRAM_URL:undefined;
@@ -190,7 +215,8 @@ app.whenReady().then(async()=>{
   ipcMain.handle('pacto:request',async(event,action,args)=>{
     const licenseActions=['licenseStatus','activateLicense','revalidateLicense','openLicenseLink'];
     const referenceActions=['referenceCatalog','referenceDetails','referenceAttachment','referenceOpenOriginal','importReferencePack'];
-    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'||action==='titleBar'||licenseActions.includes(action)||referenceActions.includes(action)))throw new Error('Solicitação não permitida.');
+    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='importLog'||action==='installUpdate'||action==='titleBar'||licenseActions.includes(action)||referenceActions.includes(action)))throw new Error('Solicitação não permitida.');
+    if(action==='importLog')return logRendererImport(args);
     if(referenceActions.includes(action)){
       try{
         if(action==='referenceCatalog')return await references.catalog();
@@ -222,7 +248,18 @@ app.whenReady().then(async()=>{
     if(action==='activateLicense')return licenseService.activateLicense(args);
     if(action==='revalidateLicense')return licenseService.revalidateLicense();
     if(action==='openLicenseLink'){const url=args?.which==='termos'?TERMS_URL:args?.which==='privacidade'?PRIVACY_URL:null;if(!url)throw new Error('Link da licença inválido.');await shell.openExternal(url);return {ok:true};}
-    try{const result=await runtime.request(action,args);if(action==='saveSettings'&&(args?.language==='es'||args?.language==='pt-BR')){Menu.setApplicationMenu(appMenu());tray?.setLocale?.(args.language);}return result;}catch(error){throw safeError(error);}
+    try{
+      const result=await runtime.request(action,args);
+      if(action==='importReference'){
+        void importLog('ipc-return',{cancelled:Boolean(result?.cancelled),name:result?.name,dataUrlLength:result?.dataUrl?.length??0});
+      }
+      if(action==='saveSettings'&&(args?.language==='es'||args?.language==='pt-BR')){Menu.setApplicationMenu(appMenu());tray?.setLocale?.(args.language);}
+      return result;
+    }catch(error){
+      const safe=safeError(error);
+      if(action==='importReference')void importLog('ipc-error',{message:safe.message});
+      throw safe;
+    }
   });
   void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
   try{control=await startControl({userData:app.getPath('userData'),runtime,allowed:ACTIONS,license:licenseService,version:app.getVersion(),headless,info:()=>({window:windowOpen()&&window.isVisible()}),onActivity:()=>{lastActivity=Date.now();}});}

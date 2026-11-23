@@ -76,3 +76,5 @@ Radar é a entrada principal para Ideias, Para revisar e Piloto automático. O c
 Cada perfil guarda os avatares nas personas existentes. A âncora original é preservada junto do bloco MANTER. A cara do perfil define a foto local no Carrossell e ativa o avatar para UGC. Um carrossel com escolha explícita usa seu próprio avatar.
 
 O editor exige só o Nome para salvar um avatar ou rascunho. A pessoa pode dispensar um aviso de semelhança por par. A dispensa vale nos dois perfis e continua valendo quando o app é reaberto.
+
+O seletor aceita caminhos locais e URIs de arquivo. O editor mantém o rascunho aberto ao cancelar ou quando a leitura falha. Escape e cliques no fundo ficam bloqueados durante a escolha e por 800 ms após o retorno. O diagnóstico local registra eventos e comprimentos da imagem, sem gravar o conteúdo da foto.
