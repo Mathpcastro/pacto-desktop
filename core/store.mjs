@@ -1,4 +1,4 @@
-import { validateScene } from './ugc.mjs';
+import { keepBlock, validateScene } from './ugc.mjs';
 import { validatePersona, photoHash, unpackPhoto, findPersona } from './personas.mjs';
 import { mkdir, readFile, writeFile, rename, readdir, unlink, copyFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -131,7 +131,7 @@ function format(value){const v=String(value||'carrossel');if(!FORMATS.includes(v
 function variant(value){const n=Number(value||0);if(!Number.isInteger(n)||n<0||n>2)throw new Error('Variante inválida.');return n;}
 // Perfil e fotos da marca: foto de perfil, fotos com o rosto, cenas aprovadas para fotos simples
 // e imagens da marca (logo e produtos) que podem aparecer nos cards.
-const emptyMedia=()=>({displayName:'',handle:'',verified:true,avatar:'',faces:[],scenes:[],assets:[]});
+const emptyMedia=()=>({displayName:'',handle:'',verified:true,avatar:'',avatarPersonaId:null,faces:[],scenes:[],assets:[]});
 export const ASSET_KINDS=['logo','produto','outro'];
 function assetKind(value){const v=String(value||'outro');if(!ASSET_KINDS.includes(v))throw new Error('Tipo de imagem inválido.');return v;}
 // Imagens anexadas ao criar o carrossel: referência ou algo que deve aparecer num card.
@@ -168,6 +168,7 @@ export class Store {
     }catch(cause){throw new Error('A biblioteca local não pôde ser lida. Seus arquivos foram preservados.',{cause});}
     await this.loadBlobs();
     if(!Array.isArray(this.data.personas))this.data.personas=[];
+    for(const persona of this.data.personas)if(!persona.keepBlock)persona.keepBlock=keepBlock(persona);
     if(!this.data.personas.some(p=>p.id===this.data.activePersonaId))this.data.activePersonaId=null;
     this.data.onboarding={brand:emptyInterview(),design:emptyInterview(),...this.data.onboarding};
     if(!Array.isArray(this.data.ideas))this.data.ideas=[];
@@ -175,6 +176,11 @@ export class Store {
     this.data.settings={...defaultSettings(),...this.data.settings};
     this.data.analytics={reports:{},snapshots:{},sources:[],...this.data.analytics};
     this.data.media={...emptyMedia(),...this.data.media};
+    if(this.data.media.avatarPersonaId){
+      const persona=this.data.personas.find(p=>p.id===this.data.media.avatarPersonaId && p.anchor);
+      this.data.media.avatarPersonaId=persona?.id??null;
+      this.data.media.avatar=persona?.anchor??'';
+    }
     this.data.instagram={defaults:Array.isArray(this.data.instagram?.defaults)?this.data.instagram.defaults:this.data.instagram?.connectedAccountId?[this.data.instagram.connectedAccountId]:[]};
     // Cada cena guarda uma série de fotos do mesmo ambiente; a primeira é a capa da série.
     for(const sc of this.data.media.scenes){if(!Array.isArray(sc.images))sc.images=sc.image?[sc.image]:[];}
@@ -251,7 +257,7 @@ export class Store {
     });
     this.queue=job.catch(()=>{});return job;
   }
-  personas(){return {personas:structuredClone(this.data.personas),activePersonaId:this.data.activePersonaId};}
+  personas(){return {personas:structuredClone(this.data.personas),activePersonaId:this.data.activePersonaId,avatarPersonaId:this.data.media.avatarPersonaId};}
   personaSignatures(){
     return this.data.personas.map(({id,nome,idade,genero,etnia,cabelo,estilo,cenario,anchor,anchorHash})=>({
       id,nome,idade,genero,etnia,cabelo,estilo,cenario,anchor:Boolean(anchor),anchorHash
@@ -262,9 +268,10 @@ export class Store {
     const old=input?.id?this.persona(input.id):null;
     const fields=validatePersona({...old,...input});
     const anchor=input?.anchor??old?.anchor??'';
+    if(old?.anchor && anchor!==old.anchor)throw new Error('A foto-âncora original deste avatar já está salva. Crie outro avatar para usar uma nova foto.');
     const anchorHash=anchor?(anchor===old?.anchor&&old.anchorHash?old.anchorHash:photoHash(anchor,input.anchorHash,nativeHash)):'';
     const now=new Date().toISOString();
-    const persona={...fields,id:old?.id||randomUUID(),anchor,anchorHash,createdAt:old?.createdAt||now,updatedAt:now};
+    const persona={...fields,id:old?.id||randomUUID(),anchor,anchorHash,keepBlock:keepBlock(fields),createdAt:old?.createdAt||now,updatedAt:now};
     this.data.personas=old?this.data.personas.map(p=>p.id===old.id?persona:p):[...this.data.personas,persona];
     if(use)this.data.activePersonaId=persona.id;
     await this.persist();return structuredClone(persona);
@@ -273,10 +280,18 @@ export class Store {
     this.data.activePersonaId=this.persona(selector).id;
     await this.persist();
   }
+  async setProfileAvatar(selector){
+    const {id,anchor}=this.persona(selector);
+    if(!anchor)throw new Error('Salve a foto-âncora antes de usar o avatar como cara do perfil.');
+    this.data.media={...this.data.media,avatar:anchor,avatarPersonaId:id};
+    this.data.activePersonaId=id;
+    await this.persist();
+  }
   async deletePersona(selector){
     const {id}=this.persona(selector);
     this.data.personas=this.data.personas.filter(p=>p.id!==id);
     if(this.data.activePersonaId===id)this.data.activePersonaId=null;
+    if(this.data.media.avatarPersonaId===id)this.data.media={...this.data.media,avatar:'',avatarPersonaId:null};
     await this.persist();
   }
   async saveProfile(profile){
@@ -322,8 +337,7 @@ export class Store {
     if(this.data.projects.some(p=>p.id===id))return this.get(id);
     const now=new Date().toISOString();const f=format(kind);const p={id,language:contentLanguage,format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||(normalizeLocale(this.data.settings.language)==='es'?'Nuevo carrusel':'Novo carrossel'),brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',madeBy:text(String(madeBy||''),40),stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
     if(p.style==='ugc'){
-      const selector=persona||this.data.activePersonaId;
-      p.persona=selector?this.persona(selector).id:'';
+      p.persona=persona?this.persona(persona).id:'';
       if(productAsset)unpackPhoto(productAsset);
       p.productAsset=productAsset;
       p.ugcOfflineAnchor=ugcOfflineAnchor===true;
@@ -398,7 +412,7 @@ export class Store {
       if(key==='displayName')next.displayName=text(value,80);
       else if(key==='handle')next.handle=text(value,60).replace(/^@+/,'').replace(/\s+/g,'');
       else if(key==='verified')next.verified=Boolean(value);
-      else if(key==='avatar')next.avatar=imageUrl(value);
+      else if(key==='avatar'){next.avatar=imageUrl(value);next.avatarPersonaId=null;}
       else if(key==='addFaces'){if(!Array.isArray(value))throw new Error('Fotos inválidas.');for(const f of value)next.faces.push({id:randomUUID(),name:text(String(f.name||'Foto'),120),dataUrl:validateReference(f).dataUrl,onColor:{}});if(next.faces.length>10)throw new Error('Use até dez fotos com o seu rosto.');}
       else if(key==='removeFace'){validId(value);next.faces=next.faces.filter(f=>f.id!==value);}
       else if(key==='faceOnColor'){const face=next.faces.find(f=>f.id===validId(value?.id));if(!face)throw new Error('Foto não encontrada.');if(!/^#[0-9a-f]{6}$/i.test(String(value.color)))throw new Error('Cor inválida.');face.onColor={...(face.onColor||{}),[value.color.toLowerCase()]:imageUrl(value.dataUrl)};}

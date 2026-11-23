@@ -70,3 +70,7 @@ HTML aprovado aplicado ao app: Telegram destacado, blocos separados e configura�
 ## 11/11/2026 — Radar na navegação
 
 Radar é a entrada principal para Ideias, Para revisar e Piloto automático. O contador e o atalho do Início representam só prévias prontas do perfil atual. Ver [[54 - Radar na navegacao]].
+
+## 23/11/2026 — Biblioteca de avatares UGC
+
+Cada perfil guarda os avatares nas personas existentes. A âncora original é preservada junto do bloco MANTER. A cara do perfil define a foto local no Carrossell e ativa o avatar para UGC. Um carrossel com escolha explícita usa seu próprio avatar.

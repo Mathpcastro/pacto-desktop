@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { anchorPrompt, scenePrompt } from '../core/ugc.mjs';
+import { anchorPrompt, keepBlock, scenePrompt } from '../core/ugc.mjs';
 import { Runtime } from '../core/runtime.mjs';
 import { slideHtml } from "../core/templates.mjs";
 import { Store } from '../core/store.mjs';
@@ -35,6 +35,11 @@ test('prompts de cena mantêm a identidade e variam entre flash, ambiente e POV'
       assert.ok(prompt.includes(fragment),fragment);
     checkNegatives(prompt);
   }
+  const saved='MANTER (não muda): traços e roupa da versão salva.';
+  const scene=scenePrompt({...fields,keepBlock:saved},{cena:'sai de casa'});
+  assert.ok(scene.includes(saved));
+  assert.ok(!scene.includes(keepBlock(fields)));
+  assert.match(scene,/ESTA FOTO.*sai de casa/);
 });
 
 test('geração de cenas envia sempre os bytes da âncora original',async t=>{
@@ -44,22 +49,47 @@ test('geração de cenas envia sempre os bytes da âncora original',async t=>{
   const calls=[],normalizations=[];
   const codex={status:{account:{connected:true}},async run(params){calls.push(params);return {images:[calls.length===1?png:Buffer.concat([png,Buffer.from([calls.length])])]};}};
   const runtime=new Runtime({store,codex,knowledge:{lessons:[]},dialogs:{anchorHash:()=> 'abcdef1234567890',normalizeUgcPhoto:bytes=>{normalizations.push(bytes);return bytes;}}});
-  const {persona}=await runtime.request('savePersona',{persona:fields,use:true});
-  const state=await runtime.request('generatePersonaAnchor',{personaId:persona.id});
-  assert.equal(state.personas[0].anchor,dataUrl(png));
-  const {id}=await store.createProject({title:'UGC',brief:'Roteiro',style:'ugc'});
+  const preview=await runtime.request('generatePersonaAnchor',{persona:fields});
+  assert.equal(preview.anchor,dataUrl(png));
+  assert.deepEqual(store.personas().personas,[]);
+  const {persona}=await runtime.request('savePersona',{persona:{...fields,anchor:preview.anchor}});
+  const {id}=await runtime.request('createProject',{title:'UGC',brief:'Roteiro',style:'ugc',persona:persona.nome});
+  assert.equal(store.get(id).persona,persona.id);
   await store.saveProject({id,slides:[{id:'one',title:'Gancho',visual:'Sai de casa'},{id:'two',title:'Corpo',visual:'Chega ao café'}]});
   const first=await runtime.request('generateUgcScene',{projectId:id,slideId:'one'});
   const second=await runtime.request('generateUgcScene',{projectId:id,slideId:'two'});
   assert.notEqual(first.slides[0].photo,dataUrl(png));
   assert.notEqual(second.slides[1].photo,first.slides[0].photo);
-  assert.equal(normalizations.length,3);
+  assert.equal(normalizations.length,2);
   assert.deepEqual(calls.map(c=>c.references),[[],[dataUrl(png)],[dataUrl(png)]]);
-  assert.ok(calls.slice(1).every(c=>c.prompt.includes('MANTER')&&!c.prompt.includes('Gancho')));
+  assert.ok(calls.slice(1).every(c=>c.prompt.includes(persona.keepBlock)&&!c.prompt.includes('Gancho')));
+  assert.equal(store.persona(persona.id).anchor,preview.anchor);
   codex.status.account.connected=false;
   await runtime.request('generatePersonaAnchor',{personaId:persona.id});
   await assert.rejects(runtime.request('generateUgcScene',{projectId:id,slideId:'one'}),/Conecte sua conta ChatGPT/);
   assert.equal(calls.length,3);
+});
+
+test('cenas sem escolha explícita seguem o avatar ativo do perfil',async t=>{
+  const root=await mkdtemp(join(tmpdir(),'carrossell-ugc-'));
+  t.after(()=>rm(root,{recursive:true,force:true}));
+  const store=await new Store(root).init(),calls=[];
+  const codex={status:{account:{connected:true}},async run(params){calls.push(params);return {images:[png]};}};
+  const runtime=new Runtime({store,codex,knowledge:{lessons:[]},dialogs:{anchorHash:()=> 'abcdef1234567890'}});
+  const original=await store.savePersona({...fields,anchor:dataUrl(png)},{use:true,nativeHash:runtime.dialogs.anchorHash});
+  const facePhoto='data:image/jpeg;base64,/9j/AAH/2Q==';
+  const face=await store.savePersona({...fields,nome:'Lara',anchor:facePhoto,anchorHash:'0123456789abcdef'});
+  const projects=[];
+  for(const persona of ['',original.id]){
+    const project=await runtime.request('createProject',{title:'UGC',brief:'Roteiro',style:'ugc',persona});
+    await store.saveProject({id:project.id,slides:[{id:'one',title:'Capa',visual:'Sai de casa'}]});
+    projects.push(project.id);
+  }
+  await runtime.request('setProfileAvatar',{id:face.id});
+  for(const projectId of projects)await runtime.request('generateUgcScene',{projectId,slideId:'one'});
+  assert.deepEqual(calls.map(c=>c.references),[[facePhoto],[original.anchor]]);
+  assert.ok(calls[0].prompt.includes(face.keepBlock));
+  assert.ok(calls[1].prompt.includes(original.keepBlock));
 });
 
 test('slide UGC renderiza a foto de capa e sobrepõe o gancho escapado sem cabeçalho',()=>{
@@ -184,8 +214,8 @@ test('projeto UGC captura e guarda a imagem do produto e exporta a legenda para 
   const runtime=new Runtime({store,knowledge:{lessons:[]},codex:{status:{account:{connected:false}}},
     dialogs:{captureProductPage:async url=>{captures.push(url);return dataUrl(png);},
       export:async(_project,zip)=>unzipSync(zip)}});
-  const persona=await store.savePersona(fields,{use:true});
-  const args={title:'UGC',brief:'Pauta',style:'ugc'};
+  const persona=await store.savePersona(fields);
+  const args={title:'UGC',brief:'Pauta',style:'ugc',persona:persona.id};
   await assert.rejects(runtime.request('createProject',{...args,productLink:'file:///tmp/x'}),/HTTP ou HTTPS/);
   await assert.rejects(runtime.request('createProject',{...args,productLink:'https://exemplo.test',productAsset:dataUrl(png)}),/link ou uma imagem/);
   assert.deepEqual(captures,[]);

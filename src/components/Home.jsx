@@ -122,8 +122,10 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
   const [productImage, setProductImage] = useState(null);
   const [importingProduct, setImportingProduct] = useState(false);
   const ugc = format === "carrossel" && style === "ugc";
-  const personas = state.personas || [];
-  const persona = personas.find((p) => p.id === pickedPersona) || personas.find((p) => p.id === state.activePersonaId);
+  const personas = (state.personas || []).filter((p) => p.anchor);
+  const selectedAvatar = personas.find((p) => p.id === pickedPersona);
+  const defaultAvatar = personas.find((p) => p.id === state.activePersonaId);
+  const persona = selectedAvatar || defaultAvatar;
   const [goal, setGoal] = useState("");
   const [size, setSize] = useState(0);
   const [architectureId, setArchitectureId] = useState("");
@@ -206,7 +208,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
         attachments: format === "carrossel" ? attachments : [],
         language,
         ...(ugc && {
-          persona: persona.id,
+          ...(selectedAvatar ? { persona: selectedAvatar.id } : {}),
           ...(productImage ? { productAsset: productImage.dataUrl } : { productLink: productLink.trim() }),
         }),
       });
@@ -215,6 +217,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
       setText("");
       setAttachments([]);
       if (ugc) {
+        setPickedPersona("");
         setProductLink("");
         setProductImage(null);
       }
@@ -363,15 +366,16 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
           <div className="composer-more">
             <div className="fld">
               <label className="fld">
-                <span>Persona UGC</span>
-                <select value={persona?.id || ""} onChange={(e) => setPickedPersona(e.target.value)} disabled={!personas.length || creating}>
-                  <option value="" disabled>Selecione uma persona</option>
+                <span>Avatar salvo</span>
+                <select value={selectedAvatar?.id || ""} onChange={(e) => setPickedPersona(e.target.value)} disabled={!personas.length || creating}>
+                  <option value="" disabled={!defaultAvatar}>{defaultAvatar ? "Avatar ativo para UGC" : "Selecione um avatar salvo"}</option>
                   {personas.map((p) => <option key={p.id} value={p.id} data-user-text>{p.nome}</option>)}
                 </select>
               </label>
-              {(!personas.length || (connected && persona && !persona.anchor)) && (
+              {!selectedAvatar && defaultAvatar && <span className="hint" data-user-text>{defaultAvatar.nome}</span>}
+              {!personas.length && (
                 <button type="button" className="link-btn" onClick={() => onBrand("personas")}>
-                  {personas.length ? "Adicionar foto-âncora na Marca" : "Cadastrar persona na Marca"}
+                  Abrir biblioteca de avatares
                 </button>
               )}
             </div>

@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { connectControl, projectSummary, userDataDir } from '../core/control.mjs';
+import { connectControl, lean, projectSummary, userDataDir } from '../core/control.mjs';
 import { TERMS_VERSION, licenseControlStatus } from '../core/license.mjs';
 import { cliPersona, parseCommand, ugcFlags, Usage } from './arguments.mjs';
 import { IMAGE_LIMIT, findPersona, imageKind, pngDifferenceHash } from '../core/personas.mjs';
@@ -30,12 +30,16 @@ Uso: carrossell <comando> [opções]   (saída em JSON)
   perfis                         lista os perfis
   perfil usar <id|nome>          troca o perfil ativo
   perfil criar <nome> [--usar]   cria um perfil
+  avatares listar [--perfil <id|nome>]
+  avatares renomear <id|nome> --nome <novo>
+  avatares apagar <id|nome>
+  avatares cara-do-perfil <id|nome>
   persona listar [--perfil <id|nome>]
   persona criar --nome <nome> --idade <anos> --genero <gênero> --etnia <aparência>
         --estilo <roupa> --cenario <lugar> --nicho <nicho> --foto <arquivo>
         [--cabelo] [--olhos] [--marca] [--porte] [--instagram @conta] [--usar]
   persona usar <id|nome>         seleciona a persona ativa no perfil
-  persona foto <id|nome> --foto <arquivo>
+  persona foto <id|nome> --foto <arquivo>   salva a primeira foto-âncora
   persona apagar <id|nome>
   persona prompt <id|nome> [--cena "<descrição>" --luz flash|ambiente|pov]
                                  mostra o prompt de âncora ou de cena
@@ -54,7 +58,7 @@ Uso: carrossell <comando> [opções]   (saída em JSON)
         [--exportar <pasta>]      grava, aprova e monta um carrossel de modelo
                                  padrão: 1 opção, escolhe a primeira; aceita --pauta, --titulo,
                                  --cards, --objetivo, --perfil e --agente
-  criar --slides <plano.json> --estilo ugc [--persona <id|nome>] [--foto <capa>]
+  criar --slides <plano.json> --estilo ugc [--avatar <id|nome> | --persona <id|nome>] [--foto <capa>]
         [--produto-imagem <arquivo> | --produto-link <http/https>] [--exportar <pasta> [--tiktok]]
                                  usa fotos fornecidas e gera as cenas com a conta ChatGPT conectada
   mensagem <id> "<pedido>"       pede um ajuste no texto, como no chat do estúdio
@@ -303,7 +307,7 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir(),co
   let plan=flags.slides?await readPlan(flags.slides):null;
   if(flags.slides&&(!Array.isArray(plan?.slides)||!plan.slides.length))throw new Usage('O plano precisa conter pelo menos um card em slides.');
   const style=flags.estilo||(flags.slides?(plan.estilo==='ugc'?'ugc':'texto'):undefined);
-  if(cmd==='criar'&&style!=='ugc'&&ugcFlags.some(key=>flags[key])) throw new Usage('Use opções de persona, produto e foto com o estilo ugc.');
+  if(cmd==='criar'&&style!=='ugc'&&ugcFlags.some(key=>flags[key])) throw new Usage('Use opções de avatar, produto e foto com o estilo ugc.');
   const ugc=flags.slides&&style==='ugc'?await prepareUgcPlan(plan,flags):null;
   if(ugc)plan=ugc.plan;
   const personaPhoto=cmd==='persona'&&flags.foto?await readUgcImage(folderPath(flags.foto),{anchor:true}):'';
@@ -340,6 +344,19 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir(),co
           const persona=findPersona(snapshot.personas,id);
           const prompt=flags.cena?scenePrompt(persona,{cena:flags.cena,luz:flags.luz}):anchorPrompt(persona);
           out({prompt,avisos:snapshot.avisos.filter(({a,b})=>a.id===persona.id||b.id===persona.id)});
+        }
+        break;
+      }
+      case 'avatares':{
+        const [sub,...selector]=rest;
+        const {personas,activePersonaId,avatarPersonaId}=await client.call('personas',scoped());
+        const avatares=personas.filter(persona=>persona.anchor);
+        if(sub==='listar')out(lean({avatares,activePersonaId,avatarPersonaId}));
+        else{
+          const {id}=findPersona(avatares,selector.join(' '));
+          if(sub==='renomear')out(await client.call('savePersona',scoped({persona:{id,nome:flags.nome}})));
+          else if(sub==='apagar')out(await client.call('deletePersona',scoped({id})));
+          else out(await client.call('setProfileAvatar',scoped({id})));
         }
         break;
       }

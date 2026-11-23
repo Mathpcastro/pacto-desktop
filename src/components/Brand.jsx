@@ -185,6 +185,7 @@ function StrategyImprover({ value, request, connected, working, onSave }) {
 export default function Brand({ state, request, isPending, onRedo, onManual, onNotice, onInstagram, onAgents, target }) {
   const profile = state.profile || {};
   const media = state.media || { faces: [], scenes: [], verified: true };
+  const avatars = (state.personas || []).filter((persona) => persona.anchor);
   const assets = media.assets || [];
   const brand = state.brandInfo || {};
   const colors = palette(profile.designKit || "");
@@ -386,7 +387,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           <div className="sub">
             <div className="sub-head">
               <b>Foto de perfil</b>
-              <span className="hint">Aparece nos estilos Tweet e Capa com sua foto</span>
+              <span className="hint">Aparece no app e nos estilos Tweet e Capa com sua foto</span>
             </div>
             <div className="profile-row">
               {media.avatar ? <img className="big-avatar" src={media.avatar} alt="Foto de perfil" /> : <span className="big-avatar">{(brand.name || "?").charAt(0)}</span>}
@@ -407,6 +408,17 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
                     </button>
                   )}
                 </div>
+                {avatars.length > 0 && (
+                  <label className="fld">
+                    <span>Avatar salvo como foto de perfil</span>
+                    <select value={media.avatarPersonaId || ""} disabled={isPending("setProfileAvatar") || isPending("saveMedia")}
+                      onChange={(event) => request("setProfileAvatar", { id: event.target.value })
+                        .then(() => onNotice("Foto de perfil atualizada.")).catch(() => {})}>
+                      <option value="" disabled>Escolher da biblioteca de avatares</option>
+                      {avatars.map((avatar) => <option key={avatar.id} value={avatar.id} data-user-text>{avatar.nome}</option>)}
+                    </select>
+                  </label>
+                )}
                 <div className="row">
                   <label className="fld" style={{ width: 150 }}>
                     <span>Nome</span>

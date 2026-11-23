@@ -60,40 +60,46 @@ A saída tem `id`, `estilo`, `cards` (quantidade), `capa` (número escolhido), `
 
 ### UGC com avatar
 
-Em **Marca › Persona UGC**, cadastre a persona, vincule o @ do Instagram e envie ou gere sua foto-âncora. É possível selecionar uma persona ativa por perfil. Em **Início › UGC com avatar**, escolha a persona e indique o link ou a imagem do produto. O Estúdio permite revisar a copy, montar os cards, refazer a foto de um card, publicar pelo fluxo do Instagram ou baixar um ZIP para o TikTok.
+Em **Marca › Persona UGC**, envie ou gere a foto-âncora, confira a prévia e clique em **Salvar avatar**. A biblioteca de cada perfil guarda o nome, a âncora original e o bloco **MANTER**. Em **Editar**, altere o nome sem trocar o ID. Para usar outra âncora, crie outro avatar. Em **Início › UGC com avatar**, escolha um avatar salvo ou use o ativo para UGC e indique o link ou a imagem do produto.
+
+**Usar como cara do perfil** ativa o avatar para UGC e aplica sua âncora como foto do perfil local do Carrossell. A opção também aparece em **Marca › Perfil**. Remover a foto desvincula a associação e preserva o avatar e a seleção ativa para UGC. Carrosséis com uma escolha explícita continuam usando o avatar escolhido.
 
 ```sh
-carrossell persona listar --perfil "Minha marca"
+carrossell avatares listar --perfil "Minha marca"
+carrossell avatares renomear "<nome ou ID>" --nome "<novo nome>"
+carrossell avatares cara-do-perfil "<nome ou ID>"
+carrossell avatares apagar "<nome ou ID>"
 carrossell persona criar --nome "<nome>" --idade 28 --genero "<gênero>" --etnia "<aparência>" \
   --estilo "<roupa>" --cenario "<lugar>" --nicho "<nicho>" --foto ancora.png --usar
 carrossell persona usar "<nome ou ID>"
-carrossell persona foto "<nome ou ID>" --foto nova-ancora.jpg
+carrossell persona foto "<rascunho>" --foto ancora.jpg
 carrossell persona prompt "<nome ou ID>" --cena "<descrição da cena>" --luz flash
-carrossell persona apagar "<nome ou ID>"
-carrossell criar --slides plano.json --estilo ugc --persona "<nome ou ID>" \
+carrossell criar --slides plano.json --estilo ugc --avatar "<nome ou ID>" \
   --produto-imagem tela.png --exportar ./ugc --tiktok
 carrossell exportar <id> --pasta ./ugc --tiktok
 ```
 
-`persona criar` também aceita `--cabelo`, `--olhos`, `--marca`, `--porte` e `--instagram @conta`. Os subcomandos aceitam `--perfil`. As respostas incluem `avisos` de similaridade entre personas. Sem `--cena`, `persona prompt` devolve o prompt de âncora. Com `--cena`, devolve o prompt de cena com MANTER e a instrução de anexar a âncora original. A luz aceita `flash`, `ambiente` (padrão) ou `pov`.
+`persona criar` também aceita `--cabelo`, `--olhos`, `--marca`, `--porte` e `--instagram @conta`. Os subcomandos aceitam `--perfil`. `avatares listar` retorna `avatares`, `activePersonaId` e `avatarPersonaId`, com as fotos representadas por `[imagem]`. `persona listar` inclui os rascunhos e os `avisos` de similaridade. `persona foto` adiciona a âncora de um rascunho. Sem `--cena`, `persona prompt` devolve o prompt de âncora. Com `--cena`, devolve o prompt de cena com MANTER e a instrução de anexar a âncora original. A luz aceita `flash`, `ambiente` (padrão) ou `pov`.
 
-O plano aceita `"estilo": "ugc"` e `"persona": "<nome ou ID>"`. As opções da CLI têm precedência. Se passar uma imagem do produto sem indicar o card, a CLI usa o penúltimo card, depois da capa. Em cada slide, `foto` recebe um caminho relativo à pasta do plano ou um caminho absoluto, e `produto: true` indica o card que vai exibir a tela. `--foto` fornece a foto de capa pela linha de comando. Use `scene` com `acao`, `cenario` e `luz` para orientar a geração. Fotos e imagens passadas à CLI aceitam PNG, JPEG e WebP até 15 MB, identificados pela assinatura. `--produto-link` captura uma página HTTP(S) em uma sessão temporária do Electron. `--produto-imagem` usa o arquivo escolhido.
+O plano aceita `"estilo": "ugc"` e `"persona": "<nome ou ID>"`. As opções `--avatar` e `--persona` são equivalentes e têm precedência sobre a seleção no plano. Se passar uma imagem do produto sem indicar o card, a CLI usa o penúltimo card, depois da capa. Em cada slide, `foto` recebe um caminho relativo à pasta do plano ou um caminho absoluto, e `produto: true` indica o card que vai exibir a tela. `--foto` fornece a foto de capa pela linha de comando. Use `scene` com `acao`, `cenario` e `luz` para orientar a geração. Fotos e imagens passadas à CLI aceitam PNG, JPEG e WebP até 15 MB, identificados pela assinatura. `--produto-link` captura uma página HTTP(S) em uma sessão temporária do Electron. `--produto-imagem` usa o arquivo escolhido.
 
-Com a conta ChatGPT conectada, os cards de cena sem foto usam a âncora original da persona para gerar a imagem. O app aplica o gancho e a copy ao montar os PNGs. Sem a conexão, o slide 1 usa uma foto fornecida ou a âncora da persona selecionada ou ativa. Os demais cards de cena sem foto usam fundo liso. A exportação conserva os PNGs 1080×1350 e `legenda.txt`. `--tiktok` também grava `tiktok.txt` com uma legenda curta e as hashtags.
+Com a conta ChatGPT conectada, os cards de cena sem foto usam a âncora original e o bloco MANTER persistido para gerar a imagem. O app aplica o gancho e a copy ao montar os PNGs. Sem a conexão, o slide 1 usa uma foto fornecida ou a âncora da persona selecionada ou ativa. Os demais cards de cena sem foto usam fundo liso. A exportação conserva os PNGs 1080×1350 e `legenda.txt`. `--tiktok` também grava `tiktok.txt` com uma legenda curta e as hashtags.
 
 Ações do runtime disponíveis no preload e no controle local
 
 | Ação | Argumentos | Retorno |
 | --- | --- | --- |
-| `personas` | `{profileId?}` | `{personas, activePersonaId, avisos}` |
+| `personas` | `{profileId?}` | `{personas, activePersonaId, avatarPersonaId, avisos}` |
 | `savePersona` | `{profileId?, persona, use?}` | Lista, avisos e `persona` salva |
 | `usePersona`, `deletePersona` | `{profileId?, id}` | Lista, persona ativa e avisos após a mudança |
+| `setProfileAvatar` | `{profileId?, id}` | Lista e IDs atualizados. Persiste a âncora em `media.avatar` e o vínculo em `media.avatarPersonaId` |
+| `generatePersonaAnchor` | `{profileId?, persona}` | Prévia `{anchor}` no app. Envie a âncora para `savePersona` ao confirmar |
 | `generatePersonaAnchor` | `{profileId?, personaId}` | Lista e avisos após gerar a âncora que falta |
 | `generateUgcScene` | `{profileId?, projectId, slideId}` | Projeto com a foto da cena atualizada |
 
-Uma persona tem `id`, `nome`, `idade`, `genero`, `etnia`, `cabelo`, `olhos`, `marcaFixa`, `porte`, `estilo`, `cenario`, `nicho`, `instagram`, `anchor`, `anchorHash`, `createdAt` e `updatedAt`. O store guarda a foto em blob. O runtime calcula dHash para PNG RGB/RGBA de 8 bits. Nos demais formatos aceita o hash de 16 dígitos hexadecimais em `anchorHash` ou usa o decodificador do Electron. O aviso por imagem usa distância de Hamming de até 10. O aviso por atributos exige gênero e aparência iguais após normalização, idades com diferença de até quatro anos e soma de similaridade por tokens de cabelo, roupa e cenário de pelo menos 2 em 3. Um aviso contém `a`, `b` e `motivo`, com os IDs, nomes e perfis das duas personas.
+Uma persona tem `id`, `nome`, `idade`, `genero`, `etnia`, `cabelo`, `olhos`, `marcaFixa`, `porte`, `estilo`, `cenario`, `nicho`, `instagram`, `anchor`, `anchorHash`, `keepBlock`, `createdAt` e `updatedAt`. O store guarda a foto original em blob e preenche o bloco MANTER para registros anteriores à biblioteca. O runtime calcula dHash para PNG RGB/RGBA de 8 bits. Nos demais formatos aceita o hash de 16 dígitos hexadecimais em `anchorHash` ou usa o decodificador do Electron. O aviso por imagem usa distância de Hamming de até 10. O aviso por atributos exige gênero e aparência iguais após normalização, idades com diferença de até quatro anos e soma de similaridade por tokens de cabelo, roupa e cenário de pelo menos 2 em 3. Um aviso contém `a`, `b` e `motivo`, com os IDs, nomes e perfis das duas personas.
 
-Para `createProject` com `style: "ugc"`, passe `persona` e, conforme a origem, `productLink` ou `productAsset` (data URL). `generateSlides` com `slideId` e `regeneratePhoto: true` refaz a foto e remonta apenas o card. `export` com `tiktok: true` adiciona o texto ao ZIP. O controle da CLI também aceita `exportTo` com `tiktok: true`.
+Para `createProject` com `style: "ugc"`, passe `persona` para fixar a escolha no carrossel. Sem esse campo, vale a persona ativa do perfil. Informe `productLink` ou `productAsset` (data URL) conforme a origem. `generateSlides` com `slideId` e `regeneratePhoto: true` refaz a foto e remonta apenas o card. `export` com `tiktok: true` adiciona o texto ao ZIP. O controle da CLI também aceita `exportTo` com `tiktok: true`.
 
 ### Licença pelo terminal
 

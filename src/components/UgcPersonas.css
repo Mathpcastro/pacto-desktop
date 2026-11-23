@@ -56,6 +56,10 @@
   max-width: 100%;
 }
 
+.ugc-persona-photo .ugc-persona-anchor {
+  width: 120px;
+}
+
 .ugc-persona-photo .btn {
   white-space: normal;
 }

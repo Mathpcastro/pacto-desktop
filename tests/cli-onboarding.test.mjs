@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
 import { main } from '../cli/carrossell.mjs';
-import { parseCommand, Usage } from '../cli/arguments.mjs';
+import { cliPersona, parseCommand, Usage } from '../cli/arguments.mjs';
 import { loadKnowledge } from '../core/knowledge.mjs';
 import { agentActions, lean, licenseControlActions } from '../core/control.mjs';
 import { generationSkills } from '../core/generation-skills.mjs';
@@ -301,7 +301,17 @@ test('CLI valida comandos persona e opções UGC antes de conectar',async t=>{
   let connections=0;
   const options={connectApp:()=>{connections++;assert.fail('Abriu o app com argumentos inválidos');}};
   assert.equal(parseCommand(['persona','usar','Lia Costa','--perfil','Marca']).flags.perfil,'Marca');
-  assert.equal(parseCommand(['criar','--slides','plano.json','--estilo','ugc','--persona','Lia Costa']).flags.estilo,'ugc');
+  const create=['criar','--slides','plano.json','--estilo','ugc'];
+  assert.deepEqual(parseCommand([...create,'--avatar','Lia Costa']),parseCommand([...create,'--persona','Lia Costa']));
+  const list=parseCommand(['avatares','listar','--perfil','Marca']);
+  assert.equal(list.flags.perfil,'Marca');
+  assert.deepEqual(list.rest,['listar']);
+  let help='';
+  const stdout=t.mock.method(process.stdout,'write',chunk=>{help+=chunk;return true;});
+  try{assert.equal(await main(['ajuda'],options),0);}
+  finally{stdout.mock.restore();}
+  assert.match(help,/avatares listar/);
+  assert.match(help,/--avatar <id\|nome>/);
   for(const argv of [
     ['persona','criar','--nome','Lia'],
     ['persona','criar',...personaFlags.map(word=>word==='28'?'0':word),'--foto',fake],
@@ -310,13 +320,15 @@ test('CLI valida comandos persona e opções UGC antes de conectar',async t=>{
     ['persona','prompt','Lia','--luz','flash'],
     ['persona','prompt','Lia','--cena','rua','--luz','estúdio'],
     ['criar','--slides','plano.json','--estilo','ugc','--produto-link','file:///tmp/pagina'],
+    [...create,'--avatar','Lia','--persona','Outra'],
+    ['criar','--slides','plano.json','--estilo','texto','--avatar','Lia'],
     ['criar','--slides','plano.json','--estilo','ugc','--produto-imagem',fake,'--produto-link','https://exemplo.test'],
     ['exportar','projeto','--pasta','saida','--tiktok','--so-stories'],
   ]) await assert.rejects(main(argv,options),Usage);
   assert.equal(connections,0);
 });
 
-test('CLI cria, lista, ativa, troca foto, imprime prompts e apaga persona',async t=>{
+test('CLI cria, lista, ativa, protege a âncora, imprime prompts e apaga persona',async t=>{
   const {root,run,store}=await setup(t,{dialogs:{anchorHash:()=> '0123456789abcdef'}});
   const anchor=join(root,'anchor.jpeg'),next=join(root,'nova.jpeg');
   await writeFile(anchor,jpeg);
@@ -329,8 +341,8 @@ test('CLI cria, lista, ativa, troca foto, imprime prompts e apaga persona',async
   assert.match(clone.avisos[0].motivo,/rosto possivelmente igual/);
   assert.equal((await run('persona','usar','Lia','Dois')).json.activePersonaId,clone.persona.id);
   assert.equal((await run('persona','listar')).json.personas.length,2);
-  await run('persona','foto',created.persona.id,'--foto',next);
-  assert.equal(store.persona('Lia Costa').anchor,dataUrl('jpeg',await readFile(next)));
+  await assert.rejects(run('persona','foto',created.persona.id,'--foto',next),/foto-âncora original.*salva/);
+  assert.equal(store.persona('Lia Costa').anchor,dataUrl('jpeg',jpeg));
   const prompt=(await run('persona','prompt','Lia Costa')).json;
   assert.match(prompt.prompt,/selfie/i);
   assert.equal(prompt.avisos.length,1);
@@ -338,6 +350,28 @@ test('CLI cria, lista, ativa, troca foto, imprime prompts e apaga persona',async
   assert.deepEqual(lean({anchor:created.persona.anchor}),{anchor:'[imagem]'});
   await run('persona','apagar',clone.persona.id);
   assert.equal((await run('persona','listar')).json.activePersonaId,null);
+});
+
+test('CLI lista, renomeia, associa ao perfil e apaga avatares salvos',async t=>{
+  const {root,run,store}=await setup(t,{dialogs:{anchorHash:()=> '0123456789abcdef'}});
+  const path=join(root,'ancora.jpeg');
+  await writeFile(path,jpeg);
+  const fields=cliPersona(parseCommand(['persona','criar',...personaFlags,'--foto',path]).flags);
+  const persona=await store.savePersona(fields);
+  await run('persona','foto',persona.id,'--foto',path);
+  await store.savePersona({...fields,nome:'Rascunho'});
+  await run('avatares','renomear','Lia','Costa','--nome','Lia Tavares');
+  await run('avatares','cara-do-perfil','Lia Tavares');
+  const {json}=await run('avatares','listar');
+  assert.equal(json.avatares.length,1);
+  assert.equal(json.avatares[0].id,persona.id);
+  assert.equal(json.avatares[0].nome,'Lia Tavares');
+  assert.equal(json.avatares[0].anchor,'[imagem]');
+  assert.equal(json.activePersonaId,persona.id);
+  assert.equal(json.avatarPersonaId,persona.id);
+  assert.equal(store.media().avatar,dataUrl('jpeg',jpeg));
+  await run('avatares','apagar',persona.id);
+  assert.deepEqual((await run('avatares','listar')).json,{avatares:[],activePersonaId:null,avatarPersonaId:null});
 });
 
 test('CLI importa fotos relativas ao plano UGC e exporta sem chamar geração offline',async t=>{
@@ -371,15 +405,15 @@ test('CLI usa âncora ativa offline e explica quando falta foto para o slide 1',
   assert.equal(store.get(json.id).slides[2].photo,'');
 });
 
-test('CLI gera cenas pendentes com a âncora da persona indicada no plano',async t=>{
+test('CLI gera cenas pendentes com a âncora selecionada por --avatar',async t=>{
   const references=[],captures=[];
   const codex={status:{account:{connected:true}},run:async options=>{references.push(options.references);return {images:[png]};}};
   const {root,run,store,file,rendered}=await setup(t,{codex,dialogs:{anchorHash:()=> '0123456789abcdef',
     captureProductPage:async url=>{captures.push(url);return dataUrl('png',png);}}});
   const path=join(root,'ancora.jpeg');await writeFile(path,jpeg);
   await run('persona','criar',...personaFlags,'--foto',path);
-  const input=await file('plano.json',{...ugcPlan(),persona:'Lia Costa'});
-  const {json}=await run('criar','--slides',input,'--produto-link','https://exemplo.test');
+  const input=await file('plano.json',{...ugcPlan(),persona:'Outro avatar'});
+  const {json}=await run('criar','--slides',input,'--avatar','Lia Costa','--produto-link','https://exemplo.test');
   assert.equal(store.get(json.id).status,'complete');
   assert.deepEqual(captures,['https://exemplo.test/']);
   assert.deepEqual(references,[[dataUrl('jpeg',jpeg)],[dataUrl('jpeg',jpeg)]]);

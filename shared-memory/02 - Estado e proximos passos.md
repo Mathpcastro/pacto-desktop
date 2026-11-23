@@ -436,3 +436,9 @@ Após os prints da prova instalada, a captura de produto foi ajustada para a pri
 ## 23/11/2026 — Prova UGC no box (sem ChatGPT)
 
 Fora do sandbox: `npm test` 312 aprovados, 0 falhas, 1 ignorado. `.deb` 1.15.0 instalado. Pela CLI: 3 perfis (UGC Marina, UGC Camila, UGC Rafael), 3 personas com as âncoras de /workspace/ugc-prompts/resultados, aviso de clone conferido com uma persona parecida (depois apagada), e 3 carrosséis UGC exportados com `--produto-link` (Carrossell, app de idiomas, curso) e `--tiktok`, cerca de 10 a 14 s cada. Correções feitas na prova: a captura de produto com `debugger`/Emulation derrubava o Electron 44 no Linux (removida; a janela offscreen 390×844 com escala 3 já gera o print móvel) e as hashtags do `tiktok.txt` ignoram palavras curtas.
+
+## 23/11/2026 — Biblioteca de avatares UGC na 1.15.0 local
+
+Marca › Persona UGC mantém a prévia da âncora aberta até salvar e lista os avatares por perfil. O Store conserva a foto original e o bloco MANTER. Início e CLI aceitam um avatar salvo para novas gerações. A ação de usar como cara do perfil atualiza a foto local e o avatar ativo para UGC.
+
+Os 37 testes focados e o build Vite passaram. A suíte completa em modo detalhado teve 304 aprovados, 13 falhas de ambiente e 1 ignorado. As falhas ocorreram nos mesmos quatro arquivos da execução anterior às mudanças. Os dois scripts de interface pararam com EPERM ao abrir o servidor local. Geração real, interface Electron e empacotamento seguem sem validação nesta etapa. [Mudanças e validação](../CHANGES-1.15.0.md)

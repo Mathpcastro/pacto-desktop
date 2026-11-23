@@ -22,7 +22,7 @@ Foto de iPhone amadora, vertical 4:5 (1080×1350). Espelho, over-the-shoulder ou
 
 REFERÊNCIA (imagem anexada): esta é {nome}. Usar só para identidade.
 
-MANTER (não muda): os mesmos traços, formato do rosto, {olhos}, {cabelo}, tom de pele, {marca_fixa}, idade ({idade}) e proporções da referência. Não embelezar, afinar, alisar, trocar ou envelhecer a pessoa. Não inventar outro rosto.
+MANTER (não muda): os mesmos traços, formato do rosto, {olhos}, {cabelo}, tom de pele, {marca_fixa}, idade ({idade}) e proporções da referência. Estilo de roupa: {estilo_roupa}. Não embelezar, afinar, alisar, trocar ou envelhecer a pessoa. Não inventar outro rosto.
 
 ESTA FOTO (só isto muda): {cena_desta_foto}
 

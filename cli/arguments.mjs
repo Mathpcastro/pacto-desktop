@@ -24,12 +24,18 @@ const commands = {
     apagar: [1, Infinity],
     prompt: [1, Infinity, 'cena luz'],
   },
+  avatares: {
+    listar: [0, 0],
+    renomear: [1, Infinity, 'nome', 'nome'],
+    apagar: [1, Infinity],
+    'cara-do-perfil': [1, Infinity],
+  },
   marca: { '': [0, 0], configurar: [0, 0, 'link descricao'], aprovar: [0, 0, 'nome'], salvar: [0, 0, 'contexto design nome', 'contexto design'] },
   licenca: { status: [0, 0], ativar: [0, 0, 'email aceito'] },
   pautas: [0, 0, 'foco listar'],
   projetos: [0, 0],
   projeto: [1, 1],
-  criar: [0, 0, 'pauta titulo estilo cards formato objetivo sem-esperar agente slides quantas capa exportar persona produto-imagem produto-link foto tiktok'],
+  criar: [0, 0, 'pauta titulo estilo cards formato objetivo sem-esperar agente slides quantas capa exportar persona avatar produto-imagem produto-link foto tiktok'],
   mensagem: [2, Infinity, 'sem-esperar'],
   editar: [1, 1, 'json', 'json'],
   aprovar: [1, 1],
@@ -74,7 +80,7 @@ export function cliPersona(flags) {
     });
   } catch(error) { throw new Usage(error.message); }
 }
-export const ugcFlags = ['persona','produto-imagem','produto-link','foto'];
+export const ugcFlags = ['persona','avatar','produto-imagem','produto-link','foto'];
 
 export function parseCommand(argv) {
   const positional = [], flags = Object.create(null);
@@ -129,7 +135,12 @@ export function parseCommand(argv) {
       catch(error) { throw new Usage(error.message); }
     }
     if (ugcFlags.some(key=>flags[key]) && (!flags.slides || flags.estilo && flags.estilo!=='ugc')) {
-      throw new Usage('Use opções de persona, produto e foto com criar --slides no estilo ugc.');
+      throw new Usage('Use opções de avatar, produto e foto com criar --slides no estilo ugc.');
+    }
+    if (flags.avatar) {
+      if (flags.persona) throw new Usage('Use --avatar ou --persona.');
+      flags.persona=flags.avatar;
+      delete flags.avatar;
     }
     if (flags.tiktok && !flags.exportar) throw new Usage('Use --tiktok com --exportar.');
     if (flags.slides) {
