@@ -80,6 +80,23 @@ export class LicenseService {
     return { response, body };
   }
 
+  async #requestLicense(path, payload, fallbackCode, context) {
+    let result;
+    try {
+      result = await this.#call(path, payload);
+    } catch {
+      await this.#saveState({ code: 'offline' });
+      return this.#publicStatus();
+    }
+
+    const { response, body } = result;
+    const patch = response.ok
+      ? await this.#acceptToken(body, context)
+      : { code: body?.code || fallbackCode };
+    await this.#saveState(patch || { code: fallbackCode });
+    return this.#publicStatus();
+  }
+
   async #acceptToken(body, { email = null, acceptedAt = null, oldState = null } = {}) {
     // HMAC is server-only. The main process adopts claims only from the configured API response,
     // checks them against this install and persists the opaque token in safeStorage.
@@ -87,17 +104,23 @@ export class LicenseService {
     if (!body?.ok || !claims || !Number.isInteger(claims.exp)
       || claims.device_hash !== this.deviceHash || !/^[a-f0-9]{64}$/.test(claims.email_hash || '')
       || claims.exp * 1000 <= this.now() || typeof claims.terms_version !== 'string'
-      || typeof claims.accepted_at !== 'string') return false;
-    if (email && claims.email_hash !== sha256(email)) return false;
-    if (acceptedAt && (claims.terms_version !== TERMS_VERSION || Date.parse(claims.accepted_at) !== Date.parse(acceptedAt))) return false;
-    const expiresAt = new Date(claims.exp * 1000).toISOString();
-    if (body.expires_at && Date.parse(body.expires_at) !== Date.parse(expiresAt)) return false;
-    await this.store.setLicense(body.token);
-    await this.#saveState({ activated: true, expiresAt, graceUntil: graceUntilFor(expiresAt),
+      || typeof claims.accepted_at !== 'string') return null;
+    if (email && claims.email_hash !== sha256(email)) return null;
+    if (acceptedAt && (claims.terms_version !== TERMS_VERSION || Date.parse(claims.accepted_at) !== Date.parse(acceptedAt))) return null;
+    const expiry = new Date(claims.exp * 1000);
+    if (!Number.isFinite(expiry.getTime()) || (body.expires_at && Date.parse(body.expires_at) !== expiry.getTime())) return null;
+    const expiresAt = expiry.toISOString();
+    const graceUntil = graceUntilFor(expiresAt);
+    if (!graceUntil) return null;
+    try {
+      await this.store.setLicense(body.token);
+    } catch {
+      return { code: 'storage_unavailable' };
+    }
+    return { activated: true, expiresAt, graceUntil,
       termsVersion: claims.terms_version, acceptedAt: acceptedAt || claims.accepted_at,
       emailMasked: email ? maskLicenseEmail(email) : oldState?.emailMasked || null,
-      code: body.code || 'activated' });
-    return true;
+      code: body.code || 'activated' };
   }
 
   async status() {
@@ -113,20 +136,10 @@ export class LicenseService {
       await this.#saveState({ code: 'activation_failed' });
       return this.#publicStatus();
     }
-    try {
-      const { response, body } = await this.#call('/license/activate', {
-        email: normalized, device_hash: this.deviceHash, app_version: this.appVersion,
-        accepted: true, terms_version: TERMS_VERSION, accepted_at: acceptedAt,
-      });
-      if (!response.ok) {
-        await this.#saveState({ code: body?.code || 'activation_failed' });
-      } else if (!await this.#acceptToken(body, { email: normalized, acceptedAt })) {
-        await this.#saveState({ code: 'activation_failed' });
-      }
-    } catch {
-      await this.#saveState({ code: 'offline' });
-    }
-    return this.#publicStatus();
+    return this.#requestLicense('/license/activate', {
+      email: normalized, device_hash: this.deviceHash, app_version: this.appVersion,
+      accepted: true, terms_version: TERMS_VERSION, accepted_at: acceptedAt,
+    }, 'activation_failed', { email: normalized, acceptedAt });
   }
 
   async revalidateLicense() {
@@ -143,19 +156,9 @@ export class LicenseService {
       await this.#saveState({ code: 'not_activated' });
       return this.#publicStatus();
     }
-    try {
-      const { response, body } = await this.#call('/license/revalidate', {
-        token, device_hash: this.deviceHash, app_version: this.appVersion,
-      });
-      if (!response.ok) {
-        await this.#saveState({ code: body?.code || 'revalidation_failed' });
-      } else if (!await this.#acceptToken(body, { oldState })) {
-        await this.#saveState({ code: 'revalidation_failed' });
-      }
-    } catch {
-      await this.#saveState({ code: 'offline' });
-    }
-    return this.#publicStatus();
+    return this.#requestLicense('/license/revalidate', {
+      token, device_hash: this.deviceHash, app_version: this.appVersion,
+    }, 'revalidation_failed', { oldState });
   }
 }
 

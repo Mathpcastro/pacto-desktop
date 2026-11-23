@@ -1,4 +1,35 @@
 #!/bin/sh
-# Carrossell CLI: roda cli/carrossell.mjs com o executável do app em modo Node.
-DIR="$(cd "$(dirname "$0")" && pwd)"
-ELECTRON_RUN_AS_NODE=1 exec "$DIR/../../MacOS/Carrossell" "$DIR/../app.asar/cli/carrossell.mjs" "$@"
+# Roda a CLI com o executável instalado do Carrossell em modo Node.
+SCRIPT="$0"
+if [ -L "$SCRIPT" ]; then
+  RESOLVED="$(readlink -f "$SCRIPT" 2>/dev/null)" && SCRIPT="$RESOLVED"
+  while [ -L "$SCRIPT" ]; do
+    LINK="$(readlink "$SCRIPT")" || exit 127
+    case "$LINK" in
+      /*) SCRIPT="$LINK" ;;
+      *) SCRIPT="$(dirname "$SCRIPT")/$LINK" ;;
+    esac
+  done
+fi
+DIR="$(cd "$(dirname "$SCRIPT")" && pwd)" || exit 127
+case "$(uname -s)" in
+  Darwin) set -- "$DIR/../../MacOS/Carrossell" "$@" ;;
+  Linux)
+    APP=
+    for NAME in pacto-desktop carrossell Carrossell; do
+      if [ -x "$DIR/../../$NAME" ] && [ -f "$DIR/../../$NAME" ]; then
+        APP="$DIR/../../$NAME"
+        break
+      fi
+    done
+    set -- "$APP" "$@"
+    ;;
+  *) set -- "" "$@" ;;
+esac
+APP="$1"
+shift
+if [ -z "$APP" ] || [ ! -x "$APP" ]; then
+  printf '%s\n' 'Não encontrei o executável do Carrossell. Reinstale o app e o comando carrossell nas configurações do perfil.' >&2
+  exit 127
+fi
+ELECTRON_RUN_AS_NODE=1 exec "$APP" "$DIR/../app.asar/cli/carrossell.mjs" "$@"

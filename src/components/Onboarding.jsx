@@ -12,12 +12,16 @@ import {
   Send,
   Sparkles,
   Square,
+  Terminal,
   Trash2,
 } from "lucide-react";
 import { LessonLink } from "../course.jsx";
 import { Grow, Markdown, Spinner, copyText } from "../ui.jsx";
 
+import CliGuide from "./CliGuide.jsx";
+
 const steps = [
+  { id: "provider", short: "Geração" },
   { id: "start", label: "O que você vende?", short: "Produto" },
   { id: "account", label: "Conectar seu ChatGPT", short: "Conta" },
   { id: "brand", label: "Contexto Oficial da Marca", short: "Contexto" },
@@ -184,12 +188,14 @@ function DocumentReview({ kind, value, onChange, onRedo, busy }) {
   );
 }
 
-export default function Onboarding({ state, request, isPending, onDone, onCancel, onManual, onAgents }) {
+export default function Onboarding({ state, request, isPending, onDone, onCancel, onManual }) {
   const { profile, account, onboarding = {}, architectures = [] } = state;
   const presets = state.designPresets || [];
   const connected = Boolean(account?.connected);
   const inInterview = ["brand", "design"].find((k) => onboarding[k]?.messages?.some((m) => m.role === "user") && !onboarding[k]?.document);
-  const [step, setStep] = useState(inInterview ? steps.findIndex((s) => s.id === inInterview) : 0);
+  const [step, setStep] = useState(() => steps.findIndex((s) => s.id === (inInterview || (profile ? "start" : "provider"))));
+  const [cliGuide, setCliGuide] = useState(false);
+  const [accountNext, setAccountNext] = useState("start");
   const [what, setWhat] = useState("");
   const [promptText, setPromptText] = useState("");
   const [pasted, setPasted] = useState("");
@@ -286,6 +292,57 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
       setSaving(false);
     }
   };
+  const chooseChatGPT = async () => {
+    setSaving(true);
+    try {
+      await request("saveSettings", { provider: "chatgpt" });
+      setAccountNext("start");
+      setStep(index(connected ? "start" : "account"));
+      if (!connected) request("connect").catch(() => {});
+    } catch {
+    } finally {
+      setSaving(false);
+    }
+  };
+  const finishCli = async () => {
+    setSaving(true);
+    try {
+      await request("saveSettings", { provider: "cli" });
+      onDone();
+    } catch {
+    } finally {
+      setSaving(false);
+    }
+  };
+  if (current === "provider") {
+    return (
+      <section className="wizard wizard-provider" aria-label="Como você quer gerar?">
+        <header className="wizard-head">
+          <h1 className="page-title">{cliGuide ? "Gerar pelo terminal" : "Como você quer gerar?"}</h1>
+        </header>
+        {cliGuide ? (
+          <CliGuide request={request} isPending={isPending} onBack={() => setCliGuide(false)} onDone={finishCli} saving={saving} />
+        ) : (
+          <>
+            <div className="choice-grid paths" role="group" aria-label="Como você quer gerar?">
+              <button type="button" className="path main" disabled={saving} onClick={chooseChatGPT}>
+                <b><Sparkles size={16} /> ChatGPT — conectar minha conta</b>
+                <small>Recomendado. Gera texto e arte.</small>
+              </button>
+              <button type="button" className="path" disabled={saving} onClick={() => setCliGuide(true)}>
+                <b><Terminal size={16} /> Claude ou Gemini — pelo terminal (CLI)</b>
+                <small>Seu agente escreve. O Carrossell monta e exporta os cards.</small>
+              </button>
+            </div>
+            <footer className="wizard-foot">
+              {onCancel && <button className="ghost-btn" type="button" onClick={onCancel}>Voltar</button>}
+              <button className="ghost-btn" type="button" onClick={onManual}>Prefiro preencher em formulário</button>
+            </footer>
+          </>
+        )}
+      </section>
+    );
+  }
   const ready = docs.brand.trim() && docs.design.trim();
   const title = current === "start" ? "O que você vende?" : current === "account" ? "Conecte sua conta do ChatGPT" : current === "ready" ? "Tudo pronto para criar" : copy[current].title;
   const lead =
@@ -307,7 +364,7 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
               type="button"
               className={step > i ? "done" : ""}
               aria-current={step === i ? "step" : undefined}
-              disabled={item.id !== "start" && !connected && !profile && !(item.id === "ready" && ready)}
+              disabled={!["provider", "start", "account"].includes(item.id) && !connected && !profile && !(item.id === "ready" && ready)}
               onClick={() => setStep(i)}
             >
               {item.short}
@@ -344,24 +401,13 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
               </b>
               <small>Usa o que a sua IA já sabe sobre você. Depois cole a resposta aqui.</small>
             </button>
-            <button type="button" className="path" disabled={quickBusy} onClick={() => setStep(index(connected ? "brand" : "account"))}>
+            <button type="button" className="path" disabled={quickBusy} onClick={() => { setAccountNext("brand"); setStep(index(connected ? "brand" : "account")); }}>
               <b>
                 <MessagesSquare size={16} /> Responder a entrevista
               </b>
               <small>Opcional e mais detalhada. Também dá para fazer depois, para melhorar a copy.</small>
             </button>
           </div>
-          {!connected && onAgents && (
-            <div className="card-box account-card">
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <b>Usa o Claude ou o Gemini em vez do ChatGPT?</b>
-                <p className="hint">O agente monta a sua marca, escreve e desenha os cards seguindo o método, com a conta dele. Os carrosséis aparecem aqui no app.</p>
-              </div>
-              <button className="btn" type="button" onClick={onAgents}>
-                Gerar com Claude ou Gemini <ArrowRight size={15} />
-              </button>
-            </div>
-          )}
           {quickBusy && (
             <div className="work-strip" role="status" style={{ borderRadius: 12 }}>
               <Spinner />
@@ -414,17 +460,6 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
               {isPending("connect") ? "Conectando…" : "Conectar conta"}
             </button>
           )}
-        </div>
-      )}
-      {current === "account" && !connected && onAgents && (
-        <div className="card-box account-card">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <b>Não usa o ChatGPT?</b>
-            <p className="hint">Gere pelo Claude ou pelo Gemini, com a sua conta deles. O agente monta a sua marca, escreve e desenha os cards seguindo o método, e os carrosséis aparecem aqui no app.</p>
-          </div>
-          <button className="btn" type="button" onClick={onAgents}>
-            Usar Claude ou Gemini <ArrowRight size={15} />
-          </button>
         </div>
       )}
       {(current === "brand" || current === "design") &&
@@ -508,7 +543,7 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
       )}
       <footer className="wizard-foot">
         {step > 0 ? (
-          <button type="button" className="ghost-btn" onClick={() => setStep(step - 1)}>
+          <button type="button" className="ghost-btn" onClick={() => setStep(current === "account" && accountNext === "start" ? index("provider") : step - 1)}>
             <ArrowLeft size={16} /> Voltar
           </button>
         ) : onCancel ? (
@@ -530,7 +565,7 @@ export default function Onboarding({ state, request, isPending, onDone, onCancel
         )}
         <span className="spacer" />
         {current === "account" && (
-          <button className="btn primary" type="button" disabled={!connected} onClick={() => setStep(index("brand"))}>
+          <button className="btn primary" type="button" disabled={!connected} onClick={() => setStep(index(accountNext))}>
             Continuar <ArrowRight size={16} />
           </button>
         )}

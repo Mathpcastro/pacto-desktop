@@ -10,6 +10,7 @@ export const ACTIVATION_ERRORS = {
   device_limit: "Esta licença já está ativa em 3 computadores. Fale com o suporte para liberar um deles.",
   rate_limited: "Muitas tentativas seguidas. Espere alguns minutos e tente de novo.",
   offline: "Não foi possível falar com o servidor de licenças. Confira a internet e tente de novo.",
+  storage_unavailable: "Não consegui guardar a licença com segurança neste computador. No Linux, abra o app com um chaveiro do sistema ativo (GNOME Keyring ou KWallet) e tente de novo.",
   not_found: "Não encontramos uma compra com este e-mail. Confira se é o mesmo e-mail usado no pagamento ou fale com o suporte.",
 };
 export function activationError(code) {
@@ -45,7 +46,7 @@ export default function LicenseDialog({ onClose, onStatus, openLink }) {
       });
       const status = parseLicenseStatus(value);
       onStatus(status);
-      if (status.activated && status.code !== "activation_failed" && status.code !== "offline") setDone(status);
+      if (status.activated && !["activation_failed", "offline", "storage_unavailable"].includes(status.code)) setDone(status);
       else setProblem({ text: activationError(status.code) });
     } catch {
       setProblem({ text: ACTIVATION_ERRORS.offline });

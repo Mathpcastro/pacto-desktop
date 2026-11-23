@@ -224,6 +224,7 @@ export class Store {
     const next={...this.data.settings};
     for(const key of Object.keys(patch)){
       if(key==='weeklyGoal'){const n=Number(patch[key]);if(!Number.isInteger(n)||n<1||n>50)throw new Error('Meta semanal inválida.');next.weeklyGoal=n;}
+      else if(key==='provider'){if(!['chatgpt','cli'].includes(patch[key]))throw new Error('Provedor de geração inválido.');next.provider=patch[key];}
       else if(key==='driveFolder')next.driveFolder=text(patch[key],1000);
       else if(key==='firstCompletedAt'||key==='lastReminderAt')next[key]=text(patch[key],40);
       else if(key==='language'){if(patch[key]!=='pt-BR'&&patch[key]!=='es')throw new Error('Idioma inválido.');next.language=patch[key];}
@@ -242,7 +243,14 @@ export class Store {
     const id=reservedId?validId(reservedId):randomUUID();
     if(this.data.projects.some(p=>p.id===id))return this.get(id);
     const now=new Date().toISOString();const f=format(kind);const p={id,language:contentLanguage,format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||(normalizeLocale(this.data.settings.language)==='es'?'Nuevo carrusel':'Novo carrossel'),brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',madeBy:text(String(madeBy||''),40),stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
-    this.data.projects.unshift(p);await this.persist();return this.get(p.id);
+    this.data.projects.unshift(p);
+    try{await this.persist();}
+    catch(error){
+      this.data.projects=this.data.projects.filter(project=>project.id!==id);
+      await this.persist().catch(()=>{});
+      throw error;
+    }
+    return this.get(id);
   }
   async saveProject(args){
     if(!args||typeof args!=='object')throw new Error('Projeto inválido.');

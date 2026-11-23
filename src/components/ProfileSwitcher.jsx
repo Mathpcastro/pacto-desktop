@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ChevronDown, Plus, Settings2, Trash2, Users } from "lucide-react";
+import { ChevronDown, Plus, Settings2, Terminal, Trash2, Users } from "lucide-react";
 import Dialog from "./Dialog.jsx";
+import { CLI_GUIDE_TITLE } from "./CliGuide.jsx";
 
 // Perfis (multicontas): cada perfil tem marca, Design Kit, fotos e carrosséis próprios.
 export default function ProfileSwitcher({
@@ -9,6 +10,7 @@ export default function ProfileSwitcher({
   isPending,
   menu,
   onSwitched,
+  onOpenCli,
 }) {
   const profiles = state.profiles || [];
   const current = profiles.find((p) => p.id === state.profileId) || profiles[0];
@@ -100,6 +102,9 @@ export default function ProfileSwitcher({
               </small>
             </button>
           )}
+          <button className="opt" onClick={onOpenCli}>
+            <b><Terminal size={15} /> {CLI_GUIDE_TITLE}</b>
+          </button>
           <button
             className="opt"
             onClick={() => (menu.setOpen(null), setManaging(true))}

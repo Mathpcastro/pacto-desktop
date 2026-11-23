@@ -1,9 +1,10 @@
 import { createServer, createConnection } from 'node:net';
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
-import { dirname, join, resolve, normalize, isAbsolute } from 'node:path';
+import { dirname, join, relative, resolve, sep, isAbsolute } from 'node:path';
 import { tellsIn } from './copy.mjs';
+import { TERMS_URL, TERMS_VERSION, licenseControlStatus, normalizeLicenseEmail } from './license.mjs';
 import { reviewCarousel } from './knowledge.mjs';
 
 // Controle local para agentes (CLI): o app — com ou sem janela — é o único dono da biblioteca,
@@ -56,14 +57,38 @@ function statusSummary(state,job){
     projects:state.projects.length,ready:state.projects.filter(p=>p.status==='complete').length};
 }
 // Pastas de exportação: só caminho absoluto, e cada arquivo precisa cair dentro dela.
-async function writeFiles(folder,files){
+async function writeFiles(folder,files,{reportPartial=false}={}){
   if(typeof folder!=='string'||!isAbsolute(folder))throw new Error('Informe a pasta de exportação com o caminho completo.');
   const base=resolve(folder),written=[];
-  for(const [name,bytes] of Object.entries(files)){
-    const target=resolve(base,normalize(name));if(!target.startsWith(base))throw new Error('Nome de arquivo inválido.');
-    await mkdir(dirname(target),{recursive:true});await writeFile(target,bytes);written.push(target);
+  try{
+    for(const [name,bytes] of Object.entries(files)){
+      const target=resolve(base,name),local=relative(base,target);
+      if(!local||local==='..'||local.startsWith(`..${sep}`)||isAbsolute(local))throw new Error('Nome de arquivo inválido.');
+      await mkdir(dirname(target),{recursive:true});
+      const temp=`${target}-${randomUUID()}.tmp`;
+      try{await writeFile(temp,bytes);await rename(temp,target);}
+      finally{await rm(temp,{force:true}).catch(()=>{});}
+      written.push(target);
+    }
+  }catch(error){
+    if(!reportPartial)throw error;
+    return {folder:base,files:written,error:'Não consegui gravar todos os arquivos na pasta de exportação.'};
   }
-  return written;
+  return {folder:base,files:written};
+}
+export function licenseControlActions(license){
+  return {
+    licenseStatus:async()=>{
+      try{return licenseControlStatus(await license.status());}
+      catch{return licenseControlStatus({code:'offline'});}
+    },
+    activateLicense:async({email,accepted,termsVersion})=>{
+      if(accepted!==true||termsVersion!==TERMS_VERSION)throw new Error(`Aceite os termos da versão ${TERMS_VERSION}: ${TERMS_URL}`);
+      if(!normalizeLicenseEmail(email))throw new Error('Informe o e-mail usado na compra.');
+      try{return licenseControlStatus(await license.activateLicense({email,accepted,termsVersion,acceptedAt:new Date().toISOString()}));}
+      catch{return licenseControlStatus({code:'activation_failed'});}
+    },
+  };
 }
 // Ações próprias da CLI, sobre o mesmo runtime da janela.
 export function agentActions(runtime,{version='',headless=false,info=()=>({})}={}){
@@ -82,17 +107,19 @@ export function agentActions(runtime,{version='',headless=false,info=()=>({})}={
       const profile={...(s.profile||{}),brand:String(name||d.brand.brandName||s.profile?.brand||''),brandContext:d.brand.document,designKit:d.design.document};
       await runtime.request('saveProfile',{profileId:s.profileId,profile});return (await agentActions(runtime).brand({profileId:s.profileId}));
     },
+    skills:async()=>runtime.skills.listSkills(runtime.knowledge),
+    discardCliProject:async({profileId,id,keepText=true})=>runtime.inProfile(profileId,()=>runtime.discardCliProject(id,keepText!==false)),
     ideas:async({profileId})=>(await state(profileId)).ideas,
-    exportTo:async({profileId,id,folder,onlyStories=false})=>{
+    exportTo:async({profileId,id,folder,onlyStories=false,reportPartial=false})=>{
       if(onlyStories){
         // Só os stories (PNGs e textos), mesmo antes das artes dos cards.
         const p=await project(profileId,id);if(!p.stories?.length)throw new Error(`Este carrossel ainda não tem stories: carrossell stories ${id}.`);
         const files={'stories.txt':Buffer.from(p.stories.map((s,i)=>[`STORY ${i+1} — ${s.type}`,s.text,s.sticker?`Sticker: ${s.sticker}`:'',s.cta?`CTA: ${s.cta}`:''].filter(Boolean).join('\n')).join('\n\n'))};
         p.stories.forEach((s,i)=>{if(s.image)files[`stories/${String(i+1).padStart(2,'0')}.png`]=Buffer.from(s.image.split(',')[1],'base64');});
-        return {folder:resolve(folder||''),files:await writeFiles(folder,files)};
+        return writeFiles(folder,files);
       }
       const files=await runtime.inProfile(profileId,()=>runtime.exportedFiles(id));
-      return {folder:resolve(folder||''),files:await writeFiles(folder,files)};
+      return writeFiles(folder,files,{reportPartial:reportPartial===true});
     },
     // Modo agente (Claude, Gemini…): o agente escreve e desenha; o app guarda, valida, monta, exporta e posta.
     saveBrand:async({profileId,name,context,design})=>{
@@ -128,7 +155,7 @@ export function agentActions(runtime,{version='',headless=false,info=()=>({})}={
   };
 }
 // Servidor: aceita {id, token, action, args}; "subscribe" passa a receber os eventos do app.
-export async function startControl({userData,runtime,allowed,version,headless=false,info,actions=agentActions(runtime,{version,headless,info}),onActivity=()=>{}}){
+export async function startControl({userData,runtime,allowed,version,headless=false,info,license,actions={...agentActions(runtime,{version,headless,info}),...(license?licenseControlActions(license):{})},onActivity=()=>{}}){
   await mkdir(userData,{recursive:true});
   const token=randomBytes(32).toString('hex'),address=controlAddress(userData);
   await writeFile(tokenFile(userData),token,{encoding:'utf8',mode:0o600});

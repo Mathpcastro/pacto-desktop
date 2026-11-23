@@ -308,6 +308,10 @@
   .popover .opt[aria-checked="true"] b::after { content: "✓"; margin-left: auto; color: var(--accent); }
   .popover hr { border: 0; border-top: 1px solid var(--line); margin: 4px 2px; }
   .popover .head { padding: 8px 11px 4px; font: 600 var(--t-xs) var(--ui); color: var(--muted); }
+  .account-popover { max-height: calc(100vh / var(--app-zoom, 1) - 72px); overflow-y: auto; }
+  .cli-menu-section { display: grid; border-radius: 8px; background: var(--accent-soft); }
+  .popover .cli-menu-section .head { color: var(--ink); }
+  .cli-menu-section > .hint { padding: 0 11px; }
   .seg { display: flex; gap: 2px; background: var(--sunk); padding: 3px; border-radius: 10px; margin: 0 6px 6px; }
   .seg button { flex: 1; border: 0; background: none; border-radius: 8px; padding: 6px 10px; font: var(--t-sm) var(--ui); color: var(--muted); white-space: nowrap; }
   .seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px #0000001a; }
@@ -492,6 +496,7 @@
   /* primeiro uso: uma etapa por tela, centralizada */
   .setup-wrap { min-height: 100%; }
   .wizard { max-width: 760px; margin: 0 auto; padding: 36px 28px 40px; display: grid; gap: 22px; }
+  .wizard-provider { align-content: start; }
   .wizard-head { display: grid; gap: 12px; justify-items: start; }
   .wizard-head .steps { margin: 4px 0 6px; }
   .wizard-body { display: grid; gap: 16px; }
@@ -821,4 +826,15 @@
   .reference-paste:focus-within, .reference-paste:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .reference-grid .tile { min-width: 0; }
   .reference-grid .tile > span { display: block; overflow-wrap: anywhere; }
+}
+
+@layer studio {
+  .cli-guide { display: grid; gap: 18px; min-width: 0; }
+  .cli-guide-install { display: grid; gap: 10px; }
+  .cli-guide .row { flex-wrap: wrap; }
+  .cli-guide > .ghost-btn { justify-self: start; }
+  .cli-copy-block { display: flex; align-items: start; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .cli-copy-block pre { flex: 1 1 275px; min-width: 0; margin: 0; white-space: pre-wrap; }
+  .cli-copy-block pre code { overflow-wrap: anywhere; }
+  .cli-copy-block .hint { flex-basis: 100%; }
 }

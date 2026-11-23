@@ -408,3 +408,19 @@ Não testado na biblioteca da cliente, que deve ter cerca de 500 MB.
 [[68 - Release Carrossell 1.14.1]]: a capa segue o post da Biblioteca, as cenas de fotos ganham fila e a Biblioteca recebe o pacote de slideshows virais do TikTok (154).
 277 testes, build e provas Electron passaram. Latest, feeds e SHA-512 verificados. Aviso v1-14-1 publicado, com o botão corrigido para as cenas de fotos.
 A página /app nova está pronta em ZIP, não publicada. Ela promete 500 slideshows do TikTok; hoje são 154.
+
+## 23/11/2026 — Ganchos de slideshow na 1.15.0 local
+
+A skill compacta entra depois do Swipe File no pedido de texto de carrossel para ChatGPT e para a CLI. `carrossell skills` lista `hooks-slideshow` como `plan`. A pauta pode indicar uma categoria. Foi restaurada a mensagem de fundo inválido de `fundo-stories`. O plano de exemplo usa Chamado e passou no `PLAN_SCHEMA`.
+
+O build do Vite passou. Em Node, a execução detalhada registrou 277 aprovados, 13 falhas e 1 skip. Foram 12 falhas ao abrir sockets locais e uma no transporte stdio do cliente MCP. A validação desta etapa ficou em Node e Vite. Detalhes em [CHANGES-1.15.0.md](../CHANGES-1.15.0.md).
+
+## 23/11/2026 — Menu do avatar, onboarding e licença na 1.15.0 local
+
+O menu do avatar mostra o status da CLI ao abrir e leva ao mesmo diálogo do menu de perfis. A etapa de escolha do provedor fica alinhada no topo e compartilha uma única linha de avisos acima do conteúdo. A ativação e a renovação retornam `storage_unavailable` quando o cofre falha ao guardar o token. A mensagem em português e espanhol orienta a ativar o chaveiro do sistema no Linux.
+
+O build do Vite passou. Em Node foram 278 aprovados, 13 falhas de ambiente já observadas e 1 ignorado pela ausência do Worker. O Chrome headless foi bloqueado pelo sandbox antes de carregar a interface. A validação em Electron e nos instaladores segue pendente. [Detalhes dos testes](../CHANGES-1.15.0.md).
+
+## 23/11/2026 — Validação fora do sandbox (box Linux)
+
+Fora do sandbox do Codex: `npm test` 290 aprovados, 0 falhas, 1 ignorado. `.deb` 1.15.0 instalado por cima da 1.14.1 em /opt/Carrossell. CLI real: `--version` → `Carrossell 1.15.0`; comando desconhecido sai com 2 sem abrir o app; `criar` sem ChatGPT apaga o rascunho; `criar --slides` exportou 6 PNG + legenda em ~3 s (estilo texto, capa na categoria Chamado). `licenca ativar` com o e-mail do Matheus: o servidor respondeu, mas o box não tem chaveiro (safeStorage indisponível) e o app devolveu `storage_unavailable`; licença não ficou ativa no box. Prints do onboarding, menu do avatar, menu de perfis e guia da CLI tirados do app instalado (Playwright + Xvfb).

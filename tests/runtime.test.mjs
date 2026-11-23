@@ -4,6 +4,8 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { unzipSync, strFromU8 } from 'fflate';
+import { Runtime } from '../core/runtime.mjs';
+import { loadKnowledge } from '../core/knowledge.mjs';
 const modulePath = '../core/store.mjs';
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aH7sAAAAASUVORK5CYII=', 'base64');
 async function fixture(t) {
@@ -12,6 +14,34 @@ async function fixture(t) {
   t.after(() => rm(root, {recursive:true,force:true}));
   const store = new Store(root); await store.init(); return {store, root, Store};
 }
+test('slideshow hook guidance is shared by carousel plans and agent text only', async t => {
+  const { store } = await fixture(t);
+  const runtime = new Runtime({ store, knowledge: loadKnowledge() });
+  const brief = 'Pauta de teste, categoria: chamado';
+  const carousel = await store.createProject({ title: 'Carrossel', brief, format: 'carrossel' });
+  const prompt = runtime.planPrompt(carousel.id);
+  const heading = '=== SKILL — GANCHOS DE SLIDESHOW ===';
+  const swipe = '=== BÔNUS — SWIPE FILE: HOOKS, IDEIAS E CTAS ===';
+  assert.ok(prompt.includes(swipe));
+  assert.ok(prompt.indexOf(heading) > prompt.indexOf(swipe));
+  assert.equal(prompt.split(heading).length, 2);
+  assert.match(prompt, /produto fora do slide 1/i);
+  assert.match(prompt, /Sem número medido pela marca, não use a forma "número real"/);
+  assert.doesNotMatch(prompt, /60M|Rocketclip|paco_roadto10/i);
+  assert.equal(runtime.agentTask(carousel.id, 'texto').prompt, prompt);
+
+  for (const format of ['material', 'apresentacao']) {
+    const document = await store.createProject({ title: 'Documento', brief, format });
+    const docPrompt = runtime.planPrompt(document.id);
+    assert.ok(!docPrompt.includes(heading));
+    assert.doesNotMatch(docPrompt, /produto fora do slide 1/i);
+  }
+  await store.saveSettings({ language: 'es' });
+  const spanish = await store.createProject({ title: 'Carrusel', brief, format: 'carrossel' });
+  const agentPrompt = runtime.agentTask(spanish.id, 'texto').prompt;
+  assert.ok(agentPrompt.includes(heading));
+  assert.match(agentPrompt, /IDIOMA DE SALIDA/);
+});
 test('persists profile, drafts and edits across restart; duplicate is independent', async t => {
   const {store,root,Store}=await fixture(t);
   await store.saveProfile({brand:'Minha marca', colors:'#ef653c', references:[]});
