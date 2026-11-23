@@ -3,5 +3,6 @@ const actions=new Set(['pilotDiagnostics','telegramStatus','saveTelegramToken','
 contextBridge.exposeInMainWorld('pacto',Object.freeze({
   request(action,args={}){if(!actions.has(action)&&!['importLog','referenceCatalog','referenceDetails','referenceAttachment','referenceOpenOriginal','importReferencePack'].includes(action))return Promise.reject(new Error('Ação não permitida.'));return ipcRenderer.invoke('pacto:request',action,args);},
   importReferencePack(file){return ipcRenderer.invoke('pacto:request','importReferencePack',{file:webUtils.getPathForFile(file)});},
+  async importReferenceFile(file,args={}){const filePath=file?webUtils.getPathForFile(file):'';if(filePath)return ipcRenderer.invoke('pacto:request','importReference',{...args,file:filePath});const bytes=file&&typeof file.arrayBuffer==='function'?new Uint8Array(await file.arrayBuffer()):null;return ipcRenderer.invoke('pacto:request','importReference',{...args,name:file?.name||'',bytes});},
   onEvent(callback){if(typeof callback!=='function')throw new TypeError('Callback inválido.');const listener=(_event,payload)=>callback(payload);ipcRenderer.on('pacto:event',listener);return ()=>ipcRenderer.removeListener('pacto:event',listener);}
 }));

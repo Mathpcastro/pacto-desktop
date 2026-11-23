@@ -136,3 +136,13 @@
   flex: none;
   margin-left: auto;
 }
+
+.ugc-persona-photo.is-drag-over {
+  border-style: dashed;
+  border-color: var(--accent, var(--sage));
+  background: color-mix(in srgb, var(--accent, var(--sage)) 8%, transparent);
+}
+
+.ugc-persona-anchor-hint {
+  color: var(--ink);
+}

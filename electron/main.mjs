@@ -8,7 +8,7 @@ import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { homedir } from 'node:os';
-import { createImportLog, readImportedImage, referenceImportOptions } from './import-reference.mjs';
+import { createImportLog, readImportedBytes, readImportedImage, referenceImportOptions } from './import-reference.mjs';
 import { Profiles } from '../core/profiles.mjs';
 import { CodexClient, safeError } from '../core/codex.mjs';
 import { Runtime, ACTIONS } from '../core/runtime.mjs';
@@ -46,6 +46,10 @@ const rendererImportLogFields = new Map([
   ['pickAnchor-ipc-result', ['cancelled', 'name', 'hasDataUrl', 'dataUrlLength']],
   ['pickAnchor-setDraft', ['hasDataUrl', 'dataUrlLength']],
   ['pickAnchor-error', ['message']],
+  ['pickAnchor-hint', []],
+  ['drop-start', ['hasPath', 'size']],
+  ['drop-ok', ['name', 'dataUrlLength']],
+  ['drop-error', ['message']],
   ['dialog-close-attempt', ['reason']],
   ['dialog-close', ['reason']],
   ['dialog-close-blocked', ['reason']],
@@ -177,6 +181,12 @@ app.whenReady().then(async()=>{
     async chooseFolder(){const result=await dialog.showOpenDialog(window,{title:ui('Escolha a pasta sincronizada (ex.: Meu Drive)'),properties:['openDirectory','createDirectory']});return result.canceled?null:result.filePaths[0]||null;},
     async openCourse(url){const u=new URL(url);if(u.protocol!=='https:'||u.hostname!=='www.youtube.com')throw new Error('Link do curso inválido.');await shell.openExternal(u.href);},
     async importReference(args){
+      if(typeof args?.file==='string'){
+        return readImportedImage(args.file,args,photoPixels,importLog);
+      }
+      if(args?.bytes!=null){
+        return readImportedBytes(args.bytes,args.name,args,photoPixels,importLog);
+      }
       const title=ui(referenceImportOptions(args).title);
       void importLog('showOpenDialog-open',{title,args});
       const result=await dialog.showOpenDialog(window,{

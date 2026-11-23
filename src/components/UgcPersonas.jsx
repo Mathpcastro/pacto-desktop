@@ -46,6 +46,8 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
   const [draft, setDraft] = useState(persona);
   const [pending, setPending] = useState("");
   const [localError, setLocalError] = useState("");
+  const [anchorHint, setAnchorHint] = useState("");
+  const [dragActive, setDragActive] = useState(false);
   const picking = useRef(false);
   const ignoreCloseUntil = useRef(0);
   const ageInput = useRef(null);
@@ -65,27 +67,73 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
     onClose();
   };
 
+  const applyAnchorResult = (result, source) => {
+    const { dataUrl, name, cancelled } = result ?? {};
+    const hasDataUrl = typeof dataUrl === "string" && dataUrl.length > 0;
+    const dataUrlLength = hasDataUrl ? dataUrl.length : 0;
+    if (source === "pick") {
+      logImport("pickAnchor-ipc-result", { cancelled: cancelled === true, name, hasDataUrl, dataUrlLength });
+      if (cancelled === true) {
+        setAnchorHint("Se o seletor não abrir sua foto, arraste a imagem para cá.");
+        logImport("pickAnchor-hint");
+        return;
+      }
+    }
+    if (!hasDataUrl || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUrl)) {
+      throw new Error(anchorReadError);
+    }
+    setAnchorHint("");
+    setDraft((current) => ({ ...current, anchor: dataUrl }));
+    if (source === "drop") logImport("drop-ok", { name, dataUrlLength });
+    logImport("pickAnchor-setDraft", { hasDataUrl, dataUrlLength });
+  };
+
   const pickAnchor = async () => {
     if (picking.current || busy) return;
     picking.current = true;
     setPending("upload");
     setLocalError("");
+    setAnchorHint("");
     logImport("pickAnchor-start");
     try {
       const result = await request("importReference", { purpose: "personaAnchor" });
-      const { dataUrl, name, cancelled } = result ?? {};
-      const hasDataUrl = typeof dataUrl === "string" && dataUrl.length > 0;
-      const dataUrlLength = hasDataUrl ? dataUrl.length : 0;
-      logImport("pickAnchor-ipc-result", { cancelled: cancelled === true, name, hasDataUrl, dataUrlLength });
-      if (cancelled === true) return;
-      if (!hasDataUrl || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUrl)) {
-        throw new Error(anchorReadError);
-      }
-      setDraft((current) => ({ ...current, anchor: dataUrl }));
-      logImport("pickAnchor-setDraft", { hasDataUrl, dataUrlLength });
+      applyAnchorResult(result, "pick");
     } catch (error) {
       const message = runtimeErrorMessage(error);
       logImport("pickAnchor-error", { message });
+      setLocalError(anchorImportErrors.has(message) ? message : anchorReadError);
+    } finally {
+      ignoreCloseUntil.current = Date.now() + 800;
+      picking.current = false;
+      setPending("");
+    }
+  };
+
+  const dropAnchor = async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragActive(false);
+    if (saved || picking.current || busy) return;
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    picking.current = true;
+    setPending("upload");
+    setLocalError("");
+    setAnchorHint("");
+    logImport("drop-start", { hasPath: Boolean(file.path), size: file.size });
+    try {
+      if (file.size > 15 * 1024 * 1024) throw new Error("Use uma foto de até 15 MB.");
+      let result;
+      if (typeof window.pacto?.importReferenceFile === "function") {
+        result = await window.pacto.importReferenceFile(file, { purpose: "personaAnchor" });
+      } else {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        result = await request("importReference", { purpose: "personaAnchor", name: file.name || "", bytes });
+      }
+      applyAnchorResult(result, "drop");
+    } catch (error) {
+      const message = runtimeErrorMessage(error);
+      logImport("drop-error", { message });
       setLocalError(anchorImportErrors.has(message) ? message : anchorReadError);
     } finally {
       ignoreCloseUntil.current = Date.now() + 800;
@@ -113,7 +161,7 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
       };
       if (generate) {
         const { anchor } = await request("generatePersonaAnchor", { persona: fieldsToSave });
-        if (anchor) setDraft((current) => ({ ...current, anchor }));
+        if (anchor) { setAnchorHint(""); setDraft((current) => ({ ...current, anchor })); }
         return;
       }
       const snapshot = await request("savePersona", {
@@ -156,7 +204,27 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
               );
             })}
           </div>
-          <div className="ugc-persona-photo">
+          <div
+            className={`ugc-persona-photo${dragActive ? " is-drag-over" : ""}`}
+            onDragEnter={!saved ? (event) => {
+              if (!busy && event.dataTransfer?.types?.includes("Files")) {
+                event.preventDefault();
+                event.stopPropagation();
+                setDragActive(true);
+              }
+            } : undefined}
+            onDragOver={!saved ? (event) => {
+              if (!busy && event.dataTransfer?.types?.includes("Files")) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!dragActive) setDragActive(true);
+              }
+            } : undefined}
+            onDragLeave={!saved ? (event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setDragActive(false);
+            } : undefined}
+            onDrop={!saved ? (event) => void dropAnchor(event) : undefined}
+          >
             <Anchor image={draft.anchor} />
             <div className="section">
               <b>Foto-âncora original</b>
@@ -174,6 +242,7 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
                   </button>
                 )}
               </div>
+              {anchorHint && <span className="hint ugc-persona-anchor-hint" role="status">{anchorHint}</span>}
               {!draft.anchor && !connected && <span className="hint" id="ugc-anchor-connect">Conecte sua conta ChatGPT para gerar a foto-âncora.</span>}
             </div>
           </div>

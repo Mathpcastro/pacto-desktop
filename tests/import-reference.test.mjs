@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Runtime } from '../core/runtime.mjs';
-import { createImportLog, normalizeImportedPath, readImportedImage, referenceImportOptions } from '../electron/import-reference.mjs';
+import { createImportLog, normalizeImportedPath, readImportedBytes, readImportedImage, referenceImportOptions } from '../electron/import-reference.mjs';
 import { canCloseFromBackdrop, isBackdropEvent, shouldBlockPersonaClose } from '../src/components/dialog-close.mjs';
 
 const fixture = '/workspace/ugc-prompts/resultados/camila/01-ancora.png';
@@ -122,4 +122,22 @@ test('o runtime encaminha o propósito e só o seletor de âncora troca de títu
   });
   assert.equal(await runtime.request('importReference', anchor), 'Escolher foto-âncora');
   assert.equal(await runtime.request('importReference'), 'Importar referência visual');
+});
+
+test('lê bytes arrastados da foto-âncora e rejeita arquivo inválido ou acima do limite', async () => {
+  const original = await readFile(fixture);
+  const events = [];
+  const log = (event, data) => events.push({ event, ...data });
+  const result = await readImportedBytes(original, '01-ancora.png', anchor, undefined, log);
+  assert.equal(result.name, '01-ancora.png');
+  assert.deepEqual(Buffer.from(result.dataUrl.split(',')[1], 'base64'), original);
+  assert.equal(events.at(-1).event, 'read-ok');
+
+  await assert.rejects(readImportedBytes(Buffer.from('invalido'), 'texto.txt', anchor, undefined, log), {
+    message: 'Não foi possível ler a imagem.',
+  });
+  await assert.rejects(readImportedBytes(Buffer.alloc(15 * 1024 * 1024 + 1), 'grande.png', anchor, undefined, log), {
+    message: 'Use uma foto de até 15 MB.',
+  });
+  assert.equal(events.at(-1).event, 'read-error');
 });

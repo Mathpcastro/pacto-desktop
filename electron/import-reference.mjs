@@ -44,6 +44,40 @@ export async function normalizeImportedPath(raw) {
   }
 }
 
+async function decodeValidatedBytes(bytes, name, maxBytes, sizeError, decode) {
+  const buffer = Buffer.isBuffer(bytes)
+    ? bytes
+    : ArrayBuffer.isView(bytes)
+      ? Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+      : null;
+  if (!buffer || !buffer.length) throw new Error(READ_ERROR);
+  if (buffer.length > maxBytes) throw new Error(sizeError);
+  try {
+    const kind = imageKind(buffer);
+    const reference = validateReference({
+      name: basename(String(name || `imagem.${kind}`)) || `imagem.${kind}`,
+      dataUrl: `data:image/${kind};base64,${buffer.toString('base64')}`,
+    });
+    if (kind !== 'png' && decode) await decode(buffer, kind);
+    return reference;
+  } catch (cause) {
+    throw new Error(READ_ERROR, { cause });
+  }
+}
+
+export async function readImportedBytes(bytes, name, args, decode, log = () => {}) {
+  void log('read-start', { rawPath: null, dropName: typeof name === 'string' ? name : null });
+  try {
+    const { maxBytes, sizeError } = referenceImportOptions(args);
+    const reference = await decodeValidatedBytes(bytes, name, maxBytes, sizeError, decode);
+    void log('read-ok', { normalizedPath: null, name: reference.name, dataUrlLength: reference.dataUrl.length });
+    return reference;
+  } catch (error) {
+    void log('read-error', { rawPath: null, message: error.message });
+    throw error;
+  }
+}
+
 export async function readImportedImage(rawPath, args, decode, log = () => {}) {
   void log('read-start', { rawPath: rawPath ?? null });
   try {
@@ -54,18 +88,7 @@ export async function readImportedImage(rawPath, args, decode, log = () => {}) {
     if (info.size > maxBytes) throw new Error(sizeError);
 
     const bytes = await readFile(file).catch(cause => { throw new Error(READ_ERROR, { cause }); });
-    if (bytes.length > maxBytes) throw new Error(sizeError);
-    let reference;
-    try {
-      const kind = imageKind(bytes);
-      reference = validateReference({
-        name: basename(file),
-        dataUrl: `data:image/${kind};base64,${bytes.toString('base64')}`,
-      });
-      if (kind !== 'png' && decode) await decode(bytes, kind);
-    } catch (cause) {
-      throw new Error(READ_ERROR, { cause });
-    }
+    const reference = await decodeValidatedBytes(bytes, basename(file), maxBytes, sizeError, decode);
     void log('read-ok', { normalizedPath: file, name: reference.name, dataUrlLength: reference.dataUrl.length });
     return reference;
   } catch (error) {

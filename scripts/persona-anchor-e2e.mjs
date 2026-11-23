@@ -114,9 +114,28 @@ try {
   await expect(change).toBeEnabled();
   await expect(error).toHaveCount(0);
   await expect(editor).toBeVisible();
+  const hint = editor.locator('.ugc-persona-anchor-hint');
+  await expect(hint).toHaveText('Se o seletor não abrir sua foto, arraste a imagem para cá.');
+
+  const dropzone = editor.locator('.ugc-persona-photo');
+  await dropzone.evaluate((target, bytes) => {
+    const dt = new DataTransfer();
+    dt.items.add(new File([new Uint8Array(bytes)], 'drop-ancora.png', { type: 'image/png' }));
+    target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+  }, Array.from(copy));
+  await expectPreview(copy);
+  await expect(hint).toHaveCount(0);
+
+  await dropzone.evaluate((target) => {
+    const dt = new DataTransfer();
+    dt.items.add(new File([new TextEncoder().encode('nao-eh-imagem')], 'ruim.txt', { type: 'text/plain' }));
+    target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+  });
+  await expect(error).toHaveText('Não foi possível ler a imagem.');
+  await expect(editor).toBeVisible();
 
   await expect.poll(async () => (await readLog()).some(entry =>
-    entry.event === 'pickAnchor-ipc-result' && entry.cancelled === true)).toBe(true);
+    entry.event === 'drop-ok' && entry.name === 'drop-ancora.png')).toBe(true);
   const entries = await readLog();
   const events = new Set(entries.map(entry => entry.event));
   for (const event of [
@@ -126,9 +145,9 @@ try {
     assert.ok(events.has(event), `Evento ausente no log: ${event}`);
   }
   assert.deepEqual(entries.filter(entry => entry.event === 'read-ok').map(entry => entry.normalizedPath), [
-    fixture, homeCopy, fixture,
+    fixture, homeCopy, fixture, null,
   ]);
-  assert.deepEqual(entries.filter(entry => entry.event === 'read-error').map(entry => entry.rawPath), [missing, null]);
+  assert.deepEqual(entries.filter(entry => entry.event === 'read-error').map(entry => entry.rawPath), [missing, null, null]);
   assert.ok(entries.some(entry => entry.event === 'dialog-close-blocked' && entry.reason === 'backdrop-click'));
   assert.ok(!events.has('dialog-close'), 'O editor fechou durante o teste.');
 
