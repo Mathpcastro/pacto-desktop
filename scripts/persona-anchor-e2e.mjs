@@ -7,7 +7,7 @@ import { crc32 } from 'node:zlib';
 import { _electron, expect } from '@playwright/test';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const fixture = '/workspace/ugc-prompts/resultados/camila/01-ancora.png';
+const fixture = fileURLToPath(new URL('../tests/fixtures/01-ancora.png', import.meta.url));
 const original = await readFile(fixture);
 const userData = await mkdtemp(join(tmpdir(), 'carrossell-persona-e2e-'));
 const executablePath = process.env.PACTO_E2E_EXECUTABLE ? resolve(process.env.PACTO_E2E_EXECUTABLE) : undefined;

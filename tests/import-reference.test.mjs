@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { access, copyFile, mkdtemp, readFile, rm, truncate, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Runtime } from '../core/runtime.mjs';
 import { createImportLog, normalizeImportedPath, readImportedBytes, readImportedImage, referenceImportOptions } from '../electron/import-reference.mjs';
 import { canCloseFromBackdrop, isBackdropEvent, shouldBlockPersonaClose } from '../src/components/dialog-close.mjs';
 
-const fixture = '/workspace/ugc-prompts/resultados/camila/01-ancora.png';
+const fixture = fileURLToPath(new URL('./fixtures/01-ancora.png', import.meta.url));
 const anchor = { purpose: 'personaAnchor' };
 
 test('lê a foto-âncora real por caminho, URI e cópia fora do diretório pessoal', async t => {
