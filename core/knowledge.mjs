@@ -1,10 +1,11 @@
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname, join, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { VOICE_RULES, PERSUASION_RULES, flowRules, aiTells } from './copy.mjs';
 import { localizePrompt } from './i18n.mjs';
 
 export const DEFAULT_KNOWLEDGE_ROOT = fileURLToPath(new URL('../resources/pacto/', import.meta.url));
+export const SLIDESHOW_HOOKS_ID = 'hooks-slideshow';
 const normalize = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const QUESTIONS = {
   brand:'Como se chama sua marca?', product:'O que você vende e como funciona?', audience:'Para quem é o produto?',
@@ -33,7 +34,17 @@ export function loadKnowledge(root = DEFAULT_KNOWLEDGE_ROOT) {
   const prompts = existsSync(join(root, 'extracted-prompts.json')) ? JSON.parse(safeRead(root, 'extracted-prompts.json')).prompts : [];
   // Minutos estimados por etapa (scripts/course-moments.mjs); aproximados, sem timestamps no ASR.
   const moments = existsSync(join(root, 'course-moments.json')) ? JSON.parse(safeRead(root, 'course-moments.json')).moments : [];
-  return {root,manifest,data,method,lessons,pages,prompts,moments};
+  const skillsDir = join(root, 'skills');
+  const skillFiles = existsSync(skillsDir) ? readdirSync(skillsDir, { withFileTypes: true }) : [];
+  const skills = skillFiles
+    .filter(entry => entry.isFile() && entry.name.endsWith('.md'))
+    .map(entry => entry.name).sort().map(file => {
+      const id = file.slice(0, -3);
+      const text = safeRead(root, join('skills', file));
+      const title = /^#[ \t]+(.+)/m.exec(text)?.[1].trim() || id;
+      return { id, title, text };
+    });
+  return {root,manifest,data,method,lessons,pages,prompts,moments,skills};
 }
 
 // Presets visuais da Aula 05. O curso recomenda criar um kit próprio; os presets são só ponto de partida.
@@ -48,6 +59,10 @@ export const DESIGN_PRESETS = [
 
 export function promptText(knowledge, id) {
   return knowledge?.prompts?.find(p => p.id === id)?.text ?? '';
+}
+
+export function skillText(knowledge, id) {
+  return knowledge?.skills?.find(skill => skill.id === id)?.text ?? '';
 }
 
 export function getLesson(knowledge, id) {

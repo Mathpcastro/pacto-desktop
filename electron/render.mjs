@@ -57,6 +57,22 @@ export function createRenderer({ folder, fontsDir, failFirst = 0 }) {
   const serial = (task) => { const next = queue.then(task, task); queue = next.catch(() => {}); return next; };
   return {
     fonts,
+    webpPixels(bytes) {
+      const dataUrl = `data:image/webp;base64,${bytes.toString('base64')}`;
+      const html = `<!doctype html><img src="${dataUrl}" alt="">`;
+      return serial(() => withPage(html, { width: 9, height: 8 }, win =>
+        win.webContents.executeJavaScript(`(async () => {
+          const image = document.querySelector('img');
+          await image.decode();
+          const canvas = document.createElement('canvas');
+          canvas.width = 9;
+          canvas.height = 8;
+          const context = canvas.getContext('2d');
+          context.drawImage(image, 0, 0, 9, 8);
+          return Array.from(context.getImageData(0, 0, 9, 8).data);
+        })()`)
+      )).catch(cause => { throw new Error('Não foi possível ler a imagem.', { cause }); });
+    },
     png(html, size) {
       return serial(() => withPage(html, size, async (win) => {
         const image = await win.webContents.capturePage({ x: 0, y: 0, width: size.width, height: size.height });

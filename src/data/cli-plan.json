@@ -1,0 +1,42 @@
+{
+  "title": "Antes de mandar o orçamento",
+  "architecture": "Lista útil",
+  "editorialLine": "",
+  "visualConcept": "",
+  "coverHooks": [],
+  "caption": "Salve para a próxima conversa com um cliente.",
+  "reply": "",
+  "regenerateSlideIds": [],
+  "slides": [
+    {
+      "id": "capa",
+      "role": "Capa",
+      "title": "Antes de mandar o orçamento",
+      "body": "Pergunte o que o cliente precisa resolver esta semana.",
+      "emphasis": "orçamento",
+      "visual": "",
+      "prompt": "",
+      "asset": ""
+    },
+    {
+      "id": "pergunta",
+      "role": "Conteúdo",
+      "title": "Peça um exemplo real",
+      "body": "Qual foi a última tarefa que atrasou por causa desse problema?",
+      "emphasis": "",
+      "visual": "",
+      "prompt": "",
+      "asset": ""
+    },
+    {
+      "id": "cta",
+      "role": "CTA",
+      "title": "Salve a pergunta",
+      "body": "Use na próxima conversa e anote como o cliente descreve o problema.",
+      "emphasis": "",
+      "visual": "",
+      "prompt": "",
+      "asset": ""
+    }
+  ]
+}

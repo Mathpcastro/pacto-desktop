@@ -408,3 +408,43 @@ Não testado na biblioteca da cliente, que deve ter cerca de 500 MB.
 [[68 - Release Carrossell 1.14.1]]: a capa segue o post da Biblioteca, as cenas de fotos ganham fila e a Biblioteca recebe o pacote de slideshows virais do TikTok (154).
 277 testes, build e provas Electron passaram. Latest, feeds e SHA-512 verificados. Aviso v1-14-1 publicado, com o botão corrigido para as cenas de fotos.
 A página /app nova está pronta em ZIP, não publicada. Ela promete 500 slideshows do TikTok; hoje são 154.
+
+## 23/11/2026 — Ganchos de slideshow na 1.15.0 local
+
+A skill compacta entra depois do Swipe File no pedido de texto de carrossel para ChatGPT e para a CLI. `carrossell skills` lista `hooks-slideshow` como `plan`. A pauta pode indicar uma categoria. Foi restaurada a mensagem de fundo inválido de `fundo-stories`. O plano de exemplo usa Chamado e passou no `PLAN_SCHEMA`.
+
+O build do Vite passou. Em Node, a execução detalhada registrou 277 aprovados, 13 falhas e 1 skip. Foram 12 falhas ao abrir sockets locais e uma no transporte stdio do cliente MCP. A validação desta etapa ficou em Node e Vite. Detalhes em [CHANGES-1.15.0.md](../CHANGES-1.15.0.md).
+
+## 23/11/2026 — Menu do avatar, onboarding e licença na 1.15.0 local
+
+O menu do avatar mostra o status da CLI ao abrir e leva ao mesmo diálogo do menu de perfis. A etapa de escolha do provedor fica alinhada no topo e compartilha uma única linha de avisos acima do conteúdo. A ativação e a renovação retornam `storage_unavailable` quando o cofre falha ao guardar o token. A mensagem em português e espanhol orienta a ativar o chaveiro do sistema no Linux.
+
+O build do Vite passou. Em Node foram 278 aprovados, 13 falhas de ambiente já observadas e 1 ignorado pela ausência do Worker. O Chrome headless foi bloqueado pelo sandbox antes de carregar a interface. A validação em Electron e nos instaladores segue pendente. [Detalhes dos testes](../CHANGES-1.15.0.md).
+
+## 23/11/2026 — Validação fora do sandbox (box Linux)
+
+Fora do sandbox do Codex: `npm test` 290 aprovados, 0 falhas, 1 ignorado. `.deb` 1.15.0 instalado por cima da 1.14.1 em /opt/Carrossell. CLI real: `--version` → `Carrossell 1.15.0`; comando desconhecido sai com 2 sem abrir o app; `criar` sem ChatGPT apaga o rascunho; `criar --slides` exportou 6 PNG + legenda em ~3 s (estilo texto, capa na categoria Chamado). `licenca ativar` com o e-mail do Matheus: o servidor respondeu, mas o box não tem chaveiro (safeStorage indisponível) e o app devolveu `storage_unavailable`; licença não ficou ativa no box. Prints do onboarding, menu do avatar, menu de perfis e guia da CLI tirados do app instalado (Playwright + Xvfb).
+
+## 23/11/2026 — UGC com avatar na 1.15.0 local
+
+Marca guarda personas e fotos-âncora por perfil, com avisos de semelhança entre perfis. O Estúdio monta o gancho e a copy em cima das fotos, aceita imagem ou captura da página do produto, permite refazer uma cena com a âncora original e exporta para TikTok. A CLI aceita `persona`, planos `ugc` com fotos locais e exportação com `--tiktok`.
+
+A suíte detalhada teve 296 aprovações, 13 falhas de ambiente e 1 ignorado. O build do Vite passou. A validação em Electron, a conta real e os instaladores seguem pendentes. [Mudanças e validação](../CHANGES-1.15.0.md)
+
+Após os prints da prova instalada, a captura de produto foi ajustada para a primeira dobra móvel de 390×844 a 3× e a moldura passou a seguir a proporção da imagem. Editar persona ganhou grade responsiva e indicação da ativa. O TikTok exporta a primeira frase em até 150 caracteres e uma linha de hashtags. Testes detalhados: 300 aprovados, 13 falhas já conhecidas e 1 ignorado. Build Vite aprovado. A conferência visual dessas correções e o empacotamento seguem pendentes.
+
+## 23/11/2026 — Prova UGC no box (sem ChatGPT)
+
+Fora do sandbox: `npm test` 312 aprovados, 0 falhas, 1 ignorado. `.deb` 1.15.0 instalado. Pela CLI: 3 perfis (UGC Marina, UGC Camila, UGC Rafael), 3 personas com as âncoras de /workspace/ugc-prompts/resultados, aviso de clone conferido com uma persona parecida (depois apagada), e 3 carrosséis UGC exportados com `--produto-link` (Carrossell, app de idiomas, curso) e `--tiktok`, cerca de 10 a 14 s cada. Correções feitas na prova: a captura de produto com `debugger`/Emulation derrubava o Electron 44 no Linux (removida; a janela offscreen 390×844 com escala 3 já gera o print móvel) e as hashtags do `tiktok.txt` ignoram palavras curtas.
+
+## 23/11/2026 — Biblioteca de avatares UGC na 1.15.0 local
+
+Marca › Persona UGC mantém a prévia da âncora aberta até salvar e lista os avatares por perfil. O Store conserva a foto original e o bloco MANTER. Início e CLI aceitam um avatar salvo para novas gerações. A ação de usar como cara do perfil atualiza a foto local e o avatar ativo para UGC.
+
+Os 37 testes focados e o build Vite passaram. A suíte completa em modo detalhado teve 304 aprovados, 13 falhas de ambiente e 1 ignorado. As falhas ocorreram nos mesmos quatro arquivos da execução anterior às mudanças. Os dois scripts de interface pararam com EPERM ao abrir o servidor local. Geração real, interface Electron e empacotamento seguem sem validação nesta etapa. [Mudanças e validação](../CHANGES-1.15.0.md)
+
+Na revisão dos prints, os cards com âncora passaram a mostrar o botão de cara do perfil nos dois estados. O aviso após salvar oferece a mesma ação. Os campos descritivos crescem com o texto e a prévia do Tweet usa a foto atual e o nome do avatar ou do perfil quando faltam os nomes da marca. Os 29 testes focados e o build Vite passaram. A suíte detalhada teve 308 aprovados, as mesmas 13 falhas de ambiente e 1 ignorado. A conferência visual e o empacotamento seguem pendentes. [Mudanças e validação](../CHANGES-1.15.0.md)
+
+Na revisão seguinte dos avatares, o seletor passou a usar **Escolher foto-âncora** e o editor passou a bloquear o fechamento durante a escolha. A leitura por caminho foi verificada com o PNG real de Camila em `/workspace` e com uma cópia em `/tmp`. O formulário exige só o Nome, e a biblioteca persiste a dispensa de avisos por par de personas. Os 31 testes focados e o build Vite passaram. A suíte detalhada registrou 314 aprovados, 13 falhas já presentes no HEAD original e 1 ignorado. A abertura da GUI foi bloqueada pelo sandbox. O instalador e a geração real ficaram fora desta prova.
+
+O modal da persona agora exige que o clique no fundo também tenha começado ali e ignora o fechamento implícito durante a escolha e nos 800 ms seguintes. O importador aceita URIs `file://` e mostra erro em português se o seletor voltar sem arquivo e sem cancelamento. O arquivo local `~/.config/pacto-desktop/import-reference.log` (`userData` fixado em `pacto-desktop`) acompanha a escolha, a leitura, o IPC, o arrastar e soltar, a atualização da prévia e o fechamento. Na investigação isolada em GTK3/X11, confirmou-se a causa raiz no Chromium 152 (Electron 44.9.0, bug 556516049): `SelectFileDialogLinuxGtk` registra o botão Open com ID `0` e o padrão em `GTK_RESPONSE_CANCEL` (`-6`), fazendo duplo clique ou `Ctrl+L` + `Enter` emitirem `-6` (`canceled: true`), enquanto clicar em `Open` emite `0` (`canceled: false`). Como alternativa direta, o quadro da foto-âncora agora aceita arrastar e soltar e exibe a dica correspondente quando o seletor retorna cancelado.

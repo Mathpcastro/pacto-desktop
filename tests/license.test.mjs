@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   LICENSE_API_URL, LICENSE_MIGRATION_START, LICENSE_MIGRATION_UNTIL, TERMS_VERSION,
-  inGrace, isInMigration, maskLicenseEmail, needsRevalidation, normalizeLicenseEmail,
+  inGrace, isInMigration, licenseControlStatus, maskLicenseEmail, needsRevalidation, normalizeLicenseEmail,
   parseLicenseStatus, parseLicenseTokenPayload, sha256DeviceId, validLicenseAcceptance,
   warningMessageKind,
 } from '../core/license.mjs';
@@ -141,6 +141,60 @@ test('LicenseService sem aceite não chama o servidor e offline permanece não b
   }
 });
 
+test('falha no cofre após resposta válida retorna storage_unavailable na ativação e na renovação', async (t) => {
+  const directory = await mkdtemp(join(projectDirectory, '.license-storage-test-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const acceptedAt = '2026-11-12T15:00:00Z';
+  const now = Date.parse(acceptedAt);
+  const email = 'buyer@example.com';
+  const installId = 'storage-install';
+  const claims = {
+    email_hash: createHash('sha256').update(email).digest('hex'),
+    device_hash: await sha256DeviceId(installId),
+    exp: Math.floor(now / 1000) + 30 * 86400,
+    terms_version: TERMS_VERSION,
+    accepted_at: acceptedAt,
+  };
+  const originalToken = makeToken(claims);
+  const renewedToken = makeToken({ ...claims, exp: claims.exp + 86400 });
+  let savedToken = '';
+  let storageAvailable = false;
+  const store = {
+    installId: () => installId,
+    getLicense: () => savedToken,
+    setLicense: async (value) => {
+      if (!storageAvailable) throw new Error('O sistema não ofereceu um cofre para guardar a chave com segurança.');
+      savedToken = value;
+    },
+  };
+  const service = new LicenseService({ store, userData: directory, now: () => now,
+    fetchImpl: async (url) => {
+      const revalidating = url.endsWith('/revalidate');
+      return Response.json({ ok: true, code: revalidating ? 'revalidated' : 'activated',
+        token: revalidating ? renewedToken : originalToken });
+    } });
+  const activate = () => service.activateLicense({ email, accepted: true, termsVersion: TERMS_VERSION, acceptedAt });
+  const failed = await activate();
+  assert.equal(failed.activated, false);
+  assert.equal(failed.code, 'storage_unavailable');
+  assert.equal(warningMessageKind(failed, now), 'storage_unavailable');
+  assert.equal(licenseControlStatus(failed).code, 'storage_unavailable');
+  assert.equal('token' in failed, false);
+  assert.equal(savedToken, '');
+
+  storageAvailable = true;
+  const active = await activate();
+  assert.equal(active.activated, true);
+  storageAvailable = false;
+  const renewal = await service.revalidateLicense();
+  assert.equal(renewal.code, 'storage_unavailable');
+  assert.equal(warningMessageKind(renewal, now), 'storage_unavailable');
+  assert.equal(renewal.activated, true);
+  assert.equal(renewal.expiresAt, active.expiresAt);
+  assert.equal('token' in renewal, false);
+  assert.equal(savedToken, originalToken);
+});
+
 test('store de safeStorage separa licença e Composio sem apagar campos existentes', async () => {
   const directory = await mkdtemp(join(projectDirectory, '.license-store-test-'));
   const encryption = { isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(value),
@@ -175,6 +229,7 @@ test('todas as strings de licença da interface têm tradução em espanhol', as
     'Não foi possível revalidar. Você está no período de graça e o app continua funcionando.',
     'A licença precisa de nova validação. Conecte-se à internet quando puder; o app continua funcionando.',
     'Não foi possível revalidar agora. Tente novamente com a internet disponível; o app continua funcionando.',
+    'Não consegui guardar a licença com segurança neste computador. No Linux, abra o app com um chaveiro do sistema ativo (GNOME Keyring ou KWallet) e tente de novo.',
     'Ativar licença', 'Informe o e-mail usado na compra. A primeira ativação precisa de internet.', 'E-mail da compra',
     'Li e aceito os Termos de Uso e o Aviso de Privacidade', 'Termos de Uso', 'Aviso de Privacidade',
     'Abrir ativação', 'Tentar novamente', 'Ativando…', 'Ativar', 'Fechar',

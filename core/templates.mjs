@@ -2,8 +2,9 @@
 // As mesmas funções servem à prévia no editor e à renderização em PNG/PDF no
 // processo principal, para que o arquivo exportado seja idêntico ao que a pessoa viu.
 import { templateCopy } from './i18n.mjs';
+import { imageDimensions } from './image-dimensions.mjs';
 
-export const STYLES = ["ia", "tweet", "texto", "textopreto", "fototexto", "fundo", "recorte"];
+export const STYLES = ["ia", "tweet", "texto", "textopreto", "fototexto", "fundo", "recorte", "ugc"];
 export const TEMPLATE_STYLES = STYLES.filter((s) => s !== "ia");
 export const PHOTO_STYLES = ["fototexto", "fundo", "recorte"];
 export const FACE_STYLES = ["fundo", "recorte"];
@@ -146,7 +147,33 @@ export function slideHtml({ style, slide, index = 0, total = 1, brand = {}, medi
   const asset = slide.assetImage || "";
   const mediaTag = (h) => (asset ? `<img class="media ${slide.assetKind === "logo" ? "contain" : ""}" style="max-height:${h}px" src="${esc(asset)}" alt="">` : "");
   let css = "", html = "";
-  if (style === "tweet") {
+  if (style === "ugc") {
+    const photo = /^data:image\/(?:png|jpeg|webp);base64,/.test(slide.photo || "") ? slide.photo : "";
+    const product = !cover && (asset || (/^data:image\/(?:png|jpeg|webp);base64,/.test(slide.asset || "") ? slide.asset : ""));
+    const dimensions = product && imageDimensions(product);
+    const frame = dimensions && dimensions.width > dimensions.height ? "ugc-screen" : "ugc-phone";
+    const cta = !cover && index === total - 1;
+    const scene = !product && photo;
+    const backdrop = scene ? `<div class="ugc-bg">${photoTag(scene, "")}</div><div class="ugc-shade"></div>` : "";
+    css = `
+.card{background:${cover || scene ? "#151515" : cta ? p.ink : p.paper};color:${cover || scene || cta ? "#fff" : p.ink}}
+.ugc-bg,.ugc-shade{position:absolute;inset:0}
+.ugc-shade{background:${cover ? "linear-gradient(#0007,transparent 42%)" : "#000a"}}
+.ugc-copy{position:relative;display:flex;flex:1;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:32px;padding:84px 94px;min-height:0}
+.ugc-copy h1{font-size:${fit(title,96,51,25,120)}px;overflow-wrap:anywhere}
+.ugc-copy p.body{font-size:${fit(body,44,30,80,300)}px;overflow-wrap:anywhere}
+.ugc-hook{justify-content:flex-start;padding:88px 74px}
+.ugc-hook h1{font-family:${SYSTEM};white-space:pre-line;paint-order:stroke fill;-webkit-text-stroke:8px #161616;text-shadow:0 5px 14px #000c;letter-spacing:-.015em}
+.ugc-product-card{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);justify-items:center;gap:20px;padding:40px 94px}
+.ugc-product-card h1,.ugc-product-card p.body{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;align-self:start}
+.ugc-product-card h1{align-self:end;font-size:${fit(title,68,51,25,120)}px;-webkit-line-clamp:2}
+.ugc-product-card p.body{font-size:${fit(body,38,30,80,300)}px;line-height:1.25;-webkit-line-clamp:3}
+.ugc-product{display:block;min-width:0;background:#131313;border:8px solid #131313}
+.ugc-phone{height:945px;aspect-ratio:9 / 19.5;border-radius:52px;object-fit:cover;object-position:top}
+.ugc-screen{width:100%;aspect-ratio:16 / 9;border-radius:34px;object-fit:contain}
+.ugc-cta p.body{opacity:.9}`;
+    html = `${backdrop}<div class="ugc-copy${cover ? " ugc-hook" : cta ? " ugc-cta" : ""}${product ? " ugc-product-card" : ""}"><h1>${cover ? esc(title) : titleHtml}</h1>${product ? `<img class="ugc-product ${frame}" src="${esc(product)}" alt="">` : ""}${!cover && body ? `<p class="body">${esc(body)}</p>` : ""}</div>`;
+  } else if (style === "tweet") {
     const scheme = [
       { bg: "#ffffff", fg: "#0f1419", sub: "#536471" },
       { bg: "#000000", fg: "#e7e9ea", sub: "#71767b" },

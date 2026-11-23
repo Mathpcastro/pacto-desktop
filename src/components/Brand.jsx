@@ -9,6 +9,8 @@ import { BarChart3 } from "lucide-react";
 import Analytics from "./Analytics.jsx";
 import Autopilot from "./Autopilot.jsx";
 import VisualReferences from "./VisualReferences.jsx";
+import UgcPersonas from "./UgcPersonas.jsx";
+import { tweetPreviewName } from "./ugc-personas-ui.mjs";
 
 // Marca em seções, como nas configurações dos bons apps: barra lateral à esquerda e uma seção por vez.
 const BRAND_TABS = {
@@ -16,6 +18,7 @@ const BRAND_TABS = {
   design: { group: "Marca", label: "Design Kit", icon: PaletteIcon },
   referencias: { group: "Aparência", label: "Referências visuais", icon: ImagePlus },
   perfil: { group: "Aparência", label: "Perfil", icon: UserRound, title: "Perfil", hint: "Nome, @ e foto que aparecem nos estilos prontos" },
+  personas: { group: "Aparência", label: "Persona UGC", icon: UserRound },
   fotos: { group: "Aparência", label: "Fotos", icon: Camera, title: "Fotos", hint: "Seu rosto e cenas para as fotos simples" },
   imagens: { group: "Aparência", label: "Imagens da marca", icon: ImageIcon, title: "Imagens da marca", hint: "Logo, produtos e o que pode aparecer nos cards" },
   otimizar: { group: "Ensinar", label: "Otimizar", icon: GraduationCap },
@@ -183,6 +186,7 @@ function StrategyImprover({ value, request, connected, working, onSave }) {
 export default function Brand({ state, request, isPending, onRedo, onManual, onNotice, onInstagram, onAgents, target }) {
   const profile = state.profile || {};
   const media = state.media || { faces: [], scenes: [], verified: true };
+  const avatars = (state.personas || []).filter((persona) => persona.anchor);
   const assets = media.assets || [];
   const brand = state.brandInfo || {};
   const colors = palette(profile.designKit || "");
@@ -214,7 +218,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
   const tweet = slideHtml({
     style: "tweet",
     slide: { title: translateUi(state.settings?.language, "Assim o seu perfil aparece no estilo Tweet.") },
-    brand: { ...brand, name: name || brand.name, handle: handle || brand.handle, verified: media.verified !== false },
+    brand: { ...brand, name: tweetPreviewName(name, state), handle: handle || brand.handle, avatar: media.avatar ?? brand.avatar, verified: media.verified !== false },
     fonts: TEMPLATE_FONTS,
     locale: state.settings?.language === "es" ? "es" : "pt-BR",
   });
@@ -282,6 +286,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
       <div className="brand-layout">
         <BrandNav tab={tab} onTab={setTab} meta={meta} />
         <div className="brand-pane">
+      {tab === "personas" && <UgcPersonas key={state.profileId} state={state} request={request} isPending={isPending} connected={connected} onNotice={onNotice} />}
       {tab === "otimizar" && (
       <section className="card-box optimize" aria-label="Otimizar o Carrossell">
         <div className="section-head">
@@ -383,7 +388,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
           <div className="sub">
             <div className="sub-head">
               <b>Foto de perfil</b>
-              <span className="hint">Aparece nos estilos Tweet e Capa com sua foto</span>
+              <span className="hint">Aparece no app e nos estilos Tweet e Capa com sua foto</span>
             </div>
             <div className="profile-row">
               {media.avatar ? <img className="big-avatar" src={media.avatar} alt="Foto de perfil" /> : <span className="big-avatar">{(brand.name || "?").charAt(0)}</span>}
@@ -404,6 +409,17 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
                     </button>
                   )}
                 </div>
+                {avatars.length > 0 && (
+                  <label className="fld">
+                    <span>Avatar salvo como foto de perfil</span>
+                    <select value={media.avatarPersonaId || ""} disabled={isPending("setProfileAvatar") || isPending("saveMedia")}
+                      onChange={(event) => request("setProfileAvatar", { id: event.target.value })
+                        .then(() => onNotice("Foto de perfil atualizada.")).catch(() => {})}>
+                      <option value="" disabled>Escolher da biblioteca de avatares</option>
+                      {avatars.map((avatar) => <option key={avatar.id} value={avatar.id} data-user-text>{avatar.nome}</option>)}
+                    </select>
+                  </label>
+                )}
                 <div className="row">
                   <label className="fld" style={{ width: 150 }}>
                     <span>Nome</span>

@@ -30,6 +30,13 @@ export class Profiles {
     if(!this.stores.has(id))this.stores.set(id,new Store(this.folder(id)).init().catch(error=>{this.stores.delete(id);throw error;}));
     return this.stores.get(id);
   }
+  async allPersonas(){
+    const lists=await Promise.all(this.list().map(async ({id,name})=>{
+      const store=await this.store(id);
+      return store.personaSignatures().map(persona=>({...persona,profileId:id,profileName:name}));
+    }));
+    return lists.flat();
+  }
   async create(name){
     if(this.index.profiles.length>=MAX_PROFILES)throw new Error(`Use até ${MAX_PROFILES} perfis.`);
     const profile={id:randomUUID(),name:profileName(name),createdAt:new Date().toISOString()};

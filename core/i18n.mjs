@@ -34,6 +34,7 @@ const PATTERNS = [
   [/^Excluir o perfil (.+)$/, (name) => `Eliminar el perfil ${name}`],
   [/^Perfil: (.+)\. Trocar de perfil$/, (name) => `Perfil: ${name}. Cambiar de perfil`],
   [/^Gerando opção de capa (\d+) de (\d+)…$/, (a, b) => `Generando opción de portada ${a} de ${b}…`],
+  [/^Gerando a foto do card (\d+)…$/, (n) => `Generando la foto de la tarjeta ${n}…`],
   [/^Gerando card (\d+) de (\d+)…$/, (a, b) => `Generando tarjeta ${a} de ${b}…`],
   [/^Corrigindo o card (\d+)…$/, (n) => `Corrigiendo la tarjeta ${n}…`],
   [/^Gerando foto (\d+) de (\d+) do ambiente…$/, (a, b) => `Generando foto ${a} de ${b} del ambiente…`],

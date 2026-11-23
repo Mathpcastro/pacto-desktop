@@ -2,6 +2,12 @@ import { createContext, useCallback, useEffect, useRef, useState } from "react";
 
 export const RuntimeErrorContext = createContext("");
 
+export function runtimeErrorMessage(error) {
+  // O Electron prefixa a mensagem com o nome do canal IPC.
+  return String(error?.message || "").replace(/^Error invoking remote method '[^']+': (?:\w*Error: )?/, "") ||
+    "Não foi possível concluir esta ação. Tente novamente.";
+}
+
 const initial = {
   profile: null,
   projects: [],
@@ -67,11 +73,7 @@ export function usePacto() {
         return result;
       } catch (err) {
         if (action === "bootstrap") setBootstrapFailed(true);
-        // O Electron prefixa "Error invoking remote method 'pacto:request': Error:"; a pessoa vê só a mensagem.
-        setError(
-          String(err?.message || "").replace(/^Error invoking remote method '[^']+': (?:\w*Error: )?/, "") ||
-            "Não foi possível concluir esta ação. Tente novamente.",
-        );
+        setError(runtimeErrorMessage(err));
         throw err;
       } finally {
         setPending((items) => items.filter((item) => item.token !== token));

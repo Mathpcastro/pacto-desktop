@@ -123,6 +123,7 @@ export function warningMessageKind(value, now = Date.now()) {
   const status = parseLicenseStatus(value, now);
   if (status.code === 'device_limit') return 'device_limit';
   if (status.code === 'rate_limited') return 'rate_limited';
+  if (status.code === 'storage_unavailable') return 'storage_unavailable';
   if (status.activated && inGrace(now, status.expiresAt, status.graceUntil)) return 'grace';
   if (status.code === 'offline') return 'offline';
   if (!status.activated) return status.migration ? 'migration' : 'not_activated';
@@ -133,5 +134,22 @@ export function warningMessageKind(value, now = Date.now()) {
 
 export function graceUntilFor(expiresAt) {
   const expiry = millis(expiresAt);
-  return Number.isFinite(expiry) ? new Date(expiry + LICENSE_GRACE_DAYS * DAY_MS).toISOString() : null;
+  return new Date(expiry + LICENSE_GRACE_DAYS * DAY_MS).toJSON();
+}
+
+const publicLicenseCodes = new Set([
+  'activated', 'not_activated', 'activation_failed', 'revalidation_failed',
+  'offline', 'storage_unavailable', 'not_found', 'device_limit', 'rate_limited', 'revoked',
+]);
+
+export function licenseControlStatus(value) {
+  const { activated, expiresAt, graceUntil, emailMasked, code } = parseLicenseStatus(value);
+  const iso = date => date ? new Date(date).toISOString() : null;
+  return {
+    activated,
+    emailMasked: /^[^\s@]\*{1,5}[^\s@]?@[^\s@]+\.[^\s@]+$/.test(emailMasked || '') ? emailMasked : null,
+    expiresAt: iso(expiresAt),
+    graceUntil: iso(graceUntil),
+    code: publicLicenseCodes.has(code) ? code : code ? 'erro_licenca' : null,
+  };
 }

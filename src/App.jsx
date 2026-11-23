@@ -9,6 +9,7 @@ import Brand from "./components/Brand.jsx";
 import Studio from "./components/Studio.jsx";
 import CommandPalette from "./components/CommandPalette.jsx";
 import ProfileSwitcher from "./components/ProfileSwitcher.jsx";
+import { CliDialog, CliMenuSection } from "./components/CliGuide.jsx";
 import { InstagramButton, InstagramModal } from "./components/Instagram.jsx";
 import { AgentModal } from "./components/AgentSetup.jsx";
 import { NoticeBell, NoticeBanner } from "./components/Notices.jsx";
@@ -22,7 +23,7 @@ import { Spinner, usePopover } from "./ui.jsx";
 import { setLocale, useDomLocale } from "./i18n.js";
 import brandMark from "./assets/brand-mark.svg";
 import { parseLicenseStatus, warningMessageKind } from "../core/license.mjs";
-import LicenseDialog from "./components/LicenseDialog.jsx";
+import LicenseDialog, { ACTIVATION_ERRORS } from "./components/LicenseDialog.jsx";
 
 const DEFAULT_PREFERENCES = { theme: "light", palette: "carrossell", scale: 100, language: "pt-BR" };
 const PALETTES = [
@@ -54,6 +55,7 @@ export default function App() {
   const [licenseStatus, setLicenseStatus] = useState(null);
   const [licenseOpen, setLicenseOpen] = useState(false);
   const [licenseBusy, setLicenseBusy] = useState(false);
+  const [cliOpen, setCliOpen] = useState(false);
   const [view, setView] = useState("home");
   const [projectId, setProjectId] = useState(null);
   const [setup, setSetup] = useState(null);
@@ -62,6 +64,8 @@ export default function App() {
   const [courseOpen, setCourseOpen] = useState(false);
   const [video, setVideo] = useState(null);
   const [notice, setNotice] = useState("");
+  const visibleNotice = !notice?.profileId || notice.profileId === state.profileId ? notice : "";
+  const noticeAction = !error && visibleNotice?.onAction;
   const [igOpen, setIgOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [agentProvider, setAgentProvider] = useState("claude");
@@ -89,9 +93,14 @@ export default function App() {
   };
   const composerRef = useRef(null);
   const menu = usePopover();
+  const openCli = () => {
+    menu.setOpen(null);
+    setCliOpen(true);
+  };
   const project = state.projects.find((p) => p.id === projectId);
   const connected = Boolean(state.account?.connected);
   const hasProfile = Boolean(state.profile);
+  const setupComplete = hasProfile || state.settings?.provider === "cli";
   const pendingResults = rhythm(state.projects, state.settings).pending.length;
   const pendingReviews = (state.autopilot?.jobs || []).filter(job => job.status === "ready").length;
   const licenseKind = licenseStatus ? warningMessageKind(licenseStatus) : null;
@@ -99,6 +108,7 @@ export default function App() {
     migration: "A migração para o novo sistema de licenças vai até 11/01/2027. Ative sua compra quando puder; o app continua disponível.",
     not_activated: "Ative sua licença com o e-mail da compra. O Carrossell continua funcionando enquanto isso.",
     offline: "Não foi possível conectar à licença. Se esta for a primeira ativação, conecte-se à internet; o app continua utilizável.",
+    storage_unavailable: ACTIVATION_ERRORS.storage_unavailable,
     device_limit: "Esta licença já está ativa em 3 dispositivos. Fale com o suporte para trocar um dispositivo.",
     rate_limited: "Muitas tentativas. Aguarde um pouco e tente novamente.",
     grace: "Não foi possível revalidar. Você está no período de graça e o app continua funcionando.",
@@ -218,10 +228,10 @@ export default function App() {
   useEffect(() => {
     const onKey = (event) => {
       const mod = event.ctrlKey || event.metaKey;
-      if (mod && event.key.toLowerCase() === "k" && hasProfile && available) {
+      if (mod && event.key.toLowerCase() === "k" && setupComplete && available) {
         event.preventDefault();
         setPalette((v) => !v);
-      } else if (mod && event.key.toLowerCase() === "n" && hasProfile && available && !document.querySelector("dialog[open]")) {
+      } else if (mod && event.key.toLowerCase() === "n" && setupComplete && available && !document.querySelector("dialog[open]")) {
         event.preventDefault();
         goHome();
         setTimeout(() => composerRef.current?.focus(), 50);
@@ -229,7 +239,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [hasProfile, available]);
+  }, [setupComplete, available]);
   const set = (patch) => setPreferences((current) => {
     const next = { ...current, ...patch };
     if (patch.language) setLocale(next.language);
@@ -275,7 +285,7 @@ export default function App() {
         <span className={`dot ${connected ? "on" : ""}`} />
       </button>
       {menu.open === "account" && (
-        <div className="popover right" style={{ minWidth: 280 }}>
+        <div className="popover right account-popover" style={{ minWidth: 280 }}>
           <div className="head">Conta ChatGPT</div>
           <button className="opt" disabled={isPending("connect") || isPending("disconnect")} onClick={() => request(connected ? "disconnect" : "connect").catch(() => {})}>
             <b>
@@ -284,6 +294,7 @@ export default function App() {
             </b>
             <small>{connected ? state.account.label || "Conectada · usada para escrever e gerar" : "Use a sua conta para escrever e gerar as artes"}</small>
           </button>
+          <CliMenuSection request={request} onOpen={openCli} />
           <hr />
           <div className="head">Tema</div>
           <div className="seg">
@@ -368,19 +379,19 @@ export default function App() {
         </div>
       </main>
     );
-  else if (!hasProfile || setup)
+  else if (!setupComplete || setup)
     body = (
       <main className="shell-main">
         <div className="setup-wrap">
-          {hasProfile && (
+          {setupComplete && (
             <button className="ghost-btn" style={{ margin: "16px 0 0 20px" }} onClick={() => setSetup(null)}>
               <ArrowLeft size={15} /> Voltar para a Marca
             </button>
           )}
           {setup === "manual" ? (
-            <Profile profile={state.profile} account={state.account} request={request} busy={isPending("connect")} onDone={() => (setSetup(null), setView(hasProfile ? "brand" : "home"), hasProfile && setNotice("Sua marca foi atualizada."))} onCancel={() => setSetup(hasProfile ? null : "interview")} />
+            <Profile profile={state.profile} account={state.account} request={request} busy={isPending("connect")} onDone={() => (setSetup(null), setView(hasProfile ? "brand" : "home"), hasProfile && setNotice("Sua marca foi atualizada."))} onCancel={() => setSetup(setupComplete ? null : "interview")} />
           ) : (
-            <Onboarding state={state} request={request} isPending={isPending} onAgents={() => setAgentsOpen(true)} onManual={() => setSetup("manual")} onDone={() => (setSetup(null), setView("home"), hasProfile && setNotice("Sua marca foi atualizada."))} onCancel={hasProfile ? () => setSetup(null) : undefined} />
+            <Onboarding key={state.profileId} state={state} request={request} isPending={isPending} onManual={() => setSetup("manual")} onDone={() => (setSetup(null), setView("home"), hasProfile && setNotice("Sua marca foi atualizada."))} onCancel={setupComplete ? () => setSetup(null) : undefined} />
           )}
         </div>
       </main>
@@ -393,7 +404,7 @@ export default function App() {
             <div hidden={view === "brand" || view === "pilot" || view === "review" || view === "stories"}
               {...(view === "ideas" ? { id: "radar-workspace", role: "tabpanel", "aria-labelledby": "radar-tab-ideas", tabIndex: 0 } : {})}>
               <Home key={state.profileId} view={view} state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} onShowHome={goHome} composerRef={composerRef} connected={connected} onAgents={openAgents} onDiscover={openCapabilities} onView={goView} pendingReviews={pendingReviews} onStories={() => setProjectPicker("stories")} onInstagram={() => setIgOpen(true)} target={homeTarget}
-                onImportReferences={importReferencePack} referenceImporting={referenceImporting} referenceRevision={referenceRevision} />
+                onImportReferences={importReferencePack} referenceImporting={referenceImporting} referenceRevision={referenceRevision} onBrand={openBrand} />
           </div>
           {view === "brand" && <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} onAgents={openAgents} target={brandTarget} />}
             {(view === "review" || view === "pilot") && <section className="page radar-content" id="radar-workspace" role="tabpanel" aria-labelledby={`radar-tab-${view}`} tabIndex={0}>
@@ -416,7 +427,7 @@ export default function App() {
           if (!packs.length) return;
           event.preventDefault();
           if (packs.length !== 1) { setNotice("Arraste um Swipe File por vez."); return; }
-          if (hasProfile && !editing && !setup) goView("references");
+          if (setupComplete && !editing && !setup) goView("references");
           void importReferencePack(packs[0]);
         }}>
           {editing ? null : (
@@ -425,8 +436,8 @@ export default function App() {
                 <img src={brandMark} alt="" />
                 carrossell
               </button>
-              {available && !loading && !bootstrapFailed && <ProfileSwitcher state={state} request={request} isPending={isPending} menu={menu} onSwitched={goHome} />}
-              {hasProfile && available && !setup && (
+              {available && !loading && !bootstrapFailed && <ProfileSwitcher state={state} request={request} isPending={isPending} menu={menu} onSwitched={goHome} onOpenCli={openCli} />}
+              {setupComplete && available && !setup && (
                 <nav className="topnav" aria-label="Navegação principal">
                   <button aria-current={view === "home" ? "page" : undefined} onClick={goHome}>
                     <HomeIcon size={16} /> Início
@@ -447,51 +458,53 @@ export default function App() {
                 </nav>
               )}
               <span className="spacer" />
-              {hasProfile && available && <InstagramButton composio={state.composio} onOpen={() => setIgOpen(true)} />}
-              {hasProfile && available && (
+              {setupComplete && available && <InstagramButton composio={state.composio} onOpen={() => setIgOpen(true)} />}
+              {setupComplete && available && (
                 <button className="cmd-btn" aria-label="Abrir comandos" onClick={() => setPalette(true)}>
                   <Search size={15} />
                   <span className="label">Buscar ou fazer algo</span>
                   <kbd>Ctrl K</kbd>
                 </button>
               )}
-              {hasProfile && available && <NoticeBell notices={state.notices} request={request} onGo={goNotice} />}
+              {setupComplete && available && <NoticeBell notices={state.notices} request={request} onGo={goNotice} />}
               {available && accountMenu}
             </header>
           )}
-          {!editing && hasProfile && available && !setup && <NoticeBanner notices={state.notices} request={request} onGo={goNotice} />}
-          {licenseKind && (
-            <div className="notice-strip info" role="status">
-              <AlertCircle size={16} />
-              <span>{licenseMessages[licenseKind]}</span>
-              <button className="btn small" onClick={() => licenseStatus?.activated ? retryLicense() : setLicenseOpen(true)} disabled={licenseBusy}>
-                {licenseStatus?.activated ? "Tentar novamente" : "Abrir ativação"}
-              </button>
-            </div>
-          )}
-          {editing ? null : update?.status === "manual" ? (
-            <div className="notice-strip info" role="status">
-              <RefreshCw size={16} />
-              <span>A versão {update.version} do Carrossell está disponível. Baixe, abra e arraste para Aplicativos; seus projetos continuam salvos.</span>
-              <button className="btn small" onClick={() => request("installUpdate").catch(() => {})}>
-                Baixar
-              </button>
-            </div>
-          ) : update?.status === "ready" ? (
-            <div className="notice-strip info" role="status">
-              <RefreshCw size={16} />
-              <span>A versão {update.version} do Carrossell está pronta. Ela entra quando você fechar o app.</span>
-              <button className="btn small" onClick={() => request("installUpdate").catch(() => {})}>
-                Reiniciar e atualizar
-              </button>
-            </div>
-          ) : (
-            <div />
-          )}
+          <div style={editing ? { display: "contents" } : undefined}>
+            {!editing && setupComplete && available && !setup && <NoticeBanner notices={state.notices} request={request} onGo={goNotice} />}
+            {licenseKind && (
+              <div className="notice-strip info" role="status">
+                <AlertCircle size={16} />
+                <span>{licenseMessages[licenseKind]}</span>
+                <button className="btn small" onClick={() => licenseStatus?.activated ? retryLicense() : setLicenseOpen(true)} disabled={licenseBusy}>
+                  {licenseStatus?.activated ? "Tentar novamente" : "Abrir ativação"}
+                </button>
+              </div>
+            )}
+            {!editing && update?.status === "manual" && (
+              <div className="notice-strip info" role="status">
+                <RefreshCw size={16} />
+                <span>A versão {update.version} do Carrossell está disponível. Baixe, abra e arraste para Aplicativos; seus projetos continuam salvos.</span>
+                <button className="btn small" onClick={() => request("installUpdate").catch(() => {})}>
+                  Baixar
+                </button>
+              </div>
+            )}
+            {!editing && update?.status === "ready" && (
+              <div className="notice-strip info" role="status">
+                <RefreshCw size={16} />
+                <span>A versão {update.version} do Carrossell está pronta. Ela entra quando você fechar o app.</span>
+                <button className="btn small" onClick={() => request("installUpdate").catch(() => {})}>
+                  Reiniciar e atualizar
+                </button>
+              </div>
+            )}
+          </div>
           {body}
           {licenseOpen && <LicenseDialog onClose={() => setLicenseOpen(false)} onStatus={setLicenseStatus} openLink={openLicenseLink} />}
         </div>
         {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+        {cliOpen && <CliDialog request={request} isPending={isPending} onClose={() => setCliOpen(false)} />}
         {capabilities && <Capabilities initialGoal={capabilityGoal} onClose={() => setCapabilities(false)} onAction={discoverAction} onAgents={openAgents} onNotice={setNotice} />}
         {agentsOpen && <AgentModal key={agentProvider} initialAgent={agentProvider} request={request} isPending={isPending} onNotice={setNotice} onClose={() => setAgentsOpen(false)} />}
         {projectPicker && <Dialog title={projectPicker === "stories" ? "De qual carrossel vamos preparar os stories?" : projectPicker === "publish" ? "Qual carrossel você quer revisar e publicar?" : "Qual conteúdo você quer baixar?"} onClose={() => setProjectPicker(null)} wide>
@@ -501,10 +514,15 @@ export default function App() {
           </div>
         </Dialog>}
         {igOpen && <InstagramModal state={state} request={request} isPending={isPending} onNotice={setNotice} onClose={() => setIgOpen(false)} />}
-        {(error || notice) && (
+        {(error || visibleNotice) && (
           <div className="snack" role={error ? "alert" : "status"} style={error ? { background: "var(--danger)", color: "#fff" } : undefined}>
             {error ? <AlertCircle size={17} /> : <Check size={17} />}
-            <span>{error || notice}</span>
+            <span>{error || (typeof visibleNotice === "string" ? visibleNotice : visibleNotice.text)}</span>
+            {noticeAction && (
+              <button className="snack-action" type="button" onClick={() => { setNotice(""); void noticeAction(); }}>
+                {visibleNotice.actionLabel}
+              </button>
+            )}
             <button className="icon-only" aria-label="Fechar aviso" onClick={() => (error ? clearError() : setNotice(""))}>
               <X size={15} />
             </button>

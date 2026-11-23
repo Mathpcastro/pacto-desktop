@@ -1,13 +1,14 @@
+import { differenceHash, luminance } from '../core/personas.mjs';
 import { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, Notification, screen, Menu, powerMonitor, clipboard, protocol } from 'electron';
 import { PilotLog } from '../core/pilot-log.mjs';
 import { reminder } from '../core/rhythm.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { dirname, join, extname, resolve } from 'node:path';
-import { readFile, writeFile, stat, mkdir, rm } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
+import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { homedir } from 'node:os';
-import { validateReference } from '../core/store.mjs';
+import { createImportLog, readImportedBytes, readImportedImage, referenceImportOptions } from './import-reference.mjs';
 import { Profiles } from '../core/profiles.mjs';
 import { CodexClient, safeError } from '../core/codex.mjs';
 import { Runtime, ACTIONS } from '../core/runtime.mjs';
@@ -25,7 +26,8 @@ import { createTray } from './tray.mjs';
 import { Notices, NOTICES_URL } from '../core/notices.mjs';
 import { configureIdentity } from './identity.mjs';
 import { createRenderer } from './render.mjs';
-import { readPage } from './page.mjs';
+import { readPage, captureProductPage } from './page.mjs';
+import { generationSkills } from '../core/generation-skills.mjs';
 import { startControl } from '../core/control.mjs';
 import { cliInfo, installCli } from './cli-install.mjs';
 import { translateUi } from '../core/i18n.mjs';
@@ -38,6 +40,33 @@ protocol.registerSchemesAsPrivileged([{scheme:'carrossell-ref',privileges:{stand
 // Pin that historical directory before changing the commercial display name.
 configureIdentity(app,process.env.PACTO_USER_DATA);
 const startupLog = new PilotLog(join(app.getPath('userData'), 'startup.log'));
+const importLog = createImportLog(join(app.getPath('userData'), 'import-reference.log'));
+const rendererImportLogFields = new Map([
+  ['pickAnchor-start', []],
+  ['pickAnchor-ipc-result', ['cancelled', 'name', 'hasDataUrl', 'dataUrlLength']],
+  ['pickAnchor-setDraft', ['hasDataUrl', 'dataUrlLength']],
+  ['pickAnchor-error', ['message']],
+  ['pickAnchor-hint', []],
+  ['drop-start', ['hasPath', 'size']],
+  ['drop-ok', ['name', 'dataUrlLength']],
+  ['drop-error', ['message']],
+  ['dialog-close-attempt', ['reason']],
+  ['dialog-close', ['reason']],
+  ['dialog-close-blocked', ['reason']],
+]);
+
+function logRendererImport(args) {
+  const fields = rendererImportLogFields.get(args?.event);
+  if (!fields) return;
+  const data = {};
+  for (const field of fields) {
+    const value = args[field];
+    if (typeof value === 'string') data[field] = value.slice(0, 300);
+    else if (typeof value === 'boolean' || Number.isFinite(value)) data[field] = value;
+  }
+  return importLog(args.event, data);
+}
+
 let startupStage = 'preparação';
 // --segundo-plano: sem janela, só o controle local para a CLI (agentes). Não usar --headless: o Chromium
 // entende essa opção como o modo sem tela dele e nenhuma janela aparece depois. Uma instância por usuário:
@@ -124,13 +153,51 @@ app.whenReady().then(async()=>{
   const schedulerOptions={exe:process.execPath,args:app.isPackaged?[BACKGROUND]:[root,BACKGROUND],run:(cmd,args)=>run(cmd,args,{windowsHide:true}),writeFile:async(file,data)=>{await mkdir(dirname(file),{recursive:true});await writeFile(file,data);},rm:file=>rm(file,{force:true}),tempDir:app.getPath('temp'),agentsDir:join(homedir(),'Library','LaunchAgents'),uid:process.getuid?.()??0};
   const scheduler=new OsScheduler(schedulerOptions);
   const pilotScheduler=!app.isPackaged&&process.env.PACTO_AUTOPILOT_NO_TASKS==='1'?{add:async()=>{},remove:async()=>{}}:new PilotScheduler(schedulerOptions);
-  runtime=new Runtime({store,profiles,codex,knowledge,emit,instagram:{composio:options=>new Composio({...options,base:fakeComposio?`${fakeComposio}/api/v3.1`:COMPOSIO_BASE})},dialogs:{login,render,readPage,openTelegram:async raw=>{const url=new URL(raw);if(url.protocol!=='https:'||url.hostname!=='t.me')throw new Error('Link do Telegram inválido.');return shell.openExternal(url.href);},openNotice:async raw=>{const u=new URL(raw);if(u.protocol!=='https:')throw new Error('Link do aviso inválido.');return shell.openExternal(u.href);},cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),secrets,scheduler,openAuth,toJpeg:pngs=>jpegCards(pngs,nativeImage),toPreviewJpeg:pngs=>pngs.map(bytes=>{const image=nativeImage.createFromBuffer(bytes);if(image.isEmpty())throw new Error('Não foi possível preparar a prévia para o Telegram.');return image.toJPEG(88);}),
+  async function photoPixels(bytes,kind){
+    const source=nativeImage.createFromBuffer(bytes);
+    if(!source.isEmpty()){
+      const bitmap=source.resize({width:9,height:8,quality:'best'}).toBitmap();
+      return Array.from({length:72},(_,i)=>luminance(bitmap[i*4+2],bitmap[i*4+1],bitmap[i*4]));
+    }
+    if(kind==='webp'){
+      const bitmap=await render.webpPixels(bytes);
+      return Array.from({length:72},(_,i)=>luminance(bitmap[i*4],bitmap[i*4+1],bitmap[i*4+2]));
+    }
+    throw new Error('Não foi possível ler a imagem.');
+  }
+  const anchorHash=async(bytes,kind)=>differenceHash(await photoPixels(bytes,kind));
+  function normalizeUgcPhoto(bytes){
+    const image=nativeImage.createFromBuffer(Buffer.from(bytes));
+    if(image.isEmpty())throw new Error('Não foi possível ler a foto gerada.');
+    const {width,height}=image.getSize();
+    const w=Math.min(width,Math.round(height*4/5)),h=Math.min(height,Math.round(width*5/4));
+    return image.crop({x:Math.floor((width-w)/2),y:Math.floor((height-h)/2),width:w,height:h})
+      .resize({width:1080,height:1350,quality:'best'}).toPNG();
+  }
+  runtime=new Runtime({store,profiles,codex,knowledge,skills:generationSkills({userData}),emit,instagram:{composio:options=>new Composio({...options,base:fakeComposio?`${fakeComposio}/api/v3.1`:COMPOSIO_BASE})},dialogs:{login,render,readPage,captureProductPage,anchorHash,normalizeUgcPhoto,openTelegram:async raw=>{const url=new URL(raw);if(url.protocol!=='https:'||url.hostname!=='t.me')throw new Error('Link do Telegram inválido.');return shell.openExternal(url.href);},openNotice:async raw=>{const u=new URL(raw);if(u.protocol!=='https:')throw new Error('Link do aviso inválido.');return shell.openExternal(u.href);},cliInfo:()=>cliInfo(root),installCli:()=>installCli(root),secrets,scheduler,openAuth,toJpeg:pngs=>jpegCards(pngs,nativeImage),toPreviewJpeg:pngs=>pngs.map(bytes=>{const image=nativeImage.createFromBuffer(bytes);if(image.isEmpty())throw new Error('Não foi possível preparar a prévia para o Telegram.');return image.toJPEG(88);}),
     async savePdf(project,bytes){const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'documento';const result=await dialog.showSaveDialog(window,{title:ui('Salvar PDF'),defaultPath:`${suggested}.pdf`,filters:[{name:'PDF',extensions:['pdf']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,bytes);return {path:result.filePath};},
     async export(project,bytes){const normalized=normalizeExport(bytes,nativeImage);const suggested=project.title.replace(/[<>:"/\\|?*\x00-\x1f]/g,'').slice(0,80)||'carrossel';const result=await dialog.showSaveDialog(window,{title:ui('Exportar carrossel'),defaultPath:`${suggested}.zip`,filters:[{name:ui('Carrossel ZIP'),extensions:['zip']}]});if(result.canceled||!result.filePath)return {cancelled:true};await writeFile(result.filePath,normalized);return {path:result.filePath,count:project.slides.length,width:1080,height:1350};},
     async normalizeFiles(files){return normalizeFiles(files,nativeImage);},
     async chooseFolder(){const result=await dialog.showOpenDialog(window,{title:ui('Escolha a pasta sincronizada (ex.: Meu Drive)'),properties:['openDirectory','createDirectory']});return result.canceled?null:result.filePaths[0]||null;},
     async openCourse(url){const u=new URL(url);if(u.protocol!=='https:'||u.hostname!=='www.youtube.com')throw new Error('Link do curso inválido.');await shell.openExternal(u.href);},
-    async importReference(){const result=await dialog.showOpenDialog(window,{title:ui('Importar referência visual'),properties:['openFile'],filters:[{name:ui('Imagens'),extensions:['png','jpg','jpeg','webp']}]});if(result.canceled||!result.filePaths[0])return {cancelled:true};const file=result.filePaths[0];if((await stat(file)).size>20*1024*1024)throw new Error('Use uma referência de até 20 MB.');const bytes=await readFile(file);if(nativeImage.createFromBuffer(bytes).isEmpty())throw new Error('Não foi possível ler a imagem.');const extension=extname(file).toLowerCase();const mime=extension==='.png'?'png':extension==='.webp'?'webp':'jpeg';const ref=validateReference({name:file.split(/[\\/]/).at(-1),dataUrl:`data:image/${mime};base64,${bytes.toString('base64')}`});return ref;}
+    async importReference(args){
+      if(typeof args?.file==='string'){
+        return readImportedImage(args.file,args,photoPixels,importLog);
+      }
+      if(args?.bytes!=null){
+        return readImportedBytes(args.bytes,args.name,args,photoPixels,importLog);
+      }
+      const title=ui(referenceImportOptions(args).title);
+      void importLog('showOpenDialog-open',{title,args});
+      const result=await dialog.showOpenDialog(window,{
+        title,
+        properties:['openFile'],
+        filters:[{name:ui('Imagens'),extensions:['png','jpg','jpeg','webp']}],
+      }).catch(cause=>{throw new Error('Não foi possível abrir o seletor de imagens.',{cause});});
+      void importLog('showOpenDialog-return',{canceled:result?.canceled,filePaths:result?.filePaths,bookmarks:result?.bookmarks});
+      if(result?.canceled)return {cancelled:true};
+      return readImportedImage(result?.filePaths?.[0],args,photoPixels,importLog);
+    }
   }});
   const telegramBase=!app.isPackaged&&/^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.PACTO_TELEGRAM_URL||'')?process.env.PACTO_TELEGRAM_URL:undefined;
   // Diário do piloto (pilot.log na pasta de dados): mostra se o app estava aberto, se o PC dormiu e o
@@ -158,7 +225,8 @@ app.whenReady().then(async()=>{
   ipcMain.handle('pacto:request',async(event,action,args)=>{
     const licenseActions=['licenseStatus','activateLicense','revalidateLicense','openLicenseLink'];
     const referenceActions=['referenceCatalog','referenceDetails','referenceAttachment','referenceOpenOriginal','importReferencePack'];
-    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='installUpdate'||action==='titleBar'||licenseActions.includes(action)||referenceActions.includes(action)))throw new Error('Solicitação não permitida.');
+    if(event.sender!==window?.webContents||event.senderFrame!==window.webContents.mainFrame||!(ACTIONS.includes(action)||action==='importLog'||action==='installUpdate'||action==='titleBar'||licenseActions.includes(action)||referenceActions.includes(action)))throw new Error('Solicitação não permitida.');
+    if(action==='importLog')return logRendererImport(args);
     if(referenceActions.includes(action)){
       try{
         if(action==='referenceCatalog')return await references.catalog();
@@ -190,9 +258,21 @@ app.whenReady().then(async()=>{
     if(action==='activateLicense')return licenseService.activateLicense(args);
     if(action==='revalidateLicense')return licenseService.revalidateLicense();
     if(action==='openLicenseLink'){const url=args?.which==='termos'?TERMS_URL:args?.which==='privacidade'?PRIVACY_URL:null;if(!url)throw new Error('Link da licença inválido.');await shell.openExternal(url);return {ok:true};}
-    try{const result=await runtime.request(action,args);if(action==='saveSettings'&&(args?.language==='es'||args?.language==='pt-BR')){Menu.setApplicationMenu(appMenu());tray?.setLocale?.(args.language);}return result;}catch(error){throw safeError(error);}
+    try{
+      const result=await runtime.request(action,args);
+      if(action==='importReference'){
+        void importLog('ipc-return',{cancelled:Boolean(result?.cancelled),name:result?.name,dataUrlLength:result?.dataUrl?.length??0});
+      }
+      if(action==='saveSettings'&&(args?.language==='es'||args?.language==='pt-BR')){Menu.setApplicationMenu(appMenu());tray?.setLocale?.(args.language);}
+      return result;
+    }catch(error){
+      const safe=safeError(error);
+      if(action==='importReference')void importLog('ipc-error',{message:safe.message});
+      throw safe;
+    }
   });
-  try{control=await startControl({userData:app.getPath('userData'),runtime,allowed:ACTIONS,version:app.getVersion(),headless,info:()=>({window:windowOpen()&&window.isVisible()}),onActivity:()=>{lastActivity=Date.now();}});}
+  void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
+  try{control=await startControl({userData:app.getPath('userData'),runtime,allowed:ACTIONS,license:licenseService,version:app.getVersion(),headless,info:()=>({window:windowOpen()&&window.isVisible()}),onActivity:()=>{lastActivity=Date.now();}});}
   catch(error){console.error(`Controle local indisponível: ${safeError(error).message}`);}
   // Posts agendados vencidos (tarefa do sistema ou computador que estava desligado) e métricas do Instagram.
   publishDue=async()=>{
@@ -221,7 +301,6 @@ app.whenReady().then(async()=>{
   startupStage = 'janela principal';
   if(!headless)await showUI();
   void startupLog.write('aberto',{modo:headless?'segundo plano':'janela'});
-  void codex.start().catch(error=>emit({type:'activity',message:safeError(error).message}));
 }).catch(async error=>{
   await startupLog.write('falha-ao-abrir',{etapa:startupStage,erro:error?.name,codigo:error?.cause?.code||error?.code});
   const message=safeError(error).message;

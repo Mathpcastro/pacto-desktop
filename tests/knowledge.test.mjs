@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadKnowledge, getLesson, searchKnowledge, briefing, prepareCarousel, reviewCarousel } from '../core/knowledge.mjs';
+import { statSync } from 'node:fs';
+import { join } from 'node:path';
+import { loadKnowledge, skillText, getLesson, searchKnowledge, briefing, prepareCarousel, reviewCarousel } from '../core/knowledge.mjs';
 
 test('course maps the eight supplied IDs and preserves provenance', () => {
   const k = loadKnowledge();
@@ -14,6 +16,20 @@ test('retrieves an exact lesson without accepting traversal', () => {
   const k = loadKnowledge();
   assert.match(getLesson(k, '73OpTuUsCH8').text, /brand context/i);
   assert.throws(() => getLesson(k, '../../secret'), /Aula/);
+});
+test('knowledge includes the compact slideshow skill and all eight hook categories', () => {
+  const knowledge = loadKnowledge();
+  const id = 'hooks-slideshow';
+  const text = skillText(knowledge, id);
+  assert.deepEqual(knowledge.skills.find(skill => skill.id === id), {
+    id, title: 'Ganchos de slideshow', text,
+  });
+  assert.deepEqual([...text.matchAll(/^### (.+)$/gm)].map(([, title]) => title), [
+    'Loop aberto', 'Alguém me mostrou', 'Chamado', 'Comparação', 'Arrependimento',
+    'Número real', 'Achado sem querer', 'Sequestro de formato',
+  ]);
+  assert.ok(statSync(join(knowledge.root, 'skills', id + '.md')).size < 4096);
+  assert.equal(skillText(knowledge, 'missing'), '');
 });
 test('search finds relevant source passages with source links and bounded output', () => {
   const hits = searchKnowledge(loadKnowledge(), 'architecture framework', 3);
