@@ -10,6 +10,7 @@ import Analytics from "./Analytics.jsx";
 import Autopilot from "./Autopilot.jsx";
 import VisualReferences from "./VisualReferences.jsx";
 import UgcPersonas from "./UgcPersonas.jsx";
+import { tweetPreviewName } from "./ugc-personas-ui.mjs";
 
 // Marca em seções, como nas configurações dos bons apps: barra lateral à esquerda e uma seção por vez.
 const BRAND_TABS = {
@@ -217,7 +218,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
   const tweet = slideHtml({
     style: "tweet",
     slide: { title: translateUi(state.settings?.language, "Assim o seu perfil aparece no estilo Tweet.") },
-    brand: { ...brand, name: name || brand.name, handle: handle || brand.handle, verified: media.verified !== false },
+    brand: { ...brand, name: tweetPreviewName(name, state), handle: handle || brand.handle, avatar: media.avatar ?? brand.avatar, verified: media.verified !== false },
     fonts: TEMPLATE_FONTS,
     locale: state.settings?.language === "es" ? "es" : "pt-BR",
   });
@@ -285,7 +286,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
       <div className="brand-layout">
         <BrandNav tab={tab} onTab={setTab} meta={meta} />
         <div className="brand-pane">
-      {tab === "personas" && <UgcPersonas key={state.profileId} state={state} request={request} isPending={isPending} connected={connected} />}
+      {tab === "personas" && <UgcPersonas key={state.profileId} state={state} request={request} isPending={isPending} connected={connected} onNotice={onNotice} />}
       {tab === "otimizar" && (
       <section className="card-box optimize" aria-label="Otimizar o Carrossell">
         <div className="section-head">

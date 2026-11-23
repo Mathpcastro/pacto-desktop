@@ -60,9 +60,9 @@ A saída tem `id`, `estilo`, `cards` (quantidade), `capa` (número escolhido), `
 
 ### UGC com avatar
 
-Em **Marca › Persona UGC**, envie ou gere a foto-âncora, confira a prévia e clique em **Salvar avatar**. A biblioteca de cada perfil guarda o nome, a âncora original e o bloco **MANTER**. Em **Editar**, altere o nome sem trocar o ID. Para usar outra âncora, crie outro avatar. Em **Início › UGC com avatar**, escolha um avatar salvo ou use o ativo para UGC e indique o link ou a imagem do produto.
+Em **Marca › Persona UGC**, o diálogo oferece **Salvar rascunho** até você enviar ou gerar uma foto-âncora. Confira a prévia e clique em **Salvar avatar**. A biblioteca de cada perfil guarda o nome, a âncora original e o bloco **MANTER**. Em **Editar**, altere o nome sem trocar o ID. Para usar outra âncora, crie outro avatar. Em **Início › UGC com avatar**, escolha um avatar salvo ou use o ativo para UGC e indique o link ou a imagem do produto.
 
-**Usar como cara do perfil** ativa o avatar para UGC e aplica sua âncora como foto do perfil local do Carrossell. A opção também aparece em **Marca › Perfil**. Remover a foto desvincula a associação e preserva o avatar e a seleção ativa para UGC. Carrosséis com uma escolha explícita continuam usando o avatar escolhido.
+**Usar como cara do perfil** aparece no aviso **Avatar salvo.** e no card de cada avatar com âncora, ao lado de **Editar** e **Apagar**. A ação ativa o avatar para UGC e aplica sua âncora como foto do perfil local do Carrossell. O card do avatar selecionado mostra o botão desativado **Cara do perfil**. Em **Marca › Perfil**, use o seletor **Avatar salvo como foto de perfil** para escolher a foto. Remover a foto desvincula a associação e preserva o avatar e a seleção ativa para UGC. Carrosséis com uma escolha explícita continuam usando o avatar escolhido.
 
 ```sh
 carrossell avatares listar --perfil "Minha marca"

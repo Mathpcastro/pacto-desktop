@@ -13,8 +13,9 @@ Versão local na branch `feat/cli-onboarding-provedor`. Validação e empacotame
 
 ## UGC com avatar
 
-- Em **Marca › Persona UGC**, confira a foto-âncora enviada ou gerada e clique em **Salvar avatar**. A biblioteca do perfil conserva a âncora original, o nome e o bloco MANTER. Avatares existentes aparecem na biblioteca e podem ser renomeados ou apagados. O aviso de semelhança continua visível para personas de perfis diferentes.
-- Em **Início › UGC com avatar**, escolha um avatar salvo ou use o ativo para UGC. **Usar como cara do perfil** ativa o avatar e define a foto local do app. Escolha ou remova essa foto em **Marca › Perfil**. Remover apenas a foto preserva o avatar salvo.
+- Em **Marca › Persona UGC**, o rodapé mostra **Salvar rascunho** enquanto a persona estiver sem foto e **Salvar avatar** assim que a âncora for enviada ou gerada. O aviso **Avatar salvo.** oferece **Usar como cara do perfil**. Os campos de descrição quebram linha e crescem com o texto. A biblioteca conserva a âncora original, o nome e o bloco MANTER, permite renomear ou apagar avatares e sinaliza semelhanças entre perfis.
+- **Usar como cara do perfil** aparece no card de cada avatar com âncora, ao lado de **Editar** e **Apagar**. No avatar selecionado, o botão desativado mostra **Cara do perfil**. Aplicar uma âncora define a foto local, ativa o avatar para UGC e exibe **Foto de perfil atualizada.**. Em **Marca › Perfil**, a prévia ampliada do Tweet usa a foto atual e, na falta de um nome de marca, usa o nome do avatar vinculado ou do perfil do app. O seletor permite escolher a foto, e **Remover** preserva o avatar salvo.
+- Em **Início › UGC com avatar**, escolha um avatar salvo ou use o ativo para UGC.
 - O estilo **UGC com avatar** começa com a foto e um gancho sobreposto. Os cards seguintes entregam a promessa, mostram a imagem do produto quando fornecida e fecham com um CTA. O produto pode vir de um arquivo ou de uma captura HTTP(S) em uma sessão isolada do Electron.
 - O Estúdio permite revisar a copy antes de montar os cards, refazer a foto de uma cena e exportar para TikTok ou publicar pelo fluxo do Instagram. Cada cena gerada usa a âncora original e o bloco MANTER salvo.
 - A CLI lista e gerencia os avatares com `avatares listar|renomear|apagar|cara-do-perfil`. `criar --slides plano.json --estilo ugc` aceita `--avatar` como sinônimo de `--persona`. Offline, a capa usa a foto do plano, a opção `--foto` ou a âncora da persona. O ZIP ou a pasta exportada inclui os PNGs 1080×1350 e `legenda.txt`, com `tiktok.txt` quando solicitado. [Comandos e contrato](API.md#ugc-com-avatar)
@@ -29,6 +30,11 @@ Validação da biblioteca de avatares
 
 - Os 37 testes de personas, UGC e CLI passaram. A suíte detalhada registrou 304 aprovados, 13 falhas e 1 ignorado. As falhas ficaram nos mesmos quatro arquivos da execução anterior às alterações, com EPERM nos sockets locais e encerramento do transporte stdio do MCP.
 - `npm run build` passou. O sandbox bloqueou os scripts de regressão e fases da interface ao abrir o servidor local. A interface Electron e o empacotamento continuam pendentes. Os testes da biblioteca usaram fixtures de imagem e dublês da geração.
+
+Validação das correções da interface da biblioteca
+
+- Os quatro novos testes passaram. A execução focada em personas, UGC e i18n aprovou 29 testes. `node --test tests/*.test.mjs` e `npm test` registraram 33 arquivos aprovados e os mesmos 4 arquivos com falhas da linha de base. A execução detalhada registrou 308 testes aprovados, 13 falhas de ambiente e 1 ignorado.
+- O build Vite passou. O Chrome headless parou no sandbox antes de carregar a interface. A conferência visual das correções e a validação em instaladores continuam pendentes.
 
 ## Arquivos
 

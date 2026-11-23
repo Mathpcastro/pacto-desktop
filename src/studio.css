@@ -460,7 +460,8 @@
   .sub-head b { font-size: var(--t-lg); }
   .profile-row { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
   .big-avatar { width: 88px; height: 88px; border-radius: 50%; border: 1px solid var(--line); object-fit: cover; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font: 700 34px var(--ui); flex: none; }
-  .tweet-preview { width: 180px; flex: none; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 5; background: #fff; }
+  .tweet-preview { width: min(100%, 520px); height: 230px; flex: none; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
+  .tweet-preview .tpl iframe { top: 50%; translate: 0 -50%; transform-origin: left center; }
   .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
   .tile { display: grid; gap: 6px; font-size: var(--t-sm); align-content: start; }
   .tile .pic { aspect-ratio: 4 / 5; border-radius: 10px; border: 1px solid var(--line); overflow: hidden; background: var(--sunk); position: relative; }
@@ -695,6 +696,11 @@
     max-width: calc(100vw - 40px); animation: studio-up 0.2s ease-out;
   }
   .snack .icon-only { color: var(--paper); width: 28px; height: 28px; }
+  .snack-action {
+    color: inherit; background: transparent; border: 0; border-radius: var(--radius-sm);
+    padding: 6px 8px; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .snack-action:hover { background: color-mix(in srgb, currentColor 12%, transparent); }
   @keyframes studio-up { from { transform: translate(-50%, 10px); opacity: 0; } }
 
   /* diálogos sem rolagem interna: o conteúdo é curto e o rodapé fica visível */

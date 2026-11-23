@@ -85,13 +85,22 @@
 .ugc-persona-fields {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
   gap: 12px;
 }
 
-.ugc-persona-fields input {
+.ugc-persona-fields input,
+.ugc-persona-fields textarea {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+}
+
+.ugc-persona-fields textarea {
+  field-sizing: content;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: auto;
 }
 
 @container persona-dialog (max-width: 580px) {

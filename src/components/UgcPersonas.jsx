@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, Check, ImagePlus, Plus, Sparkles, UserRound } from "lucide-react";
 import { translateUi } from "../../core/i18n.mjs";
 import Dialog from "./Dialog.jsx";
+import { personaSaveLabel, profileFaceButton, savedAvatarNotice } from "./ugc-personas-ui.mjs";
 import "./UgcPersonas.css";
 
 const fields = [
@@ -27,7 +28,7 @@ function Anchor({ image }) {
   );
 }
 
-function PersonaEditor({ persona, activePersonaId, request, connected, working, onUpdate, onClose }) {
+function PersonaEditor({ persona, activePersonaId, request, connected, working, onSave, onClose }) {
   const [draft, setDraft] = useState(persona);
   const [pending, setPending] = useState("");
   const [anchorHelp, setAnchorHelp] = useState("");
@@ -76,8 +77,7 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
         },
         use: isActive || use,
       });
-      onUpdate(snapshot);
-      onClose();
+      onSave(snapshot);
     } catch {
       // O diálogo mantém os campos preenchidos para uma nova tentativa.
     } finally {
@@ -90,22 +90,22 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
       <form className="ugc-persona-form" onSubmit={(event) => { event.preventDefault(); void save(); }}>
         <div className="dialog-fields">
           <div className="ugc-persona-fields">
-            {fields.map(([key, label, required]) => (
-              <label className="fld" key={key}>
-                <span>{label}</span>
-                <input
-                  type={key === "idade" ? "number" : "text"}
-                  value={draft[key] ?? ""}
-                  required={required}
-                  disabled={busy}
-                  maxLength={key === "instagram" ? 31 : 300}
-                  min={key === "idade" ? 1 : undefined}
-                  max={key === "idade" ? 120 : undefined}
-                  pattern={key === "instagram" ? "@[A-Za-z0-9_.]{1,30}" : undefined}
-                  onChange={(event) => setDraft((current) => ({ ...current, [key]: event.target.value }))}
-                />
-              </label>
-            ))}
+            {fields.map(([key, label, required]) => {
+              const fieldProps = {
+                value: draft[key] ?? "",
+                required,
+                disabled: busy,
+                onChange: (event) => setDraft((current) => ({ ...current, [key]: event.target.value })),
+              };
+              return (
+                <label className="fld" key={key}>
+                  <span>{label}</span>
+                  {key === "idade" ? <input {...fieldProps} type="number" min={1} max={120} />
+                    : key === "instagram" ? <input {...fieldProps} type="text" maxLength={31} pattern="@[A-Za-z0-9_.]{1,30}" />
+                    : <textarea {...fieldProps} rows={1} maxLength={300} />}
+                </label>
+              );
+            })}
           </div>
           <div className="ugc-persona-photo">
             <Anchor image={draft.anchor} />
@@ -138,14 +138,14 @@ function PersonaEditor({ persona, activePersonaId, request, connected, working, 
         </div>
         <footer className="dialog-footer ugc-persona-actions">
           <button className="ghost-btn" type="button" disabled={busy} onClick={onClose}>Cancelar</button>
-          <button className="btn primary" type="submit" disabled={busy}>{draft.anchor ? "Salvar avatar" : "Salvar rascunho"}</button>
+          <button className="btn primary" type="submit" disabled={busy}>{personaSaveLabel(draft)}</button>
         </footer>
       </form>
     </Dialog>
   );
 }
 
-export default function UgcPersonas({ state, request, isPending, connected }) {
+export default function UgcPersonas({ state, request, isPending, connected, onNotice }) {
   const [snapshot, setSnapshot] = useState(null);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -165,6 +165,16 @@ export default function UgcPersonas({ state, request, isPending, connected }) {
   const crossProfile = warnings.filter(({ a, b }) => a.profileId !== b.profileId);
   const busy = ["savePersona", "generatePersonaAnchor", "usePersona", "deletePersona", "setProfileAvatar"].some(isPending);
   const activate = (id) => request("usePersona", { id }).then(setSnapshot).catch(() => {});
+  const setProfileAvatar = (id) => request("setProfileAvatar", { id }).then((result) => {
+    setSnapshot(result);
+    onNotice?.("Foto de perfil atualizada.");
+  }).catch(() => {});
+  const onSave = (result) => {
+    setSnapshot(result);
+    setEditing(null);
+    const notice = savedAvatarNotice(result.persona, setProfileAvatar);
+    if (notice) onNotice?.({ ...notice, profileId });
+  };
   const remove = () => request("deletePersona", { id: deleting.id }).then((result) => {
     setSnapshot(result);
     setDeleting(null);
@@ -204,37 +214,40 @@ export default function UgcPersonas({ state, request, isPending, connected }) {
       )}
       {personas.length ? (
         <ul className="ugc-persona-list">
-          {personas.map((persona) => (
-            <li className="ugc-persona-row" key={persona.id}>
-              <Anchor image={persona.anchor} />
-              <div className="ugc-persona-name">
-                <div className="row ugc-persona-actions">
-                  <b data-user-text>{persona.nome}</b>
-                  {!persona.anchor && <span className="chip">Rascunho</span>}
-                  {persona.id === active && <span className="chip good"><Check size={13} /> Ativo para UGC</span>}
-                  {persona.id === face && <span className="chip">Cara do perfil</span>}
+          {personas.map((persona) => {
+            const faceButton = profileFaceButton(persona, face, busy);
+            return (
+              <li className="ugc-persona-row" key={persona.id}>
+                <Anchor image={persona.anchor} />
+                <div className="ugc-persona-name">
+                  <div className="row ugc-persona-actions">
+                    <b data-user-text>{persona.nome}</b>
+                    {!persona.anchor && <span className="chip">Rascunho</span>}
+                    {persona.id === active && <span className="chip good"><Check size={13} /> Ativo para UGC</span>}
+                    {persona.id === face && <span className="chip">Cara do perfil</span>}
+                  </div>
+                  <p className="hint" data-user-text>{[persona.cabelo, persona.olhos, persona.estilo, persona.nicho, persona.instagram].filter(Boolean).join(" · ")}</p>
                 </div>
-                <p className="hint" data-user-text>{[persona.cabelo, persona.olhos, persona.estilo, persona.nicho, persona.instagram].filter(Boolean).join(" · ")}</p>
-              </div>
-              <div className="row ugc-persona-actions">
-                {persona.anchor && persona.id !== active && <button className="btn small" type="button" disabled={busy} onClick={() => activate(persona.id)}>Usar no UGC</button>}
-                {persona.anchor && persona.id !== face && (
-                  <button className="btn small" type="button" disabled={busy} onClick={() => request("setProfileAvatar", { id: persona.id }).then(setSnapshot).catch(() => {})}>
-                    Usar como cara do perfil
-                  </button>
-                )}
-                <button className="btn small" type="button" disabled={busy} onClick={() => setEditing(persona)}>Editar</button>
-                <button className="ghost-btn" type="button" disabled={busy} onClick={() => setDeleting(persona)}>Apagar</button>
-              </div>
-            </li>
-          ))}
+                <div className="row ugc-persona-actions">
+                  {persona.anchor && persona.id !== active && <button className="btn small" type="button" disabled={busy} onClick={() => activate(persona.id)}>Usar no UGC</button>}
+                  {faceButton && (
+                    <button className="btn small" type="button" disabled={faceButton.disabled} onClick={() => setProfileAvatar(persona.id)}>
+                      {faceButton.label}
+                    </button>
+                  )}
+                  <button className="btn small" type="button" disabled={busy} onClick={() => setEditing(persona)}>Editar</button>
+                  <button className="ghost-btn" type="button" disabled={busy} onClick={() => setDeleting(persona)}>Apagar</button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="hint">Crie uma persona para usar como avatar dos seus carrosséis UGC.</p>
       )}
       {editing && (
         <PersonaEditor persona={editing} activePersonaId={active} request={request} connected={connected} working={Boolean(working)}
-          onUpdate={setSnapshot} onClose={() => setEditing(null)} />
+          onSave={onSave} onClose={() => setEditing(null)} />
       )}
       {deleting && (
         <Dialog title={deleting.anchor ? "Apagar avatar" : "Apagar persona"} onClose={() => !busy && setDeleting(null)}>

@@ -64,6 +64,8 @@ export default function App() {
   const [courseOpen, setCourseOpen] = useState(false);
   const [video, setVideo] = useState(null);
   const [notice, setNotice] = useState("");
+  const visibleNotice = !notice?.profileId || notice.profileId === state.profileId ? notice : "";
+  const noticeAction = !error && visibleNotice?.onAction;
   const [igOpen, setIgOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [agentProvider, setAgentProvider] = useState("claude");
@@ -512,10 +514,15 @@ export default function App() {
           </div>
         </Dialog>}
         {igOpen && <InstagramModal state={state} request={request} isPending={isPending} onNotice={setNotice} onClose={() => setIgOpen(false)} />}
-        {(error || notice) && (
+        {(error || visibleNotice) && (
           <div className="snack" role={error ? "alert" : "status"} style={error ? { background: "var(--danger)", color: "#fff" } : undefined}>
             {error ? <AlertCircle size={17} /> : <Check size={17} />}
-            <span>{error || notice}</span>
+            <span>{error || (typeof visibleNotice === "string" ? visibleNotice : visibleNotice.text)}</span>
+            {noticeAction && (
+              <button className="snack-action" type="button" onClick={() => { setNotice(""); void noticeAction(); }}>
+                {visibleNotice.actionLabel}
+              </button>
+            )}
             <button className="icon-only" aria-label="Fechar aviso" onClick={() => (error ? clearError() : setNotice(""))}>
               <X size={15} />
             </button>
