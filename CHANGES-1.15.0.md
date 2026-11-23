@@ -17,6 +17,7 @@ Versão local na branch `feat/cli-onboarding-provedor`. Validação e empacotame
 - O estilo **UGC com avatar** começa com a foto e um gancho sobreposto. Os cards seguintes entregam a promessa, mostram a imagem do produto quando fornecida e fecham com um CTA. O produto pode vir de um arquivo ou de uma captura HTTP(S) em uma sessão isolada do Electron.
 - O Estúdio permite revisar a copy antes de montar os cards, refazer a foto de uma cena e exportar para TikTok ou publicar pelo fluxo do Instagram. As cenas usam sempre a âncora original como referência.
 - A CLI aceita `persona`, `criar --slides plano.json --estilo ugc` e `--tiktok` na exportação. Offline, a capa usa a foto do plano, a opção `--foto` ou a âncora da persona. O ZIP ou a pasta exportada inclui os PNGs 1080×1350 e `legenda.txt`, com `tiktok.txt` quando solicitado. [Comandos e contrato](API.md#ugc-com-avatar)
+- **Ajustes pós-prova UGC.** O link do produto captura a primeira dobra em viewport móvel de 390×844 a 3×, sem barras e com limite de 20 s. O card usa moldura de celular em retrato ou tela larga conforme a imagem. O editor de persona tem grade de 3, 2 ou 1 coluna e indica a persona ativa. O `tiktok.txt` usa a primeira frase em até 150 caracteres e preserva as hashtags da legenda ou cria de 3 a 5 a partir do nicho e do título.
 
 Validação UGC em Node e Vite
 

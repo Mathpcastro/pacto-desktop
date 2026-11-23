@@ -430,3 +430,9 @@ Fora do sandbox do Codex: `npm test` 290 aprovados, 0 falhas, 1 ignorado. `.deb`
 Marca guarda personas e fotos-âncora por perfil, com avisos de semelhança entre perfis. O Estúdio monta o gancho e a copy em cima das fotos, aceita imagem ou captura da página do produto, permite refazer uma cena com a âncora original e exporta para TikTok. A CLI aceita `persona`, planos `ugc` com fotos locais e exportação com `--tiktok`.
 
 A suíte detalhada teve 296 aprovações, 13 falhas de ambiente e 1 ignorado. O build do Vite passou. A validação em Electron, a conta real e os instaladores seguem pendentes. [Mudanças e validação](../CHANGES-1.15.0.md)
+
+Após os prints da prova instalada, a captura de produto foi ajustada para a primeira dobra móvel de 390×844 a 3× e a moldura passou a seguir a proporção da imagem. Editar persona ganhou grade responsiva e indicação da ativa. O TikTok exporta a primeira frase em até 150 caracteres e uma linha de hashtags. Testes detalhados: 300 aprovados, 13 falhas já conhecidas e 1 ignorado. Build Vite aprovado. A conferência visual dessas correções e o empacotamento seguem pendentes.
+
+## 23/11/2026 — Prova UGC no box (sem ChatGPT)
+
+Fora do sandbox: `npm test` 312 aprovados, 0 falhas, 1 ignorado. `.deb` 1.15.0 instalado. Pela CLI: 3 perfis (UGC Marina, UGC Camila, UGC Rafael), 3 personas com as âncoras de /workspace/ugc-prompts/resultados, aviso de clone conferido com uma persona parecida (depois apagada), e 3 carrosséis UGC exportados com `--produto-link` (Carrossell, app de idiomas, curso) e `--tiktok`, cerca de 10 a 14 s cada. Correções feitas na prova: a captura de produto com `debugger`/Emulation derrubava o Electron 44 no Linux (removida; a janela offscreen 390×844 com escala 3 já gera o print móvel) e as hashtags do `tiktok.txt` ignoram palavras curtas.

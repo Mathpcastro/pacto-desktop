@@ -41,13 +41,51 @@ export function text(value, max=30000) {
   if (typeof value!=='string'||value.length>max) throw new Error('Campo deve ser texto dentro do limite permitido.');
   return value;
 }
-function tiktokCaption(caption=''){
-  const pattern=/#(?:[\p{L}\p{M}\p{N}_]+)/gu;
-  const hashtags=[...new Set(caption.match(pattern)||[])];
-  const firstLine=caption.replace(pattern,'').split('\n').find(line=>line.trim())||'';
-  const words=firstLine.trim().split(/\s+/);
-  const short=words.slice(0,28).join(' ')+(words.length>28?'…':'');
-  return [short,hashtags.join(' ')].filter(Boolean).join('\n\n');
+const TAG_STOP_WORDS = new Set(
+  'a ao aos as com como da das de do dos e em entre eu isso mais na nas no nos o os ou para pela pelo por que se sem sua suas seu seus um uma voce voces nao so ja ainda todo toda todos todas dia dias quem muito pouco esse essa este esta isso aqui ali y la las los el en con del un una the a an and for from in of on to with how your'.split(' ')
+);
+const TAG_DEFAULTS = {
+  en: ['tips', 'carousel', 'content'],
+  es: ['consejos', 'carrusel', 'contenido'],
+  pt: ['dicas', 'carrossel', 'conteudo'],
+};
+
+function tagWords(text) {
+  const normalized = text.toLowerCase().replace(/https?:\/\/\S+|@[\w.]+/g, '')
+    .normalize('NFD').replace(/\p{M}/gu, '');
+  return (normalized.match(/[a-z0-9]+/g) || []).filter(word =>
+    word.length >= 2 && /[a-z]/.test(word) && !TAG_STOP_WORDS.has(word));
+}
+
+function tiktokCaption({ caption = '', title = '', language }, niche = '') {
+  const hashtags = new Set();
+  const copy = caption.replace(/https?:\/\/\S+|(?<![\p{L}\p{M}\p{N}_])#[\p{L}\p{M}\p{N}_]+/gu, (match) => {
+    if (match[0] !== '#') return match;
+    hashtags.add(match);
+    return '';
+  });
+  const paragraph = copy.trim().split(/\n[ \t\r]*\n/, 1)[0].replace(/\s+/g, ' ').replace(/\s+([.!?,;:…])/g, '$1');
+  const sentenceEnd = /[.!?…]+["”’»)]*(?=\s|$)/.exec(paragraph);
+  let short = sentenceEnd ? paragraph.slice(0, sentenceEnd.index + sentenceEnd[0].length) : paragraph;
+  if (short.length > 150) {
+    const prefix = short.slice(0, 149).replace(/[\uD800-\uDBFF]$/, '').trimEnd();
+    const lastSpace = prefix.lastIndexOf(' ');
+    short = (lastSpace > 125 && !/\s/.test(short[prefix.length]) ? prefix.slice(0, lastSpace) : prefix) + '…';
+  }
+  if (!hashtags.size) {
+    // Palavras curtas ou genéricas viram hashtags ruins (#so, #dia); só entram termos com 5+ letras.
+    const strong = words => words.filter(word => word.length >= 5);
+    const candidates = [...strong(tagWords(niche)), ...strong(tagWords(title))];
+    for (const word of candidates.filter(word => word && word.length <= 40)) {
+      hashtags.add('#' + word);
+      if (hashtags.size === 5) break;
+    }
+    for (const word of TAG_DEFAULTS[language?.slice(0, 2)] || TAG_DEFAULTS.pt) {
+      if (hashtags.size >= 3) break;
+      hashtags.add('#' + word);
+    }
+  }
+  return [short, [...hashtags].join(' ')].filter(Boolean).join('\n\n');
 }
 export function validId(value) {
   if(typeof value!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(value))throw new Error('Identificador inválido.');
@@ -404,7 +442,11 @@ export class Store {
   exportFiles(id,{tiktok=false}={}){const p=this.get(id);if(!p.slides.length||p.slides.some(s=>!s.image||s.state==='outdated'||s.state==='generating'))throw new Error('Carrossel incompleto. Atualize as imagens de todos os slides antes de exportar.');const files={};
     for(const [i,s]of p.slides.entries()){const bytes=pngBytes(Buffer.from(s.image.split(',')[1],'base64'));files[`${String(i+1).padStart(2,'0')}.png`]=bytes;}
     files['legenda.txt']=strToU8(p.caption||'');
-    if(tiktok)files['tiktok.txt']=strToU8(tiktokCaption(p.caption));
+    if (tiktok) {
+      const personaId = p.persona || (p.style === 'ugc' ? this.data.activePersonaId : null);
+      const persona = this.data.personas.find(({ id }) => id === personaId);
+      files['tiktok.txt'] = strToU8(tiktokCaption(p, persona?.nicho));
+    }
     if(p.ctaKit){const k=p.ctaKit;files['cta-e-dm.txt']=strToU8([`Palavras-chave: ${k.keywords.join(', ')}`,`CTA do primeiro card: ${k.firstCardCta}`,`CTA do último card: ${k.lastCardCta}`,`Material gratuito: ${k.freebie}`,'',`DM 1:\n${k.dm1}`,'',`DM 2:\n${k.dm2}`].join('\n'));}
     if(p.stories?.length){
       files['stories.txt']=strToU8(p.stories.map((s,i)=>[`STORY ${i+1} — ${s.type}`,s.text,s.sticker?`Sticker: ${s.sticker}`:'',s.cta?`CTA: ${s.cta}`:''].filter(Boolean).join('\n')).join('\n\n'));

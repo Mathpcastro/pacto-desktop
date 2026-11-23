@@ -6,7 +6,6 @@
 }
 
 .ugc-persona-list,
-.ugc-persona-form,
 .ugc-persona-warning ul {
   display: grid;
   gap: 12px;
@@ -52,10 +51,55 @@
   flex-wrap: wrap;
 }
 
+.ugc-persona-photo .section {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ugc-persona-photo .btn {
+  white-space: normal;
+}
+
+.ugc-persona-dialog {
+  container: persona-dialog / inline-size;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.ugc-persona-form {
+  grid-row: 3;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.ugc-persona-form .dialog-fields {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  overflow-y: auto;
+}
+
 .ugc-persona-fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.ugc-persona-fields input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@container persona-dialog (max-width: 580px) {
+  .ugc-persona-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container persona-dialog (max-width: 400px) {
+  .ugc-persona-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .ugc-persona-warning {

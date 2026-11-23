@@ -353,7 +353,7 @@ test('CLI importa fotos relativas ao plano UGC e exporta sem chamar geração of
   const p=store.get(json.id);
   assert.equal(p.slides[0].photo,dataUrl('png',png));
   assert.equal(p.slides[2].photo,dataUrl('jpeg',jpeg));
-  assert.match(rendered[1].html,/ugc-product" src=/);
+  assert.match(rendered[1].html,/ugc-product ugc-phone" src=/);
   assert.equal(await readFile(join(output,'tiktok.txt'),'utf8'),'Veja como comecei.\n\n#dica #educação');
   const second=await run('exportar',json.id,'--pasta',join(root,'tiktok'),'--tiktok');
   assert.ok(second.json.files.some(path=>path.endsWith('tiktok.txt')));
@@ -383,5 +383,5 @@ test('CLI gera cenas pendentes com a âncora da persona indicada no plano',async
   assert.equal(store.get(json.id).status,'complete');
   assert.deepEqual(captures,['https://exemplo.test/']);
   assert.deepEqual(references,[[dataUrl('jpeg',jpeg)],[dataUrl('jpeg',jpeg)]]);
-  assert.match(rendered[1].html,/ugc-product" src=/);
+  assert.match(rendered[1].html,/ugc-product ugc-phone" src=/);
 });

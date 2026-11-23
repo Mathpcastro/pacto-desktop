@@ -8,6 +8,7 @@ import { Runtime } from '../core/runtime.mjs';
 import { slideHtml } from "../core/templates.mjs";
 import { Store } from '../core/store.mjs';
 import { productUrl } from "../core/ugc-product.mjs";
+import { captureMobileFold } from "../electron/page.mjs";
 import { strFromU8, unzipSync } from "fflate";
 
 const fields={nome:'Lia Tavares',idade:28,genero:'mulher',etnia:'parda',cabelo:'cacheado',olhos:'castanhos',marcaFixa:'sardas',porte:'mediano',estilo:'camiseta verde',cenario:'café de bairro',nicho:'educação'};
@@ -69,13 +70,31 @@ test('slide UGC renderiza a foto de capa e sobrepõe o gancho escapado sem cabe�
   assert.doesNotMatch(html,/Sua marca|@seuperfil|Texto fora da capa/);
 });
 
-test('cards UGC internos usam tela do produto, texto liso, foto escurecida e CTA',()=>{
+test('cards UGC internos escolhem a moldura pela proporção do produto e preservam os outros layouts',()=>{
   const render=(index,slide)=>slideHtml({style:'ugc',index,total:5,slide:{title:'Um título',body:'Meu texto',...slide}});
-  assert.match(render(1,{asset:dataUrl(png)}),/ugc-product" src="data:image\/png/);
+  const portrait='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAANCAIAAAAFaYjcAAAAFUlEQVR42mP8//8/AypgYsAAw04IAOnBAxfdh7RSAAAAAElFTkSuQmCC';
+  const landscape='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAJCAIAAAC0SDtlAAAAF0lEQVR42mP8//8/AymAiYFEMKqBJhoAMWADDxRJg8oAAAAASUVORK5CYII=';
+  const webp='data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoQAAkAAUAmJaQAA3AA/vz0AAA=';
+  const phone=render(1,{asset:portrait});
+  assert.match(phone,/<h1>Um título<\/h1><img class="ugc-product ugc-phone"[^>]+><p class="body">Meu texto<\/p>/);
+  assert.match(phone,/\.ugc-phone\{height:945px;aspect-ratio:9 \/ 19\.5;[^}]+object-fit:cover;object-position:top/);
+  for (const assetImage of [landscape, webp]) {
+    assert.match(render(1,{assetImage}),/<img class="ugc-product ugc-screen"/);
+  }
   assert.doesNotMatch(render(2,{}),/ugc-bg">/);
   assert.match(render(2,{}),/Meu texto/);
   assert.match(render(3,{photo:dataUrl(png)}),/ugc-shade"><\/div>/);
   assert.match(render(4,{}),/ugc-cta"><h1>/);
+});
+
+test('moldura segue a orientação exibida de JPEGs com EXIF', () => {
+  const jpeg = '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAAJABABAREA/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAA/AL+A/9k=';
+  const bytes = Buffer.from(jpeg, 'base64');
+  const exif = Buffer.from('ffe100224578696600004d4d002a00000008000101120003000000010006000000000000', 'hex');
+  const rotated = Buffer.concat([bytes.subarray(0, 2), exif, bytes.subarray(2)]).toString('base64');
+  const render = data => slideHtml({ style: 'ugc', index: 1, total: 3, slide: { assetImage: 'data:image/jpeg;base64,' + data } });
+  assert.match(render(jpeg), /<img class="ugc-product ugc-screen"/);
+  assert.match(render(rotated), /<img class="ugc-product ugc-phone"/);
 });
 
 test('montagem UGC offline exige foto na capa e usa fundo liso nos outros cards',async t=>{
@@ -93,7 +112,7 @@ test('montagem UGC offline exige foto na capa e usa fundo liso nos outros cards'
   await store.saveProject({id:project.id,slides:[{...slides[0],photo:dataUrl(png)},...slides.slice(1)]});
   const complete=await runtime.request('generateSlides',{id:project.id});
   assert.equal(complete.status,'complete');
-  assert.match(rendered[1],/ugc-product" src=/);
+  assert.match(rendered[1],/ugc-product ugc-phone" src=/);
   assert.doesNotMatch(rendered[2],/ugc-bg">/);
   assert.match(runtime.planPrompt(project.id),/primeira pessoa.*12 palavras/);
   assert.match(runtime.planPrompt(project.id),/acao, cenario e luz/);
@@ -104,6 +123,58 @@ test('link de produto aceita somente HTTP e HTTPS sem credenciais',()=>{
   assert.equal(productUrl('http://exemplo.test'),'http://exemplo.test/');
   for(const link of ['exemplo.test','file:///tmp/x','javascript:alert(1)','ftp://exemplo.test','https://a:b@exemplo.test','https://'])
     assert.throws(()=>productUrl(link),/HTTP ou HTTPS/);
+});
+
+test('captura do produto carrega como celular sem emulação por debugger e captura só a primeira dobra sem barras', async () => {
+  const calls = [];
+  const url = 'https://exemplo.test/';
+  const win = {
+    async loadURL(target, options) {
+      calls.push(['load', target, options]);
+      await Promise.resolve();
+      calls.push(['loaded']);
+    },
+    webContents: {
+      debugger: {
+        attach() { assert.fail('o debugger derruba o Electron 44 no Linux'); },
+        async sendCommand() { assert.fail('o debugger derruba o Electron 44 no Linux'); },
+      },
+      async capturePage(rect) {
+        calls.push(['capture', rect]);
+        return {
+          isEmpty: () => false,
+          toDataURL(options) {
+            calls.push(['encode', options]);
+            return dataUrl(png);
+          },
+        };
+      },
+      getURL: () => url,
+      async insertCSS(css, options) { calls.push(['css', css, options]); },
+      async executeJavaScript(script) { calls.push(['script', script]); },
+    },
+  };
+  assert.deepEqual(await captureMobileFold(win, url), { url, screenshot: dataUrl(png) });
+  const [load, loaded, css, script, shot, encode] = calls;
+  assert.equal(load[1], url);
+  assert.match(load[2].userAgent, /Android.*Mobile/);
+  assert.deepEqual(loaded, ['loaded']);
+  assert.match(css[1], /::-webkit-scrollbar\{display:none.*html,body\{scrollbar-width:none/);
+  assert.deepEqual(css[2], { cssOrigin: 'user' });
+  assert.match(script[1], /scrollTo\(\{top:0,left:0/);
+  assert.deepEqual(shot, ['capture', { x: 0, y: 0, width: 390, height: 844 }]);
+  assert.deepEqual(encode, ['encode', { scaleFactor: 3 }]);
+});
+
+test('captura do produto usa o mesmo prazo para carregamento, espera e captura', async () => {
+  const win = {
+    loadURL: async () => {},
+    webContents: {
+      debugger: { attach() {}, sendCommand: async () => {} },
+      insertCSS: () => assert.fail('preparação depois do prazo'),
+    },
+  };
+  await assert.rejects(captureMobileFold(win, 'https://exemplo.test/', 10), /Não foi possível capturar/);
 });
 
 test('projeto UGC captura e guarda a imagem do produto e exporta a legenda para TikTok',async t=>{
@@ -122,13 +193,37 @@ test('projeto UGC captura e guarda a imagem do produto e exporta a legenda para 
   assert.deepEqual(captures,['https://exemplo.test/']);
   assert.equal(project.persona,persona.id);
   assert.equal(project.productAsset,dataUrl(png));
-  const caption='Veja o passo a passo #dica\n\nMais detalhes amanhã. #educação #dica';
+  const caption='Veja o passo a passo #dica! Mais detalhes amanhã. #educação #dica';
   await store.saveProject({id:project.id,caption,slides:[{id:'one',title:'Gancho',photo:dataUrl(png)}]});
   await store.addImage(project.id,'one',png);
   const files=await runtime.request('export',{id:project.id,tiktok:true});
   assert.deepEqual(Object.keys(files),['01.png','legenda.txt','tiktok.txt']);
   assert.equal(strFromU8(files['legenda.txt']),caption);
-  assert.equal(strFromU8(files['tiktok.txt']),'Veja o passo a passo\n\n#dica #educação');
+  assert.equal(strFromU8(files['tiktok.txt']),'Veja o passo a passo!\n\n#dica #educação');
+});
+
+test('exportação TikTok corta a legenda e deriva hashtags do nicho da persona do projeto e do título', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'carrossell-tiktok-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const store = await new Store(root).init();
+  const persona = await store.savePersona({ ...fields, nicho: 'Educação financeira' });
+  await store.savePersona({ ...fields, nome: 'Outra persona', nicho: 'Culinária' }, { use: true });
+  const project = await store.createProject({
+    title: 'Orçamento e poupança para iniciantes', brief: '', style: 'ugc', persona: persona.id,
+  });
+  const caption = '💡 ' + 'Organize suas despesas com calma '.repeat(6) + 'hoje. Segunda frase.';
+  await store.saveProject({ id: project.id, caption, slides: [{ id: 'one', title: 'Gancho' }] });
+  await store.addImage(project.id, 'one', png);
+  const files = store.exportFiles(project.id, { tiktok: true });
+  const [short, tags] = strFromU8(files['tiktok.txt']).split('\n\n');
+  assert.ok(short.length <= 150);
+  assert.match(short, /^💡 Organize suas despesas.*…$/u);
+  assert.equal(tags, '#educacao #financeira #orcamento #poupanca #iniciantes');
+  assert.equal(strFromU8(files['legenda.txt']), caption);
+  await store.deletePersona(persona.id);
+  await store.saveProject({ id: project.id, title: 'IA', caption: 'Uma ideia funciona. A segunda frase fica de fora.' });
+  const fallback = strFromU8(store.exportFiles(project.id, { tiktok: true })['tiktok.txt']);
+  assert.equal(fallback, 'Uma ideia funciona.\n\n#dicas #carrossel #conteudo');
 });
 
 test('refazer foto de um card preserva a âncora e remonta apenas esse card',async t=>{
