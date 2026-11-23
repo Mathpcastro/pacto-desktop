@@ -134,8 +134,9 @@ export const STYLE_LIST = [
   ["fototexto", "Texto + foto", "Texto em cima e uma foto simples embaixo"],
   ["fundo", "Foto de fundo", "Uma foto sua ocupando o card inteiro"],
   ["recorte", "Capa com sua foto", "Você sobre a cor da marca"],
+  ["ugc", "UGC com avatar", "Fotos realistas da sua persona com texto sobreposto"],
 ];
-export const STYLE_SHORT = { ia: "Arte com IA", tweet: "Tweet", texto: "Texto branco", textopreto: "Texto preto", fototexto: "Texto + foto", fundo: "Foto de fundo", recorte: "Sua foto" };
+export const STYLE_SHORT = { ia: "Arte com IA", tweet: "Tweet", texto: "Texto branco", textopreto: "Texto preto", fototexto: "Texto + foto", fundo: "Foto de fundo", recorte: "Sua foto", ugc: "UGC com avatar" };
 export const statusLabels = {
   draft: "Rascunho",
   planning: "Escrevendo",

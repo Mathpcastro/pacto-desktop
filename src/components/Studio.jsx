@@ -49,12 +49,22 @@ const CHECKLIST = [
 ];
 const reviewed = new Map();
 const FIELDS = ["role", "title", "body", "emphasis", "visual", "prompt", "photo", "layout"];
+const PROJECT_FIELDS = ["caption", "editorialLine", "visualConcept"];
+const pickFields = (s) => Object.fromEntries(FIELDS.map((k) => [k, s[k] || ""]));
 const pick = (p) => ({
   caption: p.caption || "",
   editorialLine: p.editorialLine || "",
   visualConcept: p.visualConcept || "",
-  slides: (p.slides || []).map((s) => Object.fromEntries([["id", s.id], ...FIELDS.map((k) => [k, s[k] || ""])])),
+  slides: (p.slides || []).map((s) => ({
+    id: s.id,
+    ...pickFields(s),
+    ...(p.style === "ugc" && { asset: s.asset || "" }),
+  })),
 });
+const sameDraft = (a, b) =>
+  PROJECT_FIELDS.every((key) => a[key] === b[key]) &&
+  a.slides.length === b.slides.length &&
+  a.slides.every((slide, i) => Object.keys(slide).every((key) => slide[key] === b.slides[i][key]) && slide.asset === b.slides[i].asset);
 
 // Rascunho local com salvamento automático. Campos que a pessoa não tocou seguem
 // as atualizações do runtime; o que ela editou fica até ser salvo.
@@ -62,14 +72,14 @@ function useDraft(project, request, busy) {
   const [draft, setDraft] = useState(() => pick(project));
   const [baseline, setBaseline] = useState(() => pick(project));
   const [saving, setSaving] = useState(false);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(baseline);
+  const dirty = !sameDraft(draft, baseline);
   useEffect(() => {
     const incoming = pick(project);
     setBaseline((old) => {
-      if (JSON.stringify(old) === JSON.stringify(incoming)) return old;
+      if (sameDraft(old, incoming)) return old;
       setDraft((d) => {
         const merged = { ...incoming };
-        for (const k of ["caption", "editorialLine", "visualConcept"]) if (d[k] !== old[k]) merged[k] = d[k];
+        for (const k of PROJECT_FIELDS) if (d[k] !== old[k]) merged[k] = d[k];
         merged.slides = incoming.slides.map((s) => {
           const mine = d.slides.find((x) => x.id === s.id),
             before = old.slides.find((x) => x.id === s.id);
@@ -91,7 +101,13 @@ function useDraft(project, request, busy) {
         caption: draft.caption,
         editorialLine: draft.editorialLine,
         visualConcept: draft.visualConcept,
-        slides: project.slides.map((s) => ({ ...s, ...(draft.slides.find((d) => d.id === s.id) || {}) })),
+        slides: project.slides.map((s) => ({
+          id: s.id,
+          asset: s.asset,
+          scene: s.scene,
+          product: s.product,
+          ...(draft.slides.find((d) => d.id === s.id) || pickFields(s)),
+        })),
       });
       return true;
     } catch {
@@ -227,6 +243,8 @@ export default function Studio({ project, state, request, pending, activity, onB
   const sizeButton = useRef(null);
   const format = project.format || "carrossel";
   const doc = format !== "carrossel";
+  const ugc = !doc && project.style === "ugc";
+  const styleOptions = Object.entries(STYLE_SHORT).filter(([key]) => key !== "ugc" || ugc || project.persona);
   const template = doc || TEMPLATE_STYLES.includes(project.style);
   const connected = Boolean(state.account?.connected);
   const busy =
@@ -300,15 +318,23 @@ export default function Studio({ project, state, request, pending, activity, onB
   const drafts = draft.slides;
   const brand = state.brandInfo || {};
   const media = state.media || { faces: [], scenes: [] };
-  const labels = doc ? ["Roteiro", "Capa", format === "material" ? "Páginas" : "Slides", "Exportar"] : ["Texto", "Capa", "Carrossel", "Publicar"];
+  const labels = doc ? ["Roteiro", "Capa", format === "material" ? "Páginas" : "Slides", "Exportar"] : ["Texto", ugc ? "Fotos" : "Capa", "Carrossel", "Publicar"];
   const unit = doc ? (format === "material" ? "página" : "slide") : "card";
   const pendingImages = slides.filter((s) => !s.image || s.state !== "complete").length;
   // Imagens que podem aparecer num card: anexos deste carrossel e imagens da marca.
   const allAssets = [...(project.attachments || []).map((a) => ({ ...a, kind: "anexo" })), ...(media.assets || [])];
-  const withAsset = (s) => {
-    const a = s.asset && allAssets.find((x) => x.id === s.asset);
-    return a ? { ...s, assetImage: a.dataUrl, assetKind: a.kind } : s;
+  const cardAssets = ugc ? allAssets.filter((a) => !a.referenceId && !/^Referência \S+ · .+\.webp$/.test(a.name)) : allAssets;
+  const withAsset = (s, index) => {
+    if (ugc && (index === 0 || /^data:image\//.test(s.asset))) return s;
+    const a = s.asset && cardAssets.find((x) => x.id === s.asset);
+    if (a) return { ...s, assetImage: a.dataUrl, assetKind: a.kind };
+    if (ugc && project.productAsset && (slides[index]?.product || /^(?:produto|tela do produto)/i.test(s.role))) {
+      return { ...s, assetImage: project.productAsset, assetKind: "produto" };
+    }
+    return s;
   };
+  const ugcPersona = ugc && state.personas?.find((p) => p.id === (project.persona || state.activePersonaId));
+  const ugcCoverPhoto = ugc && /^data:image\//.test(drafts[0]?.photo || "");
   const approvedScenes = media.scenes.filter((s) => s.status === "approved" && (s.images?.length || s.image)).map((s) => ({ ...s, images: s.images?.length ? s.images : [s.image] }));
   const sceneInUse = approvedScenes.find((s) => s.id === String(drafts.find((d) => d.photo)?.photo || "").split("#")[0]) || approvedScenes[0];
   const outdated = slides.filter((s) => s.image && s.state === "outdated").length;
@@ -324,7 +350,7 @@ export default function Studio({ project, state, request, pending, activity, onB
   };
   const locale = state.settings?.language === "es" ? "es" : "pt-BR";
   const renderSlide = (s, i, variant = project.styleVariant || 0) =>
-    slideHtml({ style: project.style, slide: withAsset(s), index: i, total: drafts.length, brand, media, variant, fonts: TEMPLATE_FONTS, locale });
+    slideHtml({ style: project.style, slide: withAsset(s, i), index: i, total: drafts.length, brand, media, variant, fonts: TEMPLATE_FONTS, locale });
   const pageHtml = (i, variant = project.styleVariant || 0) =>
     documentHtml({ format, pages: drafts, brand, coverVariant: variant, fonts: TEMPLATE_FONTS, only: i, locale });
   // Envia uma imagem nova para este carrossel e a coloca no card aberto.
@@ -336,11 +362,19 @@ export default function Studio({ project, state, request, pending, activity, onB
     const added = saved?.attachments?.at(-1);
     if (added) edit(slideId, "asset", added.id);
   };
+  const uploadUgcPhoto = async (slideId) => {
+    const ref = await request("importReference").catch(() => null);
+    if (ref?.dataUrl) edit(slideId, "photo", ref.dataUrl);
+  };
+  const generateUgcCards = async (args = {}) => {
+    if (!(await save())) return;
+    return infer("generateSlides", args);
+  };
   const approve = async () => {
     if (!(await save())) return;
     const ok = await infer("approveText");
     if (!ok) return;
-    if (template || connected) await infer("generateCovers", { count: 3 });
+    if (!ugc && (template || connected)) await infer("generateCovers", { count: 3 });
     setView("capa");
   };
   const chooseCover = async () => {
@@ -355,6 +389,11 @@ export default function Studio({ project, state, request, pending, activity, onB
   };
   const exportZip = async () => {
     const r = await infer("export");
+    if (r && !r.cancelled) onNotice(`${r.count} imagens exportadas${r.path ? ` para ${r.path}` : ""}.`);
+  };
+  const exportTiktok = async () => {
+    if (!(await save())) return;
+    const r = await infer("export", { tiktok: true });
     if (r && !r.cancelled) onNotice(`${r.count} imagens exportadas${r.path ? ` para ${r.path}` : ""}.`);
   };
   const exportPdf = async (extra = {}) => {
@@ -399,7 +438,7 @@ export default function Studio({ project, state, request, pending, activity, onB
     if (!r) return;
     setCover(null);
     if (r.textApproved && (TEMPLATE_STYLES.includes(style) || connected)) {
-      await infer("generateCovers", { count: 3 });
+      if (style !== "ugc") await infer("generateCovers", { count: 3 });
       setView("capa");
     }
   };
@@ -422,13 +461,14 @@ export default function Studio({ project, state, request, pending, activity, onB
   useEffect(() => {
     onCommands?.([
       { id: "p-text", label: `Ir para ${labels[0]}`, hint: project.title, run: () => go("texto") },
-      { id: "p-cover", label: "Ir para a capa", disabled: reached < 1, run: () => go("capa") },
+      { id: "p-cover", label: ugc ? "Ir para as fotos" : "Ir para a capa", disabled: reached < 1, run: () => go("capa") },
       { id: "p-cards", label: `Ir para ${labels[2]}`, disabled: reached < 2, run: () => go("carrossel") },
       { id: "p-pub", label: `Ir para ${labels[3]}`, disabled: reached < 3, run: () => go("publicar") },
       ...(doc
         ? [{ id: "p-pdf", label: "Baixar PDF", hint: FORMAT_LABEL[format], disabled: !project.textApproved, run: () => exportPdf() }]
         : [
             { id: "p-zip", label: "Baixar ZIP deste carrossel", hint: "PNGs, legenda e DMs", disabled: stage !== "done", run: exportZip },
+            ...(ugc ? [{ id: "p-tiktok", label: "Baixar cards para o TikTok", disabled: stage !== "done", run: exportTiktok }] : []),
             { id: "p-pdfli", label: "Baixar carrossel em PDF", hint: "Para o LinkedIn", disabled: stage !== "done", run: () => exportPdf() },
             { id: "p-phone", label: "Enviar para o celular", hint: "QR code", disabled: stage !== "done", run: () => (setView("publicar"), setTab("enviar"), setSharing(true)) },
             { id: "p-cta", label: "Gerar CTA, DM e oferta", hint: "Aula 07", disabled: !slides.length, run: () => (setView(reached >= 3 ? "publicar" : view), setTab("dm"), infer("ctaKit")) },
@@ -445,17 +485,18 @@ export default function Studio({ project, state, request, pending, activity, onB
     if (busy) return { label: project.status === "planning" ? "Escrevendo…" : project.status === "generating" ? "Gerando…" : "Aguarde…", disabled: true };
     if (view === "texto") {
       if (!slides.length) return { label: doc ? "Gerar o roteiro" : "Gerar o texto", disabled: !connected, run: async () => { await save(); infer("generatePlan"); } };
-      if (project.textApproved) return { label: "Ir para a capa", run: () => go(reached >= 1 ? "capa" : "texto") };
+      if (project.textApproved) return { label: ugc ? "Ir para as fotos" : "Ir para a capa", run: () => go(reached >= 1 ? "capa" : "texto") };
       if (doc) return { label: "Aprovar roteiro", run: approve };
-      return { label: allChecked ? "Aprovar e criar capas" : `Revisão ${checks.length}/${CHECKLIST.length}`, disabled: !allChecked, run: approve, title: allChecked ? "" : "Marque a revisão humana no painel ao lado" };
+      return { label: allChecked ? (ugc ? "Aprovar texto" : "Aprovar e criar capas") : `Revisão ${checks.length}/${CHECKLIST.length}`, disabled: !allChecked, run: approve, title: allChecked ? "" : "Marque a revisão humana no painel ao lado" };
     }
     if (view === "capa") {
+      if (ugc) return { label: connected ? "Gerar fotos e montar cards" : "Montar cards", disabled: !ugcCoverPhoto && (!connected || !ugcPersona?.anchor), run: () => generateUgcCards() };
       if (!project.coverOptions?.length) return { label: "Gerar opções de capa", disabled: !template && !connected, run: () => infer("generateCovers", { count: 3 }) };
       return { label: "Usar esta capa", run: chooseCover };
     }
     if (view === "carrossel") {
       if (doc) return { label: "Ir para exportar", run: () => go("publicar") };
-      if (pendingImages) return { label: outdated && outdated === pendingImages ? `Atualizar ${outdated} ${outdated > 1 ? "cards" : "card"}` : `Gerar ${pendingImages} ${pendingImages > 1 ? "cards" : "card"}`, disabled: !template && !connected, run: () => infer("generateSlides") };
+      if (pendingImages) return { label: outdated && outdated === pendingImages ? `Atualizar ${outdated} ${outdated > 1 ? "cards" : "card"}` : `Gerar ${pendingImages} ${pendingImages > 1 ? "cards" : "card"}`, disabled: !template && !connected, run: () => ugc ? generateUgcCards() : infer("generateSlides") };
       return { label: "Ir para publicar", run: () => go("publicar") };
     }
     if (doc) return { label: "Concluir", run: () => (onNotice(`${FORMAT_LABEL[format]} salvo nos seus projetos.`), onBack()) };
@@ -659,11 +700,31 @@ export default function Studio({ project, state, request, pending, activity, onB
                   ))}
                 </div>
               ))}
-            {view === "capa" && (
+            {view === "capa" && ugc && (
+              <div className="covers-wrap">
+                <h2>Fotos do carrossel</h2>
+                {(ugcCoverPhoto || busy) && (
+                  <div className="covers">
+                    {ugcCoverPhoto ? (
+                      <div className="cover-opt"><div className="frame"><TemplateFrame html={renderSlide(drafts[0], 0)} {...SIZES.carrossel} title="Prévia da capa" /></div></div>
+                    ) : <div className="cover-ghost" role="status"><Spinner /> Gerando fotos…</div>}
+                  </div>
+                )}
+                <div className="row">
+                  <button className="btn" disabled={busy} onClick={() => uploadUgcPhoto(drafts[0].id)}>
+                    <ImagePlus size={15} /> {ugcCoverPhoto ? "Trocar foto da capa" : "Enviar foto da capa"}
+                  </button>
+                  {connected && !ugcPersona?.anchor && <button className="link-btn" onClick={() => onBrand("personas")}>Abrir Persona UGC na Marca</button>}
+                </div>
+                {!connected && <p className="hint">Envie uma foto para a capa. Os outros cards podem usar fundo liso.</p>}
+                {connected && !ugcPersona?.anchor && <p className="hint">Envie ou gere uma foto-âncora da persona na Marca para criar as cenas.</p>}
+              </div>
+            )}
+            {view === "capa" && !ugc && (
               <div className="covers-wrap">
                 {!doc && (
                   <div className="style-row" role="group" aria-label="Estilo do carrossel">
-                    {Object.entries(STYLE_SHORT).map(([k, l]) => (
+                    {styleOptions.map(([k, l]) => (
                       <button key={k} aria-pressed={project.style === k} disabled={busy} onClick={() => setStyle(k)}>
                         {l}
                       </button>
@@ -703,7 +764,7 @@ export default function Studio({ project, state, request, pending, activity, onB
               <div className="stage">
                 {!doc ? (
                   <div className="style-row" role="group" aria-label="Estilo do carrossel">
-                    {Object.entries(STYLE_SHORT).map(([k, l]) => (
+                    {styleOptions.map(([k, l]) => (
                       <button key={k} aria-pressed={project.style === k} disabled={busy} onClick={() => setStyle(k)}>
                         {l}
                       </button>
@@ -742,7 +803,7 @@ export default function Studio({ project, state, request, pending, activity, onB
                   </button>
                   <button className={`stage-frame ${frameClass}`} aria-label={`Editar ${unit} ${cur + 1}`} onClick={() => setSel(cur)}>
                     {preview(cur)}
-                    {!doc && curSlide?.state === "outdated" && <span className="chip accent stage-badge">Texto mudou · atualizar</span>}
+                    {!doc && curSlide?.state === "outdated" && <span className="chip accent stage-badge">{ugc ? "Card desatualizado" : "Texto mudou · atualizar"}</span>}
                   </button>
                   <button className="nav-arrow" aria-label="Próximo" disabled={cur === slides.length - 1} onClick={() => step(1)}>
                     <ChevronRight size={18} />
@@ -878,6 +939,11 @@ export default function Studio({ project, state, request, pending, activity, onB
                     {tab === "enviar" && (
                       <>
                         <InstagramPost project={project} state={state} request={request} isPending={(a) => pending.some((p) => p.action === a)} activity={activity} onNotice={onNotice} onConnect={onInstagram} />
+                        {ugc && (
+                          <button className="btn" disabled={exporting} onClick={exportTiktok}>
+                            {exporting ? <Spinner /> : <Download size={17} />} Baixar cards para o TikTok
+                          </button>
+                        )}
                         <div className="split">
                           <button className="btn primary" onClick={() => setSharing(true)}>
                             <Smartphone size={17} /> Enviar para o celular
@@ -1063,7 +1129,7 @@ export default function Studio({ project, state, request, pending, activity, onB
                         <Grow value={selected.visual} onChange={(e) => edit(selected.id, "visual", e.target.value)} />
                       </label>
                     )}
-                    {!doc && (
+                    {!doc && (!ugc || sel > 0) && (
                       <div className="fld">
                         <span>
                           Imagem no card <small>o que deve aparecer</small>
@@ -1072,7 +1138,7 @@ export default function Studio({ project, state, request, pending, activity, onB
                           <button className="none" aria-pressed={!selected.asset} onClick={() => edit(selected.id, "asset", "")}>
                             Nenhuma
                           </button>
-                          {allAssets.map((a) => (
+                          {cardAssets.map((a) => (
                             <button key={a.id} aria-label={a.name} title={a.name} aria-pressed={selected.asset === a.id} onClick={() => edit(selected.id, "asset", a.id)}>
                               <img src={a.dataUrl} alt="" />
                             </button>
@@ -1081,10 +1147,33 @@ export default function Studio({ project, state, request, pending, activity, onB
                             <ImagePlus size={16} />
                           </button>
                         </div>
-                        {!allAssets.length && (
+                        {!cardAssets.length && (
                           <button className="link-btn" onClick={() => onBrand("imagens")}>
                             Cadastrar logo e produtos na Marca
                           </button>
+                        )}
+                      </div>
+                    )}
+                    {ugc && !withAsset(selected, sel).assetImage && !/^data:image\//.test(selected.asset) && (
+                      <div className="fld">
+                        <span>Foto da cena</span>
+                        <div className="row">
+                          <button className="btn small" disabled={busy} onClick={() => uploadUgcPhoto(selected.id)}>
+                            <ImagePlus size={14} /> {selected.photo ? "Trocar foto" : "Enviar foto"}
+                          </button>
+                          {view === "carrossel" && (
+                            <button
+                              className="btn small"
+                              disabled={busy || !connected || !ugcPersona?.anchor}
+                              onClick={() => generateUgcCards({ slideId: selected.id, regeneratePhoto: true })}
+                            >
+                              <WandSparkles size={14} /> {selected.photo ? "Refazer foto" : "Gerar foto"}
+                            </button>
+                          )}
+                        </div>
+                        {view === "carrossel" && !connected && <p className="hint">Conecte o ChatGPT para gerar outra foto.</p>}
+                        {view === "carrossel" && connected && !ugcPersona?.anchor && (
+                          <button className="link-btn" onClick={() => onBrand("personas")}>Adicionar foto-âncora na Marca</button>
                         )}
                       </div>
                     )}

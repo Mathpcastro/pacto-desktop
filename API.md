@@ -38,7 +38,7 @@ Qualquer ação aceita `profileId` opcional: ela roda naquele perfil (inclusive 
 
 ## CLI para agentes
 
-O comando `carrossell` (`cli/carrossell.mjs`) controla o app pelo terminal ou por um agente (Codex, Claude Code). Os modelos renderizam no app sem ChatGPT. O estilo `ia` usa a conta ChatGPT para gerar arte ou aceita PNGs enviados pelo agente. `carrossell ajuda` lista os comandos; `carrossell ajuda --agente` imprime o guia que também é copiado em Marca › Usar com agentes (`core/agent-guide.mjs`). Os comandos de operação escrevem JSON no stdout e progresso no stderr. `carrossell --version` (também `-v` e `versao`) imprime `Carrossell 1.15.0` em texto simples, sem abrir o app. Comandos e opções inválidos são recusados antes da conexão. Códigos de saída: 0 ok, 1 erro, 2 uso incorreto, 3 app indisponível, 4 tempo esgotado. Imagens nunca vão para a saída: aparecem como `[imagem]` ou `image:true`.
+O comando `carrossell` (`cli/carrossell.mjs`) controla o app pelo terminal ou por um agente (Codex, Claude Code). Os modelos montam os cards no app. No UGC, a conta ChatGPT pode gerar as fotos que faltam. O estilo `ia` usa a conta ChatGPT para gerar arte ou aceita PNGs enviados pelo agente. `carrossell ajuda` lista os comandos; `carrossell ajuda --agente` imprime o guia que também é copiado em Marca › Usar com agentes (`core/agent-guide.mjs`). Os comandos de operação escrevem JSON no stdout e progresso no stderr. `carrossell --version` (também `-v` e `versao`) imprime `Carrossell 1.15.0` em texto simples, sem abrir o app. Comandos e opções inválidos são recusados antes da conexão. Códigos de saída: 0 ok, 1 erro, 2 uso incorreto, 3 app indisponível, 4 tempo esgotado. Imagens nunca vão para a saída: aparecem como `[imagem]` ou `image:true`.
 
 O app é sempre o único dono da biblioteca. `core/control.mjs` abre um named pipe (Windows, `\.\pipe\carrossell-<hash da pasta de dados>`) ou socket Unix (`<userData>/control.sock`) e grava um token novo em `<userData>/control.token` a cada início; mensagens são JSON por linha `{id, token, action, args}` → `{id, ok, result|error}`, e `subscribe` passa a receber os eventos do app. Aceita as `ACTIONS` do runtime e as ações da CLI: `ping` (versão, `headless`, `window`), `status`, `projects`, `project`, `brand`, `approveBrand` (aprova os rascunhos do começo rápido como a marca), `ideas` e `exportTo` (`folder` absoluto; grava os mesmos arquivos do ZIP). Todas aceitam `profileId`.
 
@@ -54,9 +54,46 @@ carrossell criar --slides plano.json --estilo texto --exportar ~/Carrossell
 
 O arquivo segue o `PLAN_SCHEMA` de `core/runtime.mjs`. O [exemplo do guia](src/data/cli-plan.json) inclui todos os campos. O comando usa a mesma gravação e revisão de `texto <id> --arquivo plano.json`, aprova o texto, gera e escolhe a capa e espera pelos outros cards. `--quantas 1-3` e `--capa 1-3` têm padrão 1. A capa escolhida precisa estar entre as opções geradas. O estilo padrão é `texto` e a pauta, se omitida, vem do título ou do primeiro slide. Você também pode usar `--titulo`, `--cards`, `--objetivo`, `--perfil` e `--agente <nome>` (rótulo padrão `agente`).
 
-Os estilos disponíveis nesse fluxo são `tweet`, `texto`, `textopreto`, `fototexto`, `fundo` e `recorte`. `fundo` e `recorte` precisam de uma foto do rosto salva em Marca › Perfil e fotos. Para arte pronta no estilo `ia`, use o fluxo em etapas com `criar --agente`, `texto`, `aprovar` e `card <id> <n> --imagem <arquivo.png>`.
+Os estilos disponíveis nesse fluxo são `tweet`, `texto`, `textopreto`, `fototexto`, `fundo`, `recorte` e `ugc`. `fundo` e `recorte` precisam de uma foto do rosto salva em Marca › Perfil e fotos. Para arte pronta no estilo `ia`, use o fluxo em etapas com `criar --agente`, `texto`, `aprovar` e `card <id> <n> --imagem <arquivo.png>`.
 
 A saída tem `id`, `estilo`, `cards` (quantidade), `capa` (número escolhido), `arquivos` (caminhos absolutos, vazio sem `--exportar`) e `alertas` (sinais de texto de IA, também exibidos no stderr). `--exportar` grava os mesmos `01.png`, `02.png`… e `legenda.txt` de `exportar`. Se uma etapa falhar antes do primeiro arquivo, o projeto é excluído. Se algum arquivo já foi exportado, o erro informa quais arquivos foram gravados e o projeto fica disponível. No `criar --pauta` com ChatGPT, a limpeza preserva projetos com texto gravado.
+
+### UGC com avatar
+
+Em **Marca › Persona UGC**, cadastre a persona, vincule o @ do Instagram e envie ou gere sua foto-âncora. É possível selecionar uma persona ativa por perfil. Em **Início › UGC com avatar**, escolha a persona e indique o link ou a imagem do produto. O Estúdio permite revisar a copy, montar os cards, refazer a foto de um card, publicar pelo fluxo do Instagram ou baixar um ZIP para o TikTok.
+
+```sh
+carrossell persona listar --perfil "Minha marca"
+carrossell persona criar --nome "<nome>" --idade 28 --genero "<gênero>" --etnia "<aparência>" \
+  --estilo "<roupa>" --cenario "<lugar>" --nicho "<nicho>" --foto ancora.png --usar
+carrossell persona usar "<nome ou ID>"
+carrossell persona foto "<nome ou ID>" --foto nova-ancora.jpg
+carrossell persona prompt "<nome ou ID>" --cena "<descrição da cena>" --luz flash
+carrossell persona apagar "<nome ou ID>"
+carrossell criar --slides plano.json --estilo ugc --persona "<nome ou ID>" \
+  --produto-imagem tela.png --exportar ./ugc --tiktok
+carrossell exportar <id> --pasta ./ugc --tiktok
+```
+
+`persona criar` também aceita `--cabelo`, `--olhos`, `--marca`, `--porte` e `--instagram @conta`. Os subcomandos aceitam `--perfil`. As respostas incluem `avisos` de similaridade entre personas. Sem `--cena`, `persona prompt` devolve o prompt de âncora. Com `--cena`, devolve o prompt de cena com MANTER e a instrução de anexar a âncora original. A luz aceita `flash`, `ambiente` (padrão) ou `pov`.
+
+O plano aceita `"estilo": "ugc"` e `"persona": "<nome ou ID>"`. As opções da CLI têm precedência. Se passar uma imagem do produto sem indicar o card, a CLI usa o penúltimo card, depois da capa. Em cada slide, `foto` recebe um caminho relativo à pasta do plano ou um caminho absoluto, e `produto: true` indica o card que vai exibir a tela. `--foto` fornece a foto de capa pela linha de comando. Use `scene` com `acao`, `cenario` e `luz` para orientar a geração. Fotos e imagens passadas à CLI aceitam PNG, JPEG e WebP até 15 MB, identificados pela assinatura. `--produto-link` captura uma página HTTP(S) em uma sessão temporária do Electron. `--produto-imagem` usa o arquivo escolhido.
+
+Com a conta ChatGPT conectada, os cards de cena sem foto usam a âncora original da persona para gerar a imagem. O app aplica o gancho e a copy ao montar os PNGs. Sem a conexão, o slide 1 usa uma foto fornecida ou a âncora da persona selecionada ou ativa. Os demais cards de cena sem foto usam fundo liso. A exportação conserva os PNGs 1080×1350 e `legenda.txt`. `--tiktok` também grava `tiktok.txt` com uma legenda curta e as hashtags.
+
+Ações do runtime disponíveis no preload e no controle local
+
+| Ação | Argumentos | Retorno |
+| --- | --- | --- |
+| `personas` | `{profileId?}` | `{personas, activePersonaId, avisos}` |
+| `savePersona` | `{profileId?, persona, use?}` | Lista, avisos e `persona` salva |
+| `usePersona`, `deletePersona` | `{profileId?, id}` | Lista, persona ativa e avisos após a mudança |
+| `generatePersonaAnchor` | `{profileId?, personaId}` | Lista e avisos após gerar a âncora que falta |
+| `generateUgcScene` | `{profileId?, projectId, slideId}` | Projeto com a foto da cena atualizada |
+
+Uma persona tem `id`, `nome`, `idade`, `genero`, `etnia`, `cabelo`, `olhos`, `marcaFixa`, `porte`, `estilo`, `cenario`, `nicho`, `instagram`, `anchor`, `anchorHash`, `createdAt` e `updatedAt`. O store guarda a foto em blob. O runtime calcula dHash para PNG RGB/RGBA de 8 bits. Nos demais formatos aceita o hash de 16 dígitos hexadecimais em `anchorHash` ou usa o decodificador do Electron. O aviso por imagem usa distância de Hamming de até 10. O aviso por atributos exige gênero e aparência iguais após normalização, idades com diferença de até quatro anos e soma de similaridade por tokens de cabelo, roupa e cenário de pelo menos 2 em 3. Um aviso contém `a`, `b` e `motivo`, com os IDs, nomes e perfis das duas personas.
+
+Para `createProject` com `style: "ugc"`, passe `persona` e, conforme a origem, `productLink` ou `productAsset` (data URL). `generateSlides` com `slideId` e `regeneratePhoto: true` refaz a foto e remonta apenas o card. `export` com `tiktok: true` adiciona o texto ao ZIP. O controle da CLI também aceita `exportTo` com `tiktok: true`.
 
 ### Licença pelo terminal
 

@@ -11,6 +11,18 @@ Versão local na branch `feat/cli-onboarding-provedor`. Validação e empacotame
 - **Ganchos de slideshow.** O roteiro de carrossel do ChatGPT e a tarefa de texto do agente incluem a mesma skill compacta, logo após o Swipe File. A capa usa uma das oito categorias e deixa o produto para depois do gancho. Os slides 2–4 começam a cumprir a promessa da capa. `carrossell skills` lista `hooks-slideshow` como `plan` junto com as extensões instaladas. O bloco de referência fica em português também nos pedidos em espanhol. [Fonte e skill completa](docs/sources/hooks-slideshow-fonte.md)
 - **Fundo dos stories.** Argumentos inválidos voltam a receber a mensagem de uso original. `fundo-stories` volta a mostrar `preto|branco`.
 
+## UGC com avatar
+
+- Em **Marca › Persona UGC**, cadastre personas por perfil, escolha a ativa, associe um @ e envie ou gere uma foto-âncora. O app avisa quando atributos ou fotos coincidem entre personas, inclusive de perfis diferentes.
+- O estilo **UGC com avatar** começa com a foto e um gancho sobreposto. Os cards seguintes entregam a promessa, mostram a imagem do produto quando fornecida e fecham com um CTA. O produto pode vir de um arquivo ou de uma captura HTTP(S) em uma sessão isolada do Electron.
+- O Estúdio permite revisar a copy antes de montar os cards, refazer a foto de uma cena e exportar para TikTok ou publicar pelo fluxo do Instagram. As cenas usam sempre a âncora original como referência.
+- A CLI aceita `persona`, `criar --slides plano.json --estilo ugc` e `--tiktok` na exportação. Offline, a capa usa a foto do plano, a opção `--foto` ou a âncora da persona. O ZIP ou a pasta exportada inclui os PNGs 1080×1350 e `legenda.txt`, com `tiktok.txt` quando solicitado. [Comandos e contrato](API.md#ugc-com-avatar)
+
+Validação UGC em Node e Vite
+
+- `npm test` teve 32 arquivos aprovados e 4 com falhas. A execução detalhada teve 296 testes aprovados, 13 falhas e 1 ignorado. Houve EPERM nos sockets Unix de `agent.test.mjs` (4) e `control.test.mjs` (6), EPERM em 127.0.0.1 de `publish.test.mjs` (2) e `Connection closed` no stdio de `mcp.test.mjs` (1).
+- `npx vite build` passou com aviso de chunks acima de 500 kB. O fluxo de geração, renderização e captura foi testado com dublês. A conferência visual, a captura de página com Electron, o login e a geração pela conta real, a postagem no Instagram e a validação em instaladores continuam pendentes.
+
 ## Arquivos
 
 - `cli/arguments.mjs`, `cli/carrossell.mjs`, `cli/bin/carrossell` e `electron/cli-install.mjs` — comandos, validação e instalação.

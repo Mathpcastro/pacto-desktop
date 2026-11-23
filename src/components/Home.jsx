@@ -112,11 +112,18 @@ function Measure({ project, request, onDone }) {
 
 import { CONTENT_LANGUAGE_OPTIONS, contentLanguageLabel, defaultContentLanguage } from "../contentLanguages.js";
 
-export default function Home({ view, state, request, isPending, onOpen, onNotice, onShowHome, composerRef, connected, onAgents, onDiscover, onView, pendingReviews, onStories, onInstagram, target, onImportReferences, referenceImporting, referenceRevision }) {
+export default function Home({ view, state, request, isPending, onOpen, onNotice, onShowHome, composerRef, connected, onAgents, onDiscover, onView, pendingReviews, onStories, onInstagram, target, onImportReferences, referenceImporting, referenceRevision, onBrand }) {
   const pop = usePopover();
   const [text, setText] = useState("");
   const [format, setFormat] = useState("carrossel");
   const [style, setStyle] = useState("ia");
+  const [pickedPersona, setPickedPersona] = useState("");
+  const [productLink, setProductLink] = useState("");
+  const [productImage, setProductImage] = useState(null);
+  const [importingProduct, setImportingProduct] = useState(false);
+  const ugc = format === "carrossel" && style === "ugc";
+  const personas = state.personas || [];
+  const persona = personas.find((p) => p.id === pickedPersona) || personas.find((p) => p.id === state.activePersonaId);
   const [goal, setGoal] = useState("");
   const [size, setSize] = useState(0);
   const [architectureId, setArchitectureId] = useState("");
@@ -179,6 +186,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
     setTimeout(() => { composerRef.current?.focus(); composerRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }); }, 0);
   };
   const create = async () => {
+    if (creating || importingProduct || (ugc && !persona)) return;
     if (!text.trim()) {
       composerRef.current?.focus();
       return;
@@ -197,11 +205,19 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
         visualConcept: more ? visualConcept.trim() : "",
         attachments: format === "carrossel" ? attachments : [],
         language,
+        ...(ugc && {
+          persona: persona.id,
+          ...(productImage ? { productAsset: productImage.dataUrl } : { productLink: productLink.trim() }),
+        }),
       });
       setPickedLanguage(null);
       if (connected) await request("generatePlan", { id: project.id }).catch(() => {});
       setText("");
       setAttachments([]);
+      if (ugc) {
+        setProductLink("");
+        setProductImage(null);
+      }
       onOpen(project.id);
     } catch {
     } finally {
@@ -241,6 +257,19 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
       const ref = await request("importReference");
       if (ref?.dataUrl) setAttachments((list) => [...list, { name: ref.name, dataUrl: ref.dataUrl }].slice(0, 6));
     } catch {}
+  };
+  const attachProduct = async () => {
+    setImportingProduct(true);
+    try {
+      const ref = await request("importReference");
+      if (ref?.dataUrl) {
+        setProductImage(ref);
+        setProductLink("");
+      }
+    } catch {
+    } finally {
+      setImportingProduct(false);
+    }
   };
   const addImage = async () => {
     try {
@@ -330,6 +359,43 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
             </label>
           </div>
         )}
+        {ugc && (
+          <div className="composer-more">
+            <div className="fld">
+              <label className="fld">
+                <span>Persona UGC</span>
+                <select value={persona?.id || ""} onChange={(e) => setPickedPersona(e.target.value)} disabled={!personas.length || creating}>
+                  <option value="" disabled>Selecione uma persona</option>
+                  {personas.map((p) => <option key={p.id} value={p.id} data-user-text>{p.nome}</option>)}
+                </select>
+              </label>
+              {(!personas.length || (connected && persona && !persona.anchor)) && (
+                <button type="button" className="link-btn" onClick={() => onBrand("personas")}>
+                  {personas.length ? "Adicionar foto-âncora na Marca" : "Cadastrar persona na Marca"}
+                </button>
+              )}
+            </div>
+            <div className="fld">
+              <label className="fld">
+                <span>Link do produto</span>
+                <input
+                  type="url"
+                  value={productLink}
+                  onChange={(e) => { setProductLink(e.target.value); setProductImage(null); }}
+                  disabled={importingProduct || creating}
+                />
+              </label>
+              {productImage ? (
+                <div className="row">
+                  <span className="hint" data-user-text>{productImage.name}</span>
+                  <button type="button" className="link-btn" disabled={creating} onClick={() => setProductImage(null)}>Remover imagem</button>
+                </div>
+              ) : (
+                <button type="button" className="link-btn" disabled={importingProduct || creating} onClick={attachProduct}>Enviar imagem do produto</button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="composer-foot">
           {format === "carrossel" && (
             <div className="attach-row">
@@ -351,7 +417,7 @@ export default function Home({ view, state, request, isPending, onOpen, onNotice
             </div>
           )}
           <span className="spacer" />
-          <button className="btn primary" disabled={creating || !text.trim()} onClick={create} title="Ctrl + Enter">
+          <button className="btn primary" disabled={creating || !text.trim() || (ugc && (!persona || importingProduct))} onClick={create} title="Ctrl + Enter">
             {creating ? <Spinner /> : <ArrowRight size={16} />}
             {creating ? "Criando…" : format === "carrossel" ? "Criar carrossel" : format === "material" ? "Criar material" : "Criar apresentação"}
           </button>

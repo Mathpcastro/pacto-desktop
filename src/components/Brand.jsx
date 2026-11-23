@@ -9,6 +9,7 @@ import { BarChart3 } from "lucide-react";
 import Analytics from "./Analytics.jsx";
 import Autopilot from "./Autopilot.jsx";
 import VisualReferences from "./VisualReferences.jsx";
+import UgcPersonas from "./UgcPersonas.jsx";
 
 // Marca em seções, como nas configurações dos bons apps: barra lateral à esquerda e uma seção por vez.
 const BRAND_TABS = {
@@ -16,6 +17,7 @@ const BRAND_TABS = {
   design: { group: "Marca", label: "Design Kit", icon: PaletteIcon },
   referencias: { group: "Aparência", label: "Referências visuais", icon: ImagePlus },
   perfil: { group: "Aparência", label: "Perfil", icon: UserRound, title: "Perfil", hint: "Nome, @ e foto que aparecem nos estilos prontos" },
+  personas: { group: "Aparência", label: "Persona UGC", icon: UserRound },
   fotos: { group: "Aparência", label: "Fotos", icon: Camera, title: "Fotos", hint: "Seu rosto e cenas para as fotos simples" },
   imagens: { group: "Aparência", label: "Imagens da marca", icon: ImageIcon, title: "Imagens da marca", hint: "Logo, produtos e o que pode aparecer nos cards" },
   otimizar: { group: "Ensinar", label: "Otimizar", icon: GraduationCap },
@@ -282,6 +284,7 @@ export default function Brand({ state, request, isPending, onRedo, onManual, onN
       <div className="brand-layout">
         <BrandNav tab={tab} onTab={setTab} meta={meta} />
         <div className="brand-pane">
+      {tab === "personas" && <UgcPersonas key={state.profileId} state={state} request={request} isPending={isPending} connected={connected} />}
       {tab === "otimizar" && (
       <section className="card-box optimize" aria-label="Otimizar o Carrossell">
         <div className="section-head">

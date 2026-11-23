@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { connectControl, projectSummary, userDataDir } from '../core/control.mjs';
 import { TERMS_VERSION, licenseControlStatus } from '../core/license.mjs';
-import { parseCommand, Usage } from './arguments.mjs';
+import { cliPersona, parseCommand, ugcFlags, Usage } from './arguments.mjs';
+import { IMAGE_LIMIT, findPersona, imageKind, pngDifferenceHash } from '../core/personas.mjs';
+import { anchorPrompt, scenePrompt, validateScene } from '../core/ugc.mjs';
 import { AGENT_GUIDE } from '../core/agent-guide.mjs';
 
 // CLI do Carrossell para agentes (Codex, Claude Code) e para quem gosta de terminal.
@@ -28,6 +30,15 @@ Uso: carrossell <comando> [opções]   (saída em JSON)
   perfis                         lista os perfis
   perfil usar <id|nome>          troca o perfil ativo
   perfil criar <nome> [--usar]   cria um perfil
+  persona listar [--perfil <id|nome>]
+  persona criar --nome <nome> --idade <anos> --genero <gênero> --etnia <aparência>
+        --estilo <roupa> --cenario <lugar> --nicho <nicho> --foto <arquivo>
+        [--cabelo] [--olhos] [--marca] [--porte] [--instagram @conta] [--usar]
+  persona usar <id|nome>         seleciona a persona ativa no perfil
+  persona foto <id|nome> --foto <arquivo>
+  persona apagar <id|nome>
+  persona prompt <id|nome> [--cena "<descrição>" --luz flash|ambiente|pov]
+                                 mostra o prompt de âncora ou de cena
   marca                          Contexto da Marca, Design Kit, cores e rascunhos
   marca configurar --link <url> | --descricao "<texto>"
                                  monta Contexto e Design Kit (1 a 3 min) como rascunho
@@ -35,14 +46,17 @@ Uso: carrossell <comando> [opções]   (saída em JSON)
   pautas [--foco "<tema>"]       gera 30 pautas com o Radar (ou lista as já geradas com --listar)
   projetos                       lista os carrosséis
   projeto <id>                   textos, status e capas de um carrossel
-  criar --pauta "<texto>" [--titulo] [--estilo ia|tweet|texto|textopreto|fototexto|fundo|recorte]
+  criar --pauta "<texto>" [--titulo] [--estilo ia|tweet|texto|textopreto|fototexto|fundo|recorte|ugc]
         [--cards 4|6|8|10] [--formato carrossel|material|apresentacao] [--objetivo] [--sem-esperar]
                                  cria o carrossel e escreve o texto
         [--agente claude|gemini] só cria: o texto é escrito pelo seu agente (sem ChatGPT)
   criar --slides <plano.json> [--estilo texto] [--quantas 1-3] [--capa 1-3]
-        [--exportar <pasta>]      grava, aprova e gera um carrossel de modelo sem ChatGPT
+        [--exportar <pasta>]      grava, aprova e monta um carrossel de modelo
                                  padrão: 1 opção, escolhe a primeira; aceita --pauta, --titulo,
                                  --cards, --objetivo, --perfil e --agente
+  criar --slides <plano.json> --estilo ugc [--persona <id|nome>] [--foto <capa>]
+        [--produto-imagem <arquivo> | --produto-link <http/https>] [--exportar <pasta> [--tiktok]]
+                                 usa fotos fornecidas e gera as cenas com a conta ChatGPT conectada
   mensagem <id> "<pedido>"       pede um ajuste no texto, como no chat do estúdio
 
   Modo agente (Claude, Gemini ou outro agente escreve; o app guarda, monta, exporta e posta):
@@ -69,8 +83,8 @@ Uso: carrossell <comando> [opções]   (saída em JSON)
   gerar <id> [--card <n>]        gera as artes que faltam (ou refaz o card n)
   esperar <id> [--timeout <s>]   espera a geração terminar
   cancelar                       para o trabalho em andamento
-  exportar <id> --pasta <dir> [--so-stories]
-                                 grava 01.png, 02.png..., legenda e stories (ou só os stories)
+  exportar <id> --pasta <dir> [--so-stories | --tiktok]
+                                 grava 01.png, 02.png..., legenda e stories. --tiktok inclui tiktok.txt
   instagram                      contas do Instagram e as padrão deste perfil
   instagram contas               busca no Composio as contas já conectadas (sem reconectar)
   instagram conectar             conecta outra conta (abre o navegador)
@@ -144,6 +158,66 @@ async function readImage(file){
   try{return (await readFile(resolve(file))).toString('base64');}
   catch{throw new Usage(`Não consegui ler o arquivo ${file}.`);}
 }
+async function readUgcImage(path,{anchor=false}={}){
+  const file=await open(path,'r').catch(()=>{throw new Usage(`Não consegui ler o arquivo ${path}.`);});
+  try{
+    const stats=await file.stat(),{size}=stats;
+    if(size>IMAGE_LIMIT)throw new Usage(`Use uma imagem de até 15 MB: ${path}.`);
+    if(!size||!stats.isFile())throw new Usage(`Informe um arquivo de imagem válido: ${path}.`);
+    const buffer=Buffer.alloc(size+1);
+    let offset=0;
+    while(offset<buffer.length){
+      const {bytesRead}=await file.read(buffer,offset,buffer.length-offset,offset);
+      if(!bytesRead)break;
+      offset+=bytesRead;
+    }
+    if(offset!==size)throw new Usage(`A imagem mudou durante a leitura: ${path}.`);
+    const bytes=buffer.subarray(0,size),kind=imageKind(bytes);
+    if(!kind)throw new Usage(`Use um PNG, JPEG ou WebP válido: ${path}.`);
+    if(anchor&&kind==='png'){
+      try{pngDifferenceHash(bytes);}catch(error){throw new Usage(error.message);}
+    }
+    return `data:image/${kind};base64,${bytes.toString('base64')}`;
+  }catch(error){
+    if(error instanceof Usage)throw error;
+    throw new Usage(`Não consegui ler o arquivo ${path}.`);
+  }finally{await file.close();}
+}
+
+async function prepareUgcPlan(plan,flags){
+  const persona=flags.persona??plan.persona??'';
+  if(typeof persona!=='string'||(plan.persona!==undefined&&!persona.trim()))throw new Usage('Informe a persona pelo nome ou ID.');
+  const photos=[];
+  const base=dirname(resolve(flags.slides));
+  if(plan.slides.length>20)throw new Usage('Use até vinte slides no plano UGC.');
+  const slides=[];
+  for(const [index,raw] of plan.slides.entries()){
+    if(!raw||typeof raw!=='object'||Array.isArray(raw)||typeof raw.title!=='string'||!raw.title.trim()){
+      throw new Usage(`Informe o título do slide ${index+1} no plano UGC.`);
+    }
+    const {foto,photo,produto,...slide}=raw;
+    if(produto!==undefined&&typeof produto!=='boolean')throw new Usage(`Use true ou false em produto no slide ${index+1}.`);
+    if(index===0&&(produto||slide.product))throw new Usage('Reserve o produto para depois do slide 1 de UGC.');
+    if(index===0&&raw.title.trim().split(/\s+/).length>12)throw new Usage('Use até 12 palavras no gancho do slide 1 de UGC.');
+    if(slide.scene!==undefined){
+      try{slide.scene=validateScene(slide.scene);}catch(error){throw new Usage(error.message);}
+    }
+    const location=index===0&&flags.foto?flags.foto:foto??photo;
+    if(location!==undefined&&location!==''){
+      if(typeof location!=='string'||!location.trim())throw new Usage(`Informe o caminho da foto no slide ${index+1}.`);
+      const path=index===0&&flags.foto?folderPath(location):resolve(base,location);
+      photos.push({index,photo:await readUgcImage(path)});
+    }
+    slides.push({...slide,...(produto===true?{product:true}:{})});
+  }
+  const productLink=flags['produto-link']||'';
+  const productAsset=flags['produto-imagem']?await readUgcImage(folderPath(flags['produto-imagem'])):'';
+  if((productLink||productAsset)&&!slides.some((s,i)=>i>0&&(s.product||/^(?:produto|tela do produto)/i.test(s.role)))){
+    if(slides.length<2)throw new Usage('Inclua um card para a imagem do produto no plano UGC.');
+    slides[Math.max(1,slides.length-2)].product=true;
+  }
+  return {plan:{title:'',architecture:'',caption:'',...plan,slides},photos,persona,productLink,productAsset};
+}
 const signals = tells => {
   if(tells?.length)say(`Sinais de texto de IA para corrigir: ${tells.map(t=>`${t.where}: ${t.label} ("${t.match}")`).join(' · ')}`);
 };
@@ -153,7 +227,7 @@ function checkProject(project){
   return project;
 }
 
-async function createCarousel(client,{profileId,flags,timeout,plan}){
+async function createCarousel(client,{profileId,flags,timeout,plan,style,ugc}){
   // Fixa o perfil durante todas as etapas, mesmo se ele for trocado na janela.
   const target=profileId || (await client.call('status')).profileId;
   const call=(action,args)=>client.call(action,{...args,profileId:target});
@@ -162,9 +236,10 @@ async function createCarousel(client,{profileId,flags,timeout,plan}){
   const brief=flags.pauta||flags.titulo||planTitle||'Carrossel do plano';
   const title=flags.titulo||planTitle?.slice(0,200)||brief.slice(0,80);
   const p=await call('createProject',{
-    title,brief,style:flags.estilo||(imported?'texto':undefined),
+    title,brief,style,
     cardCount:flags.cards===undefined?undefined:Number(flags.cards),format:flags.formato,goal:flags.objetivo,
     madeBy:flags.agente===true?'agente':flags.agente||(imported?'agente':undefined),
+    ...(ugc?{persona:ugc.persona,productAsset:ugc.productAsset,productLink:ugc.productLink,ugcOfflineAnchor:true}:{}),
   });
   const id=p.id;
   let files=[];
@@ -180,8 +255,12 @@ async function createCarousel(client,{profileId,flags,timeout,plan}){
       if(background)return projectSummary(started);
       return checkProject(await waitFor(client,target,id,timeout));
     }
-    const { tells }=await call('agentSave',{id,kind:'texto',data:flags.titulo?{...plan,title}:plan});
+    const { tells,project }=await call('agentSave',{id,kind:'texto',data:flags.titulo?{...plan,title}:plan});
     signals(tells);
+    // Uma foto por mensagem mantém todos os arquivos dentro do limite do socket local.
+    for(const {index,photo} of ugc?.photos||[]){
+      await call('saveUgcSlidePhoto',{id,slideId:project.slides[index].id,photo});
+    }
     await call('approveText',{id});
     await showProgress(client);
     await call('generateCovers',{id,count:Number(flags.quantas||1)});
@@ -192,7 +271,7 @@ async function createCarousel(client,{profileId,flags,timeout,plan}){
     const completed=checkProject(await waitFor(client,target,id,timeout,{progress:false}));
     if(completed.status!=='complete'||!completed.slides.every(s=>s.image))throw new Error('As artes do carrossel não ficaram prontas.');
     if(flags.exportar){
-      const result=await call('exportTo',{id,folder:folderPath(flags.exportar),reportPartial:true});
+      const result=await call('exportTo',{id,folder:folderPath(flags.exportar),reportPartial:true,...(flags.tiktok?{tiktok:true}:{})});
       files=result.files;
       if(result.error)throw new Error(result.error);
     }
@@ -221,8 +300,13 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir(),co
     process.stdout.write(`Carrossell ${version}\n`);
     return EXIT.ok;
   }
-  const plan=flags.slides?await readPlan(flags.slides):null;
+  let plan=flags.slides?await readPlan(flags.slides):null;
   if(flags.slides&&(!Array.isArray(plan?.slides)||!plan.slides.length))throw new Usage('O plano precisa conter pelo menos um card em slides.');
+  const style=flags.estilo||(flags.slides?(plan.estilo==='ugc'?'ugc':'texto'):undefined);
+  if(cmd==='criar'&&style!=='ugc'&&ugcFlags.some(key=>flags[key])) throw new Usage('Use opções de persona, produto e foto com o estilo ugc.');
+  const ugc=flags.slides&&style==='ugc'?await prepareUgcPlan(plan,flags):null;
+  if(ugc)plan=ugc.plan;
+  const personaPhoto=cmd==='persona'&&flags.foto?await readUgcImage(folderPath(flags.foto),{anchor:true}):'';
   const data=flags.json?json(flags.json,'--json'):null;
   if(flags.json&&(!data||typeof data!=='object'||Array.isArray(data)))throw new Usage('--json precisa conter um objeto.');
   let response;
@@ -244,6 +328,21 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir(),co
         else if(sub==='criar'){const s=await client.call('createProfile',{name:name.join(' '),activate:Boolean(flags.usar)});out({created:s.createdProfile||s.profiles.at(-1),active:s.profileId});}
         break;
       }
+      case 'persona':{
+        const [sub,...selector]=rest,id=selector.join(' ');
+        if(sub==='listar')out(await client.call('personas',scoped()));
+        else if(sub==='criar')out(await client.call('savePersona',scoped({persona:{...cliPersona(flags),anchor:personaPhoto},use:Boolean(flags.usar)})));
+        else if(sub==='usar')out(await client.call('usePersona',scoped({id})));
+        else if(sub==='apagar')out(await client.call('deletePersona',scoped({id})));
+        else if(sub==='foto')out(await client.call('savePersona',scoped({persona:{id,anchor:personaPhoto}})));
+        else{
+          const snapshot=await client.call('personas',scoped());
+          const persona=findPersona(snapshot.personas,id);
+          const prompt=flags.cena?scenePrompt(persona,{cena:flags.cena,luz:flags.luz}):anchorPrompt(persona);
+          out({prompt,avisos:snapshot.avisos.filter(({a,b})=>a.id===persona.id||b.id===persona.id)});
+        }
+        break;
+      }
       case 'marca':{
         const [sub]=rest;
         if(!sub)out(await client.call('brand',scoped()));
@@ -260,7 +359,7 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir(),co
       }
       case 'projetos':out(await client.call('projects',scoped()));break;
       case 'projeto':out(await client.call('project',scoped({id:rest[0]})));break;
-      case 'criar':out(await createCarousel(client,{profileId,flags,timeout,plan}));break;
+      case 'criar':out(await createCarousel(client,{profileId,flags,timeout,plan,style,ugc}));break;
       case 'skills':out(await client.call('skills'));break;
       case 'licenca':{
         const activation=rest[0]==='ativar';
@@ -321,7 +420,7 @@ export async function main(argv=process.argv.slice(2),{userData=userDataDir(),co
       case 'card':out(await client.call('agentArt',scoped({id:rest[0],card:Number(rest[1]),...art})));break;
       case 'esperar':out(await waitFor(client,profileId,rest[0],timeout));break;
       case 'cancelar':await client.call('cancelWork',scoped());out(await client.call('status',scoped()));break;
-      case 'exportar':{const id=rest[0];out(await client.call('exportTo',scoped({id,folder:folderPath(flags.pasta),onlyStories:Boolean(flags['so-stories'])})));break;}
+      case 'exportar':{const id=rest[0];out(await client.call('exportTo',scoped({id,folder:folderPath(flags.pasta),onlyStories:Boolean(flags['so-stories']),...(flags.tiktok?{tiktok:true}:{})})));break;}
       case 'instagram':{
         if(rest[0]==='conectar'){
           const s=await client.call('connectInstagram',scoped());say(`Autorize no navegador que abriu (ou abra: ${s.url}). Esperando até 10 minutos…`);

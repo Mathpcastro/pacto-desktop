@@ -12,6 +12,13 @@ Com um \`plano.json\` no mesmo esquema de \`tarefa <id> texto\`, rode \`carrosse
 - \`carrossell skills\` lista as skills. As de plano aparecem no pedido de \`tarefa <id> texto\`.
 - A capa segue a skill de ganchos de slideshow, e você pode indicar a categoria na pauta com \`--pauta "…, categoria: chamado"\`.
 
+## UGC com avatar
+- Use \`carrossell persona listar --perfil "<perfil>"\` para ver as personas e os \`avisos\` de semelhança. Cadastre com \`persona criar --nome "<nome>" --idade 28 --genero "<gênero>" --etnia "<aparência>" --estilo "<roupa>" --cenario "<lugar>" --nicho "<nicho>" --foto ancora.png --usar\`. Veja os campos opcionais em \`carrossell ajuda\`.
+- Selecione com \`persona usar <id|nome>\`. Atualize a âncora com \`persona foto <id|nome> --foto <arquivo>\`. Para preparar um gerador externo, use \`persona prompt <id|nome>\` ou acrescente \`--cena "<descrição>" --luz flash|ambiente|pov\` e anexe sempre a âncora original.
+- No slide 1, escreva um gancho em primeira pessoa com até 12 palavras. Pague o gancho nos próximos cards, use \`"produto": true\` no card com a tela do produto e deixe o CTA no último. Informe \`"foto": "fotos/capa.png"\` para usar uma foto relativa ao plano, ou descreva a cena em \`scene\` com \`acao\`, \`cenario\` e \`luz\`.
+- Rode \`carrossell criar --slides plano.json --estilo ugc --persona "<nome ou ID>" --produto-imagem tela.png --exportar ./ugc --tiktok\`. Também pode definir \`"estilo": "ugc"\` e \`"persona"\` no plano, ou usar \`--produto-link\` para capturar a tela da página. Sem a conta ChatGPT, o slide 1 usa a foto informada ou a âncora, e os outros cards sem foto usam fundo liso. Com a conta conectada, o app gera as cenas pendentes com a âncora original.
+- \`carrossell exportar <id> --pasta ./ugc --tiktok\` grava os PNGs de 1080×1350, a legenda e \`tiktok.txt\` com uma legenda curta e hashtags.
+
 ## Modo agente (Claude, Gemini ou outro agente)
 1. Marca: \`carrossell marca\`. Se não houver Contexto e Design Kit, entreviste a pessoa (o que vende, para quem, dores, tom, cores em hexadecimal, estilo visual), escreva os dois documentos em Markdown e grave com \`carrossell marca salvar --contexto contexto.md --design design.md --nome "<marca>"\`.
 2. \`carrossell criar --pauta "<tema e ângulo>" --cards 8 --agente claude\` (ou \`--agente gemini\`, conforme quem você é) cria o carrossel sem escrever o texto. Ele aparece no Início do app com o seu nome.

@@ -1,3 +1,4 @@
+import { unpackPhoto } from './personas.mjs';
 import { createServer, createConnection } from 'node:net';
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
@@ -25,7 +26,7 @@ const tokenFile=userData=>join(userData,'control.token');
 function sameToken(a,b){const x=Buffer.from(String(a||'')),y=Buffer.from(String(b||''));return x.length===y.length&&x.length>0&&timingSafeEqual(x,y);}
 // A CLI nunca recebe imagens em base64: troca por um marcador para não despejar megabytes no agente.
 export function lean(value){
-  if(typeof value==='string')return value.startsWith('data:')&&value.length>200?'[imagem]':value;
+  if(typeof value==='string')return (/^data:image\//.test(value)||value.startsWith('data:')&&value.length>200)?'[imagem]':value;
   if(Array.isArray(value))return value.map(lean);
   if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,lean(v)]));
   return value;
@@ -110,7 +111,7 @@ export function agentActions(runtime,{version='',headless=false,info=()=>({})}={
     skills:async()=>runtime.skills.listSkills(runtime.knowledge),
     discardCliProject:async({profileId,id,keepText=true})=>runtime.inProfile(profileId,()=>runtime.discardCliProject(id,keepText!==false)),
     ideas:async({profileId})=>(await state(profileId)).ideas,
-    exportTo:async({profileId,id,folder,onlyStories=false,reportPartial=false})=>{
+    exportTo:async({profileId,id,folder,onlyStories=false,reportPartial=false,tiktok=false})=>{
       if(onlyStories){
         // Só os stories (PNGs e textos), mesmo antes das artes dos cards.
         const p=await project(profileId,id);if(!p.stories?.length)throw new Error(`Este carrossel ainda não tem stories: carrossell stories ${id}.`);
@@ -118,7 +119,7 @@ export function agentActions(runtime,{version='',headless=false,info=()=>({})}={
         p.stories.forEach((s,i)=>{if(s.image)files[`stories/${String(i+1).padStart(2,'0')}.png`]=Buffer.from(s.image.split(',')[1],'base64');});
         return writeFiles(folder,files);
       }
-      const files=await runtime.inProfile(profileId,()=>runtime.exportedFiles(id));
+      const files=await runtime.inProfile(profileId,()=>runtime.exportedFiles(id,{tiktok:tiktok===true}));
       return writeFiles(folder,files,{reportPartial:reportPartial===true});
     },
     // Modo agente (Claude, Gemini…): o agente escreve e desenha; o app guarda, valida, monta, exporta e posta.
@@ -132,6 +133,14 @@ export function agentActions(runtime,{version='',headless=false,info=()=>({})}={
       return (await agentActions(runtime).brand({profileId}));
     },
     agentTask:async({profileId,id,kind})=>runtime.inProfile(profileId,()=>runtime.agentTask(id,kind)),
+    saveUgcSlidePhoto:async({profileId,id,slideId,photo})=>runtime.inProfile(profileId,async()=>{
+      runtime.ensureIdle(id);
+      const p=runtime.store.get(id);
+      if(p.style!=='ugc'||!p.slides.some(s=>s.id===slideId))throw new Error('Card UGC não encontrado.');
+      unpackPhoto(photo);
+      await runtime.saveUgcPhoto(id,slideId,photo);
+      return {id,slideId};
+    }),
     agentSave:async({profileId,id,kind,data})=>{
       const r=await runtime.inProfile(profileId,()=>runtime.agentSave(id,kind,data));
       return {...agentResult(r.project,kind),tells:r.tells};

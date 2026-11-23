@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, symlink, truncate, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
 import { main } from '../cli/carrossell.mjs';
-import { Usage } from '../cli/arguments.mjs';
+import { parseCommand, Usage } from '../cli/arguments.mjs';
 import { loadKnowledge } from '../core/knowledge.mjs';
-import { agentActions, licenseControlActions } from '../core/control.mjs';
+import { agentActions, lean, licenseControlActions } from '../core/control.mjs';
 import { generationSkills } from '../core/generation-skills.mjs';
 import { TERMS_URL, TERMS_VERSION, validLicenseAcceptance } from '../core/license.mjs';
 import { Runtime, PLAN_SCHEMA } from '../core/runtime.mjs';
@@ -32,7 +32,7 @@ async function setup(t, options = {}) {
   const runtime = new Runtime({
     store, knowledge: loadKnowledge(), skills: options.skills,
     codex: options.codex || { status: { account: { connected: false } } },
-    dialogs: { render: { fonts: {}, png: async (html, size) => { rendered.push({ html, size }); return png; } } },
+    dialogs: { render: { fonts: {}, png: async (html, size) => { rendered.push({ html, size }); return png; } }, ...options.dialogs },
   });
   const actions = { ...agentActions(runtime), ...(options.license ? licenseControlActions(options.license) : {}) };
   const client = {
@@ -282,4 +282,106 @@ test('Linux launcher follows a symlink and picks the installed executable or a f
     await rm(path);
   }
   await assert.rejects(exec(link, ['--version']), error => error.code === 127 && /Não encontrei o executável/.test(error.stderr));
+});
+
+const personaFlags=['--nome','Lia Costa','--idade','28','--genero','mulher','--etnia','parda','--estilo','casual','--cenario','rua','--nicho','educação','--instagram','@lia'];
+const jpeg=Buffer.from([255,216,255,0,2,255,217]);
+const dataUrl=(kind,bytes)=>`data:image/${kind};base64,${bytes.toString('base64')}`;
+const ugcPlan=()=>({
+  estilo:'ugc',title:'UGC',caption:'Veja como comecei. #dica #educação',
+  slides:[{id:'gancho',role:'Capa',title:'Eu comecei de um jeito simples'},
+    {id:'tela',role:'Produto',title:'A tela do produto',produto:true},
+    {id:'cta',role:'CTA',title:'Teste no seu ritmo',scene:{acao:'fecha o caderno',luz:'flash'}}],
+});
+
+test('CLI valida comandos persona e opções UGC antes de conectar',async t=>{
+  const root=await folder(t),fake=join(root,'falso.png'),big=join(root,'grande.png');
+  await writeFile(fake,'arquivo de texto');
+  await writeFile(big,png);await truncate(big,15*1024*1024+1);
+  let connections=0;
+  const options={connectApp:()=>{connections++;assert.fail('Abriu o app com argumentos inválidos');}};
+  assert.equal(parseCommand(['persona','usar','Lia Costa','--perfil','Marca']).flags.perfil,'Marca');
+  assert.equal(parseCommand(['criar','--slides','plano.json','--estilo','ugc','--persona','Lia Costa']).flags.estilo,'ugc');
+  for(const argv of [
+    ['persona','criar','--nome','Lia'],
+    ['persona','criar',...personaFlags.map(word=>word==='28'?'0':word),'--foto',fake],
+    ['persona','criar',...personaFlags.map(word=>word==='@lia'?'lia':word),'--foto',fake],
+    ['persona','foto','Lia','--foto',fake],['persona','foto','Lia','--foto',big],
+    ['persona','prompt','Lia','--luz','flash'],
+    ['persona','prompt','Lia','--cena','rua','--luz','estúdio'],
+    ['criar','--slides','plano.json','--estilo','ugc','--produto-link','file:///tmp/pagina'],
+    ['criar','--slides','plano.json','--estilo','ugc','--produto-imagem',fake,'--produto-link','https://exemplo.test'],
+    ['exportar','projeto','--pasta','saida','--tiktok','--so-stories'],
+  ]) await assert.rejects(main(argv,options),Usage);
+  assert.equal(connections,0);
+});
+
+test('CLI cria, lista, ativa, troca foto, imprime prompts e apaga persona',async t=>{
+  const {root,run,store}=await setup(t,{dialogs:{anchorHash:()=> '0123456789abcdef'}});
+  const anchor=join(root,'anchor.jpeg'),next=join(root,'nova.jpeg');
+  await writeFile(anchor,jpeg);
+  await writeFile(next,Buffer.from([255,216,255,0,3,255,217]));
+  const created=(await run('persona','criar',...personaFlags,'--foto',anchor,'--usar')).json;
+  assert.equal(created.persona.nome,'Lia Costa');
+  assert.deepEqual(created.avisos,[]);
+  assert.equal(created.activePersonaId,created.persona.id);
+  const clone=(await run('persona','criar',...personaFlags.map(word=>word==='Lia Costa'?'Lia Dois':word),'--foto',anchor)).json;
+  assert.match(clone.avisos[0].motivo,/rosto possivelmente igual/);
+  assert.equal((await run('persona','usar','Lia','Dois')).json.activePersonaId,clone.persona.id);
+  assert.equal((await run('persona','listar')).json.personas.length,2);
+  await run('persona','foto',created.persona.id,'--foto',next);
+  assert.equal(store.persona('Lia Costa').anchor,dataUrl('jpeg',await readFile(next)));
+  const prompt=(await run('persona','prompt','Lia Costa')).json;
+  assert.match(prompt.prompt,/selfie/i);
+  assert.equal(prompt.avisos.length,1);
+  assert.match((await run('persona','prompt','Lia Costa','--cena','pega café','--luz','pov')).json.prompt,/MANTER.*\n/);
+  assert.deepEqual(lean({anchor:created.persona.anchor}),{anchor:'[imagem]'});
+  await run('persona','apagar',clone.persona.id);
+  assert.equal((await run('persona','listar')).json.activePersonaId,null);
+});
+
+test('CLI importa fotos relativas ao plano UGC e exporta sem chamar geração offline',async t=>{
+  const codex={status:{account:{connected:false}},run:()=>assert.fail('Chamou geração sem ChatGPT')};
+  const {root,store,run,rendered,file}=await setup(t,{codex});
+  const plan=ugcPlan();
+  await mkdir(join(root,'fotos'));await writeFile(join(root,'fotos','capa.png'),png);await writeFile(join(root,'fotos','cta.jpeg'),jpeg);
+  plan.slides[0].foto='fotos/capa.png';plan.slides[2].foto='fotos/cta.jpeg';
+  const input=await file('plano.json',plan),output=join(root,'saida');
+  const {json}=await run('criar','--slides',input,'--produto-imagem',join(root,'fotos','capa.png'),'--exportar',output,'--tiktok');
+  assert.equal(json.estilo,'ugc');
+  assert.deepEqual(json.arquivos.map(path=>basename(path)),['01.png','02.png','03.png','legenda.txt','tiktok.txt']);
+  const p=store.get(json.id);
+  assert.equal(p.slides[0].photo,dataUrl('png',png));
+  assert.equal(p.slides[2].photo,dataUrl('jpeg',jpeg));
+  assert.match(rendered[1].html,/ugc-product" src=/);
+  assert.equal(await readFile(join(output,'tiktok.txt'),'utf8'),'Veja como comecei.\n\n#dica #educação');
+  const second=await run('exportar',json.id,'--pasta',join(root,'tiktok'),'--tiktok');
+  assert.ok(second.json.files.some(path=>path.endsWith('tiktok.txt')));
+});
+
+test('CLI usa âncora ativa offline e explica quando falta foto para o slide 1',async t=>{
+  const codex={status:{account:{connected:false}},run:()=>assert.fail('Chamou geração sem ChatGPT')};
+  const {store,run,root,file}=await setup(t,{codex,dialogs:{anchorHash:()=> '0123456789abcdef'}});
+  const plan=await file('plano.json',ugcPlan());
+  await assert.rejects(run('criar','--slides',plan),/slide 1.*foto.*foto-âncora/);
+  const path=join(root,'ancora.jpeg');await writeFile(path,jpeg);
+  await run('persona','criar',...personaFlags,'--foto',path,'--usar');
+  const {json}=await run('criar','--slides',plan,'--estilo','ugc');
+  assert.equal(store.get(json.id).slides[0].photo,dataUrl('jpeg',jpeg));
+  assert.equal(store.get(json.id).slides[2].photo,'');
+});
+
+test('CLI gera cenas pendentes com a âncora da persona indicada no plano',async t=>{
+  const references=[],captures=[];
+  const codex={status:{account:{connected:true}},run:async options=>{references.push(options.references);return {images:[png]};}};
+  const {root,run,store,file,rendered}=await setup(t,{codex,dialogs:{anchorHash:()=> '0123456789abcdef',
+    captureProductPage:async url=>{captures.push(url);return dataUrl('png',png);}}});
+  const path=join(root,'ancora.jpeg');await writeFile(path,jpeg);
+  await run('persona','criar',...personaFlags,'--foto',path);
+  const input=await file('plano.json',{...ugcPlan(),persona:'Lia Costa'});
+  const {json}=await run('criar','--slides',input,'--produto-link','https://exemplo.test');
+  assert.equal(store.get(json.id).status,'complete');
+  assert.deepEqual(captures,['https://exemplo.test/']);
+  assert.deepEqual(references,[[dataUrl('jpeg',jpeg)],[dataUrl('jpeg',jpeg)]]);
+  assert.match(rendered[1].html,/ugc-product" src=/);
 });

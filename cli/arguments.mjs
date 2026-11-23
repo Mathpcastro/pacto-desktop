@@ -1,3 +1,6 @@
+import { validatePersona } from '../core/personas.mjs';
+import { UGC_LIGHTS, validateScene } from '../core/ugc.mjs';
+import { productUrl } from '../core/ugc-product.mjs';
 import { agentActions, licenseControlActions } from '../core/control.mjs';
 import { TERMS_URL, TERMS_VERSION, normalizeLicenseEmail } from '../core/license.mjs';
 import { ACTIONS, GOALS } from '../core/runtime.mjs';
@@ -5,7 +8,7 @@ import { CARD_COUNTS } from '../core/store.mjs';
 import { FORMATS, STYLES } from '../core/templates.mjs';
 
 export class Usage extends Error {}
-const switches = new Set(['help', 'aceito', 'usar', 'listar', 'sem-esperar', 'so-stories', 'confirmar']);
+const switches = new Set(['help', 'aceito', 'usar', 'listar', 'sem-esperar', 'so-stories', 'confirmar', 'tiktok']);
 const commands = {
   ajuda: [0, 0, 'agente'],
   versao: [0, 0],
@@ -13,12 +16,20 @@ const commands = {
   skills: [0, 0],
   perfis: [0, 0],
   perfil: { usar: [1, Infinity], criar: [1, Infinity, 'usar'] },
+  persona: {
+    listar: [0, 0],
+    criar: [0, 0, 'nome idade genero etnia cabelo olhos marca porte estilo cenario nicho foto instagram usar', 'nome idade genero etnia estilo cenario nicho foto'],
+    usar: [1, Infinity],
+    foto: [1, Infinity, 'foto', 'foto'],
+    apagar: [1, Infinity],
+    prompt: [1, Infinity, 'cena luz'],
+  },
   marca: { '': [0, 0], configurar: [0, 0, 'link descricao'], aprovar: [0, 0, 'nome'], salvar: [0, 0, 'contexto design nome', 'contexto design'] },
   licenca: { status: [0, 0], ativar: [0, 0, 'email aceito'] },
   pautas: [0, 0, 'foco listar'],
   projetos: [0, 0],
   projeto: [1, 1],
-  criar: [0, 0, 'pauta titulo estilo cards formato objetivo sem-esperar agente slides quantas capa exportar'],
+  criar: [0, 0, 'pauta titulo estilo cards formato objetivo sem-esperar agente slides quantas capa exportar persona produto-imagem produto-link foto tiktok'],
   mensagem: [2, Infinity, 'sem-esperar'],
   editar: [1, 1, 'json', 'json'],
   aprovar: [1, 1],
@@ -34,7 +45,7 @@ const commands = {
   card: [2, 2, 'html imagem'],
   esperar: [1, 1],
   cancelar: [0, 0],
-  exportar: [1, 1, 'pasta so-stories', 'pasta'],
+  exportar: [1, 1, 'pasta so-stories tiktok', 'pasta'],
   instagram: { '': [0, 0], conectar: [0, 0], contas: [0, 0], padrao: [1, Infinity] },
   postar: [1, 1, 'confirmar contas em'],
   agendados: [0, 0],
@@ -54,6 +65,16 @@ function validateNumber(value, label, min, max = Number.MAX_SAFE_INTEGER) {
     throw new Usage(`Valor inválido para ${label}.`);
   }
 }
+
+export function cliPersona(flags) {
+  try {
+    return validatePersona({
+      ...Object.fromEntries(['nome','genero','etnia','cabelo','olhos','porte','estilo','cenario','nicho','instagram'].map(key=>[key,flags[key]])),
+      idade:Number(flags.idade),marcaFixa:flags.marca,
+    });
+  } catch(error) { throw new Usage(error.message); }
+}
+export const ugcFlags = ['persona','produto-imagem','produto-link','foto'];
 
 export function parseCommand(argv) {
   const positional = [], flags = Object.create(null);
@@ -102,6 +123,15 @@ export function parseCommand(argv) {
     if (flags.formato && !FORMATS.includes(flags.formato)) throw new Usage(`Use --formato ${FORMATS.join('|')}.`);
     if (flags.objetivo && !GOALS.includes(flags.objetivo)) throw new Usage(`Use --objetivo com um destes valores: ${GOALS.join(', ')}.`);
     if (flags.cards) validateNumber(flags.cards, '--cards', CARD_COUNTS[0], CARD_COUNTS.at(-1));
+    if (flags['produto-imagem'] && flags['produto-link']) throw new Usage('Use --produto-imagem ou --produto-link.');
+    if (flags['produto-link']) {
+      try { productUrl(flags['produto-link']); }
+      catch(error) { throw new Usage(error.message); }
+    }
+    if (ugcFlags.some(key=>flags[key]) && (!flags.slides || flags.estilo && flags.estilo!=='ugc')) {
+      throw new Usage('Use opções de persona, produto e foto com criar --slides no estilo ugc.');
+    }
+    if (flags.tiktok && !flags.exportar) throw new Usage('Use --tiktok com --exportar.');
     if (flags.slides) {
       if (flags.estilo === 'ia') throw new Usage('A capa do estilo ia precisa do ChatGPT. Use um estilo de modelo ou envie arte pronta com carrossell card <id> <n> --imagem <arquivo.png>.');
       if (flags.formato && flags.formato !== 'carrossel') throw new Usage('--slides cria um carrossel.');
@@ -112,6 +142,19 @@ export function parseCommand(argv) {
       if (flags.quantas || flags.capa || flags.exportar) throw new Usage('Use --quantas, --capa e --exportar com --slides.');
     }
   }
+  if (cmd === 'persona') {
+    if (sub === 'criar') {
+      validateNumber(flags.idade, '--idade', 1, 120);
+      cliPersona(flags);
+    }
+    if (sub === 'prompt' && flags.luz && (!flags.cena || !UGC_LIGHTS.includes(flags.luz))) {
+      throw new Usage('Use --cena "<descrição>" --luz flash|ambiente|pov.');
+    }
+    if(sub==='prompt'&&flags.cena){
+      try{validateScene({cena:flags.cena,luz:flags.luz});}catch(error){throw new Usage(error.message);}
+    }
+  }
+  if (cmd === 'exportar' && flags.tiktok && flags['so-stories']) throw new Usage('Use --tiktok ou --so-stories.');
   if (cmd === 'licenca' && sub === 'ativar') {
     if (!flags.aceito) throw new Usage(`Para ativar, leia os termos (${TERMS_VERSION}) em ${TERMS_URL} e repita com --aceito.`);
     if (!normalizeLicenseEmail(flags.email)) throw new Usage('Informe o e-mail usado na compra com --email <e-mail>.');

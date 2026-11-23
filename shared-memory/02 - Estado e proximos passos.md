@@ -424,3 +424,9 @@ O build do Vite passou. Em Node foram 278 aprovados, 13 falhas de ambiente já o
 ## 23/11/2026 — Validação fora do sandbox (box Linux)
 
 Fora do sandbox do Codex: `npm test` 290 aprovados, 0 falhas, 1 ignorado. `.deb` 1.15.0 instalado por cima da 1.14.1 em /opt/Carrossell. CLI real: `--version` → `Carrossell 1.15.0`; comando desconhecido sai com 2 sem abrir o app; `criar` sem ChatGPT apaga o rascunho; `criar --slides` exportou 6 PNG + legenda em ~3 s (estilo texto, capa na categoria Chamado). `licenca ativar` com o e-mail do Matheus: o servidor respondeu, mas o box não tem chaveiro (safeStorage indisponível) e o app devolveu `storage_unavailable`; licença não ficou ativa no box. Prints do onboarding, menu do avatar, menu de perfis e guia da CLI tirados do app instalado (Playwright + Xvfb).
+
+## 23/11/2026 — UGC com avatar na 1.15.0 local
+
+Marca guarda personas e fotos-âncora por perfil, com avisos de semelhança entre perfis. O Estúdio monta o gancho e a copy em cima das fotos, aceita imagem ou captura da página do produto, permite refazer uma cena com a âncora original e exporta para TikTok. A CLI aceita `persona`, planos `ugc` com fotos locais e exportação com `--tiktok`.
+
+A suíte detalhada teve 296 aprovações, 13 falhas de ambiente e 1 ignorado. O build do Vite passou. A validação em Electron, a conta real e os instaladores seguem pendentes. [Mudanças e validação](../CHANGES-1.15.0.md)

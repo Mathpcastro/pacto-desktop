@@ -1,3 +1,5 @@
+import { validateScene } from './ugc.mjs';
+import { validatePersona, photoHash, unpackPhoto, findPersona } from './personas.mjs';
 import { mkdir, readFile, writeFile, rename, readdir, unlink, copyFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
@@ -38,6 +40,14 @@ import { validArtDirection } from './art-direction.mjs';
 export function text(value, max=30000) {
   if (typeof value!=='string'||value.length>max) throw new Error('Campo deve ser texto dentro do limite permitido.');
   return value;
+}
+function tiktokCaption(caption=''){
+  const pattern=/#(?:[\p{L}\p{M}\p{N}_]+)/gu;
+  const hashtags=[...new Set(caption.match(pattern)||[])];
+  const firstLine=caption.replace(pattern,'').split('\n').find(line=>line.trim())||'';
+  const words=firstLine.trim().split(/\s+/);
+  const short=words.slice(0,28).join(' ')+(words.length>28?'…':'');
+  return [short,hashtags.join(' ')].filter(Boolean).join('\n\n');
 }
 export function validId(value) {
   if(typeof value!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(value))throw new Error('Identificador inválido.');
@@ -101,7 +111,7 @@ export const FEEDBACK_AREAS=['texto','visual','geral'];
 // Contas do Instagram padrão deste perfil (a chave e a lista de contas do Composio ficam fora da biblioteca).
 const emptyInstagram=()=>({defaults:[]});
 export class Store {
-  constructor(root){this.root=resolve(root);this.blobs=new Map();this.data={profile:null,projects:[],ideas:[],media:emptyMedia(),feedback:[],instagram:emptyInstagram(),settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
+  constructor(root){this.root=resolve(root);this.blobs=new Map();this.data={profile:null,personas:[],activePersonaId:null,projects:[],ideas:[],media:emptyMedia(),feedback:[],instagram:emptyInstagram(),settings:defaultSettings(),onboarding:{brand:emptyInterview(),design:emptyInterview()}};this.queue=Promise.resolve();}
   async init(){
     await mkdir(join(this.root,'images'),{recursive:true});await mkdir(join(this.root,BLOB_DIR),{recursive:true});
     const file=join(this.root,'state.json');
@@ -119,6 +129,8 @@ export class Store {
       }
     }catch(cause){throw new Error('A biblioteca local não pôde ser lida. Seus arquivos foram preservados.',{cause});}
     await this.loadBlobs();
+    if(!Array.isArray(this.data.personas))this.data.personas=[];
+    if(!this.data.personas.some(p=>p.id===this.data.activePersonaId))this.data.activePersonaId=null;
     this.data.onboarding={brand:emptyInterview(),design:emptyInterview(),...this.data.onboarding};
     if(!Array.isArray(this.data.ideas))this.data.ideas=[];
     if(!Array.isArray(this.data.feedback))this.data.feedback=[];
@@ -186,8 +198,8 @@ export class Store {
   persist(){
     // Cada imagem vira referência; só as novas são gravadas em blobs/, antes do state.json que as cita.
     const next=new Map();
-    const body=JSON.stringify(this.data,(_key,value)=>{
-      if(typeof value!=='string'||value.length<1024)return value;
+    const body=JSON.stringify(this.data,(key,value)=>{
+      if(typeof value!=='string'||(value.length<1024&&!['anchor','photo','asset','productAsset'].includes(key)))return value;
       let name=this.blobs.get(value)||next.get(value);
       if(!name){const m=DATA_IMAGE.exec(value);if(!m)return value;name=`${digest(value)}.${m[1]==='jpeg'?'jpg':m[1]}`;}
       next.set(value,name);return `carrossell-imagem://${name}`;
@@ -200,6 +212,34 @@ export class Store {
       this.backupCurrent=await writeAtomic(join(this.root,STATE_BACKUP),body).then(()=>true,()=>false);
     });
     this.queue=job.catch(()=>{});return job;
+  }
+  personas(){return {personas:structuredClone(this.data.personas),activePersonaId:this.data.activePersonaId};}
+  personaSignatures(){
+    return this.data.personas.map(({id,nome,idade,genero,etnia,cabelo,estilo,cenario,anchor,anchorHash})=>({
+      id,nome,idade,genero,etnia,cabelo,estilo,cenario,anchor:Boolean(anchor),anchorHash
+    }));
+  }
+  persona(selector){return structuredClone(findPersona(this.data.personas,selector));}
+  async savePersona(input,{use=false,nativeHash}={}){
+    const old=input?.id?this.persona(input.id):null;
+    const fields=validatePersona({...old,...input});
+    const anchor=input?.anchor??old?.anchor??'';
+    const anchorHash=anchor?(anchor===old?.anchor&&old.anchorHash?old.anchorHash:photoHash(anchor,input.anchorHash,nativeHash)):'';
+    const now=new Date().toISOString();
+    const persona={...fields,id:old?.id||randomUUID(),anchor,anchorHash,createdAt:old?.createdAt||now,updatedAt:now};
+    this.data.personas=old?this.data.personas.map(p=>p.id===old.id?persona:p):[...this.data.personas,persona];
+    if(use)this.data.activePersonaId=persona.id;
+    await this.persist();return structuredClone(persona);
+  }
+  async usePersona(selector){
+    this.data.activePersonaId=this.persona(selector).id;
+    await this.persist();
+  }
+  async deletePersona(selector){
+    const {id}=this.persona(selector);
+    this.data.personas=this.data.personas.filter(p=>p.id!==id);
+    if(this.data.activePersonaId===id)this.data.activePersonaId=null;
+    await this.persist();
   }
   async saveProfile(profile){
     if(!profile||typeof profile!=='object'||Array.isArray(profile))throw new Error('Perfil inválido.');
@@ -236,13 +276,20 @@ export class Store {
     }
     this.data.settings=next;await this.persist();return this.state();
   }
-  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId='',attachments=[],madeBy='',language=''}, {reservedId}={}){
+  async createProject({title,brief,architectureId='',goal='',editorialLine='',visualConcept='',cardCount:cards=0,format:kind='carrossel',style:look='ia',sourceId='',attachments=[],madeBy='',language='',persona='',productAsset='',ugcOfflineAnchor=false}, {reservedId}={}){
     if(language&&!CONTENT_LANGUAGES.includes(language))throw new Error('Idioma do carrossel inválido.');
     // Sem escolha, vale o padrão do perfil; sem padrão, o idioma da tela (como antes).
     const contentLanguage=normalizeContentLanguage(language||this.data.settings.contentLanguage,this.data.settings.language);
     const id=reservedId?validId(reservedId):randomUUID();
     if(this.data.projects.some(p=>p.id===id))return this.get(id);
     const now=new Date().toISOString();const f=format(kind);const p={id,language:contentLanguage,format:f,style:f==='carrossel'?style(look):'ia',styleVariant:0,sourceId:sourceId?validId(sourceId):'',attachments:validateAttachments(attachments),title:text(title,200).trim()||(normalizeLocale(this.data.settings.language)==='es'?'Nuevo carrusel':'Novo carrossel'),brief:text(brief),architectureId:text(architectureId,100),goal:text(goal,200),cardCount:cardCount(cards),publishedAt:'',madeBy:text(String(madeBy||''),40),stories:[],editorialLine:text(editorialLine,2000),visualConcept:text(visualConcept,4000),textApproved:false,coverOptions:[],ctaKit:null,results:null,status:'draft',slides:[],caption:'',architecture:'',messages:[],createdAt:now,updatedAt:now};
+    if(p.style==='ugc'){
+      const selector=persona||this.data.activePersonaId;
+      p.persona=selector?this.persona(selector).id:'';
+      if(productAsset)unpackPhoto(productAsset);
+      p.productAsset=productAsset;
+      p.ugcOfflineAnchor=ugcOfflineAnchor===true;
+    }
     this.data.projects.unshift(p);
     try{await this.persist();}
     catch(error){
@@ -260,17 +307,31 @@ export class Store {
     if(args.attachments!==undefined)patch.attachments=validateAttachments(args.attachments);
     // Trocar o estilo apaga as artes atuais (o histórico de versões fica) e a capa volta a ser escolhida.
     if(args.style!==undefined){const current=this.get(args.id);const next=style(args.style);if(current.format!=='carrossel'&&next!=='ia')throw new Error('Estilo só se aplica a carrosséis.');if(next!==current.style){patch.style=next;patch.styleVariant=0;patch.coverOptions=[];patch.slides=current.slides.map(({image,state,previousState,...s})=>s);patch.status=current.slides.length?'ready':'draft';}}
-    if(args.slides!==undefined){patch.slides=this.validateSlides(args.slides,patch.slides||this.get(args.id).slides);if(patch.slides.some(s=>s.state==='outdated'))patch.status='ready';}
+    if(args.slides!==undefined){patch.slides=this.validateSlides(args.slides,patch.slides||this.get(args.id).slides,patch.style||this.get(args.id).style);if(patch.slides.some(s=>s.state==='outdated'))patch.status='ready';}
     return this.update(args.id,patch);
   }
-  validateSlides(slides,previous=[]){
+  validateSlides(slides,previous=[],look=''){
     if(!Array.isArray(slides)||slides.length>20)throw new Error('Slides inválidos: use até vinte slides.');
     const seen=new Set();return slides.map((s,i)=>{
       const id=validId(s.id||randomUUID());if(seen.has(id))throw new Error('Slide repetido.');seen.add(id);
       const old=previous.find(p=>p.id===id);const result={id,index:i+1};
-      for(const k of slideText)result[k]=text(s[k]??'',12000);
+      for(const k of slideText){
+        let value=s[k]??'';
+        if(['photo','asset'].includes(k)&&typeof value==='string'){
+          const ref=BLOB_REF.exec(value);
+          if(ref){
+            const blob=[...this.blobs].find(([,name])=>name===ref[1]);
+            if(!blob)throw new Error('O arquivo da foto não está disponível neste perfil.');
+            value=blob[0];
+          }
+          if(value.startsWith('data:')){unpackPhoto(value);result[k]=value;continue;}
+        }
+        result[k]=text(value,12000);
+      }
+      if(s.scene!==undefined&&s.scene!==null&&s.scene!=='')result.scene=validateScene(s.scene);
+      if(s.product===true)result.product=true;
       if(result.layout&&!LAYOUTS.includes(result.layout))result.layout='text';
-      if(old?.image){result.image=old.image;result.versions=old.versions;result.state=artText.some(k=>result[k]!==(old[k]??''))?'outdated':old.state;}
+      if(old?.image){result.image=old.image;result.versions=old.versions;result.state=(artText.some(k=>result[k]!==(old[k]??''))||(look==='ugc'&&(result.role!==old.role||Boolean(result.product)!==Boolean(old.product))))?'outdated':old.state;}
       return result;
     });
   }
@@ -340,9 +401,10 @@ export class Store {
     return this.update(id,{slides:p.slides});
   }
   // A mesma lista de arquivos serve ao ZIP, ao celular e à pasta do Google Drive.
-  exportFiles(id){const p=this.get(id);if(!p.slides.length||p.slides.some(s=>!s.image||s.state==='outdated'||s.state==='generating'))throw new Error('Carrossel incompleto. Atualize as imagens de todos os slides antes de exportar.');const files={};
+  exportFiles(id,{tiktok=false}={}){const p=this.get(id);if(!p.slides.length||p.slides.some(s=>!s.image||s.state==='outdated'||s.state==='generating'))throw new Error('Carrossel incompleto. Atualize as imagens de todos os slides antes de exportar.');const files={};
     for(const [i,s]of p.slides.entries()){const bytes=pngBytes(Buffer.from(s.image.split(',')[1],'base64'));files[`${String(i+1).padStart(2,'0')}.png`]=bytes;}
     files['legenda.txt']=strToU8(p.caption||'');
+    if(tiktok)files['tiktok.txt']=strToU8(tiktokCaption(p.caption));
     if(p.ctaKit){const k=p.ctaKit;files['cta-e-dm.txt']=strToU8([`Palavras-chave: ${k.keywords.join(', ')}`,`CTA do primeiro card: ${k.firstCardCta}`,`CTA do último card: ${k.lastCardCta}`,`Material gratuito: ${k.freebie}`,'',`DM 1:\n${k.dm1}`,'',`DM 2:\n${k.dm2}`].join('\n'));}
     if(p.stories?.length){
       files['stories.txt']=strToU8(p.stories.map((s,i)=>[`STORY ${i+1} — ${s.type}`,s.text,s.sticker?`Sticker: ${s.sticker}`:'',s.cta?`CTA: ${s.cta}`:''].filter(Boolean).join('\n')).join('\n\n'));
@@ -350,7 +412,7 @@ export class Store {
     }
     return files;
   }
-  async exportZip(id){return zipSync(this.exportFiles(id),{level:0});}
+  async exportZip(id,options){return zipSync(this.exportFiles(id,options),{level:0});}
   async saveStories(id,stories){
     if(!Array.isArray(stories)||!stories.length||stories.length>10)throw new Error('Sequência de stories inválida.');
     const clean=stories.map(s=>({id:validId(s.id||randomUUID()),type:text(String(s.type||'Story'),60),text:text(String(s.text||'').split('\n').map(l=>l.trim()).join('\n').trim(),2000),sticker:text(String(s.sticker||''),500),cta:text(String(s.cta||''),500),visual:text(String(s.visual||''),2000)}));

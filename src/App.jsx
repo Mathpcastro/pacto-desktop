@@ -402,7 +402,7 @@ export default function App() {
             <div hidden={view === "brand" || view === "pilot" || view === "review" || view === "stories"}
               {...(view === "ideas" ? { id: "radar-workspace", role: "tabpanel", "aria-labelledby": "radar-tab-ideas", tabIndex: 0 } : {})}>
               <Home key={state.profileId} view={view} state={state} request={request} isPending={isPending} onOpen={openProject} onNotice={setNotice} onShowHome={goHome} composerRef={composerRef} connected={connected} onAgents={openAgents} onDiscover={openCapabilities} onView={goView} pendingReviews={pendingReviews} onStories={() => setProjectPicker("stories")} onInstagram={() => setIgOpen(true)} target={homeTarget}
-                onImportReferences={importReferencePack} referenceImporting={referenceImporting} referenceRevision={referenceRevision} />
+                onImportReferences={importReferencePack} referenceImporting={referenceImporting} referenceRevision={referenceRevision} onBrand={openBrand} />
           </div>
           {view === "brand" && <Brand state={state} request={request} isPending={isPending} onRedo={() => setSetup("interview")} onManual={() => setSetup("manual")} onNotice={setNotice} onInstagram={() => setIgOpen(true)} onAgents={openAgents} target={brandTarget} />}
             {(view === "review" || view === "pilot") && <section className="page radar-content" id="radar-workspace" role="tabpanel" aria-labelledby={`radar-tab-${view}`} tabIndex={0}>
