@@ -14,6 +14,46 @@ async function fixture(t) {
   t.after(() => rm(root, {recursive:true,force:true}));
   const store = new Store(root); await store.init(); return {store, root, Store};
 }
+
+function assertStrictOutputSchema(schema, path = 'plan') {
+  if (schema.type === 'object') {
+    assert.equal(schema.additionalProperties, false, path);
+    assert.deepEqual([...(schema.required ?? [])].sort(), Object.keys(schema.properties).sort(), path);
+    for (const [key, property] of Object.entries(schema.properties)) {
+      assertStrictOutputSchema(property, `${path}.${key}`);
+    }
+  }
+  if (schema.items) assertStrictOutputSchema(schema.items, `${path}[]`);
+  for (const option of schema.anyOf ?? []) assertStrictOutputSchema(option, path);
+}
+
+for (const style of ['ia', 'ugc']) {
+  test(`sends a strict Codex output schema for ${style} carousel text without changing the CLI schema`, async t => {
+    const { store } = await fixture(t);
+    const codex = {
+      status: { account: { connected: true } },
+      async run({ outputSchema }) {
+        assertStrictOutputSchema(outputSchema);
+        const card = outputSchema.properties.slides.items.properties;
+        assert.equal('scene' in card, style === 'ugc');
+        assert.equal('product' in card, style === 'ugc');
+        assert.ok(!('photo' in card));
+        assert.ok(!('persona' in outputSchema.properties));
+        return { text: JSON.stringify({ reply: 'Qual é o público?', slides: [] }) };
+      },
+    };
+    const runtime = new Runtime({ store, codex, knowledge: loadKnowledge() });
+    const project = await store.createProject({ title: 'Vender SaaS', brief: 'Vender SaaS', style });
+    const saved = await runtime.begin(project.id, 'plan', { wait: true });
+    assert.equal(saved.messages.at(-1).text, 'Qual é o público?');
+    const agentSchema = runtime.agentTask(project.id, 'texto').schema;
+    assert.ok(agentSchema.properties.persona);
+    assert.ok(!agentSchema.required.includes('persona'));
+    assert.ok(agentSchema.properties.slides.items.properties.photo);
+    assert.equal(agentSchema.properties.slides.items.required.includes('asset'), style !== 'ugc');
+  });
+}
+
 test('slideshow hook guidance is shared by carousel plans and agent text only', async t => {
   const { store } = await fixture(t);
   const runtime = new Runtime({ store, knowledge: loadKnowledge() });

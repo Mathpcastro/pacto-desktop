@@ -146,7 +146,7 @@ test("a one-card carousel goes through approval, cover art and export", async (t
     knowledge,
     codex: {
       status: { account: { connected: true } },
-      run: async (options) => options.outputSchema === PLAN_SCHEMA
+      run: async (options) => options.outputSchema?.properties.slides
         ? { text: JSON.stringify(planFor([card("only", "Um card")])) }
         : { images: [png] },
     },

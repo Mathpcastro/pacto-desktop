@@ -1,5 +1,5 @@
 import { productUrl } from './ugc-product.mjs';
-import { anchorPrompt, scenePrompt } from './ugc.mjs';
+import { anchorPrompt, scenePrompt, UGC_LIGHTS } from './ugc.mjs';
 import { imageKind, similarPersonas, unpackPhoto, validatePersona } from './personas.mjs';
 import { randomUUID } from 'node:crypto';
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -24,10 +24,25 @@ export const GOALS=['Alcance','Comentários','Salvamentos','Levar para uma ofert
 export const VISUAL_FIXES=['Texto vertical ou empilhado','Título pequeno','Texto excessivo','Hierarquia ruim','Falta CTA','Erro de ortografia','Ilustração não combina','Fora da identidade visual'];
 const string={type:'string'};
 const strings={type:'array',items:string};
-const SCENE={type:'object',additionalProperties:false,properties:{cena:string,acao:string,cenario:string,luz:{type:'string',enum:['flash','ambiente','pov']}}};
-const SLIDE={type:'object',additionalProperties:false,required:['id','role','title','body','emphasis','visual','prompt','asset'],properties:{id:string,role:string,title:string,body:string,emphasis:string,visual:string,prompt:string,asset:string,scene:SCENE,photo:string,product:{type:'boolean'}}};
-export const PLAN_SCHEMA={type:'object',additionalProperties:false,required:['title','architecture','editorialLine','visualConcept','coverHooks','caption','reply','regenerateSlideIds','slides'],properties:{title:string,architecture:string,editorialLine:string,visualConcept:string,coverHooks:strings,caption:string,reply:string,regenerateSlideIds:strings,persona:string,slides:{type:'array',minItems:0,maxItems:12,items:SLIDE}}};
-const UGC_PLAN_SCHEMA={...PLAN_SCHEMA,properties:{...PLAN_SCHEMA.properties,slides:{...PLAN_SCHEMA.properties.slides,items:{...SLIDE,required:SLIDE.required.filter(key=>key!=='asset')}}}};
+const strictObject=properties=>({type:'object',additionalProperties:false,required:Object.keys(properties),properties});
+const slideFields={id:string,role:string,title:string,body:string,emphasis:string,visual:string,prompt:string,asset:string};
+const planFields={title:string,architecture:string,editorialLine:string,visualConcept:string,coverHooks:strings,caption:string,reply:string,regenerateSlideIds:strings};
+const sceneFields={cena:string,acao:string,cenario:string,luz:{type:'string',enum:UGC_LIGHTS}};
+const planSlides=items=>({type:'array',minItems:0,maxItems:12,items});
+
+// Codex exige todas as chaves no JSON, inclusive nos objetos dentro dos cards.
+const CODEX_PLAN_SCHEMA=strictObject({...planFields,slides:planSlides(strictObject(slideFields))});
+const CODEX_UGC_PLAN_SCHEMA=strictObject({...planFields,slides:planSlides(strictObject({
+  ...slideFields,
+  asset:{type:['string','null'],description:'ID da imagem no card de produto ou null quando não se aplica.'},
+  scene:{anyOf:[strictObject(sceneFields),{type:'null'}],description:'Descrição para gerar uma foto nova ou null para manter a cena existente ou quando a foto já estiver disponível.'},
+  product:{type:['boolean','null'],description:'true no card de produto, false nos demais ou null para preservar durante uma revisão.'},
+}))});
+
+// O arquivo da CLI também permite opções e fotos fornecidas pelo usuário.
+const agentSlide={...strictObject(slideFields),properties:{...slideFields,scene:{type:'object',additionalProperties:false,properties:sceneFields},photo:string,product:{type:'boolean'}}};
+export const PLAN_SCHEMA={...CODEX_PLAN_SCHEMA,properties:{...planFields,persona:string,slides:planSlides(agentSlide)}};
+const UGC_PLAN_SCHEMA={...PLAN_SCHEMA,properties:{...PLAN_SCHEMA.properties,slides:planSlides({...agentSlide,required:agentSlide.required.filter(key=>key!=='asset')})}};
 export const INTERVIEW_SCHEMA={type:'object',additionalProperties:false,required:['reply','complete','brandName','document'],properties:{reply:string,complete:{type:'boolean'},brandName:string,document:string}};
 const IDEA={type:'object',additionalProperties:false,required:['theme','hook','why','deliverable','connection','architecture','group','top','reason'],properties:{theme:string,hook:string,why:string,deliverable:string,connection:string,architecture:string,group:string,top:{type:'boolean'},reason:string}};
 export const IDEAS_SCHEMA={type:'object',additionalProperties:false,required:['analysis','ideas'],properties:{analysis:string,ideas:{type:'array',minItems:0,maxItems:40,items:IDEA}}};
@@ -850,7 +865,7 @@ Em reply, entregue a REVISÃO FINAL e uma linha dizendo o que melhorou.`;}
         const draft=this.store.get(token.id);
         const seen=[...(draft.productAsset?[draft.productAsset]:[]),...(draft.attachments||[]).map(a=>a.dataUrl)].slice(0,4);
         const language=this.contentLanguage(draft);
-        const schema=draft.style==='ugc'?UGC_PLAN_SCHEMA:PLAN_SCHEMA;
+        const schema=draft.style==='ugc'?CODEX_UGC_PLAN_SCHEMA:CODEX_PLAN_SCHEMA;
         const planOptions={language,outputSchema:schema,...(seen.length?{references:seen}:{}),...(draft.style==='ugc'?{textOnly:true}:{})};
         let result=await this.model({...planOptions,prompt});
         if(token.cancelled)return;
