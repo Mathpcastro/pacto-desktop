@@ -147,6 +147,7 @@ test('criar discards a background project after asynchronous plan failure', asyn
 });
 
 test('invalid usage and version do not connect to the app', async () => {
+  const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   let connections = 0;
   const options = { connectApp: () => { connections++; throw new Error('Tentou conectar'); } };
   const stdout = process.stdout.write, lines = [];
@@ -154,7 +155,7 @@ test('invalid usage and version do not connect to the app', async () => {
   try {
     for (const args of [['--version'], ['-v'], ['versao']]) assert.equal(await main(args, options), 0);
   } finally { process.stdout.write = stdout; }
-  assert.deepEqual(lines.filter(line => line.startsWith('Carrossell ')), Array(3).fill('Carrossell 1.15.0\n'));
+  assert.deepEqual(lines.filter(line => line.startsWith('Carrossell ')), Array(3).fill(`Carrossell ${version}\n`));
   for (const args of [
     ['voar'], ['status', '--desconhecida'], ['texto', 'abc'], ['marca', 'outra'],
     ['capas', 'abc', '--quantas', '0'], ['editar', 'abc', '--json', 'x'],
