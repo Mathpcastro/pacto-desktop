@@ -454,3 +454,9 @@ O modal da persona agora exige que o clique no fundo também tenha começado ali
 [[70 - Release Carrossell 1.15.0]]: CLI que cria o carrossel inteiro sem ChatGPT, CLI visível no menu do perfil, onboarding com escolha entre ChatGPT e Claude/Gemini pelo terminal, skill de ganchos de slideshow e carrossel UGC com avatar realista (biblioteca de avatares, cara do perfil, arrastar e soltar da foto-âncora).
 331 testes, build e provas Electron (CLI, renderer, foto-âncora) passaram. Latest, feeds e SHA-512 verificados no run `45245226670`, depois de duas correções de teste no CI.
 Aviso de novidades ainda não publicado: aguarda confirmação do usuário. `license-proof` e `onboarding-proof` não fecharam na máquina de prova (sem chaveiro; prova de onboarding desatualizada).
+
+## 24/11/2026 — Release 1.15.1 publicada
+
+[[71 - Release Carrossell 1.15.1]] corrige o erro em **Gerar o texto** da 1.15.0. Carrossel completo de Arte com IA verificado no Windows, da geração ao ZIP.
+Os seis jobs do CI passaram no run `45406309173`. Latest, feeds, downloads e SHA-512 de Windows e Linux conferidos.
+Aviso **Volte a gerar texto no Estúdio** publicado no sino para a 1.15.1.
