@@ -139,7 +139,7 @@
 
 .ugc-persona-photo.is-drag-over {
   border-style: dashed;
-  border-color: var(--accent, var(--sage));
+  border-color: var(--accent-ink, var(--sage));
   background: color-mix(in srgb, var(--accent, var(--sage)) 8%, transparent);
 }
 

@@ -14,9 +14,10 @@
     --ink: #191919;
     --muted: #6d6a66;
     --line: #dedbd5;
-    --accent: #bd3c1c;
-    --accent-hover: #a53216;
-    --on-accent: #fff9f5;
+    --accent: #ff5a36;
+    --accent-hover: #ff795c;
+    --on-accent: #191919;
+    --accent-ink: #c72400;
     --accent-soft: #fbe5dc;
     --danger: #b43f30;
     --sage: #607362;
@@ -37,6 +38,7 @@
     --accent: #ff5a36;
     --accent-hover: #ff795c;
     --on-accent: #191919;
+    --accent-ink: var(--accent);
     --accent-soft: #3e2721;
     --danger: #ff9c8e;
     --sage: #acc2a9;
@@ -55,6 +57,7 @@
     --accent: #226b91;
     --accent-hover: #185577;
     --on-accent: #ffffff;
+    --accent-ink: var(--accent);
     --accent-soft: #dfeef6;
     --danger: #a64238;
     --sage: #567a64;
@@ -73,6 +76,7 @@
     --accent: #79c7f1;
     --accent-hover: #a2dcfa;
     --on-accent: #10212b;
+    --accent-ink: var(--accent);
     --accent-soft: #263f4d;
     --danger: #ff9c8e;
     --sage: #a8cbb6;
@@ -91,6 +95,7 @@
     --accent: #3d7049;
     --accent-hover: #2d5838;
     --on-accent: #ffffff;
+    --accent-ink: var(--accent);
     --accent-soft: #e1eee1;
     --danger: #a64238;
     --sage: #55775b;
@@ -109,6 +114,7 @@
     --accent: #a2d38c;
     --accent-hover: #c0e4ae;
     --on-accent: #172519;
+    --accent-ink: var(--accent);
     --accent-soft: #304332;
     --danger: #ff9c8e;
     --sage: #b1cfad;
@@ -127,6 +133,7 @@
     --accent: #6e519c;
     --accent-hover: #563c81;
     --on-accent: #ffffff;
+    --accent-ink: var(--accent);
     --accent-soft: #ece3f4;
     --danger: #a64238;
     --sage: #6e806d;
@@ -145,6 +152,7 @@
     --accent: #c5a7ff;
     --accent-hover: #d8c5ff;
     --on-accent: #281f35;
+    --accent-ink: var(--accent);
     --accent-soft: #3a2e49;
     --danger: #ff9c8e;
     --sage: #b9cda9;
@@ -210,14 +218,14 @@
   }
   button:focus-visible,
   summary:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-ink);
     outline-offset: 4px;
   }
   input:focus,
   textarea:focus {
     outline: 0;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
+    border-color: var(--accent-ink);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-ink) 14%, transparent);
   }
   input::placeholder,
   textarea::placeholder {
@@ -366,7 +374,7 @@
   }
   .main-nav button.active {
     color: var(--ink);
-    border-bottom-color: var(--accent);
+    border-bottom-color: var(--accent-ink);
   }
   .header-tools {
     margin-left: auto;
@@ -505,7 +513,7 @@
   }
   .text-button {
     background: transparent;
-    color: var(--accent);
+    color: var(--accent-ink);
     font-size: 13px;
     display: inline-flex;
     gap: 7px;
@@ -537,7 +545,7 @@
     margin-top: 21px;
   }
   .library-heading h1 em {
-    color: var(--accent);
+    color: var(--accent-ink);
     font-weight: normal;
   }
   .library-heading p {
@@ -781,7 +789,7 @@
     padding: 0;
   }
   .project-title:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .project-meta p {
     color: var(--muted);
@@ -910,7 +918,7 @@
     margin: 0 30px 20px;
     background: var(--accent-soft);
     color: var(--ink);
-    border-left: 2px solid var(--accent);
+    border-left: 2px solid var(--accent-ink);
     padding: 11px;
     font-size: 13px;
     line-height: 1.6;
@@ -988,14 +996,14 @@
     font-size: 13px;
   }
   .palette-choice:hover {
-    border-color: var(--accent);
+    border-color: var(--accent-ink);
   }
   .palette-choice.selected {
-    border-color: var(--accent);
-    box-shadow: inset 0 0 0 1px var(--accent);
+    border-color: var(--accent-ink);
+    box-shadow: inset 0 0 0 1px var(--accent-ink);
   }
   .palette-choice > svg {
-    color: var(--accent);
+    color: var(--accent-ink);
     position: absolute;
     top: 4px;
     right: 4px;
@@ -1032,7 +1040,7 @@
   }
   .preference-field select:focus-visible,
   .preference-scale-control input:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-ink);
     outline-offset: 3px;
   }
   .preference-scale-label {
@@ -1043,7 +1051,7 @@
     margin-bottom: 8px;
   }
   .preference-scale-label strong {
-    color: var(--accent);
+    color: var(--accent-ink);
     font-variant-numeric: tabular-nums;
   }
   .preference-scale-control {
@@ -1065,7 +1073,7 @@
   }
   .scale-step:hover:not(:disabled) {
     background: var(--canvas);
-    border-color: var(--accent);
+    border-color: var(--accent-ink);
   }
   .preference-scale-control input[type="range"] {
     width: 100%;
@@ -1081,7 +1089,7 @@
   }
   .preference-preview {
     border: 1px solid var(--line);
-    border-left: 3px solid var(--accent);
+    border-left: 3px solid var(--accent-ink);
     border-radius: 4px;
     background: var(--surface);
     padding: 13px 15px;
@@ -1136,7 +1144,7 @@
     height: 43px;
   }
   .required {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .field-hint {
     font-size: 13px;
@@ -1173,7 +1181,7 @@
     margin-top: 24px;
   }
   .profile-intro h1 em {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .profile-intro > p {
     font-size: 13px;
@@ -1364,7 +1372,7 @@
     line-height: 1.6;
   }
   .course-list > button:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .course-list .mono {
     font-size: 13px;
@@ -1397,7 +1405,7 @@
   }
   .error-banner > svg {
     flex-shrink: 0;
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .error-banner > .icon-button {
     margin-left: auto;
@@ -1497,7 +1505,7 @@
     margin-top: 22px;
   }
   .desktop-only h1 em {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .desktop-only > p {
     max-width: 390px;
@@ -1520,7 +1528,7 @@
     line-height: 1.8;
   }
   .desktop-note > svg {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .editing {
     height: 100vh;
@@ -1620,7 +1628,7 @@
     padding: 10px 25px;
     font-size: 13px;
     line-height: 1.7;
-    color: var(--accent);
+    color: var(--accent-ink);
     border-bottom: 1px solid var(--line);
   }
   .editor-grid {
@@ -1685,7 +1693,7 @@
     display: block;
   }
   .slide-thumb.selected .thumb-paper {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-ink);
     outline-offset: 3px;
   }
   .thumb-copy {
@@ -1721,7 +1729,7 @@
     padding: 0 2px;
   }
   .slide-thumb.selected .thumb-label {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .thumb-label > svg {
     color: var(--sage);
@@ -1966,7 +1974,7 @@
     border-bottom: 2px solid transparent;
   }
   .panel-tabs > button.active {
-    border-color: var(--accent);
+    border-color: var(--accent-ink);
     color: var(--ink);
   }
   .slide-fields {
@@ -2049,13 +2057,13 @@
     color: var(--muted);
   }
   .message-assistant .eyebrow {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .assistant-empty {
     margin-top: 15px;
   }
   .assistant-empty > svg {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .assistant-empty h3 {
     font:
@@ -2088,7 +2096,7 @@
     background: var(--input);
   }
   .chat-composer:focus-within {
-    border-color: var(--accent);
+    border-color: var(--accent-ink);
   }
   .chat-composer > textarea {
     border: 0;
@@ -2112,7 +2120,7 @@
     color: var(--muted);
   }
   .chat-composer .icon-button {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .step-jump {
     display: flex;
@@ -2224,7 +2232,7 @@
   .preset-grid > button.selected,
   .architecture-grid > button.selected,
   .goal-chips > button.selected {
-    border-color: var(--accent);
+    border-color: var(--accent-ink);
     background: var(--accent-soft);
   }
   .preset-grid strong,
@@ -2303,8 +2311,8 @@
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    border: 1px solid var(--accent);
-    color: var(--accent);
+    border: 1px solid var(--accent-ink);
+    color: var(--accent-ink);
     font-size: 13px;
   }
   .install-summary li.done > span {
@@ -2423,7 +2431,7 @@
   }
   .copy-card > header .mono {
     font-size: 13px;
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .copy-role {
     flex: 1;
@@ -2441,7 +2449,7 @@
     color: var(--muted);
   }
   .word-count.over {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .field textarea.copy-title {
     font:
@@ -2556,7 +2564,7 @@
     font-size: 13px;
   }
   .cover-generate > button.selected {
-    border-color: var(--accent);
+    border-color: var(--accent-ink);
     background: var(--accent-soft);
   }
   .cover-generate > .button {
@@ -2601,7 +2609,7 @@
     margin-top: 40px;
   }
   .ideas-heading h1 em {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .ideas-heading p {
     font-size: 13px;
@@ -2706,7 +2714,7 @@
     gap: 10px;
   }
   .idea-card.top {
-    border-color: var(--accent);
+    border-color: var(--accent-ink);
   }
   .idea-card > header {
     display: flex;
@@ -2723,7 +2731,7 @@
     border-radius: 999px;
     padding: 3px 8px;
     background: var(--accent-soft);
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .idea-badge.muted,
   .idea-arch {
@@ -2780,7 +2788,7 @@
     margin: 10px 0 8px;
   }
   .publish-screen.celebrate > header h2 {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .publish-screen > header p {
     font-size: 13px;
@@ -2973,7 +2981,7 @@
     margin-top: 40px;
   }
   .rhythm > .library-heading h1 em {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .rhythm > .library-heading p {
     font-size: 13px;
@@ -3088,7 +3096,7 @@
     border-bottom: 1px solid var(--line);
   }
   .winners tr.above td:first-child {
-    border-left: 2px solid var(--accent);
+    border-left: 2px solid var(--accent-ink);
   }
   .winners .idea-badge {
     margin-left: 8px;
@@ -3109,7 +3117,7 @@
     color: var(--sage);
   }
   .lesson-link:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   .lesson-link small {
     color: var(--muted);
@@ -3185,7 +3193,7 @@
     background: var(--accent-soft);
   }
   .lesson-marks .mono {
-    color: var(--accent);
+    color: var(--accent-ink);
     font-size: 13px;
   }
 }
@@ -3479,16 +3487,16 @@
 .license-dialog .dialog-fields { gap: 18px; }
 .license-intro { display: flex; gap: 13px; align-items: flex-start; }
 .license-intro p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--muted); }
-.license-icon { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); }
+.license-icon { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); }
 .license-terms { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.6; cursor: pointer; padding: 11px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--input); }
 .license-terms input { margin: 3px 0 0; width: 16px; height: 16px; accent-color: var(--accent); flex: none; cursor: pointer; }
-.license-terms.attention { border-color: var(--accent); }
-.license-link { all: unset; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
-.license-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
-.license-problem { margin: 0; background: var(--accent-soft); border-left: 2px solid var(--accent); padding: 11px 12px; font-size: 13px; line-height: 1.6; }
-.license-dialog .field input[aria-invalid] { border-color: var(--accent); }
+.license-terms.attention { border-color: var(--accent-ink); }
+.license-link { all: unset; color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.license-link:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; border-radius: 2px; }
+.license-problem { margin: 0; background: var(--accent-soft); border-left: 2px solid var(--accent-ink); padding: 11px 12px; font-size: 13px; line-height: 1.6; }
+.license-dialog .field input[aria-invalid] { border-color: var(--accent-ink); }
 .license-dialog .dialog-footer .btn.primary { display: inline-flex; align-items: center; gap: 8px; }
-.license-success { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 4px 30px 34px; color: var(--sage, var(--accent)); }
+.license-success { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 4px 30px 34px; color: var(--sage, var(--accent-ink)); }
 .license-success p { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.7; }
 
 /* Direção de arte (Marca › Design Kit) */
